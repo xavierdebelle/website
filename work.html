@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WORK — XAVIER DE BELLE</title>
+<meta name="description" content="de Belle Photography, 333 Photo, and real estate — the three things Xavier de Belle spends his life on.">
+<link rel="icon" href="assets/logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/style.css">
+<style>
+  /* ---------- masthead ---------- */
+
+  .mast {
+    padding: clamp(40px, 8vw, 96px) var(--gut) clamp(30px, 5vw, 60px);
+    border-bottom: var(--edge) solid var(--paper);
+  }
+  .mast h1 {
+    font-size: clamp(56px, 16vw, 210px);
+    margin: 14px 0 0;
+  }
+  .mast h1 em { font-style: normal; color: var(--volt); }
+  .mast__sub {
+    margin: 28px 0 0;
+    font-size: clamp(16px, 2vw, 22px);
+    line-height: 1.5;
+    max-width: 42ch;
+    font-weight: 500;
+  }
+
+  /* ---------- marquee strip ---------- */
+
+  .strip {
+    border-bottom: var(--edge) solid var(--paper);
+    background: var(--volt);
+    color: var(--ink);
+    overflow: hidden;
+    padding: 12px 0;
+  }
+  .strip__run {
+    display: flex;
+    gap: 40px;
+    width: max-content;
+    animation: slide 34s linear infinite;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: -.02em;
+    font-size: clamp(14px, 1.8vw, 20px);
+    white-space: nowrap;
+  }
+  .strip__run span::after { content: " ✦"; opacity: .5; margin-left: 40px; }
+  @keyframes slide { to { transform: translateX(-50%); } }
+  @media (prefers-reduced-motion: reduce) { .strip__run { animation: none; } }
+
+  /* ---------- chapters ---------- */
+
+  .chapter {
+    border-bottom: var(--edge) solid var(--paper);
+    padding: clamp(44px, 8vw, 110px) var(--gut);
+    position: relative;
+  }
+
+  .chapter__no {
+    font-family: var(--mono);
+    font-size: clamp(11px, 1.2vw, 13px);
+    letter-spacing: .24em;
+    color: var(--volt);
+    text-transform: uppercase;
+    margin: 0 0 18px;
+  }
+
+  .chapter h2 {
+    font-size: clamp(42px, 9.5vw, 132px);
+    margin: 0 0 6px;
+  }
+
+  .chapter__role {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: var(--dust);
+    margin: 0 0 clamp(26px, 4vw, 46px);
+  }
+
+  .chapter__cols {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+    gap: clamp(28px, 5vw, 76px);
+    align-items: start;
+  }
+
+  .chapter__cols p {
+    font-size: clamp(15px, 1.7vw, 18px);
+    line-height: 1.66;
+    margin: 0 0 20px;
+    max-width: 52ch;
+  }
+  .chapter__cols p:first-child {
+    font-size: clamp(19px, 2.4vw, 27px);
+    line-height: 1.36;
+    font-weight: 700;
+    letter-spacing: -.02em;
+  }
+
+  .spec {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border-top: var(--edge) solid var(--paper);
+  }
+  .spec li {
+    display: grid;
+    grid-template-columns: 108px minmax(0, 1fr);
+    gap: 16px;
+    padding: 15px 0;
+    border-bottom: 2px solid var(--ash);
+    font-size: 14px;
+    line-height: 1.45;
+  }
+  .spec b {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--dust);
+    font-weight: 400;
+    padding-top: 3px;
+  }
+
+  .acts { display: flex; flex-wrap: wrap; gap: 12px; margin-top: clamp(28px, 4vw, 44px); }
+
+  /* alternating flip: yellow chapter */
+  .chapter--volt {
+    background: var(--volt);
+    color: var(--ink);
+  }
+  .chapter--volt .chapter__no { color: var(--ink); opacity: .6; }
+  .chapter--volt .chapter__role { color: rgba(0,0,0,.55); }
+  .chapter--volt .spec { border-top-color: var(--ink); }
+  .chapter--volt .spec li { border-bottom-color: rgba(0,0,0,.22); }
+  .chapter--volt .spec b { color: rgba(0,0,0,.6); }
+  .chapter--volt .btn { border-color: var(--ink); color: var(--ink); }
+  .chapter--volt .btn:hover { background: var(--ink); border-color: var(--ink); color: var(--volt); }
+
+  /* white chapter */
+  .chapter--paper {
+    background: var(--paper);
+    color: var(--ink);
+  }
+  .chapter--paper .chapter__role { color: #6a6a6a; }
+  .chapter--paper .spec { border-top-color: var(--ink); }
+  .chapter--paper .spec li { border-bottom-color: #dcdcdc; }
+  .chapter--paper .spec b { color: #6a6a6a; }
+  .chapter--paper .btn { border-color: var(--ink); color: var(--ink); }
+  .chapter--paper .btn:hover { background: var(--volt); border-color: var(--volt); color: var(--ink); }
+
+  /* ---------- closing call ---------- */
+
+  .call {
+    padding: clamp(50px, 10vw, 130px) var(--gut);
+    border-bottom: var(--edge) solid var(--paper);
+  }
+  .call h2 { font-size: clamp(40px, 9vw, 128px); margin: 0 0 26px; }
+  .call h2 em { font-style: normal; -webkit-text-stroke: 2px var(--paper); color: transparent; }
+  .call p { font-size: clamp(15px, 1.8vw, 19px); line-height: 1.6; max-width: 44ch; margin: 0 0 34px; }
+
+  @media (max-width: 860px) {
+    .chapter__cols { grid-template-columns: 1fr; }
+    .spec li { grid-template-columns: 92px minmax(0, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <a class="topbar__mark" href="index.html">
+    <img src="assets/logo.svg" alt="">
+    Xavier de Belle
+  </a>
+  <nav class="topbar__nav" aria-label="Main">
+    <a href="index.html">Map</a>
+    <a href="work.html" aria-current="page">Work</a>
+    <a href="tools.html">Tools</a>
+    <a href="https://www.instagram.com/xavierdebelle/" target="_blank" rel="noopener">Instagram &#8599;</a>
+  </nav>
+</header>
+
+<section class="mast">
+  <p class="kicker">Montreal &mdash; Photographer, Cinematographer, Builder</p>
+  <h1 class="display">Three<br><em>Lanes</em></h1>
+  <p class="mast__sub">
+    Weddings with the family studio. Brands with 333. Buildings on the side.
+    Same instinct every time — find the thing nobody framed properly, then do the work.
+  </p>
+</section>
+
+<div class="strip" aria-hidden="true">
+  <div class="strip__run">
+    <span>Professional Fun Maker</span>
+    <span>Romanticizing Life</span>
+    <span>Photographer</span>
+    <span>Cinematographer</span>
+    <span>Montreal</span>
+    <span>Professional Fun Maker</span>
+    <span>Romanticizing Life</span>
+    <span>Photographer</span>
+    <span>Cinematographer</span>
+    <span>Montreal</span>
+  </div>
+</div>
+
+<main id="main">
+
+  <!-- ============ 01 ============ -->
+  <section class="chapter" id="de-belle">
+    <p class="chapter__no">01 / Weddings</p>
+    <h2 class="display">de Belle<br>Photography</h2>
+    <p class="chapter__role">Photographer &amp; Cinematographer &middot; The family studio</p>
+
+    <div class="chapter__cols">
+      <div>
+        <p>One of the originals. Thirty years of Montreal weddings and more than three thousand days on the other side of the lens.</p>
+        <p>
+          I shoot and I film. The approach is documentary — I would rather be close enough that the real
+          thing lands on camera than spend the day arranging people into a version of themselves.
+          The finish is editorial: intentional, emotional, and never fussy about it.
+        </p>
+        <p>
+          Growing up inside a studio means you learn the unglamorous half early. How a timeline actually
+          runs. What goes wrong at 4pm. Why the album matters more in ten years than the gallery does in
+          ten days. Most of the tools on this site exist because of that half.
+        </p>
+        <div class="acts">
+          <a class="btn btn--solid" href="https://debellephotography.com/" target="_blank" rel="noopener">debellephotography.com &#8599;</a>
+          <a class="btn" href="tools.html#debelle">The tools behind it &rarr;</a>
+        </div>
+      </div>
+
+      <ul class="spec">
+        <li><b>Discipline</b><span>Wedding photography &amp; cinematography</span></li>
+        <li><b>Studio</b><span>de Belle Photography, Montreal QC</span></li>
+        <li><b>Heritage</b><span>30+ years, 3000+ weddings</span></li>
+        <li><b>Style</b><span>Documentary approach, editorial finish</span></li>
+        <li><b>Range</b><span>Local &amp; destination weddings</span></li>
+        <li><b>Also</b><span>Studio sessions, albums, prints</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ============ 02 ============ -->
+  <section class="chapter chapter--volt" id="333-photo">
+    <p class="chapter__no">02 / Commercial</p>
+    <h2 class="display">333<br>Photo</h2>
+    <p class="chapter__role">Commercial photography, video &amp; design &middot; @333mtl</p>
+
+    <div class="chapter__cols">
+      <div>
+        <p>The commercial lane. Photo, video, design, web and marketing from one team, for brands that would rather not manage five vendors.</p>
+        <p>
+          Fashion, product, lifestyle, travel — the discipline changes, the standard doesn't.
+          We work as an extension of your team instead of holding you at agency arm's length,
+          and we'll tell you when the flashy idea is the wrong one.
+        </p>
+        <p>
+          It's a no-bull operation: transparent, collaborative, and built on treating a client's
+          project with the same care we give our own. Proudly Montreal, proudly Canadian.
+        </p>
+        <div class="acts">
+          <a class="btn" href="https://333photo.com/" target="_blank" rel="noopener">333photo.com &#8599;</a>
+        </div>
+      </div>
+
+      <ul class="spec">
+        <li><b>Discipline</b><span>Commercial photo &amp; video</span></li>
+        <li><b>Also</b><span>Branding, graphic design, web</span></li>
+        <li><b>Also</b><span>Digital advertising, SEO, strategy</span></li>
+        <li><b>Sectors</b><span>Fashion, product, lifestyle, travel</span></li>
+        <li><b>Base</b><span>Montreal, Canada</span></li>
+        <li><b>Approach</b><span>One team, no bull</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ============ 03 ============ -->
+  <section class="chapter chapter--paper" id="real-estate">
+    <p class="chapter__no">03 / Property</p>
+    <h2 class="display">Real<br>Estate</h2>
+    <p class="chapter__role">Buying, renovating, holding &middot; In progress</p>
+
+    <div class="chapter__cols">
+      <div>
+        <p>Buying a duplex, renovating it, and learning the trade the expensive way — by doing it.</p>
+        <p>
+          Cameras teach you to see a space before it exists: what it becomes with the right light,
+          the wall taken out, the clutter gone. Property is that same instinct on a much longer
+          exposure. Find what nobody framed properly, put in the work, hold it.
+        </p>
+        <p>
+          This lane is the youngest of the three and the one I'm most deliberately growing.
+          A duplex first, then whatever the duplex teaches me.
+        </p>
+        <div class="acts">
+          <a class="btn" href="mailto:xavier@debellephotography.com">Talk property &rarr;</a>
+        </div>
+      </div>
+
+      <ul class="spec">
+        <li><b>Stage</b><span>Duplex — acquire &amp; renovate</span></li>
+        <li><b>Market</b><span>Montreal</span></li>
+        <li><b>Strategy</b><span>Long hold, hands-on renovation</span></li>
+        <li><b>Learning</b><span>Trades, financing, permits</span></li>
+        <li><b>Status</b><span>Underway</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ============ CALL ============ -->
+  <section class="call">
+    <p class="kicker">Next</p>
+    <h2 class="display">Let's Make<br><em>Something</em></h2>
+    <p>
+      A wedding, a campaign, a building, or a browser tool that fixes one stubborn problem —
+      it all comes from the same place.
+    </p>
+    <div class="acts">
+      <a class="btn btn--solid" href="mailto:xavier@debellephotography.com">Email me</a>
+      <a class="btn" href="https://www.instagram.com/xavierdebelle/" target="_blank" rel="noopener">Instagram &#8599;</a>
+      <a class="btn" href="index.html">Back to the map</a>
+    </div>
+  </section>
+
+</main>
+
+<footer class="foot">
+  <div>
+    <p class="kicker" style="margin-bottom:14px">Xavier de Belle &mdash; Montreal</p>
+    <div class="foot__links">
+      <a href="index.html">The Map</a>
+      <a href="tools.html">Tools</a>
+      <a href="https://debellephotography.com/" target="_blank" rel="noopener">de Belle Photography &#8599;</a>
+      <a href="https://333photo.com/" target="_blank" rel="noopener">333 Photo &#8599;</a>
+      <a href="https://www.instagram.com/xavierdebelle/" target="_blank" rel="noopener">Instagram &#8599;</a>
+      <a href="mailto:xavier@debellephotography.com">Email</a>
+    </div>
+  </div>
+  <p class="foot__sig">&copy; <span id="yr"></span> Xavier de Belle &middot; v4</p>
+</footer>
+
+<script>document.getElementById('yr').textContent = new Date().getFullYear();</script>
+
+</body>
+</html>

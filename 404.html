@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Site root. Change to "/" if this repo becomes xavierdebelle.github.io -->
+<base href="/website/">
+<title>NOT HERE — XAVIER DE BELLE</title>
+<link rel="icon" href="assets/logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/style.css">
+<style>
+  body { min-height: 100vh; display: flex; flex-direction: column; }
+  .lost {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: clamp(40px, 9vw, 120px) var(--gut);
+  }
+  .lost h1 {
+    font-size: clamp(72px, 22vw, 300px);
+    margin: 18px 0 0;
+    line-height: .78;
+  }
+  .lost h1 em { font-style: normal; -webkit-text-stroke: 2px var(--paper); color: transparent; }
+  .lost p {
+    font-size: clamp(15px, 1.9vw, 20px);
+    line-height: 1.55;
+    max-width: 44ch;
+    margin: 30px 0 0;
+  }
+  .lost .acts { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 38px; }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <a class="topbar__mark" href="index.html">
+    <img src="assets/logo.svg" alt="">
+    Xavier de Belle
+  </a>
+  <nav class="topbar__nav" aria-label="Main">
+    <a href="index.html">Map</a>
+    <a href="work.html">Work</a>
+    <a href="tools.html">Tools</a>
+  </nav>
+</header>
+
+<main class="lost">
+  <p class="kicker">Error 404</p>
+  <h1 class="display">Not<br><em>Here</em></h1>
+  <p>
+    This page either moved or was never public. A few of my tools hold client
+    details, so they live on my machine and never get deployed &mdash; if you
+    followed a link to one of those, that's what happened.
+  </p>
+  <div class="acts">
+    <a class="btn btn--solid" href="index.html">Back to the map</a>
+    <a class="btn" href="tools.html">See the tools</a>
+  </div>
+</main>
+
+<footer class="foot">
+  <div>
+    <p class="kicker" style="margin-bottom:14px">Xavier de Belle &mdash; Montreal</p>
+    <div class="foot__links">
+      <a href="index.html">The Map</a>
+      <a href="work.html">Work</a>
+      <a href="tools.html">Tools</a>
+      <a href="https://www.instagram.com/xavierdebelle/" target="_blank" rel="noopener">Instagram &#8599;</a>
+    </div>
+  </div>
+  <p class="foot__sig">&copy; <span id="yr"></span> Xavier de Belle &middot; v4</p>
+</footer>
+
+<script>document.getElementById('yr').textContent = new Date().getFullYear();</script>
+</body>
+</html>

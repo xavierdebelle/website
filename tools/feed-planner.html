@@ -1,0 +1,1382 @@
+<meta charset="utf-8" />
+<title>Feed Planner</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  :root {
+    --bg: #f3f1ec;
+    --surface: #ffffff;
+    --surface-sunken: #e9e6df;
+    --ink: #201e1c;
+    --ink-dim: #726b62;
+    --ink-faint: #a39a8d;
+    --accent: #a8641f;
+    --accent-ink: #ffffff;
+    --line: #d9d4c9;
+    --danger: #a13a2f;
+    --radius-s: 3px;
+    --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+    color-scheme: light;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #18171b;
+      --surface: #221f24;
+      --surface-sunken: #29262b;
+      --ink: #f1ece3;
+      --ink-dim: #a89f92;
+      --ink-faint: #6f665c;
+      --accent: #dd9a52;
+      --accent-ink: #201205;
+      --line: #38343a;
+      --danger: #e08677;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #18171b;
+    --surface: #221f24;
+    --surface-sunken: #29262b;
+    --ink: #f1ece3;
+    --ink-dim: #a89f92;
+    --ink-faint: #6f665c;
+    --accent: #dd9a52;
+    --accent-ink: #201205;
+    --line: #38343a;
+    --danger: #e08677;
+    color-scheme: dark;
+  }
+  :root[data-theme="light"] {
+    --bg: #f3f1ec;
+    --surface: #ffffff;
+    --surface-sunken: #e9e6df;
+    --ink: #201e1c;
+    --ink-dim: #726b62;
+    --ink-faint: #a39a8d;
+    --accent: #a8641f;
+    --accent-ink: #ffffff;
+    --line: #d9d4c9;
+    --danger: #a13a2f;
+    color-scheme: light;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-ui);
+    -webkit-font-smoothing: antialiased;
+  }
+  ::selection { background: var(--accent); color: var(--accent-ink); }
+
+  button, input, textarea {
+    font: inherit;
+    color: inherit;
+  }
+  button {
+    cursor: pointer;
+    background: none;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-s);
+    color: var(--ink);
+    padding: .5rem .8rem;
+  }
+  button:hover { border-color: var(--ink-faint); }
+  button:focus-visible, input:focus-visible, textarea:focus-visible, [tabindex]:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  button.primary {
+    background: var(--accent);
+    color: var(--accent-ink);
+    border-color: var(--accent);
+    font-weight: 600;
+  }
+  button.primary:hover { filter: brightness(1.08); }
+  button.ghost {
+    border-color: transparent;
+    color: var(--ink-dim);
+  }
+  button.ghost:hover { color: var(--ink); border-color: var(--line); }
+
+  .wrap {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 2rem 1.25rem 5rem;
+  }
+
+  .masthead {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.75rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--line);
+  }
+  .masthead h1 {
+    font-family: var(--font-mono);
+    font-size: .95rem;
+    font-weight: 600;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    margin: 0;
+  }
+  .masthead .tagline {
+    display: block;
+    font-family: var(--font-ui);
+    font-size: .8rem;
+    font-weight: 400;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--ink-dim);
+    margin-top: .2rem;
+  }
+  .masthead .actions { display: flex; gap: .5rem; }
+
+  .dropdown { position: relative; }
+  .dropdown-menu {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    display: flex;
+    flex-direction: column;
+    min-width: 120px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-s);
+    box-shadow: 0 8px 24px rgba(20,18,16,.16);
+    overflow: hidden;
+    z-index: 30;
+  }
+  .dropdown-menu button {
+    border: none;
+    border-radius: 0;
+    text-align: left;
+    padding: .55rem .75rem;
+  }
+  .dropdown-menu button + button { border-top: 1px solid var(--line); }
+  .dropdown-menu button:hover { background: var(--surface-sunken); }
+  .dropdown-menu[hidden] { display: none; }
+
+  /* profile header */
+  .profile {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 1.1rem 1.4rem;
+    margin-bottom: 2.25rem;
+  }
+  .avatar-btn {
+    grid-row: 1 / 3;
+    width: 76px;
+    height: 76px;
+    border-radius: 50%;
+    padding: 0;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    background: var(--surface-sunken);
+    position: relative;
+    flex-shrink: 0;
+  }
+  .avatar-btn img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .avatar-btn .hint {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-mono); font-size: .6rem; letter-spacing: .04em;
+    color: var(--ink-faint);
+  }
+  .handle-row { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
+  .handle-input {
+    font-size: 1.05rem;
+    font-weight: 600;
+    border: none;
+    background: none;
+    padding: .1rem 0;
+    min-width: 4ch;
+    border-bottom: 1px solid transparent;
+  }
+  .handle-input:hover, .handle-input:focus { border-bottom-color: var(--line); }
+  .handle-input:focus-visible { outline: none; border-bottom-color: var(--accent); }
+
+  .stats {
+    display: flex;
+    gap: 1.4rem;
+    font-size: .85rem;
+    color: var(--ink-dim);
+  }
+  .stats b {
+    font-variant-numeric: tabular-nums;
+    color: var(--ink);
+    font-weight: 600;
+    margin-right: .3em;
+  }
+  .stats .editable {
+    border: none;
+    background: none;
+    width: 4ch;
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    color: var(--ink);
+    border-bottom: 1px solid transparent;
+    padding: 0;
+    margin-right: .4em;
+  }
+  .stats .editable:hover, .stats .editable:focus { border-bottom-color: var(--line); }
+  .stats .editable:focus-visible { outline: none; border-bottom-color: var(--accent); }
+
+  .bio {
+    grid-column: 2;
+    width: 100%;
+    resize: none;
+    border: none;
+    background: none;
+    font-size: .85rem;
+    line-height: 1.5;
+    color: var(--ink);
+    padding: 0;
+    border-bottom: 1px solid transparent;
+  }
+  .bio::placeholder { color: var(--ink-faint); }
+  .bio:hover, .bio:focus { border-bottom-color: var(--line); }
+  .bio:focus-visible { outline: none; }
+
+  /* grid */
+  .grid-label {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    font-family: var(--font-mono);
+    font-size: .7rem;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: .5rem;
+  }
+  .grid-label span.count { font-variant-numeric: tabular-nums; }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0;
+    border-top: 1px solid var(--line);
+    border-left: 1px solid var(--line);
+  }
+
+  .tile {
+    position: relative;
+    aspect-ratio: 4 / 5;
+    background: var(--surface);
+    overflow: hidden;
+    border-right: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+  }
+  .tile img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: block;
+    -webkit-user-drag: element;
+  }
+  .tile.photo { cursor: grab; }
+  .tile.photo:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+  .tile.photo:active { cursor: grabbing; }
+  .tile.photo.dragging { opacity: .35; }
+  .tile.drop-target::after {
+    content: "";
+    position: absolute; inset: 0;
+    border: 2px solid var(--accent);
+    pointer-events: none;
+  }
+
+  .tile .frame-no {
+    position: absolute;
+    left: 5px; bottom: 4px;
+    font-family: var(--font-mono);
+    font-size: .62rem;
+    letter-spacing: .02em;
+    color: #fff;
+    text-shadow: 0 0 3px rgba(0,0,0,.85), 0 0 1px rgba(0,0,0,.9);
+    pointer-events: none;
+  }
+  .tile .remove {
+    position: absolute;
+    top: 4px; right: 4px;
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(20,18,16,.55);
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .85rem;
+    line-height: 1;
+    padding: 0;
+    opacity: 0;
+    transition: opacity .12s;
+  }
+  .tile.photo:hover .remove,
+  .tile .remove:focus-visible { opacity: 1; }
+  .tile .remove:hover { background: var(--danger); }
+
+  .tile .caption-flag {
+    position: absolute;
+    right: 5px; bottom: 5px;
+    display: flex;
+    color: #fff;
+    filter: drop-shadow(0 0 2px rgba(0,0,0,.9));
+    pointer-events: none;
+  }
+
+  /* dropping a file from outside onto a tile swaps that photo */
+  .tile.replace-target::after {
+    content: "";
+    position: absolute; inset: 0;
+    border: 2px solid var(--accent);
+    background: rgba(168,100,31,.3);
+    background: color-mix(in srgb, var(--accent) 30%, transparent);
+    pointer-events: none;
+  }
+  .tile.replace-target::before {
+    content: "Replace";
+    position: absolute;
+    left: 50%; top: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 3;
+    font-family: var(--font-mono);
+    font-size: .56rem;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--accent-ink);
+    background: var(--accent);
+    padding: .25rem .45rem;
+    border-radius: 2px;
+    pointer-events: none;
+  }
+
+  .tile.add {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: .35rem;
+    background: var(--surface-sunken);
+    border: none;
+    color: var(--ink-faint);
+  }
+  .tile.add:hover { color: var(--ink-dim); }
+  .tile.add .plus {
+    font-family: var(--font-mono);
+    font-size: 1.3rem;
+    line-height: 1;
+  }
+  .tile.add .label {
+    font-size: .62rem;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+  }
+  .tile.add input { display: none; }
+
+  .empty-note {
+    font-size: .8rem;
+    color: var(--ink-faint);
+    text-align: center;
+    padding: 2.5rem 1rem;
+    grid-column: 2 / 4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(16,14,12,.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    z-index: 50;
+  }
+  .modal-backdrop[hidden] { display: none; }
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    width: 100%;
+    max-width: 420px;
+    max-height: 90vh;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+  }
+  /* keep fixed-height rows (the crop stage above all) from being flex-shrunk
+     to nothing on short windows — the modal scrolls instead */
+  .modal > * { flex-shrink: 0; }
+  .modal-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: .8rem 1rem;
+    border-bottom: 1px solid var(--line);
+    font-family: var(--font-mono);
+    font-size: .68rem;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+  }
+  .modal-head button {
+    border: none;
+    padding: 0 .2rem;
+    font-size: 1.15rem;
+    line-height: 1;
+    color: var(--ink-dim);
+  }
+  .modal-head button:hover { color: var(--ink); }
+  .modal-hint {
+    padding: .6rem 1rem 0;
+    font-size: .74rem;
+    color: var(--ink-dim);
+  }
+
+  .crop-stage {
+    position: relative;
+    width: 100%;
+    height: 264px;
+    margin-top: .6rem;
+    background: var(--surface-sunken);
+    overflow: hidden;
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+  }
+  .crop-stage.grabbing { cursor: grabbing; }
+  .crop-stage img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    pointer-events: none;
+  }
+  /* the frame marks the exact region that survives the 4:5 crop */
+  .crop-frame {
+    position: absolute;
+    left: 0; top: 0;
+    width: 0; height: 0;
+    outline: 2px solid #fff;
+    box-shadow: 0 0 0 9999px rgba(14,12,10,.52);
+    pointer-events: none;
+  }
+  .crop-frame::before,
+  .crop-frame::after {
+    content: "";
+    position: absolute;
+    pointer-events: none;
+  }
+  .crop-frame::before {
+    left: 33.333%; right: 33.333%; top: 0; bottom: 0;
+    border-left: 1px solid rgba(255,255,255,.38);
+    border-right: 1px solid rgba(255,255,255,.38);
+  }
+  .crop-frame::after {
+    top: 33.333%; bottom: 33.333%; left: 0; right: 0;
+    border-top: 1px solid rgba(255,255,255,.38);
+    border-bottom: 1px solid rgba(255,255,255,.38);
+  }
+
+  /* touch has no drag-and-drop and no hover, so swapping a photo lives here */
+  .crop-replace {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: .45rem;
+    margin: .7rem 1rem 0;
+    padding: .55rem .8rem;
+    border: 1px dashed var(--line);
+    border-radius: var(--radius-s);
+    color: var(--ink-dim);
+    font-size: .78rem;
+  }
+  .crop-replace:hover {
+    color: var(--ink);
+    border-style: solid;
+    border-color: var(--ink-faint);
+  }
+  .crop-replace svg { flex-shrink: 0; }
+
+  .crop-zoom {
+    display: flex;
+    align-items: center;
+    gap: .7rem;
+    padding: .9rem 1rem 0;
+  }
+  .crop-zoom label,
+  .crop-caption label {
+    font-family: var(--font-mono);
+    font-size: .6rem;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+  .crop-zoom input[type="range"] {
+    flex: 1;
+    min-width: 0;
+    accent-color: var(--accent);
+  }
+  .crop-zoom .zoom-value {
+    font-family: var(--font-mono);
+    font-size: .7rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink-dim);
+    width: 5ch;
+    text-align: right;
+  }
+
+  .crop-caption {
+    display: flex;
+    flex-direction: column;
+    gap: .35rem;
+    padding: .9rem 1rem 0;
+  }
+  .crop-caption textarea {
+    width: 100%;
+    resize: vertical;
+    min-height: 3.4rem;
+    font-family: var(--font-ui);
+    font-size: .82rem;
+    line-height: 1.45;
+    color: var(--ink);
+    background: var(--surface-sunken);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-s);
+    padding: .5rem .6rem;
+  }
+  .crop-caption textarea::placeholder { color: var(--ink-faint); }
+  .crop-caption textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+  .crop-foot {
+    padding: 1rem;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  .crop-preview-wrap { display: flex; flex-direction: column; gap: .4rem; }
+  .crop-preview-label {
+    font-family: var(--font-mono);
+    font-size: .6rem;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+  .crop-preview {
+    width: 72px;
+    aspect-ratio: 4 / 5;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    background: var(--surface-sunken);
+  }
+  .crop-preview img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .crop-actions { display: flex; gap: .5rem; }
+
+  footer.note {
+    margin-top: 1.75rem;
+    font-size: .72rem;
+    color: var(--ink-faint);
+    line-height: 1.6;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
+  }
+
+  /* no hover on touch — the tile controls have to stay put to be reachable */
+  @media (hover: none) {
+    .tile .remove {
+      opacity: 1;
+      width: 26px;
+      height: 26px;
+      font-size: 1rem;
+    }
+  }
+
+  @media (max-width: 420px) {
+    .wrap { padding: 1.25rem .75rem 4rem; }
+    .avatar-btn { width: 60px; height: 60px; }
+  }
+</style>
+
+<div class="wrap">
+  <div class="masthead">
+    <h1>Feed Planner<span class="tagline">Arrange before you post</span></h1>
+    <div class="actions">
+      <div class="dropdown" id="exportDropdown">
+        <button class="ghost" id="exportBtn" type="button" aria-haspopup="true" aria-expanded="false">Export</button>
+        <div class="dropdown-menu" id="exportMenu" hidden>
+          <button type="button" data-format="png">PNG</button>
+          <button type="button" data-format="jpeg">JPEG</button>
+          <button type="button" data-format="pdf">PDF</button>
+        </div>
+      </div>
+      <button class="ghost" id="clearBtn" type="button">Clear all</button>
+    </div>
+  </div>
+
+  <div class="profile">
+    <button class="avatar-btn" id="avatarBtn" type="button" title="Set profile photo">
+      <span class="hint" id="avatarHint">PHOTO</span>
+      <img id="avatarImg" hidden alt="" />
+    </button>
+    <input type="file" id="avatarInput" accept="image/*" hidden />
+
+    <div>
+      <div class="handle-row">
+        <input class="handle-input" id="username" value="your.handle" spellcheck="false" />
+      </div>
+      <div class="stats">
+        <div><b id="postCount">0</b>posts</div>
+        <div><input class="editable" id="followers" value="0" inputmode="numeric" />followers</div>
+        <div><input class="editable" id="following" value="0" inputmode="numeric" />following</div>
+      </div>
+    </div>
+
+    <textarea class="bio" id="bio" rows="2" placeholder="Write a bio to preview it above the grid…"></textarea>
+  </div>
+
+  <div class="grid-label">
+    <span>Grid preview</span>
+    <span class="count" id="gridCount">0 photos</span>
+  </div>
+
+  <div class="grid" id="grid">
+    <label class="tile add" id="addTile">
+      <span class="plus">+</span>
+      <span class="label">Add photos</span>
+      <input type="file" id="photoInput" accept="image/*" multiple />
+    </label>
+  </div>
+
+  <footer class="note">
+    Tap a photo to crop, zoom, caption, or replace it. On a computer you can also drag photos to reorder, or drop a new image onto one to replace it. Everything is stored in this browser only — nothing uploads anywhere. Frame numbers show posting order, first tile last.
+  </footer>
+</div>
+
+<div class="modal-backdrop" id="cropBackdrop" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-label="Edit photo">
+    <div class="modal-head">
+      <span>Edit photo</span>
+      <button class="ghost" id="cropClose" type="button" aria-label="Close">×</button>
+    </div>
+    <p class="modal-hint">Drag the frame to choose what shows in the tile. Zoom to crop in closer.</p>
+    <div class="crop-stage" id="cropStage">
+      <img id="cropImg" alt="" draggable="false" />
+      <div class="crop-frame" id="cropFrame"></div>
+    </div>
+    <button class="crop-replace" id="cropReplace" type="button">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h14"/><path d="M14 5l3 3-3 3"/><path d="M21 16H7"/><path d="M10 13l-3 3 3 3"/></svg>
+      Replace photo
+    </button>
+    <input type="file" id="cropReplaceInput" accept="image/*" hidden />
+    <div class="crop-zoom">
+      <label for="cropZoom">Zoom</label>
+      <input type="range" id="cropZoom" min="1" max="4" step="0.01" value="1" />
+      <span class="zoom-value" id="cropZoomValue">1.00×</span>
+    </div>
+    <div class="crop-caption">
+      <label for="cropCaption">Caption</label>
+      <textarea id="cropCaption" rows="2" placeholder="Write the caption for this post…"></textarea>
+    </div>
+    <div class="crop-foot">
+      <div class="crop-preview-wrap">
+        <span class="crop-preview-label">Grid preview</span>
+        <div class="crop-preview">
+          <img id="cropPreviewImg" alt="" draggable="false" />
+        </div>
+      </div>
+      <div class="crop-actions">
+        <button class="ghost" id="cropReset" type="button">Reset crop</button>
+        <button class="primary" id="cropSave" type="button">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const STORAGE_KEY = "feed-planner-state-v1";
+  const MAX_DIM = 1080;
+  const AVATAR_DIM = 320;
+
+  const state = loadState();
+
+  const grid = document.getElementById("grid");
+  const addTile = document.getElementById("addTile");
+  const photoInput = document.getElementById("photoInput");
+  const gridCount = document.getElementById("gridCount");
+  const postCount = document.getElementById("postCount");
+  const usernameEl = document.getElementById("username");
+  const bioEl = document.getElementById("bio");
+  const followersEl = document.getElementById("followers");
+  const followingEl = document.getElementById("following");
+  const avatarBtn = document.getElementById("avatarBtn");
+  const avatarInput = document.getElementById("avatarInput");
+  const avatarImg = document.getElementById("avatarImg");
+  const avatarHint = document.getElementById("avatarHint");
+  const clearBtn = document.getElementById("clearBtn");
+  const exportBtn = document.getElementById("exportBtn");
+  const exportMenu = document.getElementById("exportMenu");
+  const exportDropdown = document.getElementById("exportDropdown");
+  const cropBackdrop = document.getElementById("cropBackdrop");
+  const cropStage = document.getElementById("cropStage");
+  const cropImg = document.getElementById("cropImg");
+  const cropFrame = document.getElementById("cropFrame");
+  const cropPreviewImg = document.getElementById("cropPreviewImg");
+  const cropReplaceBtn = document.getElementById("cropReplace");
+  const cropReplaceInput = document.getElementById("cropReplaceInput");
+  const cropZoomInput = document.getElementById("cropZoom");
+  const cropZoomValue = document.getElementById("cropZoomValue");
+  const cropCaptionInput = document.getElementById("cropCaption");
+  const cropClose = document.getElementById("cropClose");
+  const cropSave = document.getElementById("cropSave");
+  const cropReset = document.getElementById("cropReset");
+
+  const TILE_W = 4, TILE_H = 5;
+  const MAX_ZOOM = 4;
+
+  function clamp(v, min, max) { return Math.min(Math.max(v, min), max); }
+
+  // The source rectangle a 4:5 tile shows: the largest tile-shaped window that
+  // fits the image (that's plain "cover"), shrunk by the zoom factor.
+  function cropWindow(iw, ih, zoom) {
+    const sw0 = Math.min(iw, ih * (TILE_W / TILE_H));
+    const sh0 = Math.min(ih, iw * (TILE_H / TILE_W));
+    return { sw: sw0 / zoom, sh: sh0 / zoom };
+  }
+
+  // CSS equivalent of the same window: object-position places the cover box,
+  // then scaling about that same anchor zooms without shifting the focus.
+  function applyPhotoStyle(imgEl, photo) {
+    const fx = photo.focusX ?? 50, fy = photo.focusY ?? 50, z = photo.zoom ?? 1;
+    imgEl.style.objectPosition = `${fx}% ${fy}%`;
+    imgEl.style.transformOrigin = `${fx}% ${fy}%`;
+    imgEl.style.transform = z > 1 ? `scale(${z})` : "";
+  }
+
+  function loadState() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) return JSON.parse(raw);
+    } catch (e) {}
+    return {
+      profile: { username: "your.handle", bio: "", followers: "0", following: "0", avatar: null },
+      photos: []
+    };
+  }
+
+  function saveState() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch (e) {
+      console.warn("Storage full — try removing a few photos.", e);
+    }
+  }
+
+  function resizeToDataURL(file, maxDim) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      const reader = new FileReader();
+      reader.onerror = reject;
+      reader.onload = () => { img.src = reader.result; };
+      img.onerror = reject;
+      img.onload = () => {
+        let { width, height } = img;
+        if (width > height && width > maxDim) {
+          height = Math.round(height * (maxDim / width));
+          width = maxDim;
+        } else if (height >= width && height > maxDim) {
+          width = Math.round(width * (maxDim / height));
+          height = maxDim;
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL("image/jpeg", 0.85));
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // ---- profile fields ----
+  usernameEl.value = state.profile.username;
+  bioEl.value = state.profile.bio;
+  followersEl.value = state.profile.followers;
+  followingEl.value = state.profile.following;
+  if (state.profile.avatar) setAvatarPreview(state.profile.avatar);
+
+  usernameEl.addEventListener("input", () => { state.profile.username = usernameEl.value; saveState(); });
+  bioEl.addEventListener("input", () => { state.profile.bio = bioEl.value; saveState(); });
+  followersEl.addEventListener("input", () => {
+    followersEl.value = followersEl.value.replace(/[^\d]/g, "");
+    state.profile.followers = followersEl.value; saveState();
+  });
+  followingEl.addEventListener("input", () => {
+    followingEl.value = followingEl.value.replace(/[^\d]/g, "");
+    state.profile.following = followingEl.value; saveState();
+  });
+
+  function setAvatarPreview(dataUrl) {
+    avatarImg.src = dataUrl;
+    avatarImg.hidden = false;
+    avatarHint.hidden = true;
+  }
+
+  avatarBtn.addEventListener("click", () => avatarInput.click());
+  avatarInput.addEventListener("change", async () => {
+    const file = avatarInput.files[0];
+    if (!file) return;
+    const dataUrl = await resizeToDataURL(file, AVATAR_DIM);
+    state.profile.avatar = dataUrl;
+    setAvatarPreview(dataUrl);
+    saveState();
+    avatarInput.value = "";
+  });
+
+  // ---- photo grid ----
+  function render() {
+    grid.querySelectorAll(".tile.photo").forEach(t => t.remove());
+
+    state.photos.forEach((photo, i) => {
+      const tile = document.createElement("div");
+      tile.className = "tile photo";
+      tile.draggable = true;
+      tile.dataset.index = i;
+      tile.tabIndex = 0;
+      tile.setAttribute("role", "button");
+      const caption = (photo.caption || "").trim();
+      tile.title = caption
+        ? `${caption}\n\nClick to edit · drag to reorder`
+        : "Click to crop and caption · drag to reorder";
+
+      const img = document.createElement("img");
+      img.src = photo.dataUrl;
+      img.alt = "";
+      img.draggable = false;
+      applyPhotoStyle(img, photo);
+      tile.appendChild(img);
+
+      const frameNo = document.createElement("span");
+      frameNo.className = "frame-no";
+      frameNo.textContent = String(i + 1).padStart(2, "0");
+      tile.appendChild(frameNo);
+
+      if (caption) {
+        const flag = document.createElement("span");
+        flag.className = "caption-flag";
+        flag.innerHTML = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h10"/></svg>';
+        tile.appendChild(flag);
+      }
+
+      const remove = document.createElement("button");
+      remove.className = "remove";
+      remove.type = "button";
+      remove.setAttribute("aria-label", "Remove photo");
+      remove.textContent = "×";
+      remove.addEventListener("click", (e) => {
+        e.stopPropagation();
+        state.photos.splice(i, 1);
+        saveState();
+        render();
+      });
+      tile.appendChild(remove);
+
+      tile.addEventListener("click", () => openCropModal(i));
+      tile.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          openCropModal(i);
+        }
+      });
+
+      grid.insertBefore(tile, addTile);
+      wireDrag(tile);
+    });
+
+    gridCount.textContent = state.photos.length === 1 ? "1 photo" : `${state.photos.length} photos`;
+    postCount.textContent = state.photos.length;
+  }
+
+  let dragIndex = null;
+
+  function wireDrag(tile) {
+    tile.addEventListener("dragstart", () => {
+      dragIndex = Number(tile.dataset.index);
+      tile.classList.add("dragging");
+    });
+    tile.addEventListener("dragend", () => {
+      tile.classList.remove("dragging");
+      clearDropHighlights();
+    });
+    tile.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      tile.classList.toggle("replace-target", isFileDrag(e));
+      tile.classList.toggle("drop-target", !isFileDrag(e));
+    });
+    tile.addEventListener("dragleave", () => {
+      tile.classList.remove("drop-target", "replace-target");
+    });
+    tile.addEventListener("drop", async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      tile.classList.remove("drop-target", "replace-target");
+      const dropIndex = Number(tile.dataset.index);
+
+      // an image dragged in from outside swaps the photo in this slot
+      if (isFileDrag(e)) {
+        const files = Array.from(e.dataTransfer.files || []).filter(f => f.type.startsWith("image/"));
+        if (!files.length) return;
+        const dataUrl = await resizeToDataURL(files[0], MAX_DIM);
+        const existing = state.photos[dropIndex];
+        state.photos[dropIndex] = {
+          dataUrl,
+          focusX: 50,
+          focusY: 50,
+          zoom: 1,
+          caption: existing ? (existing.caption || "") : ""
+        };
+        saveState();
+        render();
+        if (files.length > 1) handleFiles(files.slice(1));
+        return;
+      }
+
+      if (dragIndex === null || dragIndex === dropIndex) return;
+      const [moved] = state.photos.splice(dragIndex, 1);
+      state.photos.splice(dropIndex, 0, moved);
+      dragIndex = null;
+      saveState();
+      render();
+    });
+  }
+
+  function isFileDrag(e) {
+    return !!e.dataTransfer && Array.from(e.dataTransfer.types || []).includes("Files");
+  }
+
+  function clearDropHighlights() {
+    grid.querySelectorAll(".drop-target, .replace-target")
+      .forEach(t => t.classList.remove("drop-target", "replace-target"));
+  }
+
+  async function handleFiles(fileList) {
+    const files = Array.from(fileList).filter(f => f.type.startsWith("image/"));
+    for (const file of files) {
+      const dataUrl = await resizeToDataURL(file, MAX_DIM);
+      state.photos.push({ dataUrl, focusX: 50, focusY: 50, zoom: 1, caption: "" });
+    }
+    saveState();
+    render();
+  }
+
+  photoInput.addEventListener("change", () => {
+    handleFiles(photoInput.files);
+    photoInput.value = "";
+  });
+
+  addTile.addEventListener("dragover", (e) => { e.preventDefault(); addTile.classList.add("drop-target"); });
+  addTile.addEventListener("dragleave", () => addTile.classList.remove("drop-target"));
+  addTile.addEventListener("drop", (e) => {
+    e.preventDefault();
+    addTile.classList.remove("drop-target");
+    if (e.dataTransfer.files && e.dataTransfer.files.length) handleFiles(e.dataTransfer.files);
+  });
+
+  clearBtn.addEventListener("click", () => {
+    if (!state.photos.length && !state.profile.avatar) return;
+    if (!confirm("Remove all photos and reset the profile preview?")) return;
+    state.photos = [];
+    state.profile = { username: "your.handle", bio: "", followers: "0", following: "0", avatar: null };
+    usernameEl.value = state.profile.username;
+    bioEl.value = "";
+    followersEl.value = "0";
+    followingEl.value = "0";
+    avatarImg.hidden = true;
+    avatarHint.hidden = false;
+    saveState();
+    render();
+  });
+
+  // ---- crop + caption modal ----
+  let cropIndex = null;
+  let cropFocus = { x: 50, y: 50 };
+  let cropZoom = 1;
+  let cropDragging = false;
+  let grabOffset = { x: 0, y: 0 };
+
+  function openCropModal(index) {
+    const photo = state.photos[index];
+    if (!photo) return;
+    cropIndex = index;
+    cropFocus = { x: photo.focusX ?? 50, y: photo.focusY ?? 50 };
+    cropZoom = photo.zoom ?? 1;
+    cropCaptionInput.value = photo.caption || "";
+    cropImg.src = photo.dataUrl;
+    cropPreviewImg.src = photo.dataUrl;
+    // the stage has no layout box while the modal is hidden — show it, then measure
+    cropBackdrop.hidden = false;
+    if (cropImg.complete && cropImg.naturalWidth) updateCropVisuals();
+    else cropImg.addEventListener("load", updateCropVisuals, { once: true });
+  }
+
+  function closeCropModal() {
+    cropBackdrop.hidden = true;
+    cropIndex = null;
+    endCropDrag();
+  }
+
+  function stageMetrics() {
+    const rect = cropStage.getBoundingClientRect();
+    const iw = cropImg.naturalWidth, ih = cropImg.naturalHeight;
+    if (!iw || !ih || !rect.width || !rect.height) return null;
+    const scale = Math.min(rect.width / iw, rect.height / ih);
+    return { rect, iw, ih, scale, ox: (rect.width - iw * scale) / 2, oy: (rect.height - ih * scale) / 2 };
+  }
+
+  function updateCropVisuals() {
+    cropZoomValue.textContent = cropZoom.toFixed(2) + "×";
+    cropZoomInput.value = cropZoom;
+    applyPhotoStyle(cropPreviewImg, { focusX: cropFocus.x, focusY: cropFocus.y, zoom: cropZoom });
+
+    const m = stageMetrics();
+    if (!m) return;
+    const { sw, sh } = cropWindow(m.iw, m.ih, cropZoom);
+    const left = (m.iw - sw) * (cropFocus.x / 100);
+    const top = (m.ih - sh) * (cropFocus.y / 100);
+    cropFrame.style.left = (m.ox + left * m.scale) + "px";
+    cropFrame.style.top = (m.oy + top * m.scale) + "px";
+    cropFrame.style.width = (sw * m.scale) + "px";
+    cropFrame.style.height = (sh * m.scale) + "px";
+  }
+
+  // focus is stored as a fraction of the slack, so the frame can never leave the image
+  function centerFocusOn(imgX, imgY) {
+    const iw = cropImg.naturalWidth, ih = cropImg.naturalHeight;
+    const { sw, sh } = cropWindow(iw, ih, cropZoom);
+    const slackX = iw - sw, slackY = ih - sh;
+    cropFocus = {
+      x: slackX > 0.5 ? clamp((imgX - sw / 2) / slackX, 0, 1) * 100 : 50,
+      y: slackY > 0.5 ? clamp((imgY - sh / 2) / slackY, 0, 1) * 100 : 50
+    };
+  }
+
+  function frameCenter() {
+    const iw = cropImg.naturalWidth, ih = cropImg.naturalHeight;
+    const { sw, sh } = cropWindow(iw, ih, cropZoom);
+    return {
+      x: (iw - sw) * (cropFocus.x / 100) + sw / 2,
+      y: (ih - sh) * (cropFocus.y / 100) + sh / 2
+    };
+  }
+
+  function setZoom(next) {
+    next = clamp(Number(next) || 1, 1, MAX_ZOOM);
+    if (!cropImg.naturalWidth) { cropZoom = next; updateCropVisuals(); return; }
+    const c = frameCenter();   // zoom around whatever the frame is currently on
+    cropZoom = next;
+    centerFocusOn(c.x, c.y);
+    updateCropVisuals();
+  }
+
+  function pointerToImage(e) {
+    const m = stageMetrics();
+    if (!m) return null;
+    return {
+      x: (e.clientX - m.rect.left - m.ox) / m.scale,
+      y: (e.clientY - m.rect.top - m.oy) / m.scale
+    };
+  }
+
+  function endCropDrag() {
+    cropDragging = false;
+    cropStage.classList.remove("grabbing");
+  }
+
+  cropStage.addEventListener("pointerdown", (e) => {
+    const p = pointerToImage(e);
+    if (!p) return;
+    const iw = cropImg.naturalWidth, ih = cropImg.naturalHeight;
+    const { sw, sh } = cropWindow(iw, ih, cropZoom);
+    const left = (iw - sw) * (cropFocus.x / 100);
+    const top = (ih - sh) * (cropFocus.y / 100);
+    const inside = p.x >= left && p.x <= left + sw && p.y >= top && p.y <= top + sh;
+    // grabbing inside the frame keeps your grip on it; clicking outside jumps it there
+    grabOffset = inside ? { x: p.x - (left + sw / 2), y: p.y - (top + sh / 2) } : { x: 0, y: 0 };
+    if (!inside) { centerFocusOn(p.x, p.y); updateCropVisuals(); }
+    cropDragging = true;
+    cropStage.classList.add("grabbing");
+    cropStage.setPointerCapture(e.pointerId);
+  });
+  cropStage.addEventListener("pointermove", (e) => {
+    if (!cropDragging) return;
+    const p = pointerToImage(e);
+    if (!p) return;
+    centerFocusOn(p.x - grabOffset.x, p.y - grabOffset.y);
+    updateCropVisuals();
+  });
+  cropStage.addEventListener("pointerup", endCropDrag);
+  cropStage.addEventListener("pointercancel", endCropDrag);
+  cropStage.addEventListener("wheel", (e) => {
+    e.preventDefault();
+    setZoom(cropZoom * (e.deltaY < 0 ? 1.09 : 1 / 1.09));
+  }, { passive: false });
+
+  cropZoomInput.addEventListener("input", () => setZoom(cropZoomInput.value));
+
+  // Swapping the photo from inside the editor: the touch equivalent of dropping
+  // a file onto a tile, so it applies straight away just like the drop does.
+  cropReplaceBtn.addEventListener("click", () => cropReplaceInput.click());
+  cropReplaceInput.addEventListener("change", async () => {
+    const file = cropReplaceInput.files[0];
+    const index = cropIndex;
+    cropReplaceInput.value = "";
+    if (!file || index === null || !file.type.startsWith("image/")) return;
+
+    const dataUrl = await resizeToDataURL(file, MAX_DIM);
+    const photo = state.photos[index];
+    if (!photo) return;
+    photo.dataUrl = dataUrl;
+    photo.focusX = 50;
+    photo.focusY = 50;
+    photo.zoom = 1;          // the caption stays — the slot keeps its plan
+    saveState();
+    render();
+
+    // only refresh the editor if it is still showing this same photo
+    if (cropIndex !== index) return;
+    cropFocus = { x: 50, y: 50 };
+    cropZoom = 1;
+    cropImg.src = dataUrl;
+    cropPreviewImg.src = dataUrl;
+    if (cropImg.complete && cropImg.naturalWidth) updateCropVisuals();
+    else cropImg.addEventListener("load", updateCropVisuals, { once: true });
+  });
+
+  window.addEventListener("resize", () => { if (!cropBackdrop.hidden) updateCropVisuals(); });
+
+  cropReset.addEventListener("click", () => {
+    cropFocus = { x: 50, y: 50 };
+    cropZoom = 1;
+    updateCropVisuals();
+  });
+  cropClose.addEventListener("click", closeCropModal);
+  cropBackdrop.addEventListener("click", (e) => { if (e.target === cropBackdrop) closeCropModal(); });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !cropBackdrop.hidden) closeCropModal();
+  });
+  cropSave.addEventListener("click", () => {
+    if (cropIndex === null) return;
+    const photo = state.photos[cropIndex];
+    photo.focusX = Math.round(cropFocus.x * 10) / 10;
+    photo.focusY = Math.round(cropFocus.y * 10) / 10;
+    photo.zoom = Math.round(cropZoom * 100) / 100;
+    photo.caption = cropCaptionInput.value.trim();
+    saveState();
+    render();
+    closeCropModal();
+  });
+
+  // ---- export ----
+  exportBtn.addEventListener("click", () => {
+    const willOpen = exportMenu.hidden;
+    exportMenu.hidden = !willOpen;
+    exportBtn.setAttribute("aria-expanded", String(willOpen));
+  });
+  document.addEventListener("click", (e) => {
+    if (!exportDropdown.contains(e.target)) {
+      exportMenu.hidden = true;
+      exportBtn.setAttribute("aria-expanded", "false");
+    }
+  });
+  exportMenu.querySelectorAll("button[data-format]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      exportMenu.hidden = true;
+      exportBtn.setAttribute("aria-expanded", "false");
+      exportGrid(btn.dataset.format);
+    });
+  });
+
+  function loadImageEl(src) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = reject;
+      img.src = src;
+    });
+  }
+
+  const CAPTION_FONT = '13px -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif';
+  const NUMBER_FONT = '11px ui-monospace, Menlo, Consolas, monospace';
+
+  function wrapText(ctx, text, maxWidth, maxLines) {
+    if (!text) return [];
+    const words = text.replace(/\s+/g, " ").trim().split(" ");
+    const lines = [];
+    let line = "";
+    for (const word of words) {
+      const test = line ? line + " " + word : word;
+      if (!line || ctx.measureText(test).width <= maxWidth) {
+        line = test;
+      } else {
+        lines.push(line);
+        line = word;
+      }
+    }
+    if (line) lines.push(line);
+    if (lines.length <= maxLines) return lines;
+
+    const kept = lines.slice(0, maxLines);
+    let last = kept[maxLines - 1];
+    while (last.length && ctx.measureText(last + "…").width > maxWidth) last = last.slice(0, -1);
+    kept[maxLines - 1] = last.replace(/\s+$/, "") + "…";
+    return kept;
+  }
+
+  async function composeGridCanvas() {
+    const cols = 3;
+    const tileW = 356;
+    const gapPx = 6;
+    const tileH = Math.round(tileW * TILE_H / TILE_W);
+    const rows = Math.ceil(state.photos.length / cols) || 1;
+
+    // captions get a band under each tile; without any, the grid stays as-is
+    const padX = 10, padTop = 9, padBottom = 12, lineH = 17, gutter = 26, maxLines = 3;
+    const hasCaptions = state.photos.some(p => (p.caption || "").trim());
+    const measure = document.createElement("canvas").getContext("2d");
+    measure.font = CAPTION_FONT;
+    const maxTextW = tileW - padX * 2 - gutter;
+    const wrapped = hasCaptions
+      ? state.photos.map(p => wrapText(measure, (p.caption || "").trim(), maxTextW, maxLines))
+      : [];
+    const bandLines = hasCaptions ? Math.max(1, ...wrapped.map(l => l.length)) : 0;
+    const bandH = hasCaptions ? padTop + bandLines * lineH + padBottom : 0;
+    const cellH = tileH + bandH;
+
+    const width = tileW * cols + gapPx * (cols - 1);
+    const height = cellH * rows + gapPx * (rows - 1);
+
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d");
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, width, height);
+
+    const images = await Promise.all(state.photos.map(p => loadImageEl(p.dataUrl)));
+
+    state.photos.forEach((photo, i) => {
+      const col = i % cols;
+      const row = Math.floor(i / cols);
+      const dx = col * (tileW + gapPx);
+      const dy = row * (cellH + gapPx);
+      const img = images[i];
+      const iw = img.naturalWidth, ih = img.naturalHeight;
+
+      // same window the tile shows on screen: cover, shrunk by zoom, placed by focus
+      const { sw, sh } = cropWindow(iw, ih, photo.zoom ?? 1);
+      const sx = (iw - sw) * ((photo.focusX ?? 50) / 100);
+      const sy = (ih - sh) * ((photo.focusY ?? 50) / 100);
+      ctx.drawImage(img, sx, sy, sw, sh, dx, dy, tileW, tileH);
+
+      if (!hasCaptions) return;
+      const bandY = dy + tileH;
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(dx, bandY, tileW, bandH);
+      ctx.clip();
+      ctx.textBaseline = "top";
+      ctx.font = NUMBER_FONT;
+      ctx.fillStyle = "#a39a8d";
+      ctx.fillText(String(i + 1).padStart(2, "0"), dx + padX, bandY + padTop + 1);
+      ctx.font = CAPTION_FONT;
+      ctx.fillStyle = "#201e1c";
+      wrapped[i].forEach((line, li) => {
+        ctx.fillText(line, dx + padX + gutter, bandY + padTop + li * lineH);
+      });
+      ctx.restore();
+    });
+
+    return canvas;
+  }
+
+  function triggerDownload(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  function buildSingleImagePdf(jpegBytes, width, height) {
+    const enc = new TextEncoder();
+    const chunks = [];
+    let offset = 0;
+    const objOffsets = {};
+    function push(data) {
+      const bytes = typeof data === "string" ? enc.encode(data) : data;
+      chunks.push(bytes);
+      offset += bytes.length;
+    }
+    push("%PDF-1.4\n");
+    objOffsets[1] = offset;
+    push("1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n");
+    objOffsets[2] = offset;
+    push("2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n");
+    objOffsets[3] = offset;
+    push(`3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${width} ${height}] /Resources << /XObject << /Im0 4 0 R >> >> /Contents 5 0 R >>\nendobj\n`);
+    objOffsets[4] = offset;
+    push(`4 0 obj\n<< /Type /XObject /Subtype /Image /Width ${width} /Height ${height} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${jpegBytes.length} >>\nstream\n`);
+    push(jpegBytes);
+    push("\nendstream\nendobj\n");
+    objOffsets[5] = offset;
+    const content = `q ${width} 0 0 ${height} 0 0 cm /Im0 Do Q`;
+    push(`5 0 obj\n<< /Length ${content.length} >>\nstream\n${content}\nendstream\nendobj\n`);
+    const xrefStart = offset;
+    let xref = "xref\n0 6\n0000000000 65535 f \n";
+    for (let i = 1; i <= 5; i++) xref += String(objOffsets[i]).padStart(10, "0") + " 00000 n \n";
+    push(xref);
+    push(`trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n${xrefStart}\n%%EOF`);
+    const total = chunks.reduce((a, c) => a + c.length, 0);
+    const out = new Uint8Array(total);
+    let pos = 0;
+    for (const c of chunks) { out.set(c, pos); pos += c.length; }
+    return out;
+  }
+
+  async function exportGrid(format) {
+    if (!state.photos.length) {
+      alert("Add a few photos before exporting.");
+      return;
+    }
+    const canvas = await composeGridCanvas();
+    const stamp = new Date().toISOString().slice(0, 10);
+
+    if (format === "png") {
+      canvas.toBlob(blob => triggerDownload(blob, `feed-grid-${stamp}.png`), "image/png");
+    } else if (format === "jpeg") {
+      canvas.toBlob(blob => triggerDownload(blob, `feed-grid-${stamp}.jpg`), "image/jpeg", 0.92);
+    } else if (format === "pdf") {
+      canvas.toBlob(async blob => {
+        const buf = new Uint8Array(await blob.arrayBuffer());
+        const pdfBytes = buildSingleImagePdf(buf, canvas.width, canvas.height);
+        triggerDownload(new Blob([pdfBytes], { type: "application/pdf" }), `feed-grid-${stamp}.pdf`);
+      }, "image/jpeg", 0.92);
+    }
+  }
+
+  render();
+})();
+</script>

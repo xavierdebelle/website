@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wedding Day Schedule — De Belle Photography</title>
+<style>
+  :root{
+    --ink:#1a1a1a; --muted:#6b6b6b; --red:#c0392b; --line:#d9d4cc;
+    --bg:#f4f1ec; --card:#ffffff; --accent:#1a1a1a;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:"Helvetica Neue",Arial,sans-serif; line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:880px; margin:0 auto; padding:32px 20px 80px}
+  header.brand{text-align:center; margin-bottom:8px}
+  header.brand .logo{
+    font-family:"Georgia",serif; letter-spacing:3px; font-size:26px;
+    text-transform:uppercase;
+  }
+  header.brand .sub{color:var(--muted); font-size:12px; letter-spacing:2px; text-transform:uppercase}
+  .intro{
+    background:#fff7f5; border:1px solid #f0d6d0; border-radius:8px;
+    padding:14px 18px; margin:20px 0 28px; font-size:14px; color:#7a3b33;
+  }
+  .intro b{color:var(--red)}
+  h2.section{
+    font-family:"Georgia",serif; font-size:15px; letter-spacing:2px; text-transform:uppercase;
+    border-bottom:2px solid var(--ink); padding-bottom:6px; margin:34px 0 16px;
+  }
+  .card{
+    background:var(--card); border:1px solid var(--line); border-radius:10px;
+    padding:18px 20px; margin-bottom:16px;
+  }
+  .card h3{margin:0 0 4px; font-size:15px}
+  .card .note{color:var(--muted); font-size:12.5px; margin:0 0 14px}
+  .grid{display:grid; grid-template-columns:1fr 1fr; gap:12px 18px}
+  .grid-3{display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px 18px}
+  @media(max-width:640px){.grid,.grid-3{grid-template-columns:1fr}}
+  label{display:block; font-size:12px; font-weight:700; letter-spacing:.3px; margin-bottom:4px; color:#333}
+  label .opt{font-weight:400; color:var(--muted); text-transform:none; letter-spacing:0}
+  input,select,textarea{
+    width:100%; padding:9px 11px; border:1px solid var(--line); border-radius:6px;
+    font:inherit; font-size:14px; background:#fff; color:var(--ink);
+  }
+  input:focus,select:focus,textarea:focus{outline:2px solid #bfae93; outline-offset:0; border-color:#bfae93}
+  textarea{resize:vertical; min-height:52px}
+  .full{grid-column:1 / -1}
+  .inline-yn{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+  .inline-yn select{max-width:120px}
+  .actions{
+    padding:22px 0 4px; margin-top:28px; text-align:center;
+  }
+  button{
+    font:inherit; font-weight:700; letter-spacing:1px; text-transform:uppercase; font-size:13px;
+    padding:14px 30px; border-radius:8px; border:0; cursor:pointer;
+  }
+  .btn-primary{background:var(--accent); color:#fff}
+  .btn-primary:hover{background:#000}
+  .btn-ghost{background:transparent; color:var(--ink); border:1px solid var(--ink); margin-left:8px}
+  .btn-ghost:hover{background:var(--ink); color:#fff}
+  .hint{font-size:11px; color:var(--muted); margin-top:10px}
+
+  /* ---------- Generated schedule ---------- */
+  #output{display:none}
+  .doc{
+    background:#fff; border:1px solid var(--line); border-radius:6px;
+    padding:46px 54px; font-family:"Georgia",serif; color:#111;
+  }
+  .doc .dhead{text-align:center; margin-bottom:6px}
+  .doc .dhead .logo{letter-spacing:4px; font-size:24px; text-transform:uppercase}
+  .doc .dhead .sub{font-family:Arial,sans-serif; letter-spacing:2px; font-size:11px; color:#555; text-transform:uppercase}
+  .doc h2{
+    font-size:14px; letter-spacing:2px; text-transform:uppercase; text-align:center;
+    background:#1a1a1a; color:#fff; padding:7px; margin:30px 0 14px; border-radius:3px;
+  }
+  .doc h3{font-size:15px; margin:20px 0 2px; border-bottom:1px solid #bbb; padding-bottom:3px}
+  .doc .blk-note{font-family:Arial,sans-serif; font-size:11px; color:#555; margin:2px 0 10px; font-style:italic}
+  .doc table{width:100%; border-collapse:collapse; margin:8px 0 6px; font-family:Arial,sans-serif; font-size:12.5px}
+  .doc td{border:1px solid #c9c9c9; padding:7px 10px; vertical-align:top; width:50%}
+  .doc td .cap{color:#111; font-weight:700}
+  .doc td .val{color:var(--red); font-weight:400}
+  .doc .twocol{display:grid; grid-template-columns:1fr 1fr; gap:0}
+  .doc p.line{font-family:Arial,sans-serif; font-size:13px; margin:6px 0}
+  .doc p.line .cap{font-weight:700}
+  .doc p.line .val{color:var(--red)}
+  .doc .special{font-family:Arial,sans-serif; font-size:12.5px; margin:6px 0 0}
+  .doc .special .val{color:var(--red)}
+  .doc a{color:var(--red); word-break:break-all}
+
+  @media print{
+    body{background:#fff}
+    .wrap{max-width:100%; padding:0}
+    #formView,.actions,.intro,header.brand,.print-actions{display:none !important}
+    #output{display:block !important}
+    .doc{border:0; padding:0}
+    .doc h2{-webkit-print-color-adjust:exact; print-color-adjust:exact}
+    .blk{page-break-inside:avoid}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="brand">
+    <div class="logo">De Belle</div>
+    <div class="sub">Photography &amp; Cinematography</div>
+  </header>
+
+  <!-- ============ FORM ============ -->
+  <div id="formView">
+    <div class="intro">
+      Fill in your details below, then click <b>Generate Schedule</b> at the bottom.
+      Only the fields you type into change &mdash; all the standard captions stay the same.
+      You can leave optional fields blank. Times use formats like <i>10:30 am</i>.
+    </div>
+
+    <form id="schedForm">
+
+      <!-- GENERAL INFORMATION -->
+      <h2 class="section">General Information</h2>
+      <div class="card">
+        <div class="grid">
+          <div>
+            <label>Photography <span class="opt">— is De Belle your photographer?</span></label>
+            <div class="inline-yn">
+              <select name="photo_yn"><option>YES</option><option>NO</option></select>
+              <input type="text" name="photo_who" placeholder="If not us, who?">
+            </div>
+          </div>
+          <div>
+            <label>Cinematography <span class="opt">— is De Belle your videographer?</span></label>
+            <div class="inline-yn">
+              <select name="cine_yn"><option>YES</option><option>NO</option></select>
+              <input type="text" name="cine_who" placeholder="If not us, who?">
+            </div>
+          </div>
+          <div class="full">
+            <label>Photo Booth / Same Night Prints / Red Carpet / Slideshow</label>
+            <div class="inline-yn">
+              <select name="extras_yn"><option>YES</option><option>NO</option></select>
+              <input type="text" name="extras_who" placeholder="If not us, who?">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CLIENT INFORMATION -->
+      <h2 class="section">Client Information</h2>
+      <div class="card">
+        <div class="grid">
+          <div><label>Bride's name</label><input name="bride_name" placeholder="Full name"></div>
+          <div><label>Groom's name</label><input name="groom_name" placeholder="Full name"></div>
+          <div><label>Bride's phone</label><input name="bride_phone" placeholder="Phone #"></div>
+          <div><label>Groom's phone</label><input name="groom_phone" placeholder="Phone #"></div>
+          <div><label>Bride's email</label><input name="bride_email" placeholder="Email"></div>
+          <div><label>Groom's email</label><input name="groom_email" placeholder="Email"></div>
+          <div><label>Bride's Instagram</label><input name="bride_ig" placeholder="@handle"></div>
+          <div><label>Groom's Instagram</label><input name="groom_ig" placeholder="@handle"></div>
+          <div class="full"><label>Pinterest board link <span class="opt">(optional)</span></label><input name="pinterest" placeholder="https://"></div>
+          <div><label>Approx. number of guests</label><input name="guests_total" placeholder="e.g. 150"></div>
+          <div><label>People in your bridal party</label><input name="bridal_party" placeholder="e.g. 8"></div>
+          <div><label>Payment given morning of wedding <span class="opt">(if applicable)</span></label><input name="pay_amount" placeholder="$ amount"></div>
+          <div><label>Payment remitted by who &amp; how</label><input name="pay_by" placeholder="Name / method"></div>
+        </div>
+      </div>
+
+      <!-- TIMELINE -->
+      <h2 class="section">Timeline</h2>
+      <p style="font-size:13px;color:#6b6b6b;margin-top:-6px">
+        Fill in the blocks that apply to your day. Leave a whole block empty to omit it from the schedule.
+      </p>
+
+      <!-- Generic block template rendered via JS for the 6 stages -->
+      <div id="timelineBlocks"></div>
+
+      <!-- VENDORS -->
+      <h2 class="section">Vendors Information</h2>
+      <div class="card">
+        <p class="note">Name + Instagram link for each. Leave blank any you don't have.</p>
+        <div id="vendorBlocks"></div>
+      </div>
+
+      <div class="actions">
+        <button type="button" class="btn-primary" onclick="generate()">Generate Schedule</button>
+        <button type="reset" class="btn-ghost">Clear Form</button>
+        <div class="hint">Nothing is sent anywhere — everything stays on your device until you print or save.</div>
+      </div>
+    </form>
+  </div>
+
+  <!-- ============ OUTPUT ============ -->
+  <div id="output">
+    <div class="print-actions actions" style="position:static">
+      <button type="button" class="btn-primary" onclick="window.print()">Print / Save as PDF</button>
+      <button type="button" class="btn-ghost" onclick="backToEdit()">Back to Edit</button>
+    </div>
+    <div class="doc" id="docBody"></div>
+    <div class="print-actions actions" style="position:static">
+      <button type="button" class="btn-ghost" onclick="backToEdit()">Back to Edit</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ---- Timeline stage definitions ----
+const STAGES = [
+  {key:'groom', title:"Groom's Preparation",
+   note:"Guys don't need their suits on when we arrive — we photograph everyone getting ready.", rain:false},
+  {key:'bride', title:"Bride's Preparation",
+   note:"The girls don't need dresses on when we arrive. Important: Hair & Make-up must be COMPLETE by the time we arrive.", rain:false},
+  {key:'ceremony', title:"Ceremony", note:"", rain:false},
+  {key:'family', title:"Family Photos", note:"", rain:true},
+  {key:'couple', title:"Couple Photos", note:"", rain:true},
+  {key:'reception', title:"Reception", note:"", rain:false, receptionSimple:true},
+];
+
+const VENDORS = ["Wedding Venue","Wedding Planner","Entertainment / DJ","Hairdresser",
+  "Make-up Artist","Florist","Wedding Cake","Bridal Boutique","Decor / Linens / Rentals","Jewelry / Rings"];
+
+// ---- Build timeline form blocks ----
+function buildTimelineForm(){
+  let html='';
+  STAGES.forEach(s=>{
+    html+=`<div class="card">
+      <h3>${s.title}</h3>
+      ${s.note?`<p class="note">${s.note}</p>`:''}
+      <div class="grid-3">
+        <div><label>Arrival</label><input name="${s.key}_arrival" placeholder="i.e. 10:30 am"></div>
+        <div><label>Departure</label><input name="${s.key}_departure" placeholder="i.e. 11:30 am"></div>
+        ${s.receptionSimple?'':`<div><label>Travel time to next location</label><input name="${s.key}_travel" placeholder="i.e. 30 min / same location"></div>`}
+      </div>
+      <div class="grid" style="margin-top:12px">
+        <div class="full"><label>Address</label><input name="${s.key}_address" placeholder="Street, City, Postal Code"></div>
+        ${s.receptionSimple?'':`<div><label># Guests at this location</label><input name="${s.key}_guests" placeholder="number"></div>`}
+        ${s.rain?`
+          <div><label>Backup rain location 1 <span class="opt">(name)</span></label><input name="${s.key}_rain1_name" placeholder="Name"></div>
+          <div class="full"><label>Backup rain location 1 — address</label><input name="${s.key}_rain1_addr" placeholder="Street, City, Postal Code"></div>
+          <div><label>Backup rain location 2 <span class="opt">(name)</span></label><input name="${s.key}_rain2_name" placeholder="Name"></div>
+          <div class="full"><label>Backup rain location 2 — address</label><input name="${s.key}_rain2_addr" placeholder="Street, City, Postal Code"></div>
+        `:''}
+        <div class="full"><label>Any special pictures? <span class="opt">(optional)</span></label><textarea name="${s.key}_special" placeholder="Note anything specific you'd like us to capture"></textarea></div>
+      </div>
+    </div>`;
+  });
+  document.getElementById('timelineBlocks').innerHTML=html;
+}
+
+// ---- Build vendor form blocks ----
+function buildVendorForm(){
+  let html='<div class="grid">';
+  VENDORS.forEach((v,i)=>{
+    html+=`<div><label>${v} — name</label><input name="vendor_${i}_name" placeholder="Name"></div>
+           <div><label>${v} — Instagram link</label><input name="vendor_${i}_ig" placeholder="@handle or link"></div>`;
+  });
+  html+='</div>';
+  document.getElementById('vendorBlocks').innerHTML=html;
+}
+
+buildTimelineForm();
+buildVendorForm();
+
+// ---- Helpers ----
+function val(n){const el=document.querySelector(`[name="${n}"]`);return el?el.value.trim():'';}
+function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function v(s){return s?`<span class="val">${esc(s)}</span>`:`<span class="val" style="color:#bbb">—</span>`;}
+function yn(ynName,whoName){
+  const a=val(ynName), w=val(whoName);
+  return w?`${esc(a)} <span class="val">(${esc(w)})</span>`:esc(a);
+}
+function linkify(s){
+  if(!s) return '<span style="color:#bbb">—</span>';
+  if(/^https?:\/\//i.test(s)) return `<a href="${esc(s)}">${esc(s)}</a>`;
+  return `<span class="val">${esc(s)}</span>`;
+}
+
+// ---- Generate the schedule document ----
+function generate(){
+  let h='';
+  h+=`<div class="dhead"><div class="logo">De Belle</div><div class="sub">Wedding Day Schedule</div></div>`;
+  const couple=[val('bride_name'),val('groom_name')].filter(Boolean).join(' & ');
+  if(couple) h+=`<p style="text-align:center;font-size:16px;margin:4px 0 0">${esc(couple)}</p>`;
+
+  // GENERAL
+  h+=`<h2>General Information</h2><div class="blk">`;
+  h+=`<p class="line"><span class="cap">Photography:</span> ${yn('photo_yn','photo_who')}</p>`;
+  h+=`<p class="line"><span class="cap">Cinematography:</span> ${yn('cine_yn','cine_who')}</p>`;
+  h+=`<p class="line"><span class="cap">Photo Booth / Same Night Prints / Red Carpet / Slideshow:</span> ${yn('extras_yn','extras_who')}</p>`;
+  h+=`</div>`;
+
+  // CLIENT
+  h+=`<h2>Client Information</h2><div class="blk"><table>
+    <tr><td><span class="cap">Bride's name:</span> ${v(val('bride_name'))}</td><td><span class="cap">Groom's name:</span> ${v(val('groom_name'))}</td></tr>
+    <tr><td><span class="cap">Phone:</span> ${v(val('bride_phone'))}</td><td><span class="cap">Phone:</span> ${v(val('groom_phone'))}</td></tr>
+    <tr><td><span class="cap">Email:</span> ${v(val('bride_email'))}</td><td><span class="cap">Email:</span> ${v(val('groom_email'))}</td></tr>
+    <tr><td><span class="cap">Instagram:</span> ${v(val('bride_ig'))}</td><td><span class="cap">Instagram:</span> ${v(val('groom_ig'))}</td></tr>
+  </table>`;
+  h+=`<p class="line"><span class="cap">Pinterest board:</span> ${linkify(val('pinterest'))}</p>`;
+  h+=`<table>
+    <tr><td><span class="cap">Approx. guests:</span> ${v(val('guests_total'))}</td><td><span class="cap"># in bridal party:</span> ${v(val('bridal_party'))}</td></tr>
+    <tr><td><span class="cap">Payment morning of wedding:</span> ${v(val('pay_amount'))}</td><td><span class="cap">Remitted by who &amp; how:</span> ${v(val('pay_by'))}</td></tr>
+  </table></div>`;
+
+  // TIMELINE
+  h+=`<h2>Timeline</h2>`;
+  STAGES.forEach(s=>{
+    const arrival=val(s.key+'_arrival'), departure=val(s.key+'_departure'),
+          addr=val(s.key+'_address'), travel=val(s.key+'_travel'),
+          guests=val(s.key+'_guests'), special=val(s.key+'_special');
+    const anything=[arrival,departure,addr,travel,guests,special,
+      val(s.key+'_rain1_name'),val(s.key+'_rain1_addr'),val(s.key+'_rain2_name'),val(s.key+'_rain2_addr')]
+      .some(Boolean);
+    if(!anything) return; // skip empty blocks
+    h+=`<div class="blk"><h3>${s.title}</h3>`;
+    if(s.note) h+=`<p class="blk-note">${s.note}</p>`;
+    h+=`<table>
+      <tr><td><span class="cap">Arrival:</span> ${v(arrival)}</td><td><span class="cap">Address:</span> ${v(addr)}</td></tr>
+      <tr><td><span class="cap">Departure:</span> ${v(departure)}</td>`;
+    if(s.receptionSimple){
+      h+=`<td></td></tr>`;
+    }else{
+      h+=`<td></td></tr>
+      <tr><td><span class="cap">Travel time to next location:</span> ${v(travel)}</td><td><span class="cap"># guests at location:</span> ${v(guests)}</td></tr>`;
+    }
+    if(s.rain){
+      h+=`<tr><td><span class="cap">Backup rain location:</span> ${v(val(s.key+'_rain1_name'))}</td><td><span class="cap">Address:</span> ${v(val(s.key+'_rain1_addr'))}</td></tr>
+          <tr><td><span class="cap">Backup rain location:</span> ${v(val(s.key+'_rain2_name'))}</td><td><span class="cap">Address:</span> ${v(val(s.key+'_rain2_addr'))}</td></tr>`;
+    }
+    h+=`</table>`;
+    h+=`<p class="special"><span class="cap">Any special pictures? (optional):</span> ${special?`<span class="val">${esc(special)}</span>`:'<span style="color:#bbb">—</span>'}</p>`;
+    h+=`</div>`;
+  });
+
+  // VENDORS
+  h+=`<h2>Vendors Information</h2><div class="blk"><table>`;
+  VENDORS.forEach((vn,i)=>{
+    const name=val(`vendor_${i}_name`), ig=val(`vendor_${i}_ig`);
+    if(!name && !ig) return;
+    h+=`<tr><td style="width:32%"><span class="cap">${vn}</span></td>
+        <td style="width:68%"><span class="cap">Name:</span> ${v(name)}<br><span class="cap">Instagram:</span> ${linkify(ig)}</td></tr>`;
+  });
+  h+=`</table></div>`;
+
+  document.getElementById('docBody').innerHTML=h;
+  document.getElementById('formView').style.display='none';
+  document.getElementById('output').style.display='block';
+  window.scrollTo(0,0);
+}
+
+function backToEdit(){
+  document.getElementById('output').style.display='none';
+  document.getElementById('formView').style.display='block';
+  window.scrollTo(0,0);
+}
+</script>
+</body>
+</html>

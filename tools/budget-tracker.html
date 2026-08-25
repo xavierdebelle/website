@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap');
+
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --bg:#0d1117;--surface:#161b22;--surface2:#1c2330;--surface3:#21283a;
+    --border:#2a3445;--border2:#344058;
+    --blue:#4fc3f7;--blue-dim:#1e3a52;--blue-text:#82d8ff;
+    --purple:#b39ddb;--purple-dim:#2d2050;--purple-text:#ce9bff;
+    --pink:#f48fb1;--pink-dim:#3d1a2a;--pink-text:#ff8fbd;
+    --teal:#80cbc4;--teal-dim:#1a3530;--teal-text:#a0ede8;
+    --violet:#7c6dfa;--violet-dim:#1e1a42;
+    --green:#69f0ae;--green-dim:#0d2e1e;--green-text:#8fffc8;
+    --yellow:#ffd740;--yellow-dim:#2e2400;
+    --red:#ff5252;--red-dim:#2e0f0f;
+    --text:#e6edf3;--text2:#8b949e;--text3:#4d5566;
+    --radius:10px;--radius-sm:6px;
+  }
+  body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;font-size:14px;min-height:100vh;padding:0}
+  
+  .app{max-width:1400px;margin:0 auto;padding:20px 16px}
+  
+  /* HEADER */
+  .header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+  .header h1{font-size:22px;font-weight:800;letter-spacing:-0.5px}
+  .month-nav{display:flex;align-items:center;gap:8px}
+  .month-nav button{background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:var(--radius-sm);padding:6px 10px;cursor:pointer;font-family:inherit;font-size:13px;transition:.15s}
+  .month-nav button:hover{border-color:var(--border2);background:var(--surface3)}
+  .month-label{font-weight:700;font-size:15px;min-width:110px;text-align:center}
+
+  /* SUMMARY BAR */
+  .summary-bar{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:20px}
+  .sum-card{border-radius:var(--radius);padding:14px 16px;position:relative;overflow:hidden;cursor:default}
+  .sum-card::before{content:'';position:absolute;inset:0;opacity:.08;background:white}
+  .sum-card .sum-label{font-size:10px;font-weight:700;letter-spacing:1.5px;opacity:.75;margin-bottom:6px;text-transform:uppercase}
+  .sum-card .sum-val{font-family:'DM Mono',monospace;font-size:18px;font-weight:500;white-space:nowrap}
+  .sum-card.rollover{background:var(--blue-dim);border:1px solid #1e5a7a;color:var(--blue-text)}
+  .sum-card.income{background:var(--violet-dim);border:1px solid #3d3480;color:#b3acff}
+  .sum-card.expenses{background:var(--purple-dim);border:1px solid #5a3a80;color:var(--purple-text)}
+  .sum-card.bills{background:var(--pink-dim);border:1px solid #7a2a50;color:var(--pink-text)}
+  .sum-card.savings{background:var(--teal-dim);border:1px solid #1a5a55;color:var(--teal-text)}
+  .sum-card.debt{background:#1e1a1a;border:1px solid #5a2a2a;color:#ff8f8f}
+
+  /* MAIN GRID */
+  .main-grid{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;margin-bottom:12px}
+  .section-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+  .section-header{padding:12px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border)}
+  .section-header .sec-title{font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase}
+  .section-header .add-btn{width:22px;height:22px;border-radius:50%;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;line-height:1;transition:.15s;font-family:inherit}
+  .section-header .add-btn:hover{background:var(--surface3);color:var(--text);border-color:var(--blue)}
+
+  .col-headers{display:grid;grid-template-columns:1fr 80px 80px 52px;gap:0;padding:6px 14px;border-bottom:1px solid var(--border)}
+  .col-headers span{font-size:10px;font-weight:600;letter-spacing:.8px;color:var(--text3);text-transform:uppercase}
+  .col-headers span:not(:first-child){text-align:right}
+  .col-headers span:last-child{text-align:center}
+
+  .row-item{display:grid;grid-template-columns:1fr 80px 80px 52px;gap:0;padding:5px 14px;border-bottom:1px solid var(--border);align-items:center;transition:.1s}
+  .row-item:hover{background:var(--surface2)}
+  .row-item:last-child{border-bottom:none}
+  
+  .row-item input[type=text]{background:transparent;border:none;color:var(--text);font-family:'Syne',sans-serif;font-size:13px;width:100%;outline:none;padding:2px 0}
+  .row-item input[type=text]:focus{color:var(--blue);border-bottom:1px solid var(--blue)}
+  .row-item input[type=number]{background:transparent;border:none;font-family:'DM Mono',monospace;font-size:13px;width:100%;outline:none;padding:2px 4px;text-align:right;-moz-appearance:textfield}
+  .row-item input[type=number]::-webkit-outer-spin-button,
+  .row-item input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
+  .row-item .planned-in{color:var(--blue)}
+  .row-item .actual-in{color:var(--text)}
+  .row-item .actual-in:focus{color:var(--green)}
+  .row-item .pct-badge{font-family:'DM Mono',monospace;font-size:11px;font-weight:500;text-align:center;padding:2px 5px;border-radius:4px;width:44px;display:inline-block}
+  .pct-over{background:var(--red-dim);color:var(--red)}
+  .pct-on{background:var(--green-dim);color:var(--green)}
+  .pct-under{background:var(--yellow-dim);color:var(--yellow)}
+  .pct-empty{color:var(--text3);font-size:11px}
+  .del-btn{opacity:0;background:none;border:none;color:var(--red);cursor:pointer;font-size:14px;padding:0 2px;transition:.1s;font-family:inherit}
+  .row-item:hover .del-btn{opacity:.6}
+  .del-btn:hover{opacity:1 !important}
+
+  .total-row{display:grid;grid-template-columns:1fr 80px 80px 52px;padding:8px 14px;background:var(--surface2);border-top:1px solid var(--border2)}
+  .total-row .tot-label{font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.5px;text-transform:uppercase}
+  .total-row .tot-val{font-family:'DM Mono',monospace;font-size:13px;font-weight:500;text-align:right}
+  .total-row .tot-pct{font-family:'DM Mono',monospace;font-size:11px;text-align:center;color:var(--text2)}
+
+  /* BOTTOM ROW: overview + rollover */
+  .bottom-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  
+  .overview-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+  .ov-header{padding:12px 14px;border-bottom:1px solid var(--border);font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--blue)}
+  .ov-row{display:grid;grid-template-columns:1fr 90px 90px 80px;padding:7px 14px;border-bottom:1px solid var(--border);align-items:center}
+  .ov-row:last-child{border-bottom:none}
+  .ov-row.ov-remaining{background:var(--teal-dim);border-top:1px solid var(--border2)}
+  .ov-label{font-size:13px;color:var(--text2)}
+  .ov-label.minus{color:var(--text3)}
+  .ov-val{font-family:'DM Mono',monospace;font-size:13px;text-align:right}
+  .ov-planned{color:var(--blue)}
+  .ov-actual{color:var(--text)}
+  .ov-diff{font-family:'DM Mono',monospace;font-size:12px;text-align:right}
+  .ov-diff.pos{color:var(--green)}
+  .ov-diff.neg{color:var(--red)}
+  .ov-headers{display:grid;grid-template-columns:1fr 90px 90px 80px;padding:5px 14px;border-bottom:1px solid var(--border)}
+  .ov-headers span{font-size:10px;color:var(--text3);letter-spacing:.8px;text-transform:uppercase}
+  .ov-headers span:not(:first-child){text-align:right}
+  .ov-rem-label{color:var(--teal-text);font-weight:700;font-size:13px}
+  .ov-rem-val{color:var(--teal-text);font-weight:700;font-size:14px}
+
+  /* ROLLOVER CARD */
+  .rollover-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+  .rv-header{padding:12px 14px;border-bottom:1px solid var(--border);font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--blue)}
+  .rv-body{padding:16px 14px;display:flex;flex-direction:column;gap:14px}
+  .rv-field{display:flex;flex-direction:column;gap:6px}
+  .rv-field label{font-size:10px;font-weight:700;letter-spacing:1px;color:var(--text3);text-transform:uppercase}
+  .rv-input{background:var(--yellow-dim);border:1px solid #5a4800;border-radius:var(--radius-sm);padding:10px 12px;font-family:'DM Mono',monospace;font-size:16px;font-weight:500;color:var(--yellow);width:100%;outline:none;-moz-appearance:textfield}
+  .rv-input::-webkit-outer-spin-button,.rv-input::-webkit-inner-spin-button{-webkit-appearance:none}
+  .rv-input:focus{border-color:var(--yellow);box-shadow:0 0 0 2px rgba(255,215,64,.15)}
+  .rv-hint{font-size:11px;color:var(--text3);margin-top:4px}
+  .rv-remaining-big{margin-top:8px;padding:14px;background:var(--teal-dim);border-radius:var(--radius-sm);border:1px solid #1a5a55}
+  .rv-remaining-big .rv-rem-label{font-size:10px;letter-spacing:1px;color:var(--teal);text-transform:uppercase;font-weight:700;margin-bottom:6px}
+  .rv-remaining-big .rv-rem-val{font-family:'DM Mono',monospace;font-size:24px;font-weight:500;color:var(--teal-text)}
+
+  .income-color{color:#b3acff} .expenses-color{color:var(--purple-text)} .bills-color{color:var(--pink-text)} .savings-color{color:var(--teal-text)} .debt-color{color:#ff8f8f}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <h1>Budget Tracker</h1>
+    <div class="month-nav">
+      <button onclick="prevMonth()">&#8592;</button>
+      <span class="month-label" id="month-label"></span>
+      <button onclick="nextMonth()">&#8594;</button>
+    </div>
+  </div>
+
+  <div class="summary-bar">
+    <div class="sum-card rollover"><div class="sum-label">Rollover</div><div class="sum-val" id="sum-rollover">$0</div></div>
+    <div class="sum-card income"><div class="sum-label">Income</div><div class="sum-val" id="sum-income">$0</div></div>
+    <div class="sum-card expenses"><div class="sum-label">Expenses</div><div class="sum-val" id="sum-expenses">$0</div></div>
+    <div class="sum-card bills"><div class="sum-label">Bills</div><div class="sum-val" id="sum-bills">$0</div></div>
+    <div class="sum-card savings"><div class="sum-label">Savings</div><div class="sum-val" id="sum-savings">$0</div></div>
+    <div class="sum-card debt"><div class="sum-label">Debt</div><div class="sum-val" id="sum-debt">$0</div></div>
+  </div>
+
+  <div class="main-grid" id="main-grid"></div>
+
+  <div class="bottom-grid">
+    <div class="overview-card">
+      <div class="ov-header">Overview</div>
+      <div class="ov-headers"><span></span><span>Planned</span><span>Actual</span><span>Diff</span></div>
+      <div id="overview-rows"></div>
+    </div>
+    <div class="rollover-card">
+      <div class="rv-header">Rollover</div>
+      <div class="rv-body">
+        <div class="rv-field">
+          <label>Planned rollover</label>
+          <input class="rv-input" type="number" id="rv-planned" value="5635" step="1" oninput="recalc()">
+        </div>
+        <div class="rv-field">
+          <label>Actual rollover</label>
+          <input class="rv-input" type="number" id="rv-actual" value="5035" step="1" oninput="recalc()">
+          <div class="rv-hint">Money carried forward from last month</div>
+        </div>
+        <div class="rv-remaining-big">
+          <div class="rv-rem-label">Remaining (actual)</div>
+          <div class="rv-rem-val" id="big-remaining">$0</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+let currentMonth = 2; // March
+let currentYear = 2026;
+
+const SECTIONS = [
+  {
+    key:'income', label:'Income', color:'#b3acff',
+    rows:[
+      {name:'His paycheck', planned:9200, actual:9200},
+      {name:'My paycheck',  planned:7200, actual:7200},
+    ]
+  },
+  {
+    key:'expenses', label:'Expenses', color:'#ce9bff',
+    rows:[
+      {name:'Groceries',   planned:1100, actual:1100},
+      {name:'Restaurants', planned:560,  actual:560},
+      {name:'His gym',     planned:210,  actual:210},
+      {name:'My gym',      planned:210,  actual:210},
+    ]
+  },
+  {
+    key:'bills', label:'Bills', color:'#ff8fbd',
+    rows:[
+      {name:'Rent',           planned:3400, actual:3400},
+      {name:'Utilities',      planned:310,  actual:310},
+      {name:'Internet',       planned:90,   actual:90},
+      {name:'His phone',      planned:60,   actual:80},
+      {name:'My phone',       planned:60,   actual:80},
+      {name:'Netflix',        planned:30,   actual:30},
+      {name:'Tactical snacks',planned:40,   actual:40},
+      {name:'Wedding fund',   planned:1600, actual:1800},
+    ]
+  },
+  {
+    key:'savings', label:'Savings', color:'#a0ede8',
+    rows:[
+      {name:'Investments',  planned:4200, actual:4200},
+      {name:'Retirement',   planned:2800, actual:2800},
+      {name:'Wedding fund', planned:1600, actual:1800},
+      {name:'Truck access.',planned:440,  actual:440},
+    ]
+  },
+  {
+    key:'debt', label:'Debt', color:'#ff8f8f',
+    rows:[]
+  },
+];
+
+function fmt(n){
+  if(n==null||isNaN(n))return'—';
+  return '$'+Math.round(n).toLocaleString('en-CA');
+}
+
+function pctBadge(planned, actual){
+  if(!planned||planned===0) return '<span class="pct-empty">—</span>';
+  const p = actual/planned;
+  const cls = p>1.05?'pct-over':p>=0.98?'pct-on':'pct-under';
+  return `<span class="pct-badge ${cls}">${Math.round(p*100)}%</span>`;
+}
+
+function buildSections(){
+  const grid = document.getElementById('main-grid');
+  grid.innerHTML='';
+  SECTIONS.forEach((sec,si)=>{
+    const card = document.createElement('div');
+    card.className='section-card';
+    card.innerHTML=`
+      <div class="section-header">
+        <span class="sec-title" style="color:${sec.color}">${sec.label}</span>
+        <button class="add-btn" onclick="addRow(${si})" title="Add row">+</button>
+      </div>
+      <div class="col-headers">
+        <span>Name</span><span>Planned</span><span>Actual</span><span>%</span>
+      </div>
+      <div id="rows-${si}"></div>
+      <div class="total-row" id="total-${si}"></div>
+    `;
+    grid.appendChild(card);
+    renderRows(si);
+  });
+}
+
+function renderRows(si){
+  const sec = SECTIONS[si];
+  const container = document.getElementById('rows-'+si);
+  container.innerHTML='';
+  sec.rows.forEach((row,ri)=>{
+    const div = document.createElement('div');
+    div.className='row-item';
+    div.innerHTML=`
+      <div style="display:flex;align-items:center;gap:4px">
+        <input type="text" class="name-in" value="${row.name}" placeholder="Item name" oninput="SECTIONS[${si}].rows[${ri}].name=this.value">
+        <button class="del-btn" onclick="delRow(${si},${ri})">&#215;</button>
+      </div>
+      <input type="number" class="planned-in" value="${row.planned||''}" placeholder="0" step="1" oninput="SECTIONS[${si}].rows[${ri}].planned=+this.value||0;recalc()">
+      <input type="number" class="actual-in" value="${row.actual||''}" placeholder="0" step="1" oninput="SECTIONS[${si}].rows[${ri}].actual=+this.value||0;recalc()">
+      <div class="pct-cell">${pctBadge(row.planned,row.actual)}</div>
+    `;
+    container.appendChild(div);
+  });
+  renderTotal(si);
+}
+
+function renderTotal(si){
+  const sec = SECTIONS[si];
+  const tp = sec.rows.reduce((a,r)=>a+(+r.planned||0),0);
+  const ta = sec.rows.reduce((a,r)=>a+(+r.actual||0),0);
+  const pct = tp>0?Math.round(ta/tp*100)+'%':'—';
+  const el = document.getElementById('total-'+si);
+  const col = sec.color;
+  el.innerHTML=`
+    <span class="tot-label" style="color:${col}">Total</span>
+    <span class="tot-val" style="color:${col}">${fmt(tp)}</span>
+    <span class="tot-val">${fmt(ta)}</span>
+    <span class="tot-pct">${pct}</span>
+  `;
+}
+
+function addRow(si){
+  SECTIONS[si].rows.push({name:'',planned:0,actual:0});
+  renderRows(si);
+  recalc();
+  // focus new name input
+  const container = document.getElementById('rows-'+si);
+  const inputs = container.querySelectorAll('.name-in');
+  if(inputs.length) inputs[inputs.length-1].focus();
+}
+
+function delRow(si,ri){
+  SECTIONS[si].rows.splice(ri,1);
+  renderRows(si);
+  recalc();
+}
+
+function sectionTotal(si, field){
+  return SECTIONS[si].rows.reduce((a,r)=>a+(+r[field]||0),0);
+}
+
+function recalc(){
+  const rvP = +document.getElementById('rv-planned').value||0;
+  const rvA = +document.getElementById('rv-actual').value||0;
+
+  const incP = sectionTotal(0,'planned'), incA = sectionTotal(0,'actual');
+  const expP = sectionTotal(1,'planned'), expA = sectionTotal(1,'actual');
+  const bilP = sectionTotal(2,'planned'), bilA = sectionTotal(2,'actual');
+  const savP = sectionTotal(3,'planned'), savA = sectionTotal(3,'actual');
+  const debP = sectionTotal(4,'planned'), debA = sectionTotal(4,'actual');
+
+  // Summary bar (shows actuals)
+  document.getElementById('sum-rollover').textContent=fmt(rvA);
+  document.getElementById('sum-income').textContent=fmt(incA);
+  document.getElementById('sum-expenses').textContent=fmt(expA);
+  document.getElementById('sum-bills').textContent=fmt(bilA);
+  document.getElementById('sum-savings').textContent=fmt(savA);
+  document.getElementById('sum-debt').textContent=fmt(debA);
+
+  // Update pct badges
+  SECTIONS.forEach((_,si)=>{
+    const container = document.getElementById('rows-'+si);
+    if(!container) return;
+    const pctCells = container.querySelectorAll('.pct-cell');
+    SECTIONS[si].rows.forEach((row,ri)=>{
+      if(pctCells[ri]) pctCells[ri].innerHTML = pctBadge(row.planned,row.actual);
+    });
+    renderTotal(si);
+  });
+
+  // Overview
+  const remP = rvP+incP-expP-bilP-savP-debP;
+  const remA = rvA+incA-expA-bilA-savA-debA;
+
+  const ovRows = [
+    {label:'Rollover',   planned:rvP, actual:rvA,   style:''},
+    {label:'+ Income',   planned:incP,actual:incA,  style:''},
+    {label:'− Expenses', planned:expP,actual:expA,  style:'minus'},
+    {label:'− Bills',    planned:bilP,actual:bilA,  style:'minus'},
+    {label:'− Savings',  planned:savP,actual:savA,  style:'minus'},
+    {label:'− Debt',     planned:debP,actual:debA,  style:'minus'},
+  ];
+
+  const ovContainer = document.getElementById('overview-rows');
+  ovContainer.innerHTML='';
+  ovRows.forEach(r=>{
+    const diff = r.actual - r.planned;
+    const diffCls = diff>=0?'pos':'neg';
+    const div = document.createElement('div');
+    div.className='ov-row';
+    div.innerHTML=`
+      <span class="ov-label ${r.style}">${r.label}</span>
+      <span class="ov-val ov-planned">${fmt(r.planned)}</span>
+      <span class="ov-val">${fmt(r.actual)}</span>
+      <span class="ov-diff ${diffCls}">${diff>=0?'+':''}${fmt(diff)}</span>
+    `;
+    ovContainer.appendChild(div);
+  });
+
+  // Remaining row
+  const remDiv = document.createElement('div');
+  remDiv.className='ov-row ov-remaining';
+  const remDiff = remA - remP;
+  remDiv.innerHTML=`
+    <span class="ov-rem-label">Remaining</span>
+    <span class="ov-val ov-rem-val">${fmt(remP)}</span>
+    <span class="ov-val ov-rem-val">${fmt(remA)}</span>
+    <span class="ov-diff ${remDiff>=0?'pos':'neg'}">${remDiff>=0?'+':''}${fmt(remDiff)}</span>
+  `;
+  ovContainer.appendChild(remDiv);
+
+  document.getElementById('big-remaining').textContent = fmt(remA);
+}
+
+function updateMonthLabel(){
+  document.getElementById('month-label').textContent = MONTHS[currentMonth]+' '+currentYear;
+}
+function prevMonth(){
+  currentMonth--;
+  if(currentMonth<0){currentMonth=11;currentYear--;}
+  updateMonthLabel();
+}
+function nextMonth(){
+  currentMonth++;
+  if(currentMonth>11){currentMonth=0;currentYear++;}
+  updateMonthLabel();
+}
+
+updateMonthLabel();
+buildSections();
+recalc();
+</script>
+</body>
+</html>

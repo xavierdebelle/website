@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TOOLS — XAVIER DE BELLE</title>
+<meta name="description" content="Every browser tool Xavier de Belle has built — portfolio makers, de Belle Photography tools, personal tools, event builds and generative art.">
+<link rel="icon" href="assets/logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/style.css">
+<style>
+  /* ---------- masthead ---------- */
+
+  .mast {
+    padding: clamp(40px, 8vw, 96px) var(--gut) clamp(28px, 5vw, 56px);
+    border-bottom: var(--edge) solid var(--paper);
+  }
+  .mast h1 {
+    font-size: clamp(58px, 17vw, 220px);
+    margin: 14px 0 0;
+  }
+  .mast h1 em { font-style: normal; -webkit-text-stroke: 2px var(--paper); color: transparent; }
+  .mast__sub {
+    margin: 26px 0 0;
+    font-size: clamp(15px, 1.9vw, 20px);
+    line-height: 1.5;
+    max-width: 40ch;
+    font-weight: 500;
+  }
+
+  /* ---------- filter rail ---------- */
+
+  .rail {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    background: var(--ink);
+    border-bottom: var(--edge) solid var(--paper);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    padding: 14px var(--gut);
+  }
+
+  .chip {
+    appearance: none;
+    background: transparent;
+    border: 2px solid var(--ash);
+    color: var(--dust);
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    padding: 10px 15px;
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .chip:hover { border-color: var(--paper); color: var(--paper); }
+  .chip[aria-pressed="true"] {
+    background: var(--volt);
+    border-color: var(--volt);
+    color: var(--ink);
+    font-weight: 700;
+  }
+
+  .rail__search {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 2px solid var(--ash);
+    padding-bottom: 4px;
+  }
+  .rail__search input {
+    background: transparent;
+    border: 0;
+    color: var(--paper);
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: .1em;
+    padding: 6px 0;
+    width: 190px;
+    outline: none;
+  }
+  .rail__search input::placeholder { color: var(--dust); text-transform: uppercase; letter-spacing: .18em; font-size: 10px; }
+  .rail__search:focus-within { border-bottom-color: var(--volt); }
+  .rail__search svg { width: 14px; height: 14px; stroke: var(--dust); fill: none; stroke-width: 2; flex: none; }
+
+  /* ---------- sections ---------- */
+
+  .band { border-bottom: var(--edge) solid var(--paper); }
+  .band[hidden] { display: none; }
+
+  .band__head {
+    display: flex;
+    align-items: baseline;
+    gap: clamp(14px, 3vw, 30px);
+    flex-wrap: wrap;
+    padding: clamp(34px, 6vw, 64px) var(--gut) clamp(18px, 3vw, 30px);
+  }
+  .band__no {
+    font-family: var(--mono);
+    font-size: clamp(11px, 1.3vw, 13px);
+    color: var(--volt);
+    letter-spacing: .2em;
+  }
+  .band__head h2 {
+    font-size: clamp(34px, 6.4vw, 84px);
+    margin: 0;
+  }
+  .band__head p {
+    margin: 0;
+    max-width: 34ch;
+    color: var(--dust);
+    font-size: 14px;
+    line-height: 1.55;
+    margin-left: auto;
+  }
+
+  /* ---------- cards ---------- */
+
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: var(--edge);
+    background: var(--paper);
+    border-top: var(--edge) solid var(--paper);
+  }
+
+  .card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    background: var(--ink);
+    color: var(--paper);
+    text-decoration: none;
+    padding: clamp(24px, 3vw, 34px);
+    min-height: 230px;
+    overflow: hidden;
+    transition: background .18s, color .18s;
+  }
+  .card[hidden] { display: none; }
+
+  .card::after {
+    content: "";
+    position: absolute;
+    right: -60px; bottom: -60px;
+    width: 150px; height: 150px;
+    background: var(--volt);
+    clip-path: polygon(100% 0, 100% 100%, 0 100%);
+    opacity: 0;
+    transition: opacity .2s, transform .25s;
+    transform: translate(20px, 20px);
+  }
+  .card:hover::after { opacity: 1; transform: translate(0, 0); }
+
+  .card:hover { background: var(--smoke); }
+
+  .card__no {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: .22em;
+    color: var(--dust);
+  }
+  .card h3 {
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: -0.035em;
+    line-height: .92;
+    font-size: clamp(24px, 2.6vw, 34px);
+    margin: 0;
+    position: relative;
+    z-index: 1;
+  }
+  .card:hover h3 { color: var(--volt); }
+  .card p {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.55;
+    color: #b9b9b9;
+    position: relative;
+    z-index: 1;
+  }
+  .card__go {
+    margin-top: auto;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    position: relative;
+    z-index: 1;
+  }
+  .card__go span { color: var(--volt); font-size: 14px; }
+
+  .card__tags {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    position: relative;
+    z-index: 1;
+  }
+  .card__tags i {
+    font-style: normal;
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    border: 1px solid var(--ash);
+    padding: 4px 8px;
+    color: var(--dust);
+  }
+
+  /* empty state */
+  .empty {
+    padding: clamp(50px, 10vw, 110px) var(--gut);
+    text-align: center;
+    border-bottom: var(--edge) solid var(--paper);
+  }
+  .empty[hidden] { display: none; }
+  .empty p {
+    font-weight: 900;
+    text-transform: uppercase;
+    font-size: clamp(20px, 3vw, 34px);
+    letter-spacing: -.03em;
+    margin: 0;
+  }
+
+  @media (max-width: 700px) {
+    .rail__search { margin-left: 0; width: 100%; }
+    .rail__search input { width: 100%; }
+    .band__head p { margin-left: 0; }
+  }
+</style>
+</head>
+<body>
+
+<a class="skip" href="#grid">Skip to the tools</a>
+
+<header class="topbar">
+  <a class="topbar__mark" href="index.html">
+    <img src="assets/logo.svg" alt="">
+    Xavier de Belle
+  </a>
+  <nav class="topbar__nav" aria-label="Main">
+    <a href="index.html">Map</a>
+    <a href="work.html">Work</a>
+    <a href="tools.html" aria-current="page">Tools</a>
+    <a href="https://www.instagram.com/xavierdebelle/" target="_blank" rel="noopener">Instagram &#8599;</a>
+  </nav>
+</header>
+
+<section class="mast">
+  <p class="kicker">The Workshop &mdash; 12 builds, all in-browser</p>
+  <h1 class="display">Tools<br><em>I Built</em></h1>
+  <p class="mast__sub">
+    Every one of these started as a problem I hit on a shoot, in a studio, or on a Monday night.
+    None of them need an install. All of them live here so I can find them again.
+  </p>
+</section>
+
+<div class="rail" role="group" aria-label="Filter tools">
+  <button class="chip" type="button" data-filter="all" aria-pressed="true">All &mdash; 12</button>
+  <button class="chip" type="button" data-filter="portfolio" aria-pressed="false">Portfolio</button>
+  <button class="chip" type="button" data-filter="debelle" aria-pressed="false">de Belle Photography</button>
+  <button class="chip" type="button" data-filter="personal" aria-pressed="false">Personal</button>
+  <button class="chip" type="button" data-filter="events" aria-pressed="false">Events</button>
+  <button class="chip" type="button" data-filter="art" aria-pressed="false">Art</button>
+
+  <label class="rail__search">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+    <span class="sr-only">Search tools</span>
+    <input type="search" id="q" placeholder="Search" autocomplete="off">
+  </label>
+</div>
+
+<main id="grid">
+
+  <section class="band" id="portfolio" data-band="portfolio">
+    <div class="band__head">
+      <span class="band__no">01 / Portfolio Makers</span>
+      <h2 class="display">Lay It<br>Out</h2>
+      <p>Settling a set before it goes out, then three ways to lay images down and get them off the screen.</p>
+    </div>
+    <div class="cards">
+
+      <a class="card" href="tools/feed-planner.html" target="_blank" rel="noopener" data-cat="portfolio" data-keys="instagram feed planner social grid schedule posts arrange">
+        <span class="card__no">01</span>
+        <h3>Feed Planner</h3>
+        <p>See the Instagram grid before it exists. Arrange, reorder, and settle the sequence before anything gets posted.</p>
+        <div class="card__tags"><i>Instagram</i><i>Planning</i></div>
+        <span class="card__go">Open Tool <span>&#8599;</span><span class="sr-only">(opens in a new tab)</span></span>
+      </a>
+
+      <a class="card" href="tools/portfolio-grid.html" target="_blank" rel="noopener" data-cat="portfolio" data-keys="grid layout portfolio export pdf photos tiles">
+        <span class="card__no">02</span>
+        <h3>Portfolio Grid</h3>
+        <p>Drop in photos, lay them into a clean even grid, crop each tile exactly how you want it, then export the sheet.</p>
+        <div class="card__tags"><i>Layout</i><i>PNG / JPEG / PDF</i></div>
+        <span class="card__go">Open Tool <span>&#8599;</span><span class="sr-only">(opens in a new tab)</span></span>
+      </a>
+
+      <a class="card" href="tools/portfolio-masonry.html" target="_blank" rel="noopener" data-cat="portfolio" data-keys="masonry grid layout portfolio ratio shape export">
+        <span class="card__no">03</span>
+        <h3>Portfolio Masonry</h3>
+        <p>Same idea, no forced crop. Every image keeps its own shape and the wall packs itself around them.</p>
+        <div class="card__tags"><i>Layout</i><i>Native ratios</i></div>
+        <span class="card__go">Open Tool <span>&#8599;</span><span class="sr-only">(opens in a new tab)</span></span>
+      </a>
+
+      <a class="card" href="tools/freecanvas.html" target="_blank" rel="noopener" data-cat="portfolio" data-keys="freecanvas canvas drag resize collage moodboard free placement">
+        <span class="card__no">04</span>
+        <h3>FreeCanvas</h3>
+        <p>No grid at all. Drag photos anywhere, resize from the corner, lock them when the composition feels right.</p>
+        <div class="card__tags"><i>Collage</i><i>Free placement</i></div>
+        <span class="card__go">Open Tool <span>&#8599;</span><span class="sr-only">(opens in a new tab)</span></span>
+      </a>
+    </div>
+  </section>
+
+  <section class="band" id="debelle" data-band="debelle">
+    <div class="band__head">
+      <span class="band__no">02 / de Belle Photography Tools</span>
+      <h2 class="display">Run The<br>Studio</h2>
+      <p>The studio machinery — everything a couple touches between booking the day and taking delivery of it.</p>
+    </div>
+    <div class="cards">
+
+      <a class="card" href="tools/package-builder.html" data-private target="_blank" rel="noopener" data-cat="debelle" data-keys="package builder pricing quote wedding debelle album prints offer">
+        <span class="card__no">05</span>
+        <h3>Package Builder</h3>
+        <p>Every way to remember your day, priced live. Couples assemble their own package and see it add up as they go.</p>
+        <div class="card__tags"><i>de Belle</i><i>Sales</i></div>
+        <span class="card__go">Open Tool <span>&#8599;</span><span class="sr-only">(opens in a new tab)</span></span>
+      </a>
+
+      <a class="card" href="tools/video-corrections.html" data-private target="_blank" rel="noopener" data-cat="debelle" data-keys="video edit corrections feedback revisions timecode film notes">
+        <span class="card__no">06</span>
+        <h3>Video Corrections</h3>
+        <p>Edit notes without the email chaos. Clients log corrections in a structured form so nothing gets lost in a thread.</p>
+        <div class="card__tags"><i>de Belle</i><i>Post-production</i></div>
+        <span class="card__go">Open Tool <span>&#8599;</span><span class="sr-only">(opens in a new tab)</span></span>
+      </a>
+
+      <a class="card" href="tools/wedding-schedule.html" target="_blank" rel="noopener" data-cat="debelle" data-keys="wedding day schedule timeline planning hours coverage">
+        <span class="card__no">07</span>
+        <h3>Wedding Day Schedule</h3>
+        <p>Build the timeline of the day hour by hour, so the couple, the planner and the camera team all read from one page.</p>
+        <div class="card__tags"><i>de Belle</i><i>Timeline</i></div>
+        <span class="card__go">Open Tool <span>&#8599;</span><span class="sr-only">(opens in a new tab)</span></span>
+      </a>
+    </div>
+  </section>
+
+  <section class="band" id="personal" data-band="personal">
+    <div class="band__head">
+      <span class="band__no">03 / Personal</span>
+      <h2 class="display">Just For<br>Me</h2>
+      <p>Built for myself rather than for a client or a shoot. Small, private, and load-bearing.</p>
+    </div>
+    <div class="cards">
+
+      <a class="card" href="tools/budget-tracker.html" target="_blank" rel="noopener" data-cat="personal" data-keys="budget tracker money finance expenses spending income personal">
+        <span class="card__no">08</span>
+        <h3>Budget Tracker</h3>
+        <p>Where the money actually goes. Log it, categorise it, and stop guessing at the end of the month.</p>
+        <div class="card__tags"><i>Finance</i><i>Personal</i></div>
+        <span class="card__go">Open Tool <span>&#8599;</span><span class="sr-only">(opens in a new tab)</span></span>
+      </a>
+    </div>
+  </section>
+
+  <section class="band" id="events" data-band="events">
+    <div class="band__head">
+      <span class="band__no">04 / Events</span>
+      <h2 class="display">Gather<br>People</h2>
+      <p>One-off builds for real gatherings. Made for a specific day and a specific crowd, then left standing.</p>
+    </div>
+    <div class="cards">
+
+      <a class="card" href="tools/wedding-activities.html" data-private target="_blank" rel="noopener" data-cat="events" data-keys="wedding activities guests agreco xavier maria guide itinerary">
+        <span class="card__no">09</span>
+        <h3>Wedding Activities</h3>
+        <p>Xavier &amp; Maria — the guest-facing guide to everything happening around the wedding, not just the ceremony.</p>
+        <div class="card__tags"><i>Event site</i><i>Guests</i></div>
+        <span class="card__go">Open Build <span>&#8599;</span><span class="sr-only">(opens in a new tab)</span></span>
+      </a>
+
+      <a class="card" href="tools/volley-bbq-zine.html" data-private target="_blank" rel="noopener" data-cat="events" data-keys="volley bbq zine monday volleyball social sport summer">
+        <span class="card__no">10</span>
+        <h3>Volley &amp; BBQ Zine</h3>
+        <p>Monday night volleyball and a grill, written up as a standalone zine. Pure excuse to make something.</p>
+        <div class="card__tags"><i>Zine</i><i>Standalone</i></div>
+        <span class="card__go">Open Build <span>&#8599;</span><span class="sr-only">(opens in a new tab)</span></span>
+      </a>
+    </div>
+  </section>
+
+  <section class="band" id="art" data-band="art">
+    <div class="band__head">
+      <span class="band__no">05 / Art &amp; Experiments</span>
+      <h2 class="display">No Brief,<br>No Client</h2>
+      <p>Generative pieces with no deliverable attached — which is the entire point. Best full screen.</p>
+    </div>
+    <div class="cards">
+
+      <a class="card" href="tools/liquid-silver.html" target="_blank" rel="noopener" data-cat="art" data-keys="liquid silver generative art metal chrome animation visual">
+        <span class="card__no">11</span>
+        <h3>Liquid Silver</h3>
+        <p>Metal that will not sit still. Flowing, reflective, generative — put it on a screen and let it run.</p>
+        <div class="card__tags"><i>Generative</i><i>Full screen</i></div>
+        <span class="card__go">Open Piece <span>&#8599;</span><span class="sr-only">(opens in a new tab)</span></span>
+      </a>
+
+      <a class="card" href="tools/organic-loops.html" target="_blank" rel="noopener" data-cat="art" data-keys="organic loops generative art motion animation visual pattern">
+        <span class="card__no">12</span>
+        <h3>Organic Loops</h3>
+        <p>Motion that never quite repeats itself. Slow, looping, alive — the visual equivalent of a held breath.</p>
+        <div class="card__tags"><i>Generative</i><i>Full screen</i></div>
+        <span class="card__go">Open Piece <span>&#8599;</span><span class="sr-only">(opens in a new tab)</span></span>
+      </a>
+    </div>
+  </section>
+
+  <div class="empty" id="empty" hidden>
+    <p>Nothing matches that. <span class="volt">Try again.</span></p>
+  </div>
+
+</main>
+
+<footer class="foot">
+  <div>
+    <p class="kicker" style="margin-bottom:14px">Xavier de Belle &mdash; Montreal</p>
+    <div class="foot__links">
+      <a href="index.html">The Map</a>
+      <a href="work.html">Work</a>
+      <a href="https://debellephotography.com/" target="_blank" rel="noopener">de Belle Photography &#8599;</a>
+      <a href="https://333photo.com/" target="_blank" rel="noopener">333 Photo &#8599;</a>
+      <a href="https://www.instagram.com/xavierdebelle/" target="_blank" rel="noopener">Instagram &#8599;</a>
+      <a href="mailto:xavier@debellephotography.com">Email</a>
+    </div>
+  </div>
+  <p class="foot__sig">&copy; <span id="yr"></span> Xavier de Belle &middot; v4</p>
+</footer>
+
+<script>
+(function () {
+  "use strict";
+
+  document.getElementById('yr').textContent = new Date().getFullYear();
+
+  /* ---------------------------------------------------------------
+     Private tools.
+     Three tools carry client data — payment instructions, a live CRM
+     endpoint, real pricing — so they are not deployed. Locally every
+     tool is here; on the public site the cards are removed and the
+     counts re-derived so nothing advertises a page that isn't there.
+     --------------------------------------------------------------- */
+  var LOCAL = location.protocol === 'file:' ||
+              /^(localhost|127\.0\.0\.1|\[?::1\]?)$/.test(location.hostname);
+
+  if (!LOCAL) {
+    document.querySelectorAll('.card[data-private]').forEach(function (c) { c.remove(); });
+    // renumber so the public list reads 01..N with no gaps
+    document.querySelectorAll('.card').forEach(function (c, i) {
+      c.querySelector('.card__no').textContent = ('0' + (i + 1)).slice(-2);
+    });
+    // a category can empty out entirely once private tools are removed
+    document.querySelectorAll('.chip[data-filter]').forEach(function (chip) {
+      var f = chip.dataset.filter;
+      if (f === 'all') return;
+      if (!document.querySelector('.card[data-cat="' + f + '"]')) chip.remove();
+    });
+    var n = document.querySelectorAll('.card').length;
+    document.querySelector('.chip[data-filter="all"]').innerHTML = 'All &mdash; ' + n;
+    document.querySelector('.mast .kicker').innerHTML =
+      'The Workshop &mdash; ' + n + ' builds, all in-browser';
+  }
+
+  var chips = Array.prototype.slice.call(document.querySelectorAll('.chip'));
+  var cards = Array.prototype.slice.call(document.querySelectorAll('.card'));
+  var bands = Array.prototype.slice.call(document.querySelectorAll('.band'));
+  var empty = document.getElementById('empty');
+  var q     = document.getElementById('q');
+
+  var filter = 'all';
+
+  function apply() {
+    var term = q.value.trim().toLowerCase();
+    var shown = 0;
+
+    cards.forEach(function (c) {
+      var okCat = (filter === 'all') || (c.dataset.cat === filter);
+      var hay = (c.dataset.keys + ' ' + c.textContent).toLowerCase();
+      var okTerm = !term || hay.indexOf(term) !== -1;
+      var on = okCat && okTerm;
+      c.hidden = !on;
+      if (on) shown++;
+    });
+
+    bands.forEach(function (b) {
+      var any = b.querySelectorAll('.card:not([hidden])').length > 0;
+      b.hidden = !any;
+    });
+
+    empty.hidden = shown > 0;
+  }
+
+  chips.forEach(function (chip) {
+    chip.addEventListener('click', function () {
+      filter = chip.dataset.filter;
+      chips.forEach(function (c) {
+        c.setAttribute('aria-pressed', String(c === chip));
+      });
+      apply();
+    });
+  });
+
+  q.addEventListener('input', apply);
+
+  // deep links: tools.html#debelle selects that filter
+  function fromHash() {
+    var h = (location.hash || '').replace('#', '');
+    var match = chips.filter(function (c) { return c.dataset.filter === h; })[0];
+    if (match) match.click();
+  }
+  window.addEventListener('hashchange', fromHash);
+  fromHash();
+
+  // Run once on load so a section left empty by the private-tool filter
+  // doesn't render a heading with nothing beneath it.
+  apply();
+})();
+</script>
+
+</body>
+</html>
