@@ -5,6 +5,25 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v6 — 2026-08-25
+
+**New tool**
+- **Carousel Planner** added to Portfolio Makers, directly after Feed Planner.
+  Builds seamless Instagram carousels — photos span across slides, snap to the
+  edges, export ready to post. 4:5, 1:1 and 1.91:1.
+- Checked before publishing: fully self-contained, no external endpoints, no
+  credentials, no personal data.
+
+**Cleanup this made worth doing**
+- Card numbering, the total count and the category chips are now derived from
+  the cards present in *both* local and public modes — previously only the
+  public path recalculated them, so local showed stale hard-coded numbers.
+  Adding, removing or reordering a tool now needs no manual renumbering.
+- Fixed a stale comment in `tools.html` still claiming three tools were
+  withheld from the deploy; that stopped being true in v5.
+
+---
+
 ## v5 — 2026-08-25
 
 **All tools public**

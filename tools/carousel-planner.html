@@ -1,0 +1,1964 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Carousel Planner</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  :root {
+    --bg: #f3f1ec;
+    --surface: #ffffff;
+    --surface-sunken: #e9e6df;
+    --ink: #201e1c;
+    --ink-dim: #726b62;
+    --ink-faint: #a39a8d;
+    --accent: #a8641f;
+    --accent-ink: #ffffff;
+    --line: #d9d4c9;
+    --danger: #a13a2f;
+    --radius-s: 3px;
+    --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #18171b;
+      --surface: #221f24;
+      --surface-sunken: #29262b;
+      --ink: #f1ece3;
+      --ink-dim: #a89f92;
+      --ink-faint: #6f665c;
+      --accent: #dd9a52;
+      --accent-ink: #201205;
+      --line: #38343a;
+      --danger: #e08677;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #18171b;
+    --surface: #221f24;
+    --surface-sunken: #29262b;
+    --ink: #f1ece3;
+    --ink-dim: #a89f92;
+    --ink-faint: #6f665c;
+    --accent: #dd9a52;
+    --accent-ink: #201205;
+    --line: #38343a;
+    --danger: #e08677;
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-ui);
+    -webkit-font-smoothing: antialiased;
+    overflow: hidden;
+  }
+  ::selection { background: var(--accent); color: var(--accent-ink); }
+
+  button, input, select, textarea { font: inherit; color: inherit; }
+  button {
+    cursor: pointer;
+    background: none;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-s);
+    color: var(--ink);
+    padding: .45rem .7rem;
+    white-space: nowrap;
+  }
+  button:hover:not(:disabled) { border-color: var(--ink-faint); }
+  button:disabled { opacity: .38; cursor: default; }
+  button.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+  button.primary:hover:not(:disabled) { filter: brightness(1.06); }
+  button.ghost { border-color: transparent; }
+  button.ghost:hover:not(:disabled) { border-color: var(--line); }
+  button.danger:hover:not(:disabled) { border-color: var(--danger); color: var(--danger); }
+  button:focus-visible, input:focus-visible, select:focus-visible, [tabindex]:focus-visible {
+    outline: 2px solid var(--accent); outline-offset: 2px;
+  }
+  input[type="number"], input[type="text"], select {
+    background: var(--surface-sunken);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-s);
+    padding: .35rem .45rem;
+    width: 100%;
+    min-width: 0;
+  }
+  input[type="color"] {
+    -webkit-appearance: none; appearance: none;
+    width: 100%; height: 30px; padding: 0;
+    border: 1px solid var(--line); border-radius: var(--radius-s);
+    background: none; cursor: pointer;
+  }
+  input[type="color"]::-webkit-color-swatch-wrapper { padding: 2px; }
+  input[type="color"]::-webkit-color-swatch { border: none; border-radius: 1px; }
+  input[type="range"] { width: 100%; accent-color: var(--accent); }
+
+  /* ---------- shell ---------- */
+  .app { display: grid; grid-template-rows: auto 1fr; height: 100%; }
+
+  header.bar {
+    display: flex; align-items: center; gap: .8rem;
+    padding: .55rem .9rem;
+    border-bottom: 1px solid var(--line);
+    background: var(--surface);
+    flex-wrap: wrap;
+  }
+  .brand { display: flex; flex-direction: column; line-height: 1.15; margin-right: .4rem; }
+  .brand b { font-size: .95rem; font-weight: 600; letter-spacing: -.01em; }
+  .brand span { font-size: .68rem; color: var(--ink-faint); letter-spacing: .07em; text-transform: uppercase; }
+  .bar .spacer { flex: 1; }
+  .bar .group { display: flex; align-items: center; gap: .35rem; }
+  .bar label.inline { font-size: .75rem; color: var(--ink-dim); }
+  .bar select, .bar input[type="number"] { width: auto; min-width: 62px; }
+
+  .main { display: grid; grid-template-columns: 268px 1fr; min-height: 0; }
+
+  /* ---------- side panel ---------- */
+  aside {
+    border-right: 1px solid var(--line);
+    background: var(--surface);
+    overflow-y: auto;
+    display: flex; flex-direction: column;
+  }
+  .sect { padding: .8rem .9rem; border-bottom: 1px solid var(--line); }
+  .sect h2 {
+    margin: 0 0 .6rem; font-size: .68rem; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--ink-faint); font-weight: 600;
+  }
+  .row { display: flex; gap: .4rem; align-items: center; }
+  .row + .row { margin-top: .45rem; }
+  .row.wrap { flex-wrap: wrap; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: .4rem; }
+  .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: .4rem; }
+  .field { display: flex; flex-direction: column; gap: .18rem; min-width: 0; }
+  .field label { font-size: .68rem; color: var(--ink-dim); }
+  .hint { font-size: .72rem; color: var(--ink-faint); line-height: 1.45; margin: .5rem 0 0; }
+  .checkline { display: flex; align-items: center; gap: .45rem; font-size: .8rem; color: var(--ink-dim); }
+  .checkline input { accent-color: var(--accent); }
+  .full { width: 100%; }
+
+  .empty-note { font-size: .78rem; color: var(--ink-faint); line-height: 1.5; }
+
+  /* layers */
+  .layers { display: flex; flex-direction: column; gap: 2px; max-height: 230px; overflow-y: auto; }
+  .layer {
+    display: flex; align-items: center; gap: .5rem;
+    padding: .28rem .35rem; border-radius: var(--radius-s);
+    border: 1px solid transparent; cursor: pointer; text-align: left;
+    width: 100%; background: none;
+  }
+  .layer:hover { background: var(--surface-sunken); }
+  .layer.sel { border-color: var(--accent); background: var(--surface-sunken); }
+  .layer img { width: 30px; height: 30px; object-fit: cover; border-radius: 2px; background: var(--surface-sunken); flex: none; }
+  .layer .meta { flex: 1; min-width: 0; font-size: .74rem; color: var(--ink-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .layer .lockmark { font-size: .7rem; color: var(--ink-faint); }
+
+  /* ---------- canvas area ---------- */
+  .stage { display: grid; grid-template-rows: 1fr auto; min-width: 0; min-height: 0; }
+
+  .viewport {
+    position: relative;
+    overflow: auto;
+    background:
+      repeating-conic-gradient(var(--surface-sunken) 0% 25%, transparent 0% 50%) 50% / 18px 18px;
+    background-color: var(--bg);
+    min-height: 0;
+  }
+  .viewport.panning { cursor: grabbing; }
+  .canvas-pad { padding: 46px; width: max-content; }
+  .strip-wrap { position: relative; }
+  .strip {
+    position: relative;
+    transform-origin: top left;
+    background: #111;
+    box-shadow: 0 2px 30px rgba(0,0,0,.28);
+    user-select: none;
+    touch-action: none;
+  }
+
+  .item { position: absolute; transform-origin: center center; will-change: transform; overflow: hidden; }
+  .item img { position: absolute; display: block; pointer-events: none; }
+  .item.locked { cursor: default; }
+
+  .frame {
+    position: absolute; z-index: 900;
+    transform-origin: center center;
+    outline: calc(1.5px * var(--invz)) solid var(--accent);
+    pointer-events: none;
+  }
+  .handle {
+    position: absolute; width: 11px; height: 11px;
+    background: var(--surface); border: 1.5px solid var(--accent);
+    border-radius: 2px;
+    transform: translate(-50%, -50%) scale(var(--invz));
+    pointer-events: auto;
+  }
+  .handle.rot {
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: grab;
+  }
+  .handle[data-h="nw"], .handle[data-h="se"] { cursor: nwse-resize; }
+  .handle[data-h="ne"], .handle[data-h="sw"] { cursor: nesw-resize; }
+  .handle[data-h="n"], .handle[data-h="s"] { cursor: ns-resize; }
+  .handle[data-h="e"], .handle[data-h="w"] { cursor: ew-resize; }
+
+  .divider { position: absolute; top: 0; bottom: 0; pointer-events: none; }
+  .divider i {
+    position: absolute; top: 0; bottom: 0; left: 0;
+    width: calc(1px * var(--invz));
+    background: rgba(255,255,255,.55);
+    mix-blend-mode: difference;
+  }
+  .divider b {
+    position: absolute; top: calc(-30px * var(--invz)); left: 0;
+    transform: translateX(-50%) scale(var(--invz));
+    transform-origin: top center;
+    font: 600 12px/1 var(--font-mono);
+    color: var(--ink-faint);
+  }
+  .guide { position: absolute; background: #35d1c0; pointer-events: none; z-index: 9999; }
+
+  .safe { position: absolute; pointer-events: none; border: calc(1px * var(--invz)) dashed rgba(255,255,255,.35); }
+
+  /* ---------- slide preview rail ---------- */
+  .rail {
+    border-top: 1px solid var(--line);
+    background: var(--surface);
+    padding: .6rem .9rem .7rem;
+  }
+  .rail-head {
+    display: flex; align-items: center; gap: .6rem; margin-bottom: .5rem;
+  }
+  .rail-head h2 {
+    margin: 0; font-size: .68rem; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--ink-faint); font-weight: 600;
+  }
+  .rail-head .spacer { flex: 1; }
+  .slides { display: flex; gap: .5rem; overflow-x: auto; padding-bottom: .25rem; }
+  .slide-card { flex: none; display: flex; flex-direction: column; gap: .25rem; }
+  .slide-thumb {
+    position: relative; overflow: hidden; border-radius: 2px;
+    background: #111; border: 1px solid var(--line); cursor: pointer;
+  }
+  .slide-thumb .inner { position: absolute; top: 0; left: 0; transform-origin: top left; }
+  .slide-cap { font: 500 .68rem/1 var(--font-mono); color: var(--ink-faint); text-align: center; }
+
+  /* ---------- modal ---------- */
+  .modal {
+    position: fixed; inset: 0; z-index: 100;
+    background: rgba(0,0,0,.62);
+    display: none; align-items: center; justify-content: center;
+    padding: 1.2rem;
+  }
+  .modal.open { display: flex; }
+  .sheet {
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: 6px; padding: 1rem 1.1rem 1.1rem;
+    max-width: 92vw; max-height: 92vh; overflow: auto;
+  }
+  .sheet h3 { margin: 0 0 .1rem; font-size: 1rem; }
+  .sheet .sub { margin: 0 0 .9rem; font-size: .78rem; color: var(--ink-faint); }
+  .sheet-actions { display: flex; gap: .5rem; justify-content: flex-end; margin-top: 1rem; }
+
+  /* phone preview */
+  .phone-wrap { display: flex; flex-direction: column; align-items: center; gap: .7rem; }
+  .phone {
+    position: relative;
+    box-sizing: content-box;          /* the bezel must not eat the slide width */
+    border: 10px solid #1c1a1e; border-radius: 34px;
+    background: #000; overflow: hidden;
+    box-shadow: 0 10px 40px rgba(0,0,0,.5);
+  }
+  .swiper {
+    display: flex; overflow-x: auto; scroll-snap-type: x mandatory;
+    height: 100%; scrollbar-width: none;
+  }
+  .swiper::-webkit-scrollbar { display: none; }
+  .swiper .pane { flex: none; scroll-snap-align: center; position: relative; overflow: hidden; background: #000; }
+  .swiper .pane .inner { position: absolute; top: 0; left: 0; transform-origin: top left; }
+  .dots { display: flex; gap: 5px; justify-content: center; }
+  .dots i { width: 6px; height: 6px; border-radius: 50%; background: var(--ink-faint); opacity: .4; transition: opacity .15s; }
+  .dots i.on { opacity: 1; background: var(--accent); }
+  .phone-nav { display: flex; align-items: center; gap: .8rem; }
+
+  .exp-list { display: flex; flex-direction: column; gap: .35rem; max-height: 40vh; overflow: auto; }
+  .exp-row {
+    display: flex; align-items: center; gap: .6rem;
+    padding: .3rem .4rem; border: 1px solid var(--line); border-radius: var(--radius-s);
+    font-size: .8rem;
+  }
+  .exp-row .nm { flex: 1; font-family: var(--font-mono); font-size: .74rem; color: var(--ink-dim); }
+  .exp-row img { width: 34px; height: 42px; object-fit: cover; border-radius: 2px; }
+
+  .toast {
+    position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%);
+    background: var(--ink); color: var(--bg);
+    padding: .5rem .85rem; border-radius: 4px; font-size: .8rem;
+    opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 200;
+  }
+  .toast.show { opacity: .95; }
+
+  .drop-veil {
+    position: absolute; inset: 0; z-index: 50;
+    border: 2px dashed var(--accent); background: rgba(0,0,0,.25);
+    display: none; align-items: center; justify-content: center;
+    color: #fff; font-size: .95rem; letter-spacing: .02em;
+    pointer-events: none;
+  }
+  .drop-veil.on { display: flex; }
+
+  kbd {
+    font: 500 .7rem/1 var(--font-mono); border: 1px solid var(--line);
+    border-bottom-width: 2px; border-radius: 3px; padding: .12rem .3rem;
+    color: var(--ink-dim);
+  }
+
+  @media (max-width: 860px) {
+    .main { grid-template-columns: 1fr; }
+    aside { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="bar">
+    <div class="brand"><b>Carousel Planner</b><span>Seamless slides</span></div>
+
+    <div class="group">
+      <label class="inline" for="slideCount">Slides</label>
+      <input type="number" id="slideCount" min="2" max="20" step="1" value="4" />
+    </div>
+
+    <div class="group">
+      <label class="inline" for="ratio">Format</label>
+      <select id="ratio">
+        <option value="4:5">Portrait 4:5</option>
+        <option value="1:1">Square 1:1</option>
+        <option value="1.91:1">Landscape 1.91:1</option>
+      </select>
+    </div>
+
+    <div class="group">
+      <button id="btnAdd" class="primary">Add photos</button>
+      <input type="file" id="filePick" accept="image/*" multiple hidden />
+    </div>
+
+    <div class="spacer"></div>
+
+    <div class="group">
+      <button id="btnZoomOut" class="ghost" title="Zoom out">&minus;</button>
+      <span id="zoomLabel" style="font:500 .74rem/1 var(--font-mono); color:var(--ink-dim); min-width:42px; text-align:center;">100%</span>
+      <button id="btnZoomIn" class="ghost" title="Zoom in">+</button>
+      <button id="btnFit" class="ghost" title="Fit to window">Fit</button>
+    </div>
+
+    <div class="group">
+      <button id="btnPreview">Preview swipe</button>
+      <button id="btnExport" class="primary">Export slides</button>
+    </div>
+  </header>
+
+  <div class="main">
+    <aside>
+      <div class="sect">
+        <h2>Canvas</h2>
+        <div class="grid2">
+          <div class="field">
+            <label for="bgColor">Background</label>
+            <input type="color" id="bgColor" value="#111111" />
+          </div>
+          <div class="field">
+            <label for="gutter" title="Spacing between the slide previews below">Preview gap</label>
+            <input type="number" id="gutter" min="0" max="80" step="2" value="14" />
+          </div>
+        </div>
+        <div class="row" style="margin-top:.55rem">
+          <label class="checkline"><input type="checkbox" id="optSnap" checked /> Snap to edges</label>
+        </div>
+        <div class="row">
+          <label class="checkline"><input type="checkbox" id="optSafe" /> Show safe area</label>
+        </div>
+      </div>
+
+      <div class="sect">
+        <h2>Selection</h2>
+        <div id="selPanel" style="display:none">
+          <div class="grid2">
+            <div class="field"><label for="inX">X</label><input type="number" id="inX" step="1" /></div>
+            <div class="field"><label for="inY">Y</label><input type="number" id="inY" step="1" /></div>
+          </div>
+          <div class="grid2" style="margin-top:.4rem">
+            <div class="field"><label for="inW">Width</label><input type="number" id="inW" step="1" min="10" /></div>
+            <div class="field"><label for="inH">Height</label><input type="number" id="inH" step="1" min="10" /></div>
+          </div>
+          <div class="grid2" style="margin-top:.4rem">
+            <div class="field"><label for="inR">Rotation</label><input type="number" id="inR" step="1" /></div>
+            <div class="field"><label for="inO">Opacity</label><input type="number" id="inO" step="5" min="0" max="100" /></div>
+          </div>
+
+          <div class="row" style="margin-top:.6rem"><span class="field" style="width:100%"><label>Fit to</label></span></div>
+          <div class="grid2">
+            <button id="btnFitSlide" title="Cover the slide it sits on">Cover slide</button>
+            <button id="btnFitStrip" title="Cover the whole carousel">Cover strip</button>
+          </div>
+          <div class="grid2" style="margin-top:.4rem">
+            <select id="spanFrom" title="Span from slide"></select>
+            <select id="spanTo" title="Span to slide"></select>
+          </div>
+          <button id="btnSpan" class="full" style="margin-top:.4rem">Cover slides in range</button>
+
+          <div class="field" style="margin-top:.6rem">
+            <label for="inFit">Photo fills its frame by</label>
+            <select id="inFit">
+              <option value="cover">Cropping to fill</option>
+              <option value="contain">Fitting whole photo in</option>
+            </select>
+          </div>
+          <div class="field" style="margin-top:.4rem">
+            <label for="inZoom">Crop zoom <span id="inZoomVal">100%</span></label>
+            <input type="range" id="inZoom" min="100" max="400" step="5" value="100" />
+          </div>
+          <div class="grid2" style="margin-top:.4rem">
+            <div class="field"><label for="inOX">Crop across</label><input type="range" id="inOX" min="0" max="100" step="1" value="50" /></div>
+            <div class="field"><label for="inOY">Crop down</label><input type="range" id="inOY" min="0" max="100" step="1" value="50" /></div>
+          </div>
+          <div class="grid2" style="margin-top:.4rem">
+            <button id="btnFlipH" title="Flip horizontally">Flip H</button>
+            <button id="btnFlipV" title="Flip vertically">Flip V</button>
+          </div>
+          <button id="btnShape" class="full" style="margin-top:.4rem"
+                  title="Reshape the frame to the photo's own proportions">Reset to photo shape</button>
+          <div class="grid2" style="margin-top:.4rem">
+            <button id="btnBack">Send back</button>
+            <button id="btnFront">Bring front</button>
+          </div>
+          <div class="grid3" style="margin-top:.4rem">
+            <button id="btnDup">Duplicate</button>
+            <button id="btnLock">Lock</button>
+            <button id="btnDel" class="danger">Delete</button>
+          </div>
+        </div>
+        <p id="selEmpty" class="empty-note">Nothing selected. Click a photo on the canvas, or drop image files anywhere onto it.</p>
+      </div>
+
+      <div class="sect">
+        <h2>Layers</h2>
+        <div class="layers" id="layers"></div>
+        <div class="grid2" style="margin-top:.55rem">
+          <button id="btnAuto" title="One photo per slide, in order">Auto-arrange</button>
+          <button id="btnClear" class="danger">Clear all</button>
+        </div>
+      </div>
+
+      <div class="sect" style="border-bottom:none">
+        <h2>Shortcuts</h2>
+        <p class="hint">
+          <kbd>drag</kbd> move &nbsp; <kbd>&#8997;</kbd>+drag reposition crop<br />
+          <kbd>&#8592;&#8594;</kbd> nudge &nbsp; <kbd>&#8679;</kbd>+nudge 10px<br />
+          <kbd>&#8984;D</kbd> duplicate &nbsp; <kbd>&#8984;Z</kbd> undo<br />
+          <kbd>space</kbd>+drag pan &nbsp; <kbd>&#8984;</kbd>+wheel zoom<br />
+          <kbd>&#9003;</kbd> delete &nbsp; <kbd>esc</kbd> deselect
+        </p>
+      </div>
+    </aside>
+
+    <div class="stage">
+      <div class="viewport" id="viewport" tabindex="0">
+        <div class="canvas-pad" id="canvasPad">
+          <div class="strip-wrap">
+            <div class="strip" id="strip"></div>
+          </div>
+        </div>
+        <div class="drop-veil" id="dropVeil">Drop photos to place them</div>
+      </div>
+
+      <div class="rail">
+        <div class="rail-head">
+          <h2>Slide by slide</h2>
+          <span class="spacer"></span>
+          <span id="railNote" style="font-size:.72rem;color:var(--ink-faint)"></span>
+        </div>
+        <div class="slides" id="slides"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="previewModal">
+  <div class="sheet">
+    <h3>Swipe preview</h3>
+    <p class="sub">Swipe, scroll sideways, or use the arrows &mdash; this is how the carousel reads on a phone.</p>
+    <div class="phone-wrap">
+      <div class="phone" id="phone"><div class="swiper" id="swiper"></div></div>
+      <div class="dots" id="dots"></div>
+      <div class="phone-nav">
+        <button id="prevSlide" class="ghost">&larr;</button>
+        <span id="phoneLabel" style="font:500 .74rem/1 var(--font-mono); color:var(--ink-dim)"></span>
+        <button id="nextSlide" class="ghost">&rarr;</button>
+      </div>
+    </div>
+    <div class="sheet-actions">
+      <button id="closePreview">Close</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="exportModal">
+  <div class="sheet" style="width:440px">
+    <h3>Export slides</h3>
+    <p class="sub" id="exportSub"></p>
+    <div class="grid2">
+      <div class="field">
+        <label for="expFormat">File type</label>
+        <select id="expFormat">
+          <option value="jpeg">JPEG (smaller)</option>
+          <option value="png">PNG (lossless)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="expName">Name prefix</label>
+        <input type="text" id="expName" value="carousel" />
+      </div>
+    </div>
+    <div class="field" style="margin-top:.5rem">
+      <label for="expQuality">JPEG quality <span id="expQualityVal">92</span></label>
+      <input type="range" id="expQuality" min="60" max="100" step="1" value="92" />
+    </div>
+    <div class="exp-list" id="expList" style="margin-top:.8rem"></div>
+    <div class="sheet-actions">
+      <button id="closeExport">Cancel</button>
+      <button id="btnExportZip" class="primary">Download all (.zip)</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<script>
+(function () {
+"use strict";
+
+/* ============================================================
+   Model
+   ============================================================ */
+
+var RATIOS = {
+  "4:5":    { w: 1080, h: 1350 },
+  "1:1":    { w: 1080, h: 1080 },
+  "1.91:1": { w: 1080, h: 566  }
+};
+
+var MAX_IMPORT_EDGE = 4000;   // photos are downscaled on import to keep things quick
+var SAFE_INSET = 0.06;        // where Instagram UI tends to sit
+
+var state = {
+  slides: 4,
+  ratio: "4:5",
+  bg: "#111111",
+  gutter: 14,
+  items: []      // z-order: last = front
+};
+
+var assets = new Map();   // assetId -> { id, src, w, h, name }
+var imgs   = new Map();   // assetId -> HTMLImageElement (decoded, export-ready)
+
+var selectedId = null;
+var zoom = 1;
+var undoStack = [];
+var redoStack = [];
+var spaceDown = false;
+var userZoomed = false;
+
+function SW() { return RATIOS[state.ratio].w; }
+function SH() { return RATIOS[state.ratio].h; }
+function stripW() { return SW() * state.slides; }
+function uid() { return Math.random().toString(36).slice(2, 10); }
+function clamp(v, a, b) { return Math.min(b, Math.max(a, v)); }
+function byId(id) { for (var i = 0; i < state.items.length; i++) if (state.items[i].id === id) return state.items[i]; return null; }
+function sel() { return selectedId ? byId(selectedId) : null; }
+
+/* ============================================================
+   Elements
+   ============================================================ */
+
+var $ = function (id) { return document.getElementById(id); };
+var viewport = $("viewport"), strip = $("strip"), canvasPad = $("canvasPad");
+var stripWrap = strip.parentNode;
+var elMap = new Map();   // itemId -> element
+var frameEl = null;
+
+/* ============================================================
+   Persistence  (layout in localStorage, photos in IndexedDB)
+   ============================================================ */
+
+var LS_KEY = "carouselPlanner.layout.v1";
+var db = null;
+
+function openDB() {
+  return new Promise(function (resolve) {
+    var rq = indexedDB.open("carouselPlanner", 1);
+    rq.onupgradeneeded = function () {
+      var d = rq.result;
+      if (!d.objectStoreNames.contains("assets")) d.createObjectStore("assets", { keyPath: "id" });
+    };
+    rq.onsuccess = function () { db = rq.result; resolve(db); };
+    rq.onerror = function () { resolve(null); };
+  });
+}
+function dbPut(a) {
+  if (!db) return;
+  try { db.transaction("assets", "readwrite").objectStore("assets").put(a); } catch (e) {}
+}
+function dbDelete(id) {
+  if (!db) return;
+  try { db.transaction("assets", "readwrite").objectStore("assets").delete(id); } catch (e) {}
+}
+function dbAll() {
+  return new Promise(function (resolve) {
+    if (!db) return resolve([]);
+    try {
+      var rq = db.transaction("assets", "readonly").objectStore("assets").getAll();
+      rq.onsuccess = function () { resolve(rq.result || []); };
+      rq.onerror = function () { resolve([]); };
+    } catch (e) { resolve([]); }
+  });
+}
+
+var saveTimer = null;
+function saveSoon() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(function () {
+    try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch (e) {}
+  }, 250);
+}
+
+/* ============================================================
+   Assets
+   ============================================================ */
+
+function loadImage(src) {
+  return new Promise(function (resolve, reject) {
+    var im = new Image();
+    im.onload = function () { resolve(im); };
+    im.onerror = reject;
+    im.src = src;
+  });
+}
+
+function readFileAsDataURL(file) {
+  return new Promise(function (resolve, reject) {
+    var fr = new FileReader();
+    fr.onload = function () { resolve(fr.result); };
+    fr.onerror = reject;
+    fr.readAsDataURL(file);
+  });
+}
+
+// Downscale oversized photos so dragging stays smooth; keeps PNG alpha intact.
+function normalise(src, isPng) {
+  return loadImage(src).then(function (im) {
+    var big = Math.max(im.naturalWidth, im.naturalHeight);
+    if (big <= MAX_IMPORT_EDGE) return { src: src, w: im.naturalWidth, h: im.naturalHeight };
+    var k = MAX_IMPORT_EDGE / big;
+    var c = document.createElement("canvas");
+    c.width = Math.round(im.naturalWidth * k);
+    c.height = Math.round(im.naturalHeight * k);
+    var x = c.getContext("2d");
+    x.imageSmoothingQuality = "high";
+    x.drawImage(im, 0, 0, c.width, c.height);
+    return {
+      src: c.toDataURL(isPng ? "image/png" : "image/jpeg", 0.94),
+      w: c.width, h: c.height
+    };
+  });
+}
+
+function registerAsset(a) {
+  assets.set(a.id, a);
+  return loadImage(a.src).then(function (im) { imgs.set(a.id, im); return a; });
+}
+
+function addFiles(fileList, dropPt) {
+  var files = Array.prototype.slice.call(fileList).filter(function (f) { return /^image\//.test(f.type); });
+  if (!files.length) return Promise.resolve();
+  toast("Loading " + files.length + " photo" + (files.length > 1 ? "s" : "") + "…");
+  pushUndo();
+
+  var startCount = state.items.length;
+  var chain = Promise.resolve();
+  files.forEach(function (file, i) {
+    chain = chain.then(function () {
+      return readFileAsDataURL(file)
+        .then(function (src) { return normalise(src, /png$/i.test(file.type)); })
+        .then(function (n) {
+          var a = { id: uid(), src: n.src, w: n.w, h: n.h, name: file.name };
+          dbPut(a);
+          return registerAsset(a);
+        })
+        .then(function (a) {
+          var it = makeItem(a, startCount + i, dropPt);
+          state.items.push(it);
+        });
+    });
+  });
+
+  return chain.then(function () {
+    render();
+    selectItem(state.items.length ? state.items[state.items.length - 1].id : null);
+    saveSoon();
+    toast(files.length + " photo" + (files.length > 1 ? "s" : "") + " added");
+  }).catch(function (e) {
+    console.error(e);
+    toast("Could not read one of those files");
+  });
+}
+
+// Cover rect: smallest rect of the given aspect that fully covers the box.
+function coverRect(aw, ah, bx, by, bw, bh) {
+  var k = Math.max(bw / aw, bh / ah);
+  var w = aw * k, h = ah * k;
+  return { x: bx + (bw - w) / 2, y: by + (bh - h) / 2, w: w, h: h };
+}
+
+function makeItem(a, index, dropPt) {
+  var r;
+  if (dropPt) {
+    var k = SH() / a.h;                       // land at full slide height
+    var w = a.w * k, h = SH();
+    r = { x: dropPt.x - w / 2, y: dropPt.y - h / 2, w: w, h: h };
+  } else {
+    var s = index % state.slides;             // one photo per slide, cropped to fit
+    r = { x: s * SW(), y: 0, w: SW(), h: SH() };
+  }
+  return {
+    id: uid(), aid: a.id,
+    x: Math.round(r.x), y: Math.round(r.y),
+    w: Math.round(r.w), h: Math.round(r.h),
+    rot: 0, op: 100, flipH: false, flipV: false, lock: false,
+    fit: "cover", ox: 0.5, oy: 0.5, zoom: 1
+  };
+}
+
+/* ============================================================
+   Undo
+   ============================================================ */
+
+function snapshot() {
+  return JSON.stringify({ slides: state.slides, ratio: state.ratio, bg: state.bg, items: state.items });
+}
+function pushUndo() {
+  undoStack.push(snapshot());
+  if (undoStack.length > 60) undoStack.shift();
+  redoStack.length = 0;
+}
+function applySnap(s) {
+  var o = JSON.parse(s);
+  state.slides = o.slides; state.ratio = o.ratio; state.bg = o.bg; state.items = o.items;
+  if (!byId(selectedId)) selectedId = null;
+  syncControls();
+  render();
+  saveSoon();
+}
+function undo() {
+  if (!undoStack.length) return;
+  redoStack.push(snapshot());
+  applySnap(undoStack.pop());
+}
+function redo() {
+  if (!redoStack.length) return;
+  undoStack.push(snapshot());
+  applySnap(redoStack.pop());
+}
+
+/* ============================================================
+   Rendering
+   ============================================================ */
+
+function setZoom(z, keepCenter) {
+  var prev = zoom;
+  zoom = clamp(z, 0.03, 2);
+  var cx = (viewport.scrollLeft + viewport.clientWidth / 2) / prev;
+  var cy = (viewport.scrollTop + viewport.clientHeight / 2) / prev;
+  layoutStrip();
+  if (keepCenter !== false) {
+    viewport.scrollLeft = cx * zoom - viewport.clientWidth / 2;
+    viewport.scrollTop = cy * zoom - viewport.clientHeight / 2;
+  }
+  $("zoomLabel").textContent = Math.round(zoom * 100) + "%";
+}
+
+function layoutStrip() {
+  var tw = stripW(), th = SH();
+  strip.style.width = tw + "px";
+  strip.style.height = th + "px";
+  strip.style.transform = "scale(" + zoom + ")";
+  strip.style.setProperty("--invz", (1 / zoom).toFixed(4));
+  strip.style.background = state.bg;
+  stripWrap.style.width = Math.round(tw * zoom) + "px";
+  stripWrap.style.height = Math.round(th * zoom) + "px";
+}
+
+function fitToWindow() {
+  if (!viewport.clientWidth || !viewport.clientHeight) return;
+  userZoomed = false;
+  var pad = 110;
+  var zx = (viewport.clientWidth - pad) / stripW();
+  var zy = (viewport.clientHeight - pad) / SH();
+  setZoom(Math.min(zx, zy), false);
+  viewport.scrollLeft = 0;
+  viewport.scrollTop = Math.max(0, (stripWrap.offsetHeight - viewport.clientHeight) / 2 + 46);
+}
+
+function buildItemEl(it) {
+  var el = document.createElement("div");
+  el.className = "item";
+  el.dataset.id = it.id;
+  var im = document.createElement("img");
+  im.draggable = false;
+  el.appendChild(im);
+  return el;
+}
+
+function pct(v) { return Math.round((v == null ? 0.5 : v) * 100); }
+
+// Where the photo lands inside its frame. The editor, the previews and the
+// exporter all go through here, so what you see is what gets written out.
+function fitGeom(it, iw, ih) {
+  var base = (it.fit === "contain")
+    ? Math.min(it.w / iw, it.h / ih)
+    : Math.max(it.w / iw, it.h / ih);
+  var k = base * (it.zoom || 1);
+  var dw = iw * k, dh = ih * k;
+  return {
+    dw: dw, dh: dh,
+    dx: (it.w - dw) * (it.ox == null ? 0.5 : it.ox),
+    dy: (it.h - dh) * (it.oy == null ? 0.5 : it.oy)
+  };
+}
+
+function paintItem(it) {
+  var el = elMap.get(it.id);
+  if (!el) return;
+  var a = assets.get(it.aid);
+  var im = el.firstChild;
+  if (a && im.getAttribute("src") !== a.src) im.src = a.src;
+  el.style.left = it.x + "px";
+  el.style.top = it.y + "px";
+  el.style.width = it.w + "px";
+  el.style.height = it.h + "px";
+  el.style.transform = "rotate(" + it.rot + "deg) scale(" +
+    (it.flipH ? -1 : 1) + "," + (it.flipV ? -1 : 1) + ")";
+  el.style.opacity = (it.op / 100);
+  el.style.cursor = it.lock ? "default" : "move";
+  el.classList.toggle("locked", !!it.lock);
+  if (a) {
+    var g = fitGeom(it, a.w, a.h);
+    im.style.left = g.dx + "px";
+    im.style.top = g.dy + "px";
+    im.style.width = g.dw + "px";
+    im.style.height = g.dh + "px";
+  }
+  if (it.id === selectedId) placeFrame(it);
+}
+
+function render() {
+  layoutStrip();
+
+  // items (reconcile)
+  var seen = new Set();
+  state.items.forEach(function (it, i) {
+    var el = elMap.get(it.id);
+    if (!el) { el = buildItemEl(it); elMap.set(it.id, el); strip.appendChild(el); }
+    el.style.zIndex = String(i + 1);
+    paintItem(it);
+    seen.add(it.id);
+  });
+  elMap.forEach(function (el, id) {
+    if (!seen.has(id)) { el.remove(); elMap.delete(id); }
+  });
+
+  renderChrome();
+  renderFrame();
+  renderLayers();
+  renderThumbs();
+  syncSelPanel();
+}
+
+function renderChrome() {
+  Array.prototype.slice.call(strip.querySelectorAll(".divider,.safe")).forEach(function (n) { n.remove(); });
+  for (var i = 0; i <= state.slides; i++) {
+    var d = document.createElement("div");
+    d.className = "divider";
+    d.style.left = (i * SW()) + "px";
+    d.style.zIndex = "500";
+    var line = document.createElement("i");
+    d.appendChild(line);
+    if (i < state.slides) {
+      var lab = document.createElement("b");
+      lab.textContent = String(i + 1);
+      lab.style.left = (SW() / 2) + "px";
+      d.appendChild(lab);
+    }
+    strip.appendChild(d);
+  }
+  if ($("optSafe").checked) {
+    for (var s = 0; s < state.slides; s++) {
+      var sa = document.createElement("div");
+      sa.className = "safe";
+      sa.style.left = (s * SW() + SW() * SAFE_INSET) + "px";
+      sa.style.top = (SH() * SAFE_INSET) + "px";
+      sa.style.width = (SW() * (1 - SAFE_INSET * 2)) + "px";
+      sa.style.height = (SH() * (1 - SAFE_INSET * 2)) + "px";
+      sa.style.zIndex = "500";
+      strip.appendChild(sa);
+    }
+  }
+}
+
+var HANDLES = [
+  ["nw", 0, 0], ["n", 50, 0], ["ne", 100, 0], ["e", 100, 50],
+  ["se", 100, 100], ["s", 50, 100], ["sw", 0, 100], ["w", 0, 50]
+];
+
+function renderFrame() {
+  if (frameEl) { frameEl.remove(); frameEl = null; }
+  var it = sel();
+  if (!it) return;
+  if (!elMap.get(it.id)) return;
+
+  frameEl = document.createElement("div");
+  frameEl.className = "frame";
+  if (!it.lock) {
+    HANDLES.forEach(function (h) {
+      var b = document.createElement("div");
+      b.className = "handle";
+      b.dataset.h = h[0];
+      b.style.left = h[1] + "%";
+      b.style.top = h[2] + "%";
+      frameEl.appendChild(b);
+    });
+    var r = document.createElement("div");
+    r.className = "handle rot";
+    r.dataset.h = "rot";
+    r.style.left = "50%";
+    r.style.top = "0%";
+    r.style.transform = "translate(-50%,-50%) scale(var(--invz)) translateY(-26px)";
+    frameEl.appendChild(r);
+  }
+  strip.appendChild(frameEl);
+  placeFrame(it);
+}
+
+function placeFrame(it) {
+  if (!frameEl) return;
+  frameEl.style.left = it.x + "px";
+  frameEl.style.top = it.y + "px";
+  frameEl.style.width = it.w + "px";
+  frameEl.style.height = it.h + "px";
+  frameEl.style.transform = "rotate(" + it.rot + "deg)";
+}
+
+function renderLayers() {
+  var box = $("layers");
+  box.textContent = "";
+  if (!state.items.length) {
+    var p = document.createElement("p");
+    p.className = "empty-note";
+    p.textContent = "No photos yet.";
+    box.appendChild(p);
+    return;
+  }
+  for (var i = state.items.length - 1; i >= 0; i--) {
+    (function (it, idx) {
+      var a = assets.get(it.aid) || {};
+      var row = document.createElement("button");
+      row.className = "layer" + (it.id === selectedId ? " sel" : "");
+      var th = document.createElement("img");
+      th.src = a.src || "";
+      row.appendChild(th);
+      var m = document.createElement("span");
+      m.className = "meta";
+      var span = slideSpan(it);
+      m.textContent = (a.name ? a.name.replace(/\.[^.]+$/, "") : "photo") +
+                      "  ·  " + (span[0] === span[1] ? "slide " + span[0] : "slides " + span[0] + "–" + span[1]);
+      row.appendChild(m);
+      if (it.lock) {
+        var lk = document.createElement("span");
+        lk.className = "lockmark";
+        lk.textContent = "■";
+        row.appendChild(lk);
+      }
+      row.onclick = function () { selectItem(it.id); };
+      box.appendChild(row);
+    })(state.items[i], i);
+  }
+}
+
+function slideSpan(it) {
+  var a = clamp(Math.floor(it.x / SW()) + 1, 1, state.slides);
+  var b = clamp(Math.ceil((it.x + it.w) / SW()), 1, state.slides);
+  return [a, Math.max(a, b)];
+}
+
+/* ---- slide-by-slide rail + phone preview share this renderer ---- */
+
+function stripClone(scale) {
+  var wrap = document.createElement("div");
+  wrap.className = "inner";
+  wrap.style.width = stripW() + "px";
+  wrap.style.height = SH() + "px";
+  wrap.style.transform = "scale(" + scale + ")";
+  wrap.style.background = state.bg;
+  state.items.forEach(function (it) {
+    var a = assets.get(it.aid);
+    if (!a) return;
+    var g = fitGeom(it, a.w, a.h);
+    var d = document.createElement("div");
+    d.style.cssText =
+      "position:absolute;overflow:hidden;left:" + it.x + "px;top:" + it.y + "px;width:" + it.w + "px;height:" + it.h +
+      "px;transform:rotate(" + it.rot + "deg) scale(" + (it.flipH ? -1 : 1) + "," + (it.flipV ? -1 : 1) +
+      ");opacity:" + (it.op / 100) + ";";
+    var im = document.createElement("img");
+    im.src = a.src;
+    im.draggable = false;
+    im.style.cssText = "position:absolute;display:block;left:" + g.dx + "px;top:" + g.dy +
+      "px;width:" + g.dw + "px;height:" + g.dh + "px";
+    d.appendChild(im);
+    wrap.appendChild(d);
+  });
+  return wrap;
+}
+
+function renderThumbs() {
+  var host = $("slides");
+  host.textContent = "";
+  host.style.gap = state.gutter + "px";
+  var H = 132;
+  var k = Math.min(H / SH(), 200 / SW());
+  for (var i = 0; i < state.slides; i++) {
+    (function (i) {
+      var card = document.createElement("div");
+      card.className = "slide-card";
+      var th = document.createElement("div");
+      th.className = "slide-thumb";
+      th.style.width = Math.round(SW() * k) + "px";
+      th.style.height = H + "px";
+      var inner = stripClone(k);
+      inner.style.left = Math.round(-i * SW() * k) + "px";
+      th.appendChild(inner);
+      th.onclick = function () { scrollToSlide(i); };
+      var cap = document.createElement("div");
+      cap.className = "slide-cap";
+      cap.textContent = i + 1;
+      card.appendChild(th);
+      card.appendChild(cap);
+      host.appendChild(card);
+    })(i);
+  }
+  $("railNote").textContent = SW() + " × " + SH() + " px each";
+}
+
+function scrollToSlide(i) {
+  var target = (i * SW() + SW() / 2) * zoom - viewport.clientWidth / 2;
+  viewport.scrollTo({ left: target, behavior: "smooth" });
+}
+
+function toast(msg) {
+  var t = $("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(t._t);
+  t._t = setTimeout(function () { t.classList.remove("show"); }, 1900);
+}
+
+/* ============================================================
+   Selection + property panel
+   ============================================================ */
+
+function selectItem(id) {
+  selectedId = id;
+  renderFrame();
+  renderLayers();
+  syncSelPanel();
+}
+
+function syncSelPanel() {
+  var it = sel();
+  $("selPanel").style.display = it ? "block" : "none";
+  $("selEmpty").style.display = it ? "none" : "block";
+  if (!it) return;
+  $("inX").value = Math.round(it.x);
+  $("inY").value = Math.round(it.y);
+  $("inW").value = Math.round(it.w);
+  $("inH").value = Math.round(it.h);
+  $("inR").value = Math.round(it.rot);
+  $("inO").value = Math.round(it.op);
+  $("btnLock").textContent = it.lock ? "Unlock" : "Lock";
+  $("inFit").value = it.fit || "cover";
+  $("inZoom").value = Math.round((it.zoom || 1) * 100);
+  $("inZoomVal").textContent = Math.round((it.zoom || 1) * 100) + "%";
+  $("inOX").value = pct(it.ox);
+  $("inOY").value = pct(it.oy);
+  updateCropSliders();
+  var span = slideSpan(it);
+  fillSlideSelect($("spanFrom"), span[0]);
+  fillSlideSelect($("spanTo"), span[1]);
+}
+
+// A crop axis is only adjustable when the photo actually overflows on it.
+function updateCropSliders() {
+  var it = sel(); if (!it) return;
+  var ov = overflowOf(it);
+  $("inOX").disabled = ov.x < 1;
+  $("inOY").disabled = ov.y < 1;
+}
+
+function fillSlideSelect(selEl, value) {
+  selEl.textContent = "";
+  for (var i = 1; i <= state.slides; i++) {
+    var o = document.createElement("option");
+    o.value = String(i);
+    o.textContent = "Slide " + i;
+    selEl.appendChild(o);
+  }
+  selEl.value = String(clamp(value, 1, state.slides));
+}
+
+function syncControls() {
+  $("slideCount").value = state.slides;
+  $("ratio").value = state.ratio;
+  $("bgColor").value = state.bg;
+  $("gutter").value = state.gutter;
+}
+
+/* How much bigger than its frame the photo renders — i.e. how much crop there is to move. */
+function overflowOf(it) {
+  var a = assets.get(it.aid);
+  if (!a) return { x: 0, y: 0 };
+  var g = fitGeom(it, a.w, a.h);
+  return { x: g.dw - it.w, y: g.dh - it.h };
+}
+
+/* ============================================================
+   Pointer interaction: move / resize / rotate / pan
+   ============================================================ */
+
+function toStrip(e) {
+  var r = strip.getBoundingClientRect();
+  return { x: (e.clientX - r.left) / zoom, y: (e.clientY - r.top) / zoom };
+}
+function rot2(px, py, deg) {
+  var a = deg * Math.PI / 180, c = Math.cos(a), s = Math.sin(a);
+  return { x: px * c - py * s, y: px * s + py * c };
+}
+
+var drag = null;
+var thumbThrottle = 0;
+function liveUpdate() {
+  var now = Date.now();
+  if (now - thumbThrottle > 160) { thumbThrottle = now; renderThumbs(); }
+}
+
+strip.addEventListener("pointerdown", function (e) {
+  if (e.button === 1 || spaceDown) { startPan(e); return; }
+  if (e.button !== 0) return;
+
+  var h = e.target.closest(".handle");
+  if (h && sel()) {
+    e.preventDefault();
+    pushUndo();
+    var it = sel();
+    drag = {
+      mode: h.dataset.h === "rot" ? "rotate" : "resize",
+      handle: h.dataset.h,
+      it: it,
+      start: { x: it.x, y: it.y, w: it.w, h: it.h, rot: it.rot },
+      cx: it.x + it.w / 2, cy: it.y + it.h / 2,
+      p0: toStrip(e)
+    };
+    drag.a0 = Math.atan2(drag.p0.y - drag.cy, drag.p0.x - drag.cx) * 180 / Math.PI;
+    strip.setPointerCapture(e.pointerId);
+    return;
+  }
+
+  var el = e.target.closest(".item");
+  if (el) {
+    var item = byId(el.dataset.id);
+    if (!item) return;
+    selectItem(item.id);
+    if (item.lock) return;
+    e.preventDefault();
+    pushUndo();
+    if (e.altKey) {
+      var ov = overflowOf(item);
+      drag = {
+        mode: "crop", it: item, p0: toStrip(e),
+        start: { ox: item.ox == null ? 0.5 : item.ox, oy: item.oy == null ? 0.5 : item.oy },
+        ovX: ov.x, ovY: ov.y
+      };
+    } else {
+      drag = { mode: "move", it: item, start: { x: item.x, y: item.y }, p0: toStrip(e) };
+    }
+    strip.setPointerCapture(e.pointerId);
+  } else {
+    selectItem(null);
+  }
+});
+
+strip.addEventListener("pointermove", function (e) {
+  if (!drag) return;
+  var p = toStrip(e);
+  var it = drag.it;
+
+  if (drag.mode === "crop") {
+    if (drag.ovX > 1) it.ox = clamp(drag.start.ox - (p.x - drag.p0.x) / drag.ovX, 0, 1);
+    if (drag.ovY > 1) it.oy = clamp(drag.start.oy - (p.y - drag.p0.y) / drag.ovY, 0, 1);
+    paintItem(it);
+    liveUpdate();
+    return;
+  }
+
+  if (drag.mode === "move") {
+    var nx = drag.start.x + (p.x - drag.p0.x);
+    var ny = drag.start.y + (p.y - drag.p0.y);
+    if (!e.metaKey && !e.ctrlKey && $("optSnap").checked && it.rot === 0) {
+      var s = snapMove(it, nx, ny);
+      nx = s.x; ny = s.y;
+      showGuides(s.guides);
+    } else clearGuides();
+    it.x = nx; it.y = ny;
+
+  } else if (drag.mode === "rotate") {
+    var a = Math.atan2(p.y - drag.cy, p.x - drag.cx) * 180 / Math.PI;
+    var r = drag.start.rot + (a - drag.a0);
+    if (e.shiftKey) r = Math.round(r / 15) * 15;
+    it.rot = Math.round(r * 10) / 10;
+
+  } else if (drag.mode === "resize") {
+    resizeTo(drag, p, e.shiftKey);
+  }
+
+  paintItem(it);
+  liveUpdate();
+});
+
+function endDrag(e) {
+  if (!drag) return;
+  var it = drag.it;
+  it.x = Math.round(it.x); it.y = Math.round(it.y);
+  it.w = Math.round(it.w); it.h = Math.round(it.h);
+  drag = null;
+  clearGuides();
+  paintItem(it);
+  renderThumbs();
+  renderLayers();
+  syncSelPanel();
+  saveSoon();
+}
+strip.addEventListener("pointerup", endDrag);
+strip.addEventListener("pointercancel", endDrag);
+
+function resizeTo(d, p, shift) {
+  var it = d.it, s = d.start;
+  var MIN = 24;
+  var rel = { x: p.x - d.cx, y: p.y - d.cy };
+  var loc = rot2(rel.x, rel.y, -s.rot);        // pointer in the item's own frame
+  var hw = s.w / 2, hh = s.h / 2;
+  var H = d.handle;
+  var fx = 0, fy = 0, nw = s.w, nh = s.h;
+  var hasX = /w|e/.test(H) && H !== "n" && H !== "s";
+  var hasY = /n|s/.test(H) && H !== "e" && H !== "w";
+  var corner = H.length === 2;
+
+  if (H.indexOf("w") > -1) fx = hw; else if (H.indexOf("e") > -1) fx = -hw;
+  if (H.indexOf("n") > -1) fy = hh; else if (H.indexOf("s") > -1) fy = -hh;
+
+  if (hasX) nw = Math.max(MIN, Math.abs(loc.x - fx));
+  if (hasY) nh = Math.max(MIN, Math.abs(loc.y - fy));
+
+  if (corner && !shift) {                      // keep the photo's proportions
+    var k = Math.max(nw / s.w, nh / s.h);
+    nw = Math.max(MIN, s.w * k);
+    nh = Math.max(MIN, s.h * k);
+  }
+
+  var dirX = fx > 0 ? -1 : 1, dirY = fy > 0 ? -1 : 1;
+  var mx = hasX ? fx + dirX * nw : 0;
+  var my = hasY ? fy + dirY * nh : 0;
+  var lc = { x: hasX ? (fx + mx) / 2 : 0, y: hasY ? (fy + my) / 2 : 0 };
+  var wc = rot2(lc.x, lc.y, s.rot);
+  var cx = d.cx + wc.x, cy = d.cy + wc.y;
+
+  it.w = nw; it.h = nh;
+  it.x = cx - nw / 2; it.y = cy - nh / 2;
+
+  // snap straight edges to slide boundaries when proportions are free
+  if (s.rot === 0 && $("optSnap").checked && (!corner || shift)) {
+    var t = 9 / zoom;
+    var xs = xTargets(it.id), ys = yTargets(it.id), g = [];
+    if (hasX) {
+      var edgeX = H.indexOf("w") > -1 ? it.x : it.x + it.w;
+      var bx = nearest(edgeX, xs, t);
+      if (bx !== null) {
+        if (H.indexOf("w") > -1) { it.w += it.x - bx; it.x = bx; } else { it.w = bx - it.x; }
+        g.push({ v: true, at: bx });
+      }
+    }
+    if (hasY) {
+      var edgeY = H.indexOf("n") > -1 ? it.y : it.y + it.h;
+      var by = nearest(edgeY, ys, t);
+      if (by !== null) {
+        if (H.indexOf("n") > -1) { it.h += it.y - by; it.y = by; } else { it.h = by - it.y; }
+        g.push({ v: false, at: by });
+      }
+    }
+    showGuides(g);
+  }
+}
+
+/* ---- snapping ---- */
+
+function xTargets(skipId) {
+  var t = [];
+  for (var i = 0; i <= state.slides; i++) { t.push(i * SW()); if (i < state.slides) t.push(i * SW() + SW() / 2); }
+  state.items.forEach(function (o) {
+    if (o.id === skipId || o.rot !== 0) return;
+    t.push(o.x, o.x + o.w / 2, o.x + o.w);
+  });
+  return t;
+}
+function yTargets(skipId) {
+  var t = [0, SH() / 2, SH()];
+  state.items.forEach(function (o) {
+    if (o.id === skipId || o.rot !== 0) return;
+    t.push(o.y, o.y + o.h / 2, o.y + o.h);
+  });
+  return t;
+}
+function nearest(v, list, tol) {
+  var best = null, bd = tol;
+  for (var i = 0; i < list.length; i++) {
+    var d = Math.abs(list[i] - v);
+    if (d <= bd) { bd = d; best = list[i]; }
+  }
+  return best;
+}
+function snapMove(it, nx, ny) {
+  var tol = 9 / zoom;
+  var xs = xTargets(it.id), ys = yTargets(it.id);
+  var guides = [];
+  var cands = [[nx, 0], [nx + it.w / 2, it.w / 2], [nx + it.w, it.w]];
+  var bestX = null, bdX = tol;
+  cands.forEach(function (c) {
+    var m = nearest(c[0], xs, tol);
+    if (m !== null && Math.abs(m - c[0]) <= bdX) { bdX = Math.abs(m - c[0]); bestX = m - c[1]; guides.x = m; }
+  });
+  if (bestX !== null) nx = bestX; else delete guides.x;
+
+  var candsY = [[ny, 0], [ny + it.h / 2, it.h / 2], [ny + it.h, it.h]];
+  var bestY = null, bdY = tol;
+  candsY.forEach(function (c) {
+    var m = nearest(c[0], ys, tol);
+    if (m !== null && Math.abs(m - c[0]) <= bdY) { bdY = Math.abs(m - c[0]); bestY = m - c[1]; guides.y = m; }
+  });
+  if (bestY !== null) ny = bestY;
+
+  var out = [];
+  if (guides.x !== undefined) out.push({ v: true, at: guides.x });
+  if (guides.y !== undefined) out.push({ v: false, at: guides.y });
+  return { x: nx, y: ny, guides: out };
+}
+function clearGuides() {
+  Array.prototype.slice.call(strip.querySelectorAll(".guide")).forEach(function (n) { n.remove(); });
+}
+function showGuides(list) {
+  clearGuides();
+  (list || []).forEach(function (g) {
+    var d = document.createElement("div");
+    d.className = "guide";
+    if (g.v) {
+      d.style.left = g.at + "px"; d.style.top = "0"; d.style.height = SH() + "px";
+      d.style.width = (1.5 / zoom) + "px";
+    } else {
+      d.style.top = g.at + "px"; d.style.left = "0"; d.style.width = stripW() + "px";
+      d.style.height = (1.5 / zoom) + "px";
+    }
+    strip.appendChild(d);
+  });
+}
+
+/* ---- panning ---- */
+function startPan(e) {
+  e.preventDefault();
+  var sx = viewport.scrollLeft, sy = viewport.scrollTop, x0 = e.clientX, y0 = e.clientY;
+  viewport.classList.add("panning");
+  function mv(ev) {
+    viewport.scrollLeft = sx - (ev.clientX - x0);
+    viewport.scrollTop = sy - (ev.clientY - y0);
+  }
+  function up() {
+    viewport.classList.remove("panning");
+    window.removeEventListener("pointermove", mv);
+    window.removeEventListener("pointerup", up);
+  }
+  window.addEventListener("pointermove", mv);
+  window.addEventListener("pointerup", up);
+}
+
+viewport.addEventListener("wheel", function (e) {
+  if (e.ctrlKey || e.metaKey) {
+    e.preventDefault();
+    userZoomed = true;
+    var r = strip.getBoundingClientRect();
+    var ax = (e.clientX - r.left) / zoom, ay = (e.clientY - r.top) / zoom;
+    var z = clamp(zoom * (1 - e.deltaY * 0.0025), 0.03, 2);
+    zoom = z;
+    layoutStrip();
+    $("zoomLabel").textContent = Math.round(zoom * 100) + "%";
+    var r2 = strip.getBoundingClientRect();
+    viewport.scrollLeft += (ax * zoom + r2.left) - e.clientX;
+    viewport.scrollTop += (ay * zoom + r2.top) - e.clientY;
+  }
+}, { passive: false });
+
+/* ============================================================
+   Keyboard
+   ============================================================ */
+
+function typing(e) {
+  var n = e.target;
+  return n && (n.tagName === "INPUT" || n.tagName === "TEXTAREA" || n.tagName === "SELECT");
+}
+
+window.addEventListener("keydown", function (e) {
+  if (e.code === "Space" && !typing(e)) { spaceDown = true; }
+  var mod = e.metaKey || e.ctrlKey;
+
+  if (mod && e.key.toLowerCase() === "z") {
+    if (typing(e)) return;
+    e.preventDefault();
+    e.shiftKey ? redo() : undo();
+    return;
+  }
+  if (typing(e)) return;
+
+  var it = sel();
+  if (mod && e.key.toLowerCase() === "d" && it) { e.preventDefault(); duplicate(); return; }
+  if (mod && e.key === "]" && it) { e.preventDefault(); reorder(1); return; }
+  if (mod && e.key === "[" && it) { e.preventDefault(); reorder(-1); return; }
+
+  if (e.key === "Escape") { selectItem(null); closeModals(); return; }
+  if ((e.key === "Delete" || e.key === "Backspace") && it) { e.preventDefault(); removeItem(it.id); return; }
+
+  if (it && !it.lock && /^Arrow/.test(e.key)) {
+    e.preventDefault();
+    var step = e.shiftKey ? 10 : 1;
+    pushUndo();
+    if (e.key === "ArrowLeft") it.x -= step;
+    if (e.key === "ArrowRight") it.x += step;
+    if (e.key === "ArrowUp") it.y -= step;
+    if (e.key === "ArrowDown") it.y += step;
+    paintItem(it); syncSelPanel(); renderThumbs(); saveSoon();
+  }
+});
+window.addEventListener("keyup", function (e) { if (e.code === "Space") spaceDown = false; });
+
+window.addEventListener("paste", function (e) {
+  if (!e.clipboardData) return;
+  var files = [];
+  Array.prototype.slice.call(e.clipboardData.items).forEach(function (i) {
+    if (i.kind === "file" && /^image\//.test(i.type)) files.push(i.getAsFile());
+  });
+  if (files.length) { e.preventDefault(); addFiles(files, null); }
+});
+
+/* ============================================================
+   Item operations
+   ============================================================ */
+
+function duplicate() {
+  var it = sel(); if (!it) return;
+  pushUndo();
+  var c = JSON.parse(JSON.stringify(it));
+  c.id = uid(); c.x += 40; c.y += 40; c.lock = false;
+  state.items.push(c);
+  render(); selectItem(c.id); saveSoon();
+}
+function removeItem(id) {
+  pushUndo();
+  state.items = state.items.filter(function (o) { return o.id !== id; });
+  if (selectedId === id) selectedId = null;
+  render(); saveSoon();
+}
+function reorder(dir) {
+  var it = sel(); if (!it) return;
+  var i = state.items.indexOf(it), j = clamp(i + dir, 0, state.items.length - 1);
+  if (i === j) return;
+  pushUndo();
+  state.items.splice(i, 1);
+  state.items.splice(j, 0, it);
+  render(); saveSoon();
+}
+function coverBox(bx, bw) {
+  var it = sel(); if (!it) return;
+  pushUndo();
+  it.x = Math.round(bx); it.y = 0;
+  it.w = Math.round(bw); it.h = SH();
+  it.rot = 0;
+  it.fit = "cover";
+  render(); saveSoon();
+}
+
+/* ============================================================
+   Controls
+   ============================================================ */
+
+$("btnAdd").onclick = function () { $("filePick").click(); };
+$("filePick").onchange = function (e) { addFiles(e.target.files, null); e.target.value = ""; };
+
+$("slideCount").onchange = function (e) {
+  var n = clamp(parseInt(e.target.value, 10) || 2, 2, 20);
+  e.target.value = n;
+  pushUndo();
+  state.slides = n;
+  render(); saveSoon();
+};
+
+$("ratio").onchange = function (e) {
+  var oldH = SH();
+  pushUndo();
+  state.ratio = e.target.value;
+  var k = SH() / oldH;
+  state.items.forEach(function (it) {          // keep the composition proportional
+    it.y = Math.round(it.y * k);
+    it.h = Math.round(it.h * k);
+  });
+  render(); fitToWindow(); saveSoon();
+};
+
+$("bgColor").oninput = function (e) { state.bg = e.target.value; layoutStrip(); renderThumbs(); saveSoon(); };
+$("gutter").oninput = function (e) {
+  state.gutter = clamp(parseInt(e.target.value, 10) || 0, 0, 80);
+  $("slides").style.gap = state.gutter + "px";
+  saveSoon();
+};
+$("optSafe").onchange = renderChrome;
+
+$("btnZoomIn").onclick = function () { userZoomed = true; setZoom(zoom * 1.25); };
+$("btnZoomOut").onclick = function () { userZoomed = true; setZoom(zoom / 1.25); };
+$("btnFit").onclick = fitToWindow;
+
+["inX", "inY", "inW", "inH", "inR", "inO"].forEach(function (id) {
+  $(id).onchange = function () {
+    var it = sel(); if (!it) return;
+    pushUndo();
+    var v = parseFloat($(id).value) || 0;
+    if (id === "inX") it.x = v;
+    if (id === "inY") it.y = v;
+    if (id === "inW") it.w = Math.max(24, v);
+    if (id === "inH") it.h = Math.max(24, v);
+    if (id === "inR") it.rot = v;
+    if (id === "inO") it.op = clamp(v, 0, 100);
+    paintItem(it); renderThumbs(); renderLayers(); syncSelPanel(); saveSoon();
+  };
+});
+
+$("btnFitSlide").onclick = function () {
+  var it = sel(); if (!it) return;
+  var s = clamp(Math.round((it.x + it.w / 2) / SW() - 0.5), 0, state.slides - 1);
+  coverBox(s * SW(), SW());
+};
+$("btnFitStrip").onclick = function () { coverBox(0, stripW()); };
+$("btnSpan").onclick = function () {
+  var a = parseInt($("spanFrom").value, 10), b = parseInt($("spanTo").value, 10);
+  if (b < a) { var t = a; a = b; b = t; }
+  coverBox((a - 1) * SW(), (b - a + 1) * SW());
+};
+$("btnFlipH").onclick = function () { var it = sel(); if (!it) return; pushUndo(); it.flipH = !it.flipH; paintItem(it); renderThumbs(); saveSoon(); };
+$("btnFlipV").onclick = function () { var it = sel(); if (!it) return; pushUndo(); it.flipV = !it.flipV; paintItem(it); renderThumbs(); saveSoon(); };
+$("btnShape").onclick = function () {
+  var it = sel(); if (!it) return;
+  var a = assets.get(it.aid); if (!a) return;
+  pushUndo();
+  var k = Math.sqrt((it.w * it.h) / (a.w * a.h));   // same area, the photo's own proportions
+  var cx = it.x + it.w / 2, cy = it.y + it.h / 2;
+  it.w = Math.round(a.w * k); it.h = Math.round(a.h * k);
+  it.x = Math.round(cx - it.w / 2); it.y = Math.round(cy - it.h / 2);
+  paintItem(it); syncSelPanel(); renderThumbs(); saveSoon();
+};
+$("inFit").onchange = function () {
+  var it = sel(); if (!it) return;
+  pushUndo(); it.fit = $("inFit").value;
+  paintItem(it); syncSelPanel(); renderThumbs(); saveSoon();
+};
+["inOX", "inOY"].forEach(function (id) {
+  $(id).oninput = function () {
+    var it = sel(); if (!it) return;
+    it[id === "inOX" ? "ox" : "oy"] = parseInt($(id).value, 10) / 100;
+    paintItem(it); liveUpdate(); saveSoon();
+  };
+  $(id).onchange = renderThumbs;
+});
+
+$("inZoom").oninput = function () {
+  var it = sel(); if (!it) return;
+  it.zoom = parseInt($("inZoom").value, 10) / 100;
+  $("inZoomVal").textContent = Math.round(it.zoom * 100) + "%";
+  updateCropSliders();
+  paintItem(it); liveUpdate(); saveSoon();
+};
+$("inZoom").onchange = function () { syncSelPanel(); renderThumbs(); };
+
+// One undo step per slider drag, rather than one per pixel of travel.
+["inOX", "inOY", "inZoom"].forEach(function (id) {
+  $(id).addEventListener("pointerdown", function () { if (sel()) pushUndo(); });
+});
+
+$("btnBack").onclick = function () { reorder(-1); };
+$("btnFront").onclick = function () { reorder(1); };
+$("btnDup").onclick = duplicate;
+$("btnDel").onclick = function () { var it = sel(); if (it) removeItem(it.id); };
+$("btnLock").onclick = function () {
+  var it = sel(); if (!it) return;
+  pushUndo(); it.lock = !it.lock;
+  paintItem(it); renderFrame(); renderLayers(); syncSelPanel(); saveSoon();
+};
+
+$("btnAuto").onclick = function () {
+  if (!state.items.length) return;
+  pushUndo();
+  state.items.forEach(function (it, i) {
+    var s = i % state.slides;
+    it.x = s * SW(); it.y = 0;
+    it.w = SW(); it.h = SH();
+    it.rot = 0; it.fit = "cover";
+  });
+  render(); saveSoon();
+  toast("One photo per slide");
+};
+
+$("btnClear").onclick = function () {
+  if (!state.items.length) return;
+  if (!confirm("Remove all photos from this carousel?")) return;
+  pushUndo();
+  state.items = [];
+  selectedId = null;
+  render(); saveSoon();
+};
+
+/* ---- drag & drop ---- */
+var dragDepth = 0;
+viewport.addEventListener("dragenter", function (e) { e.preventDefault(); dragDepth++; $("dropVeil").classList.add("on"); });
+viewport.addEventListener("dragover", function (e) { e.preventDefault(); e.dataTransfer.dropEffect = "copy"; });
+viewport.addEventListener("dragleave", function () { if (--dragDepth <= 0) { dragDepth = 0; $("dropVeil").classList.remove("on"); } });
+viewport.addEventListener("drop", function (e) {
+  e.preventDefault();
+  dragDepth = 0;
+  $("dropVeil").classList.remove("on");
+  if (e.dataTransfer && e.dataTransfer.files.length) addFiles(e.dataTransfer.files, toStrip(e));
+});
+
+/* ============================================================
+   Swipe preview
+   ============================================================ */
+
+function closeModals() {
+  $("previewModal").classList.remove("open");
+  $("exportModal").classList.remove("open");
+}
+$("closePreview").onclick = closeModals;
+$("closeExport").onclick = closeModals;
+[$("previewModal"), $("exportModal")].forEach(function (m) {
+  m.addEventListener("pointerdown", function (e) { if (e.target === m) closeModals(); });
+});
+
+$("btnPreview").onclick = function () {
+  var vh = Math.max(360, document.documentElement.clientHeight || window.innerHeight || 720);
+  var Wp = 300;
+  var Hp = Math.round(Wp * SH() / SW());
+  var maxH = Math.round(vh * 0.58);
+  if (Hp > maxH) { Wp = Math.max(160, Math.round(Wp * maxH / Hp)); Hp = Math.round(Wp * SH() / SW()); }
+  var k = Wp / SW();
+
+  var phone = $("phone");
+  phone.style.width = Wp + "px";
+  phone.style.height = Hp + "px";
+
+  var sw = $("swiper");
+  sw.textContent = "";
+  for (var i = 0; i < state.slides; i++) {
+    var pane = document.createElement("div");
+    pane.className = "pane";
+    pane.style.width = Wp + "px";
+    pane.style.height = Hp + "px";
+    var inner = stripClone(k);
+    inner.style.left = Math.round(-i * SW() * k) + "px";
+    pane.appendChild(inner);
+    sw.appendChild(pane);
+  }
+
+  var dots = $("dots");
+  dots.textContent = "";
+  for (var j = 0; j < state.slides; j++) dots.appendChild(document.createElement("i"));
+
+  $("previewModal").classList.add("open");
+  sw.scrollLeft = 0;
+  markDot(0);
+  sw.onscroll = function () { markDot(Math.round(sw.scrollLeft / Wp)); };
+  $("prevSlide").onclick = function () { sw.scrollBy({ left: -Wp, behavior: "smooth" }); };
+  $("nextSlide").onclick = function () { sw.scrollBy({ left: Wp, behavior: "smooth" }); };
+};
+
+function markDot(i) {
+  var dots = $("dots").children;
+  for (var k = 0; k < dots.length; k++) dots[k].classList.toggle("on", k === i);
+  $("phoneLabel").textContent = (i + 1) + " / " + state.slides;
+}
+
+/* ============================================================
+   Export
+   ============================================================ */
+
+function renderSlide(i) {
+  var c = document.createElement("canvas");
+  c.width = SW(); c.height = SH();
+  var x = c.getContext("2d");
+  x.imageSmoothingQuality = "high";
+  x.fillStyle = state.bg;
+  x.fillRect(0, 0, c.width, c.height);
+  state.items.forEach(function (it) {
+    var im = imgs.get(it.aid);
+    if (!im) return;
+    var g = fitGeom(it, im.naturalWidth, im.naturalHeight);
+
+    x.save();
+    x.globalAlpha = it.op / 100;
+    x.translate(it.x + it.w / 2 - i * SW(), it.y + it.h / 2);
+    x.rotate(it.rot * Math.PI / 180);
+    x.beginPath();
+    x.rect(-it.w / 2, -it.h / 2, it.w, it.h);
+    x.clip();
+    x.scale(it.flipH ? -1 : 1, it.flipV ? -1 : 1);
+    x.drawImage(im, -it.w / 2 + g.dx, -it.h / 2 + g.dy, g.dw, g.dh);
+    x.restore();
+  });
+  return c;
+}
+
+function slideBlob(i) {
+  var fmt = $("expFormat").value;
+  var q = parseInt($("expQuality").value, 10) / 100;
+  return new Promise(function (resolve) {
+    renderSlide(i).toBlob(function (b) { resolve(b); }, fmt === "png" ? "image/png" : "image/jpeg", q);
+  });
+}
+function slideName(i) {
+  var base = ($("expName").value || "carousel").replace(/[^\w\-]+/g, "-");
+  var n = String(i + 1).padStart(2, "0");
+  return base + "-" + n + ($("expFormat").value === "png" ? ".png" : ".jpg");
+}
+function download(blob, name) {
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement("a");
+  a.href = url; a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+}
+
+$("expQuality").oninput = function () { $("expQualityVal").textContent = $("expQuality").value; };
+$("expFormat").onchange = function () {
+  $("expQuality").parentNode.style.opacity = $("expFormat").value === "png" ? ".4" : "1";
+  buildExportList();
+};
+$("expName").onchange = buildExportList;
+
+function buildExportList() {
+  var list = $("expList");
+  list.textContent = "";
+  for (var i = 0; i < state.slides; i++) {
+    (function (i) {
+      var row = document.createElement("div");
+      row.className = "exp-row";
+      var th = document.createElement("img");
+      th.src = renderSlide(i).toDataURL("image/jpeg", 0.5);
+      row.appendChild(th);
+      var nm = document.createElement("span");
+      nm.className = "nm";
+      nm.textContent = slideName(i);
+      row.appendChild(nm);
+      var b = document.createElement("button");
+      b.className = "ghost";
+      b.textContent = "Download";
+      b.onclick = function () { slideBlob(i).then(function (bl) { download(bl, slideName(i)); }); };
+      row.appendChild(b);
+      list.appendChild(row);
+    })(i);
+  }
+}
+
+$("btnExport").onclick = function () {
+  if (!state.items.length) { toast("Add some photos first"); return; }
+  $("exportSub").textContent =
+    state.slides + " slides at " + SW() + " × " + SH() + " px, in posting order.";
+  buildExportList();
+  $("exportModal").classList.add("open");
+};
+
+$("btnExportZip").onclick = function () {
+  var btn = $("btnExportZip");
+  btn.disabled = true;
+  btn.textContent = "Rendering…";
+  var files = [];
+  var chain = Promise.resolve();
+  for (var i = 0; i < state.slides; i++) {
+    (function (i) {
+      chain = chain.then(function () {
+        return slideBlob(i)
+          .then(function (b) { return b.arrayBuffer(); })
+          .then(function (buf) { files.push({ name: slideName(i), data: new Uint8Array(buf) }); });
+      });
+    })(i);
+  }
+  chain.then(function () {
+    var base = ($("expName").value || "carousel").replace(/[^\w\-]+/g, "-");
+    download(zipStore(files), base + "-slides.zip");
+    btn.disabled = false;
+    btn.textContent = "Download all (.zip)";
+    toast("Exported " + files.length + " slides");
+  }).catch(function (e) {
+    console.error(e);
+    btn.disabled = false;
+    btn.textContent = "Download all (.zip)";
+    toast("Export failed");
+  });
+};
+
+/* ---- minimal store-only ZIP writer (JPEG/PNG don't compress further) ---- */
+
+var CRC_TABLE = (function () {
+  var t = new Uint32Array(256);
+  for (var n = 0; n < 256; n++) {
+    var c = n;
+    for (var k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+    t[n] = c >>> 0;
+  }
+  return t;
+})();
+function crc32(buf) {
+  var c = 0xFFFFFFFF;
+  for (var i = 0; i < buf.length; i++) c = CRC_TABLE[(c ^ buf[i]) & 0xFF] ^ (c >>> 8);
+  return (c ^ 0xFFFFFFFF) >>> 0;
+}
+function zipStore(files) {
+  var enc = new TextEncoder();
+  var chunks = [], central = [], offset = 0;
+
+  function u16(v) { return [v & 255, (v >> 8) & 255]; }
+  function u32(v) { return [v & 255, (v >>> 8) & 255, (v >>> 16) & 255, (v >>> 24) & 255]; }
+  var DOS_DATE = (1 << 5) | 1;   // 1980-01-01, the earliest date the format allows
+
+  files.forEach(function (f) {
+    var nameBytes = enc.encode(f.name);
+    var crc = crc32(f.data);
+    var local = [].concat(
+      u32(0x04034b50), u16(20), u16(0), u16(0), u16(0), u16(DOS_DATE),
+      u32(crc), u32(f.data.length), u32(f.data.length),
+      u16(nameBytes.length), u16(0)
+    );
+    chunks.push(new Uint8Array(local), nameBytes, f.data);
+    central.push({ name: nameBytes, crc: crc, size: f.data.length, offset: offset });
+    offset += local.length + nameBytes.length + f.data.length;
+  });
+
+  var cdStart = offset, cdSize = 0;
+  central.forEach(function (e) {
+    var head = [].concat(
+      u32(0x02014b50), u16(20), u16(20), u16(0), u16(0), u16(0), u16(DOS_DATE),
+      u32(e.crc), u32(e.size), u32(e.size),
+      u16(e.name.length), u16(0), u16(0), u16(0), u16(0), u32(0), u32(e.offset)
+    );
+    chunks.push(new Uint8Array(head), e.name);
+    cdSize += head.length + e.name.length;
+  });
+
+  chunks.push(new Uint8Array([].concat(
+    u32(0x06054b50), u16(0), u16(0),
+    u16(central.length), u16(central.length),
+    u32(cdSize), u32(cdStart), u16(0)
+  )));
+
+  return new Blob(chunks, { type: "application/zip" });
+}
+
+/* ============================================================
+   Boot
+   ============================================================ */
+
+var restoreLostPhotos = false;
+
+function restore() {
+  var raw = null;
+  try { raw = localStorage.getItem(LS_KEY); } catch (e) {}
+  if (!raw) return Promise.resolve();
+  var saved;
+  try { saved = JSON.parse(raw); } catch (e) { return Promise.resolve(); }
+
+  return dbAll().then(function (rows) {
+    var used = {};
+    (saved.items || []).forEach(function (it) { used[it.aid] = true; });
+    var jobs = [];
+    rows.forEach(function (a) {
+      if (used[a.id]) jobs.push(registerAsset(a));
+      else dbDelete(a.id);            // photo from an older session nobody is using
+    });
+    return Promise.all(jobs).then(function () {
+      state.slides = clamp(saved.slides || 4, 2, 20);
+      state.ratio = RATIOS[saved.ratio] ? saved.ratio : "4:5";
+      state.bg = saved.bg || "#111111";
+      state.gutter = saved.gutter != null ? saved.gutter : 14;
+      state.items = (saved.items || []).filter(function (it) { return assets.has(it.aid); });
+      if ((saved.items || []).length && !state.items.length) restoreLostPhotos = true;
+      state.items.forEach(function (it) {
+        if (!it.fit) it.fit = "cover";
+        if (it.ox == null) it.ox = 0.5;
+        if (it.oy == null) it.oy = 0.5;
+        if (!it.zoom) it.zoom = 1;
+      });
+    });
+  });
+}
+
+openDB()
+  .then(restore)
+  .catch(function (e) { console.error(e); })
+  .then(function () {
+    syncControls();
+    render();
+    requestAnimationFrame(function () { requestAnimationFrame(fitToWindow); });
+    if (state.items.length) toast("Restored your last carousel");
+    else if (restoreLostPhotos) toast("Your last layout was found, but this browser wouldn't keep the photos");
+  });
+
+var resizeTimer = null;
+window.addEventListener("resize", function () {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(function () {
+    renderThumbs();
+    if (!userZoomed) fitToWindow();
+  }, 120);
+});
+
+})();
+</script>
+</body>
+</html>
