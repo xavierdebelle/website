@@ -1,24 +1,13 @@
-# ---------------------------------------------------------------
-# NOT DEPLOYED — these carry client data and must stay off the web.
-# Kept locally so the tools still work from this folder.
-#   package-builder   : real pricing + studio inquiry address
-#   video-corrections : posts to a live CRM endpoint
-#   wedding-activities: Interac payment details + guest RSVP form
-# The repo is public, so anything committed is public forever.
-# Never remove these lines without deciding that deliberately.
-# ---------------------------------------------------------------
-tools/package-builder.html
-tools/video-corrections.html
-tools/wedding-activities.html
+# Every tool is published as of v5 — a deliberate decision, see CHANGELOG.
+#
+# The hiding mechanism is still in place and unused. To pull a tool back off
+# the public site: add its path here, run `git rm --cached <path>`, and mark
+# it `data-private` in tools.html (plus a trailing `,1` on its fact row in
+# index.html). Counts, categories and the text index all re-derive themselves.
+#
+# NOTE: adding a line here does NOT untrack an already-committed file.
 
-# Held back pending a decision: this page ships a Firebase config and talks
-# to a Realtime Database that answers unauthenticated reads (verified 200 on
-# GET /.json). It performs set/push/remove with no sign-in, so writes are
-# likely open too. Lock the database rules down first, then delete this line.
-tools/volley-bbq-zine.html
-
-# Local version archive — snapshots duplicate ~1.8MB each and contain
-# copies of the private tools above. Git is the shared history instead.
+# Local version archive — snapshots duplicate ~1.8MB each.
 versions/
 
 .DS_Store

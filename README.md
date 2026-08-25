@@ -19,9 +19,9 @@ browser tools I've built. Plain HTML/CSS/JS, no build step, no dependencies.
 
     python3 -m http.server 8899
 
-Then open http://localhost:8899. Served from `localhost` or opened as a
-file, every tool is visible. Served from anywhere else, three tools are
-hidden and their pages aren't deployed at all — see `.gitignore`.
+Then open http://localhost:8899. All 12 tools are published, so local and
+live show the same thing. The pages can still hide a tool from the public
+site if that's ever wanted again — see the note in `.gitignore`.
 
 ## Deploying
 

@@ -5,6 +5,28 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v5 — 2026-08-25
+
+**All tools public**
+- The four tools held back in v4 are now published: `package-builder`,
+  `video-corrections`, `wedding-activities` and `volley-bbq-zine`.
+  Deliberate call — the site is a complete hub again, 12 tools in five
+  categories, and Events is back on the map.
+- Verified first that none of them carry a real secret: no private keys, no
+  service-account credentials, no API tokens. The Firebase `apiKey` in the
+  zine is a public identifier; database *rules* are what protect that data.
+- Copy on the 404 page and in the README no longer claims some tools are
+  undeployed, because that stopped being true.
+- The hiding mechanism stays in place, unused, so a tool can be pulled back
+  off the public site in one line if that's ever wanted.
+
+**Still outstanding (unchanged by this release)**
+- The zine's Firebase Realtime Database answers unauthenticated reads and
+  very likely writes. Publishing the page widens who can find it.
+- `video-corrections` ships a live inbound CRM webhook URL, now public.
+
+---
+
 ## v4 — 2026-08-25
 
 **Going live**

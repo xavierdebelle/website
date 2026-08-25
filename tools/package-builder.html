@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>de Belle Photography — Package Builder</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&family=Montserrat:wght@200;300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --black: #000000;
+    --black2: #0d0d0d;
+    --black3: #1a1a1a;
+    --black4: #222222;
+    --mid: #383838;
+    --subtle: #585858;
+    --muted: #888888;
+    --light: #bbbbbb;
+    --white: #ffffff;
+    --gold: #ffffff;
+    --gold2: #aaaaaa;
+    --green: #7aab8a;
+    --line: rgba(255,255,255,0.12);
+    --line2: rgba(255,255,255,0.22);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { background: var(--black); color: var(--white); font-family: 'Montserrat', sans-serif; font-weight: 300; font-size: 13px; min-height: 100vh; -webkit-font-smoothing: antialiased; }
+  input[type=number]::-webkit-inner-spin-button,
+  input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
+  input[type=number] { -moz-appearance: textfield; }
+
+  /* NAV */
+  nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; display: flex; align-items: center; justify-content: center; padding: 22px 40px; background: linear-gradient(to bottom, rgba(0,0,0,0.98) 0%, rgba(0,0,0,0) 100%); }
+  .nav-logo { text-decoration: none; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .nav-logo-img { height: 70px; width: auto; display: block; filter: brightness(1); }
+  .nav-logo span { font-weight: 300; opacity: 0.45; font-size: 9px; font-style: normal; font-family: 'Montserrat', sans-serif; letter-spacing: 0.35em; text-transform: uppercase; display: block; color: var(--white); }
+
+  /* HEADER */
+  header { text-align: center; padding: 150px 40px 80px; position: relative; overflow: hidden; border-bottom: 1px solid var(--line); }
+  header::before { content: ''; position: absolute; inset: 0;  pointer-events: none; }
+  .header-eyebrow { font-size: 8.5px; letter-spacing: 0.45em; text-transform: uppercase; color: var(--gold); margin-bottom: 22px; font-weight: 400; opacity: 0.8; }
+  header h1 { font-family: 'Cormorant Garamond', serif; font-size: clamp(44px, 6vw, 76px); font-weight: 300; font-style: italic; color: var(--white); line-height: 1.05; margin-bottom: 22px; }
+  header h1 em { font-style: normal; font-weight: 400; }
+  header p { font-size: 10px; font-weight: 300; letter-spacing: 0.14em; color: var(--muted); max-width: 440px; margin: 0 auto; line-height: 2.2; text-transform: uppercase; }
+  .header-rule { width: 1px; height: 70px; background: linear-gradient(to bottom, transparent, rgba(255,255,255,0.25), transparent); margin: 30px auto 0; }
+
+  /* LAYOUT */
+  .builder-layout { display: grid; grid-template-columns: 1fr 370px; max-width: 1380px; margin: 0 auto; }
+  .builder-main { padding: 70px 65px 120px; border-right: 1px solid var(--line); }
+
+  /* SECTION */
+  .section { margin-bottom: 68px; opacity: 0; transform: translateY(18px); animation: fadeUp 0.55s ease forwards; }
+  .section:nth-child(1){animation-delay:.05s} .section:nth-child(2){animation-delay:.1s} .section:nth-child(3){animation-delay:.15s} .section:nth-child(4){animation-delay:.2s} .section:nth-child(5){animation-delay:.25s} .section:nth-child(6){animation-delay:.3s} .section:nth-child(7){animation-delay:.35s} .section:nth-child(8){animation-delay:.4s}
+  @keyframes fadeUp { to { opacity:1; transform:translateY(0); } }
+
+  .section-header { display: flex; align-items: center; gap: 18px; margin-bottom: 26px; padding-bottom: 18px; border-bottom: 1px solid var(--line); }
+  .section-num { font-family: 'Cormorant Garamond', serif; font-size: 13px; font-style: italic; color: var(--gold); opacity: 0.55; min-width: 18px; }
+  .section-header h2 { font-family: 'Cormorant Garamond', serif; font-size: 27px; font-weight: 400; font-style: italic; color: var(--white); flex: 1; }
+  .section-tag { font-size: 8px; letter-spacing: 0.25em; text-transform: uppercase; color: var(--subtle); font-weight: 400; }
+  .section-note { font-size: 10.5px; color: var(--subtle); margin-bottom: 22px; line-height: 1.9; letter-spacing: 0.03em; }
+
+  /* OPTION CARDS */
+  .options-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(208px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); }
+  .option-card { background: var(--black2); padding: 24px 22px; cursor: pointer; transition: background 0.22s ease; position: relative; overflow: hidden; }
+  .option-card::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 1px; background: var(--gold); transform: scaleX(0); transform-origin: left; transition: transform 0.28s ease; }
+  .option-card:hover { background: var(--black3); }
+  .option-card:hover::after { transform: scaleX(1); }
+  .option-card.selected { background: var(--black4); }
+  .option-card.selected::after { transform: scaleX(1); }
+  .card-check { position: absolute; top: 16px; right: 16px; width: 16px; height: 16px; border: 1px solid var(--mid); display: flex; align-items: center; justify-content: center; font-size: 8px; color: var(--gold); opacity: 0; transition: opacity 0.2s; }
+  .option-card.selected .card-check { opacity: 1; border-color: var(--gold); }
+  .card-title { font-family: 'Cormorant Garamond', serif; font-size: 18px; font-weight: 400; color: var(--white); margin-bottom: 9px; padding-right: 22px; line-height: 1.3; }
+  .card-desc { font-size: 10px; color: var(--muted); line-height: 1.85; margin-bottom: 16px; letter-spacing: 0.02em; }
+  .card-price { font-family: 'Cormorant Garamond', serif; font-size: 28px; font-weight: 300; color: var(--gold); line-height: 1; }
+  .card-price-note { font-size: 8.5px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--subtle); margin-top: 4px; }
+
+  /* QTY */
+  .qty-control { display: flex; align-items: center; gap: 10px; margin-top: 12px; }
+  .qty-btn { width: 24px; height: 24px; border: 1px solid var(--mid); background: transparent; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; color: var(--muted); transition: all 0.15s; font-family: 'Cormorant Garamond', serif; }
+  .qty-btn:hover { border-color: var(--gold); color: var(--gold); }
+  .qty-display { font-family: 'Cormorant Garamond', serif; font-size: 15px; min-width: 28px; text-align: center; color: var(--white); }
+
+  /* ADDON ROWS */
+  .addon-list { display: flex; flex-direction: column; gap: 1px; background: var(--line); border: 1px solid var(--line); }
+  .addon-row { display: flex; align-items: center; gap: 15px; padding: 15px 18px; background: var(--black2); cursor: pointer; transition: background 0.2s; position: relative; }
+  .addon-row::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 2px; background: var(--gold); transform: scaleY(0); transition: transform 0.22s ease; }
+  .addon-row:hover { background: var(--black3); }
+  .addon-row.selected { background: var(--black4); }
+  .addon-row.selected::before { transform: scaleY(1); }
+  .addon-check { width: 15px; height: 15px; border: 1px solid var(--mid); flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all 0.2s; font-size: 8px; color: transparent; }
+  .addon-row.selected .addon-check { background: var(--gold); border-color: var(--gold); color: var(--black); }
+  .addon-row.selected .addon-check::after { content: '✓'; }
+  .addon-info { flex: 1; }
+  .addon-name { font-size: 12px; font-weight: 400; color: var(--white); letter-spacing: 0.02em; margin-bottom: 2px; }
+  .addon-detail { font-size: 9.5px; color: var(--subtle); letter-spacing: 0.03em; line-height: 1.6; }
+  .addon-price { font-family: 'Cormorant Garamond', serif; font-size: 20px; color: var(--gold); flex-shrink: 0; text-align: right; min-width: 62px; }
+
+  /* GLAM */
+  .glam-info { font-size: 11px; color: var(--muted); line-height: 2; letter-spacing: 0.04em; margin-bottom: 22px; font-style: italic; padding: 18px 22px; border: 1px solid var(--line); background: var(--black2); }
+  .conflict-msg { font-size: 10px; color: #ffffff; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); padding: 11px 15px; margin-bottom: 14px; line-height: 1.7; letter-spacing: 0.03em; display: none; }
+  .conflict-msg.visible { display: block; }
+
+  /* ALBUM */
+  .album-builder { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); }
+  .album-type-card { background: var(--black2); padding: 17px 15px; cursor: pointer; transition: background 0.2s; border-bottom: 2px solid transparent; }
+  .album-type-card:hover { background: var(--black3); }
+  .album-type-card.selected { background: var(--black4); border-bottom-color: var(--gold); }
+  .album-type-name { font-size: 12px; color: var(--white); font-weight: 400; margin-bottom: 4px; }
+  .album-type-price { font-family: 'Cormorant Garamond', serif; font-size: 17px; color: var(--gold); }
+  .album-type-spec { font-size: 9px; color: var(--subtle); margin-top: 3px; letter-spacing: 0.05em; }
+  .album-pages-control { padding: 16px 18px; background: var(--black2); border: 1px solid var(--line); border-top: none; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+  .pages-label { font-size: 9.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+  .pages-input-wrap { display: flex; align-items: center; gap: 10px; }
+  .pages-input { width: 66px; border: 1px solid var(--mid); padding: 6px 10px; font-family: 'Cormorant Garamond', serif; font-size: 20px; text-align: center; color: var(--white); background: var(--black); outline: none; }
+  .pages-subtotal { font-family: 'Cormorant Garamond', serif; font-size: 20px; color: var(--gold); min-width: 78px; text-align: right; }
+
+  /* SNP */
+  .snp-calculator { border: 1px solid var(--line); background: var(--black2); padding: 26px; }
+  .snp-input-row { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+  .snp-input-row label { font-size: 9.5px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); }
+  .snp-input { width: 96px; border: 1px solid var(--mid); padding: 9px 12px; font-family: 'Cormorant Garamond', serif; font-size: 24px; text-align: center; color: var(--white); background: var(--black); outline: none; }
+  .snp-total { font-family: 'Cormorant Garamond', serif; font-size: 28px; color: var(--gold); font-weight: 300; }
+  .snp-note { font-size: 9.5px; color: var(--subtle); margin-top: 14px; line-height: 1.8; letter-spacing: 0.04em; }
+
+  /* SIDEBAR */
+  .sidebar { position: sticky; top: 0; height: 100vh; overflow-y: auto; padding: 48px 36px; background: var(--black2); }
+  .sidebar::-webkit-scrollbar { width: 2px; }
+  .sidebar::-webkit-scrollbar-thumb { background: var(--mid); }
+  .sidebar-logo { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 18px; color: var(--white); margin-bottom: 4px; opacity: 0.75; }
+  .sidebar-subtitle { font-size: 7.5px; letter-spacing: 0.35em; text-transform: uppercase; color: var(--subtle); margin-bottom: 38px; }
+  .sidebar-section { margin-bottom: 22px; }
+  .sidebar-section-title { font-size: 7px; letter-spacing: 0.3em; text-transform: uppercase; color: var(--gold); margin-bottom: 12px; opacity: 0.55; font-weight: 400; padding-bottom: 7px; border-bottom: 1px solid var(--line); }
+  .summary-line { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; padding: 5px 0; font-size: 10.5px; color: var(--muted); line-height: 1.5; border-bottom: 1px solid rgba(255,255,255,0.04); }
+  .summary-line:last-child { border-bottom: none; }
+  .summary-line-name { flex: 1; }
+  .summary-line-price { font-family: 'Cormorant Garamond', serif; font-size: 15px; color: var(--light); flex-shrink: 0; }
+  .summary-empty { font-size: 10.5px; color: var(--subtle); font-style: italic; line-height: 1.9; }
+  .sidebar-divider { border: none; border-top: 1px solid var(--line2); margin: 24px 0; }
+
+  /* DISCOUNT BLOCK */
+  .discount-block { background: rgba(122,171,138,0.07); border: 1px solid rgba(122,171,138,0.2); padding: 18px 18px 16px; margin-bottom: 18px; display: none; }
+  .discount-block.visible { display: block; }
+  .discount-label { font-size: 7px; letter-spacing: 0.35em; text-transform: uppercase; color: var(--green); opacity: 0.7; margin-bottom: 10px; }
+  .discount-saving-amount { font-family: 'Cormorant Garamond', serif; font-size: 52px; font-weight: 300; color: var(--green); line-height: 1; letter-spacing: -0.01em; }
+  .discount-pct-badge { display: inline-block; margin-top: 10px; font-size: 8px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--green); border: 1px solid rgba(122,171,138,0.4); padding: 3px 9px; font-family: 'Montserrat', sans-serif; font-weight: 400; }
+  .discount-note { font-size: 9px; color: var(--green); opacity: 0.5; margin-top: 5px; letter-spacing: 0.03em; }
+
+  /* TOTALS */
+  .total-label { font-size: 7.5px; letter-spacing: 0.32em; text-transform: uppercase; color: var(--subtle); margin-bottom: 6px; }
+  .total-before { font-family: 'Cormorant Garamond', serif; font-size: 20px; color: var(--subtle); line-height: 1; text-decoration: line-through; margin-bottom: 4px; display: none; }
+  .total-before.visible { display: block; }
+  .total-amount { font-family: 'Cormorant Garamond', serif; font-size: 52px; font-weight: 300; color: var(--white); line-height: 1; letter-spacing: -0.01em; }
+  .total-tax-note { font-size: 9px; color: var(--subtle); margin-top: 10px; line-height: 1.8; letter-spacing: 0.03em; }
+  .total-with-tax { font-family: 'Cormorant Garamond', serif; font-size: 15px; color: var(--subtle); margin-top: 7px; }
+  .total-with-tax span { font-size: 8.5px; font-family: 'Montserrat', sans-serif; letter-spacing: 0.1em; margin-left: 5px; text-transform: uppercase; }
+
+  .cta-btn { display: block; width: 100%; margin-top: 22px; padding: 15px; background: transparent; color: var(--gold); border: 1px solid var(--gold2); font-family: 'Montserrat', sans-serif; font-size: 8.5px; letter-spacing: 0.3em; text-transform: uppercase; font-weight: 400; cursor: pointer; transition: all 0.28s; }
+  .cta-btn:hover { background: var(--gold); color: var(--black); border-color: var(--gold); }
+  .reset-btn { display: block; width: 100%; margin-top: 9px; padding: 11px; background: transparent; color: var(--subtle); border: 1px solid rgba(255,255,255,0.08); font-family: 'Montserrat', sans-serif; font-size: 8px; letter-spacing: 0.2em; text-transform: uppercase; cursor: pointer; transition: all 0.2s; }
+  .reset-btn:hover { color: var(--muted); border-color: var(--mid); }
+
+  /* FOOTER */
+  .footer-band { border-top: 1px solid var(--line); padding: 36px 40px; text-align: center; }
+  .footer-band p { font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--subtle); }
+  .footer-band a { color: var(--gold); text-decoration: none; }
+
+  /* RESPONSIVE */
+  @media(max-width:960px) { .builder-layout{grid-template-columns:1fr} .sidebar{position:relative;height:auto} .builder-main{padding:50px 24px 80px;border-right:none} }
+  @media(max-width:580px) { header{padding:120px 20px 60px} .options-grid{grid-template-columns:1fr} .album-builder{grid-template-columns:1fr 1fr} }
+</style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-logo" href="https://debellephotography.com" target="_blank">
+    <img src="https://assets.cdn.filesafe.space/jkQ5EV9KVntkUlZAm9MS/media/698f33297d6877ee9ebde8b1.png" alt="de Belle Photography" class="nav-logo-img">
+    <span>Package Builder</span>
+  </a>
+</nav>
+
+<header>
+  <div class="header-eyebrow">Build Your Wedding Package</div>
+  <h1>Every Way to<br><em>Remember Your Day.</em></h1>
+  <p>Select exactly what you need, service by service.<br>Your discount is applied automatically.</p>
+  <div class="header-rule"></div>
+</header>
+
+<div class="builder-layout">
+  <div class="builder-main">
+
+    <!-- I. PHOTOGRAPHY -->
+    <div class="section">
+      <div class="section-header"><span class="section-num">I.</span><h2>Photography</h2><span class="section-tag">Select one</span></div>
+      <div class="options-grid" id="photo-grid"></div>
+    </div>
+
+    <!-- II. CINEMATOGRAPHY -->
+    <div class="section">
+      <div class="section-header"><span class="section-num">II.</span><h2>Cinematography</h2><span class="section-tag">Select one</span></div>
+      <div class="options-grid" id="video-grid"></div>
+    </div>
+
+    <!-- III. VIDEO EDITING -->
+    <div class="section">
+      <div class="section-header"><span class="section-num">III.</span><h2>Video Editing</h2><span class="section-tag">Add-ons</span></div>
+      <p class="section-note">Available with any cinematography coverage.</p>
+      <div class="addon-list" id="video-addons-list"></div>
+    </div>
+
+    <!-- IV. GLAM STUDIO -->
+    <div class="section">
+      <div class="section-header"><span class="section-num">IV.</span><h2>Glam Studio</h2><span class="section-tag">Portrait experience</span></div>
+      <div class="glam-info">This isn't a photo booth. This is a full editorial portrait experience — real photographer, beautiful lighting, sleek black-and-white. Five hours of coverage, instant 4x6 prints, and an experience your guests will be talking about long after the last dance.</div>
+      <div id="glam-conflict" class="conflict-msg">The evening-only rate requires full day photography to be selected above.</div>
+      <div class="options-grid" id="glam-grid"></div>
+    </div>
+
+    <!-- V. SAME NIGHT PRINTS -->
+    <div class="section">
+      <div class="section-header"><span class="section-num">V.</span><h2>Same Night Prints</h2><span class="section-tag">Guest keepsake</span></div>
+      <div class="snp-calculator">
+        <div class="snp-input-row">
+          <label for="snp-guests">Number of guests</label>
+          <input type="number" id="snp-guests" class="snp-input" min="0" max="600" value="0">
+          <div class="snp-total" id="snp-total-display">$0</div>
+        </div>
+        <div class="snp-note" id="snp-note-display">$4.50 per person &nbsp;·&nbsp; Minimum charge $375 &nbsp;·&nbsp; Groups over 100 require an assistant (+$300)</div>
+      </div>
+    </div>
+
+    <!-- VI. ALBUMS -->
+    <div class="section">
+      <div class="section-header"><span class="section-num">VI.</span><h2>Albums</h2><span class="section-tag">À la carte</span></div>
+      <p class="section-note">Priced per page. Select your album format, then specify your page count.</p>
+      <div id="albums-container"></div>
+    </div>
+
+    <!-- VII. ADDITIONAL SERVICES -->
+    <div class="section">
+      <div class="section-header"><span class="section-num">VII.</span><h2>Additional Services</h2><span class="section-tag">Optional</span></div>
+      <div class="addon-list" id="other-addons-list"></div>
+    </div>
+
+  </div>
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-logo">de Belle Photography</div>
+    <div class="sidebar-subtitle">Your Package Summary</div>
+
+    <div id="summary-content">
+      <div class="summary-empty">Your selections will appear here as you build your package.</div>
+    </div>
+
+    <hr class="sidebar-divider">
+
+    <!-- DISCOUNT BLOCK -->
+    <div class="discount-block" id="discount-block">
+      <div class="discount-label">Volume Discount Applied</div>
+      <div class="discount-saving-amount" id="discount-saving-display">$0</div>
+      <div class="discount-pct-badge" id="discount-pct-display"></div>
+      <div class="discount-note">saved · rounded to nearest $50</div>
+    </div>
+
+    <!-- TOTALS -->
+    <div>
+      <div class="total-label">Estimated Total</div>
+      <div class="total-before" id="total-before-display"></div>
+      <div class="total-amount" id="total-display">$0</div>
+      <div class="total-tax-note">All prices before tax. GST + QST (14.975%) apply. Travel included within 100 km of Montreal.</div>
+      <div class="total-with-tax" id="total-tax-display">$0 <span>incl. tax</span></div>
+    </div>
+
+    <button class="cta-btn" onclick="exportSummary()">Export Package Summary</button>
+    <button class="reset-btn" onclick="resetAll()">Clear All Selections</button>
+  </div>
+</div>
+
+<div class="footer-band">
+  <p><a href="mailto:yourwedding@debellephotography.com">yourwedding@debellephotography.com</a> &nbsp;·&nbsp; 514.887.4686 &nbsp;·&nbsp; <a href="https://debellephotography.com" target="_blank">debellephotography.com</a></p>
+</div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────────────────────
+
+const PHOTO_OPTIONS = [
+  { id:'hourly',        name:'Hourly Coverage',  price:400,  unit:'per hour', qty:true, minQty:2, desc:'200–300 photos per hour. Top 50 images enhanced per hour. Minimum 2 hours.' },
+  { id:'eight_hour',    name:'8-Hour Service',    price:3200,                             desc:'All high-resolution photos. Top 400 images enhanced.' },
+  { id:'full_day',      name:'Full Day',          price:4000,                             desc:'10am to midnight. All high-resolution photos. Top 700 images enhanced.' },
+];
+
+const VIDEO_OPTIONS = [
+  { id:'video_hourly',      name:'Hourly Coverage', price:400,  unit:'per hour', qty:true, minQty:2, desc:'20–30 video clips per hour. All footage via download link. Minimum 2 hours.' },
+  { id:'video_eight_hour',  name:'8-Hour Service',  price:3200,                             desc:'100–200 video clips. Includes a 1–2 min edited clip.' },
+  { id:'video_full_day',    name:'Full Day',         price:4000,                             desc:'200–300 video clips. Includes a 3–5 min edited clip and a 15–30 sec reel.' },
+];
+
+const VIDEO_ADDONS = [
+  { id:'va_highlight_35',  name:'3–5 Minute Highlight Film',   price:600,  desc:'Edited highlight with music.' },
+  { id:'va_highlight_510', name:'8–10 Minute Highlight Film',  price:800,  desc:'Extended highlight/recap with music.' },
+  { id:'va_feature_20',    name:'20-Minute Feature Film',      price:1200, desc:'Full edited feature film with music.' },
+  { id:'va_supplements',   name:'Video Supplements',           price:300,  desc:'Approx. 10 minutes — speeches, first dance, etc.' },
+  { id:'va_reel',          name:'Social Media Reel',           price:150,  desc:'IG / FB / TikTok reel.' },
+  { id:'va_asst_cine',     name:'Assistant Cinematographer',   price:1000, desc:'Second cinematographer for the full day.' },
+];
+
+const GLAM_OPTIONS = [
+  { id:'glam_standalone', name:'Glam Studio',           price:2000, desc:'5 hours of coverage. Instant 4x6 B&W prints. Standalone booking.', reqFullDay:false },
+  { id:'glam_bundled',    name:'Glam Studio + Assistant',price:1750, desc:'5 hours. Bundled with full day photography. Includes assistant photographer.', reqFullDay:true },
+  { id:'glam_evening',    name:'Evening Glam Studio',   price:1500, desc:'5-hour evening-only service. Requires full day photography.', reqFullDay:true },
+];
+
+const ALBUM_TYPES = [
+  { id:'youngbook', name:'Young Book / Graphi Box', pricePerPage:55, min:30, format:'min. 30 pages · 8x12' },
+  { id:'graphi',    name:'Graphi Album',             pricePerPage:65, min:24, format:'min. 24 pages · 9x13 or 12x12' },
+  { id:'matted',    name:'Matted Album',             pricePerPage:75, min:24, format:'min. 24 pages · 9x13 or 12x12' },
+  { id:'layflat',   name:'Layflat Album',            pricePerPage:30, min:24, format:'custom size' },
+];
+
+const OTHER_ADDONS = [
+  { id:'oa_asst_photo',   name:'Assistant Photographer',           price:1000, desc:'Second photographer for the full day, capturing additional angles.' },
+  { id:'oa_engagement',   name:'Engagement / Casual Photoshoot',   price:350,  desc:'1-hour session. Top 50 images enhanced, delivered via online gallery.' },
+  { id:'oa_slideshow',    name:'Photo Slideshow',                  price:200,  desc:'4–5 min slideshow, 80–100 images.' },
+  { id:'oa_parent_albums',name:'Parent Album Duplicates',          price:500,  desc:'One set of parent albums (4x5, 6x8, 8x10 for Graphi or Young Book).' },
+  { id:'oa_sleeve',       name:'Graphi Sleeve for Album',         price:150,  desc:'Protective sleeve for Graphi or Young Book albums.' },
+  { id:'oa_layflat_addon',name:'24-Page Layflat Album (Add-on)',   price:700,  desc:'Compact layflat album, 24 pages.' },
+];
+
+// ── DISCOUNT TABLE ────────────────────────────────────────────────────────────
+// Returns discount % and rounded-to-50 final price
+
+function getDiscount(subtotal) {
+  if (subtotal <= 2500)  return 0;
+  if (subtotal <= 3000)  return 1;
+  if (subtotal <= 3500)  return 2;
+  if (subtotal <= 4000)  return 3;
+  if (subtotal <= 4500)  return 4;
+  if (subtotal <= 5000)  return 5;
+  if (subtotal <= 5500)  return 6;
+  if (subtotal <= 6000)  return 7;
+  if (subtotal <= 6500)  return 8;
+  if (subtotal <= 7000)  return 8;
+  if (subtotal <= 7500)  return 9;
+  if (subtotal <= 8000)  return 9;
+  if (subtotal <= 8500)  return 10;
+  if (subtotal <= 9000)  return 10;
+  if (subtotal <= 9500)  return 11;
+  if (subtotal <= 10000) return 11;
+  if (subtotal <= 11000) return 12;
+  if (subtotal <= 12000) return 13;
+  if (subtotal <= 13000) return 14;
+  if (subtotal <= 14000) return 15;
+  if (subtotal <= 15000) return 16;
+  if (subtotal <= 16000) return 17;
+  if (subtotal <= 17000) return 18;
+  if (subtotal <= 18000) return 19;
+  if (subtotal <= 19000) return 20;
+  return 20;
+}
+
+function roundTo50(n) {
+  return Math.round(n / 50) * 50;
+}
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+
+let state = {
+  photo: null, photoQty: 2,
+  video: null, videoQty: 2,
+  videoAddons: new Set(),
+  glam: null, glamExtraHours: 0,
+  snpGuests: 0,
+  album: null, albumPages: 30,
+  otherAddons: new Set(),
+};
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+
+const fmt = n => '$' + n.toLocaleString('en-CA');
+
+function makeCard(id, title, price, desc, selected, extraHTML='', unitNote='') {
+  return `<div class="option-card ${selected?'selected':''}" onclick="toggleCard('${id}')">
+    <div class="card-check">✓</div>
+    <div class="card-title">${title}</div>
+    <div class="card-desc">${desc}</div>
+    ${extraHTML}
+    <div class="card-price">${fmt(price)}</div>
+    ${unitNote ? `<div class="card-price-note">${unitNote}</div>` : ''}
+  </div>`;
+}
+
+function makeAddon(id, name, price, desc, selected) {
+  return `<div class="addon-row ${selected?'selected':''}" onclick="toggleAddon('${id}')">
+    <div class="addon-check"></div>
+    <div class="addon-info"><div class="addon-name">${name}</div><div class="addon-detail">${desc}</div></div>
+    <div class="addon-price">${fmt(price)}</div>
+  </div>`;
+}
+
+// ── RENDER ────────────────────────────────────────────────────────────────────
+
+function renderPhoto() {
+  document.getElementById('photo-grid').innerHTML = PHOTO_OPTIONS.map(o => {
+    let ex = '';
+    if (o.qty && state.photo === o.id) {
+      ex = `<div class="qty-control" onclick="event.stopPropagation()">
+        <button class="qty-btn" onclick="changeQty('photo',-1)">−</button>
+        <div class="qty-display">${state.photoQty}h</div>
+        <button class="qty-btn" onclick="changeQty('photo',1)">+</button>
+      </div>`;
+    }
+    const p = o.qty ? o.price * (state.photo===o.id ? state.photoQty : 1) : o.price;
+    return makeCard(o.id, o.name, p, o.desc, state.photo===o.id, ex, o.unit||'');
+  }).join('');
+}
+
+function renderVideo() {
+  document.getElementById('video-grid').innerHTML = VIDEO_OPTIONS.map(o => {
+    let ex = '';
+    if (o.qty && state.video === o.id) {
+      ex = `<div class="qty-control" onclick="event.stopPropagation()">
+        <button class="qty-btn" onclick="changeQty('video',-1)">−</button>
+        <div class="qty-display">${state.videoQty}h</div>
+        <button class="qty-btn" onclick="changeQty('video',1)">+</button>
+      </div>`;
+    }
+    const p = o.qty ? o.price * (state.video===o.id ? state.videoQty : 1) : o.price;
+    return makeCard(o.id, o.name, p, o.desc, state.video===o.id, ex, o.unit||'');
+  }).join('');
+}
+
+function renderVideoAddons() {
+  document.getElementById('video-addons-list').innerHTML = VIDEO_ADDONS.map(a =>
+    makeAddon(a.id, a.name, a.price, a.desc, state.videoAddons.has(a.id))
+  ).join('');
+}
+
+function renderGlam() {
+  const hasFullDay = state.photo === 'full_day';
+  const cf = document.getElementById('glam-conflict');
+  if (state.glam) {
+    const g = GLAM_OPTIONS.find(x => x.id === state.glam);
+    cf.classList.toggle('visible', !!(g && g.reqFullDay && !hasFullDay));
+  } else { cf.classList.remove('visible'); }
+
+  let extra = '';
+  if (state.glam) {
+    extra = `<div style="grid-column:1/-1;background:var(--black2);border:1px solid var(--line);border-top:none;padding:14px 18px;display:flex;align-items:center;gap:14px;">
+      <div class="addon-info"><div class="addon-name">Extra Hours (Glam Studio)</div><div class="addon-detail">$375 per additional hour beyond 5-hour coverage</div></div>
+      <div class="qty-control"><button class="qty-btn" onclick="changeGlamHours(-1)">−</button><div class="qty-display">${state.glamExtraHours}h</div><button class="qty-btn" onclick="changeGlamHours(1)">+</button></div>
+      <div class="addon-price">${fmt(state.glamExtraHours * 375)}</div>
+    </div>`;
+  }
+  document.getElementById('glam-grid').innerHTML = GLAM_OPTIONS.map(g =>
+    makeCard(g.id, g.name, g.price, g.desc + (g.reqFullDay && !hasFullDay ? ' · Requires full day photo' : ''), state.glam===g.id)
+  ).join('') + extra;
+}
+
+function renderAlbums() {
+  const sel = state.album;
+  const aType = sel ? ALBUM_TYPES.find(a => a.id===sel) : null;
+  const min = aType ? aType.min : 30;
+  const pages = state.albumPages;
+  const sub = aType ? aType.pricePerPage * pages : 0;
+
+  document.getElementById('albums-container').innerHTML =
+    `<div class="album-builder">` +
+    ALBUM_TYPES.map(a => `
+      <div class="album-type-card ${sel===a.id?'selected':''}" onclick="selectAlbum('${a.id}')">
+        <div class="album-type-name">${a.name}</div>
+        <div class="album-type-price">$${a.pricePerPage}/page</div>
+        <div class="album-type-spec">${a.format}</div>
+      </div>`).join('') +
+    `</div>` +
+    (sel ? `<div class="album-pages-control">
+      <div class="pages-label">Pages (min. ${min})</div>
+      <div class="pages-input-wrap">
+        <button class="qty-btn" onclick="changePages(-2)">−</button>
+        <input type="number" class="pages-input" id="pages-input" value="${pages}" min="${min}" step="2" oninput="setPagesFromInput(this.value)">
+        <button class="qty-btn" onclick="changePages(2)">+</button>
+      </div>
+      <div class="pages-subtotal">${fmt(sub)}</div>
+    </div>` : '');
+}
+
+function renderOtherAddons() {
+  document.getElementById('other-addons-list').innerHTML = OTHER_ADDONS.map(a =>
+    makeAddon(a.id, a.name, a.price, a.desc, state.otherAddons.has(a.id))
+  ).join('');
+}
+
+// ── CALC ──────────────────────────────────────────────────────────────────────
+
+function calcSNP(g) {
+  if (g <= 0) return 0;
+  let b = g * 4.5;
+  if (b < 375) b = 375;
+  if (g > 100) b += 300;
+  return Math.round(b);
+}
+
+function calcRaw() {
+  let total = 0, lines = [];
+
+  if (state.photo) {
+    const o = PHOTO_OPTIONS.find(x => x.id===state.photo);
+    if (o) { const p = o.qty ? o.price*state.photoQty : o.price; total+=p; lines.push({section:'Photography', name: o.qty?`Photography (${state.photoQty}h)`:o.name, price:p}); }
+  }
+  if (state.video) {
+    const o = VIDEO_OPTIONS.find(x => x.id===state.video);
+    if (o) { const p = o.qty ? o.price*state.videoQty : o.price; total+=p; lines.push({section:'Cinematography', name: o.qty?`Cinematography (${state.videoQty}h)`:o.name, price:p}); }
+  }
+  state.videoAddons.forEach(id => {
+    const a = VIDEO_ADDONS.find(x => x.id===id);
+    if (a) { total+=a.price; lines.push({section:'Video Editing', name:a.name, price:a.price}); }
+  });
+  if (state.glam) {
+    const g = GLAM_OPTIONS.find(x => x.id===state.glam);
+    if (g) { total+=g.price; lines.push({section:'Glam Studio', name:g.name, price:g.price}); }
+    if (state.glamExtraHours > 0) { const ep=state.glamExtraHours*375; total+=ep; lines.push({section:'Glam Studio', name:`Extra hours (${state.glamExtraHours}h)`, price:ep}); }
+  }
+  if (state.snpGuests > 0) {
+    const p = calcSNP(state.snpGuests); total+=p;
+    lines.push({section:'Same Night Prints', name:`Same Night Prints (${state.snpGuests} guests)`, price:p});
+  }
+  if (state.album) {
+    const a = ALBUM_TYPES.find(x => x.id===state.album);
+    if (a) { const p=a.pricePerPage*state.albumPages; total+=p; lines.push({section:'Album', name:`${a.name} (${state.albumPages} pages)`, price:p}); }
+  }
+  state.otherAddons.forEach(id => {
+    const a = OTHER_ADDONS.find(x => x.id===id);
+    if (a) { total+=a.price; lines.push({section:'Additional', name:a.name, price:a.price}); }
+  });
+
+  return { raw: total, lines };
+}
+
+// ── RENDER SUMMARY ────────────────────────────────────────────────────────────
+
+function renderSummary() {
+  const { raw, lines } = calcRaw();
+  const discPct = getDiscount(raw);
+  const saving = discPct > 0 ? roundTo50(raw * discPct / 100) : 0;
+  const finalTotal = raw - saving;
+  const withTax = Math.round(finalTotal * 1.14975);
+
+  // Summary lines
+  const el = document.getElementById('summary-content');
+  if (!lines.length) {
+    el.innerHTML = '<div class="summary-empty">Your selections will appear here as you build your package.</div>';
+  } else {
+    const secs = {};
+    lines.forEach(l => { if (!secs[l.section]) secs[l.section]=[]; secs[l.section].push(l); });
+    el.innerHTML = Object.entries(secs).map(([s, items]) =>
+      `<div class="sidebar-section"><div class="sidebar-section-title">${s}</div>` +
+      items.map(i => `<div class="summary-line"><span class="summary-line-name">${i.name}</span><span class="summary-line-price">${fmt(i.price)}</span></div>`).join('') +
+      `</div>`
+    ).join('');
+  }
+
+  // Discount block
+  const db = document.getElementById('discount-block');
+  if (discPct > 0 && raw > 0) {
+    db.classList.add('visible');
+    document.getElementById('discount-saving-display').textContent = fmt(saving);
+    document.getElementById('discount-pct-display').textContent = discPct + '% off';
+  } else {
+    db.classList.remove('visible');
+  }
+
+  // Totals
+  const beforeEl = document.getElementById('total-before-display');
+  if (discPct > 0 && raw > 0) {
+    beforeEl.classList.add('visible');
+    beforeEl.textContent = fmt(raw);
+  } else {
+    beforeEl.classList.remove('visible');
+  }
+
+  document.getElementById('total-display').textContent = fmt(finalTotal);
+  document.getElementById('total-tax-display').innerHTML = fmt(withTax) + ' <span>incl. tax</span>';
+
+  // SNP note
+  const g = state.snpGuests;
+  if (g > 0) {
+    const t = calcSNP(g);
+    let note = `$4.50/person · Min. $375 · Total: ${fmt(t)}`;
+    if (g > 100) note += ' (incl. $300 assistant)';
+    document.getElementById('snp-note-display').textContent = note;
+    document.getElementById('snp-total-display').textContent = fmt(t);
+  } else {
+    document.getElementById('snp-note-display').textContent = '$4.50 per person · Minimum charge $375 · Groups over 100 require an assistant (+$300)';
+    document.getElementById('snp-total-display').textContent = '$0';
+  }
+}
+
+// ── INTERACTIONS ──────────────────────────────────────────────────────────────
+
+function toggleCard(id) {
+  if (PHOTO_OPTIONS.find(o => o.id===id)) {
+    state.photo = state.photo===id ? null : id;
+    renderPhoto(); renderGlam(); renderSummary(); return;
+  }
+  if (VIDEO_OPTIONS.find(o => o.id===id)) {
+    state.video = state.video===id ? null : id;
+    renderVideo(); renderSummary(); return;
+  }
+  if (GLAM_OPTIONS.find(g => g.id===id)) {
+    state.glam = state.glam===id ? null : id;
+    if (!state.glam) state.glamExtraHours = 0;
+    renderGlam(); renderSummary(); return;
+  }
+}
+
+function toggleAddon(id) {
+  if (VIDEO_ADDONS.find(a => a.id===id)) {
+    state.videoAddons.has(id) ? state.videoAddons.delete(id) : state.videoAddons.add(id);
+    renderVideoAddons(); renderSummary(); return;
+  }
+  if (OTHER_ADDONS.find(a => a.id===id)) {
+    state.otherAddons.has(id) ? state.otherAddons.delete(id) : state.otherAddons.add(id);
+    renderOtherAddons(); renderSummary(); return;
+  }
+}
+
+function changeQty(type, delta) {
+  if (type==='photo') { state.photoQty = Math.max(2, state.photoQty+delta); renderPhoto(); }
+  else { state.videoQty = Math.max(2, state.videoQty+delta); renderVideo(); }
+  renderSummary();
+}
+
+function changeGlamHours(delta) {
+  state.glamExtraHours = Math.max(0, state.glamExtraHours+delta);
+  renderGlam(); renderSummary();
+}
+
+function selectAlbum(id) {
+  state.album = state.album===id ? null : id;
+  if (state.album) { const a=ALBUM_TYPES.find(x=>x.id===id); if(state.albumPages<a.min) state.albumPages=a.min; }
+  renderAlbums(); renderSummary();
+}
+
+function changePages(delta) {
+  const a = ALBUM_TYPES.find(x => x.id===state.album); if (!a) return;
+  state.albumPages = Math.max(a.min, state.albumPages+delta);
+  renderAlbums(); renderSummary();
+}
+
+function setPagesFromInput(val) {
+  const n = parseInt(val); if (isNaN(n)) return;
+  const a = ALBUM_TYPES.find(x => x.id===state.album); if (!a) return;
+  state.albumPages = Math.max(a.min, n);
+  renderSummary();
+  const d = document.querySelector('.pages-subtotal'); if (d) d.textContent = fmt(a.pricePerPage*state.albumPages);
+}
+
+document.getElementById('snp-guests').addEventListener('input', function() {
+  state.snpGuests = parseInt(this.value) || 0; renderSummary();
+});
+
+function renderAll() {
+  renderPhoto(); renderVideo(); renderVideoAddons();
+  renderGlam(); renderAlbums(); renderOtherAddons(); renderSummary();
+}
+
+function resetAll() {
+  state = {photo:null,photoQty:2,video:null,videoQty:2,videoAddons:new Set(),glam:null,glamExtraHours:0,snpGuests:0,album:null,albumPages:30,otherAddons:new Set()};
+  document.getElementById('snp-guests').value = 0;
+  renderAll();
+}
+
+function exportSummary() {
+  const { raw, lines } = calcRaw();
+  if (!lines.length) { alert('Please make at least one selection before exporting.'); return; }
+  const discPct = getDiscount(raw);
+  const saving = discPct > 0 ? roundTo50(raw * discPct / 100) : 0;
+  const finalTotal = raw - saving;
+  const withTax = Math.round(finalTotal * 1.14975);
+  const secs = {};
+  lines.forEach(l => { if (!secs[l.section]) secs[l.section]=[]; secs[l.section].push(l); });
+
+  let out = `DE BELLE PHOTOGRAPHY\nCustom Package Summary\n${'─'.repeat(46)}\n\n`;
+  Object.entries(secs).forEach(([s, items]) => {
+    out += `${s.toUpperCase()}\n`;
+    items.forEach(i => { out += `  ${i.name.padEnd(38)} ${fmt(i.price)}\n`; });
+    out += '\n';
+  });
+  out += `${'─'.repeat(46)}\n`;
+  out += `SUBTOTAL (before discount)               ${fmt(raw)}\n`;
+  if (discPct > 0) {
+    out += `VOLUME DISCOUNT (${discPct}%)                    -${fmt(saving)}\n`;
+    out += `DISCOUNTED TOTAL                         ${fmt(finalTotal)}\n`;
+  }
+  out += `TOTAL WITH TAX (GST+QST 14.975%)         ${fmt(withTax)}\n\n`;
+  out += `All prices in CAD. Travel included within 100 km of Montreal.\n`;
+  out += `yourwedding@debellephotography.com  ·  514.887.4686\n`;
+
+  const blob = new Blob([out], {type:'text/plain'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'debelle-package-summary.txt'; a.click();
+  URL.revokeObjectURL(url);
+}
+
+renderAll();
+</script>
+</body>
+</html>

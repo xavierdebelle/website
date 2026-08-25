@@ -418,7 +418,7 @@
 <div class="hud hud--hint" aria-hidden="true">
   <b>Click</b> a node to open it<br>
   <b>Drag</b> the field to move &middot; <b>Scroll</b> to zoom<br>
-  <span style="opacity:.5">v4</span>
+  <span style="opacity:.5">v5</span>
 </div>
 
 <div class="hud hud--ctl">
@@ -519,7 +519,7 @@
       unit:'Tool',
       title:'de Belle<br>Photography<br>Tools',
       body:['The studio machinery — everything a couple touches between booking the day and taking delivery of it.'],
-      facts:[['Package Builder','Every way to remember your day',1],['Video Corrections','Structured edit notes from clients',1],['Wedding Schedule','Timeline builder for the day']],
+      facts:[['Package Builder','Every way to remember your day'],['Video Corrections','Structured edit notes from clients'],['Wedding Schedule','Timeline builder for the day']],
       acts:[['See them all','tools.html#debelle',1]] },
     { id:'t-personal', label:'PERSONAL', kind:'leaf', parent:'tools', angle:-18, dist:255,
       unit:'Tool',
@@ -531,7 +531,7 @@
       unit:'Build',
       title:'Events',
       body:['One-off builds for real gatherings. Made for a specific day, a specific crowd, and left standing afterward.'],
-      facts:[['Wedding Activities','Xavier &amp; Maria — guest activity guide',1],['Volley &amp; BBQ','Monday night zine, standalone',1]],
+      facts:[['Wedding Activities','Xavier &amp; Maria — guest activity guide'],['Volley &amp; BBQ','Monday night zine, standalone']],
       acts:[['See them all','tools.html#events',1]] },
     { id:'t-art', label:'ART', kind:'leaf', parent:'tools', angle:44, dist:260,
       unit:'Piece',
@@ -563,9 +563,9 @@
      2. BUILD THE GRAPH
      ===================================================== */
 
-  /* Three tools carry client data and are not deployed. Locally the map
-     shows everything; publicly those rows are dropped and the counts are
-     recomputed, so the map never points at a page that isn't there. */
+  /* No tools are private as of v5 — every one is published. The filter below
+     stays in place, unused: append `,1` to a fact row to pull that tool from
+     the public site, and every count re-derives itself. */
   var LOCAL = location.protocol === 'file:' ||
               /^(localhost|127\.0\.0\.1|\[?::1\]?)$/.test(location.hostname);
 
