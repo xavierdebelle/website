@@ -5,6 +5,34 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v7 — 2026-08-25
+
+**Budget Tracker replaced with v3**
+- Now actually saves. The previous version kept nothing — a refresh wiped the
+  month. This one persists to `localStorage` under `debelle.budget-tracker.v2`.
+  Nothing to migrate, since the old one stored nothing.
+- Planned vs actual per row, with a percentage badge on each.
+- Real month navigation: a new month seeds itself from the previous one and
+  carries the remaining balance forward as its rollover.
+- Row edits propagate to later months; earlier months stay as they were.
+- Export and import the whole history as JSON.
+- Card and map copy updated to describe what it now does.
+
+**Checked before shipping**
+- Only outbound request is Google Fonts. No endpoints, no credentials.
+  Budget data never leaves the browser — `localStorage` plus a local file
+  download.
+- Verified live: persistence, month seeding (rollover carried forward
+  correctly) and forward propagation all behave.
+
+**Note**
+- The seeded starter figures — paycheques, rent, savings — are visible to
+  anyone opening the tool. Unchanged from the previous version, which shipped
+  the same numbers, but worth a deliberate decision. Blanking them is a small
+  edit to `defaultMonth()`.
+
+---
+
 ## v6 — 2026-08-25
 
 **New tool**

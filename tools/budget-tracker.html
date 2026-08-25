@@ -21,16 +21,25 @@
     --radius:10px;--radius-sm:6px;
   }
   body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;font-size:14px;min-height:100vh;padding:0}
-  
+
   .app{max-width:1400px;margin:0 auto;padding:20px 16px}
-  
+
   /* HEADER */
-  .header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+  .header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:20px}
   .header h1{font-size:22px;font-weight:800;letter-spacing:-0.5px}
+  .header .subtitle{font-size:11px;color:var(--text3);margin-top:3px;letter-spacing:.2px}
+  .header-right{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding-top:2px}
+  .status-stack{display:flex;flex-direction:column;align-items:flex-end;gap:2px;min-width:150px}
   .month-nav{display:flex;align-items:center;gap:8px}
-  .month-nav button{background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:var(--radius-sm);padding:6px 10px;cursor:pointer;font-family:inherit;font-size:13px;transition:.15s}
-  .month-nav button:hover{border-color:var(--border2);background:var(--surface3)}
+  .month-nav button,.io-btn{background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:var(--radius-sm);padding:6px 10px;cursor:pointer;font-family:inherit;font-size:13px;transition:.15s}
+  .month-nav button:hover,.io-btn:hover{border-color:var(--border2);background:var(--surface3)}
+  .io-btn{font-weight:600;letter-spacing:.3px}
+  .io-group{display:flex;align-items:center;gap:6px}
   .month-label{font-weight:700;font-size:15px;min-width:110px;text-align:center}
+  .save-status{font-family:'DM Mono',monospace;font-size:11px;color:var(--text3);text-align:right}
+  .save-status.warn{color:var(--yellow)}
+  .prop-status{font-family:'DM Mono',monospace;font-size:11px;color:var(--blue-text);text-align:right;opacity:0;transition:opacity .25s;min-height:14px}
+  .prop-status.show{opacity:1}
 
   /* SUMMARY BAR */
   .summary-bar{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:20px}
@@ -61,7 +70,7 @@
   .row-item{display:grid;grid-template-columns:1fr 80px 80px 52px;gap:0;padding:5px 14px;border-bottom:1px solid var(--border);align-items:center;transition:.1s}
   .row-item:hover{background:var(--surface2)}
   .row-item:last-child{border-bottom:none}
-  
+
   .row-item input[type=text]{background:transparent;border:none;color:var(--text);font-family:'Syne',sans-serif;font-size:13px;width:100%;outline:none;padding:2px 0}
   .row-item input[type=text]:focus{color:var(--blue);border-bottom:1px solid var(--blue)}
   .row-item input[type=number]{background:transparent;border:none;font-family:'DM Mono',monospace;font-size:13px;width:100%;outline:none;padding:2px 4px;text-align:right;-moz-appearance:textfield}
@@ -86,7 +95,7 @@
 
   /* BOTTOM ROW: overview + rollover */
   .bottom-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-  
+
   .overview-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
   .ov-header{padding:12px 14px;border-bottom:1px solid var(--border);font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--blue)}
   .ov-row{display:grid;grid-template-columns:1fr 90px 90px 80px;padding:7px 14px;border-bottom:1px solid var(--border);align-items:center}
@@ -126,11 +135,25 @@
 <body>
 <div class="app">
   <div class="header">
-    <h1>Budget Tracker</h1>
-    <div class="month-nav">
-      <button onclick="prevMonth()">&#8592;</button>
-      <span class="month-label" id="month-label"></span>
-      <button onclick="nextMonth()">&#8594;</button>
+    <div>
+      <h1>Budget Tracker</h1>
+      <div class="subtitle">Row edits apply to this month and every month after it — earlier months stay as they were.</div>
+    </div>
+    <div class="header-right">
+      <div class="status-stack">
+        <span class="save-status" id="save-status"></span>
+        <span class="prop-status" id="prop-status"></span>
+      </div>
+      <div class="io-group">
+        <button class="io-btn" onclick="exportData()" title="Download every month as a .json file">Export</button>
+        <button class="io-btn" onclick="document.getElementById('import-file').click()" title="Load a previously exported .json file">Import</button>
+        <input type="file" id="import-file" accept="application/json,.json" style="display:none" onchange="importData(this)">
+      </div>
+      <div class="month-nav">
+        <button onclick="prevMonth()">&#8592;</button>
+        <span class="month-label" id="month-label"></span>
+        <button onclick="nextMonth()">&#8594;</button>
+      </div>
     </div>
   </div>
 
@@ -156,12 +179,12 @@
       <div class="rv-body">
         <div class="rv-field">
           <label>Planned rollover</label>
-          <input class="rv-input" type="number" id="rv-planned" value="5635" step="1" oninput="recalc()">
+          <input class="rv-input" type="number" id="rv-planned" step="1" oninput="onRollover()">
         </div>
         <div class="rv-field">
           <label>Actual rollover</label>
-          <input class="rv-input" type="number" id="rv-actual" value="5035" step="1" oninput="recalc()">
-          <div class="rv-hint">Money carried forward from last month</div>
+          <input class="rv-input" type="number" id="rv-actual" step="1" oninput="onRollover()">
+          <div class="rv-hint">Money carried forward from last month — stays specific to this month</div>
         </div>
         <div class="rv-remaining-big">
           <div class="rv-rem-label">Remaining (actual)</div>
@@ -174,53 +197,60 @@
 
 <script>
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-let currentMonth = 2; // March
-let currentYear = 2026;
+const STORAGE_KEY = 'debelle.budget-tracker.v2';
 
-const SECTIONS = [
-  {
-    key:'income', label:'Income', color:'#b3acff',
-    rows:[
-      {name:'His paycheck', planned:9200, actual:9200},
-      {name:'My paycheck',  planned:7200, actual:7200},
-    ]
-  },
-  {
-    key:'expenses', label:'Expenses', color:'#ce9bff',
-    rows:[
-      {name:'Groceries',   planned:1100, actual:1100},
-      {name:'Restaurants', planned:560,  actual:560},
-      {name:'His gym',     planned:210,  actual:210},
-      {name:'My gym',      planned:210,  actual:210},
-    ]
-  },
-  {
-    key:'bills', label:'Bills', color:'#ff8fbd',
-    rows:[
-      {name:'Rent',           planned:3400, actual:3400},
-      {name:'Utilities',      planned:310,  actual:310},
-      {name:'Internet',       planned:90,   actual:90},
-      {name:'His phone',      planned:60,   actual:80},
-      {name:'My phone',       planned:60,   actual:80},
-      {name:'Netflix',        planned:30,   actual:30},
-      {name:'Tactical snacks',planned:40,   actual:40},
-      {name:'Wedding fund',   planned:1600, actual:1800},
-    ]
-  },
-  {
-    key:'savings', label:'Savings', color:'#a0ede8',
-    rows:[
-      {name:'Investments',  planned:4200, actual:4200},
-      {name:'Retirement',   planned:2800, actual:2800},
-      {name:'Wedding fund', planned:1600, actual:1800},
-      {name:'Truck access.',planned:440,  actual:440},
-    ]
-  },
-  {
-    key:'debt', label:'Debt', color:'#ff8f8f',
-    rows:[]
-  },
+const SECTION_META = [
+  {key:'income',   label:'Income',   color:'#b3acff'},
+  {key:'expenses', label:'Expenses', color:'#ce9bff'},
+  {key:'bills',    label:'Bills',    color:'#ff8fbd'},
+  {key:'savings',  label:'Savings',  color:'#a0ede8'},
+  {key:'debt',     label:'Debt',     color:'#ff8f8f'},
 ];
+
+function defaultMonth(){
+  return {
+    rvPlanned:5635,
+    rvActual:5035,
+    sections:{
+      income:[
+        {name:'His paycheck', planned:9200, actual:9200},
+        {name:'My paycheck',  planned:7200, actual:7200},
+      ],
+      expenses:[
+        {name:'Groceries',   planned:1100, actual:1100},
+        {name:'Restaurants', planned:560,  actual:560},
+        {name:'His gym',     planned:210,  actual:210},
+        {name:'My gym',      planned:210,  actual:210},
+      ],
+      bills:[
+        {name:'Rent',           planned:3400, actual:3400},
+        {name:'Utilities',      planned:310,  actual:310},
+        {name:'Internet',       planned:90,   actual:90},
+        {name:'His phone',      planned:60,   actual:80},
+        {name:'My phone',       planned:60,   actual:80},
+        {name:'Netflix',        planned:30,   actual:30},
+        {name:'Tactical snacks',planned:40,   actual:40},
+        {name:'Wedding fund',   planned:1600, actual:1800},
+      ],
+      savings:[
+        {name:'Investments',  planned:4200, actual:4200},
+        {name:'Retirement',   planned:2800, actual:2800},
+        {name:'Wedding fund', planned:1600, actual:1800},
+        {name:'Truck access.',planned:440,  actual:440},
+      ],
+      debt:[],
+    }
+  };
+}
+
+let state = null;   // {current:'YYYY-MM', months:{...}}
+let SECTIONS = [];  // live view of the current month: [{key,label,color,rows}]
+
+/* ---------- helpers ---------- */
+function num(v){const n=+v;return isFinite(n)?n:0;}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function keyOf(year,month){return year+'-'+String(month+1).padStart(2,'0');}
+function parseKey(k){const p=k.split('-');return {year:+p[0],month:+p[1]-1};}
 
 function fmt(n){
   if(n==null||isNaN(n))return'—';
@@ -234,6 +264,156 @@ function pctBadge(planned, actual){
   return `<span class="pct-badge ${cls}">${Math.round(p*100)}%</span>`;
 }
 
+/* ---------- storage ---------- */
+function normalize(data){
+  if(!data||typeof data!=='object'||!data.months||typeof data.months!=='object') return null;
+  const out={current:null,months:{}};
+  Object.keys(data.months).forEach(k=>{
+    if(!/^\d{4}-\d{2}$/.test(k)) return;
+    const src=data.months[k]||{};
+    const m={rvPlanned:num(src.rvPlanned),rvActual:num(src.rvActual),sections:{}};
+    SECTION_META.forEach(meta=>{
+      const rows=(src.sections&&Array.isArray(src.sections[meta.key]))?src.sections[meta.key]:[];
+      m.sections[meta.key]=rows.map(r=>({
+        name:String((r&&r.name)||''),
+        planned:num(r&&r.planned),
+        actual:num(r&&r.actual)
+      }));
+    });
+    out.months[k]=m;
+  });
+  const keys=Object.keys(out.months).sort();
+  if(!keys.length) return null;
+  out.current=(data.current&&out.months[data.current])?data.current:keys[keys.length-1];
+  return out;
+}
+
+function loadState(){
+  let stored=null;
+  try{
+    const raw=localStorage.getItem(STORAGE_KEY);
+    if(raw) stored=normalize(JSON.parse(raw));
+  }catch(e){ stored=null; }
+  if(stored) return stored;
+  const now=new Date();
+  const k=keyOf(now.getFullYear(),now.getMonth());
+  return {current:k,months:{[k]:defaultMonth()}};
+}
+
+let saveTimer=null;
+function save(){
+  clearTimeout(saveTimer);
+  saveTimer=setTimeout(saveNow,300);
+}
+function saveNow(){
+  clearTimeout(saveTimer);
+  try{
+    localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
+    const t=new Date().toLocaleTimeString('en-CA',{hour:'2-digit',minute:'2-digit'});
+    status('Saved '+t);
+  }catch(e){
+    status('Not saved — storage blocked',true);
+  }
+}
+function status(msg,warn){
+  const el=document.getElementById('save-status');
+  el.textContent=msg;
+  el.className='save-status'+(warn?' warn':'');
+}
+
+let propTimer=null;
+function propStatus(count,verb){
+  const el=document.getElementById('prop-status');
+  clearTimeout(propTimer);
+  if(!count){ el.className='prop-status'; el.textContent=''; return; }
+  el.textContent='↓ '+verb+' in '+count+' later month'+(count===1?'':'s');
+  el.className='prop-status show';
+  propTimer=setTimeout(()=>{ el.className='prop-status'; },2600);
+}
+
+/* ---------- months ---------- */
+function month(){ return state.months[state.current]; }
+
+function remaining(m,field){
+  const rv = field==='planned'?m.rvPlanned:m.rvActual;
+  const t = k => m.sections[k].reduce((a,r)=>a+num(r[field]),0);
+  return num(rv)+t('income')-t('expenses')-t('bills')-t('savings')-t('debt');
+}
+
+function laterKeys(){
+  return Object.keys(state.months).filter(k=>k>state.current).sort();
+}
+function earlierKeys(target){
+  return Object.keys(state.months).filter(k=>k<target).sort();
+}
+
+/* Apply fn to every stored month AFTER the current one. Returns how many. */
+function propagate(fn){
+  const keys=laterKeys();
+  keys.forEach(k=>fn(state.months[k]));
+  return keys.length;
+}
+
+/* Find the row in a later month that corresponds to row `ri` / `name`.
+   Same index wins; otherwise match by name; otherwise skip that month. */
+function matchRow(m,secKey,ri,name){
+  const rows=m.sections[secKey]||[];
+  const at=rows[ri];
+  if(at && at.name===name) return at;
+  if(name){ const byName=rows.filter(r=>r.name===name); if(byName.length===1) return byName[0]; }
+  return null;
+}
+
+function seedMonth(target){
+  const earlier=earlierKeys(target);
+  if(earlier.length){
+    const src=state.months[earlier[earlier.length-1]];
+    const m={rvPlanned:remaining(src,'planned'),rvActual:remaining(src,'actual'),sections:{}};
+    SECTION_META.forEach(meta=>{
+      m.sections[meta.key]=src.sections[meta.key].map(r=>({name:r.name,planned:num(r.planned),actual:num(r.actual)}));
+    });
+    return m;
+  }
+  const later=Object.keys(state.months).filter(k=>k>target).sort();
+  if(later.length){
+    // back-filling a month before everything we have: take the row list, leave the money blank
+    const src=state.months[later[0]];
+    const m={rvPlanned:0,rvActual:0,sections:{}};
+    SECTION_META.forEach(meta=>{
+      m.sections[meta.key]=src.sections[meta.key].map(r=>({name:r.name,planned:num(r.planned),actual:0}));
+    });
+    return m;
+  }
+  return defaultMonth();
+}
+
+function goMonth(key){
+  if(!state.months[key]) state.months[key]=seedMonth(key);
+  state.current=key;
+  propStatus(0);
+  bind();
+  renderAll();
+  saveNow();
+}
+function prevMonth(){
+  const {year,month:m}=parseKey(state.current);
+  goMonth(m===0?keyOf(year-1,11):keyOf(year,m-1));
+}
+function nextMonth(){
+  const {year,month:m}=parseKey(state.current);
+  goMonth(m===11?keyOf(year+1,0):keyOf(year,m+1));
+}
+
+function bind(){
+  const m=month();
+  SECTIONS=SECTION_META.map(meta=>({key:meta.key,label:meta.label,color:meta.color,rows:m.sections[meta.key]}));
+  document.getElementById('rv-planned').value=m.rvPlanned||'';
+  document.getElementById('rv-actual').value=m.rvActual||'';
+  const {year,month:mo}=parseKey(state.current);
+  document.getElementById('month-label').textContent=MONTHS[mo]+' '+year;
+}
+
+/* ---------- rendering ---------- */
 function buildSections(){
   const grid = document.getElementById('main-grid');
   grid.innerHTML='';
@@ -243,7 +423,7 @@ function buildSections(){
     card.innerHTML=`
       <div class="section-header">
         <span class="sec-title" style="color:${sec.color}">${sec.label}</span>
-        <button class="add-btn" onclick="addRow(${si})" title="Add row">+</button>
+        <button class="add-btn" onclick="addRow(${si})" title="Add row (also added to later months)">+</button>
       </div>
       <div class="col-headers">
         <span>Name</span><span>Planned</span><span>Actual</span><span>%</span>
@@ -265,11 +445,11 @@ function renderRows(si){
     div.className='row-item';
     div.innerHTML=`
       <div style="display:flex;align-items:center;gap:4px">
-        <input type="text" class="name-in" value="${row.name}" placeholder="Item name" oninput="SECTIONS[${si}].rows[${ri}].name=this.value">
-        <button class="del-btn" onclick="delRow(${si},${ri})">&#215;</button>
+        <input type="text" class="name-in" value="${esc(row.name)}" placeholder="Item name" oninput="setField(${si},${ri},'name',this.value)">
+        <button class="del-btn" onclick="delRow(${si},${ri})" title="Delete row (also removed from later months)">&#215;</button>
       </div>
-      <input type="number" class="planned-in" value="${row.planned||''}" placeholder="0" step="1" oninput="SECTIONS[${si}].rows[${ri}].planned=+this.value||0;recalc()">
-      <input type="number" class="actual-in" value="${row.actual||''}" placeholder="0" step="1" oninput="SECTIONS[${si}].rows[${ri}].actual=+this.value||0;recalc()">
+      <input type="number" class="planned-in" value="${row.planned||''}" placeholder="0" step="1" oninput="setField(${si},${ri},'planned',+this.value||0)">
+      <input type="number" class="actual-in" value="${row.actual||''}" placeholder="0" step="1" oninput="setField(${si},${ri},'actual',+this.value||0)">
       <div class="pct-cell">${pctBadge(row.planned,row.actual)}</div>
     `;
     container.appendChild(div);
@@ -279,8 +459,8 @@ function renderRows(si){
 
 function renderTotal(si){
   const sec = SECTIONS[si];
-  const tp = sec.rows.reduce((a,r)=>a+(+r.planned||0),0);
-  const ta = sec.rows.reduce((a,r)=>a+(+r.actual||0),0);
+  const tp = sec.rows.reduce((a,r)=>a+num(r.planned),0);
+  const ta = sec.rows.reduce((a,r)=>a+num(r.actual),0);
   const pct = tp>0?Math.round(ta/tp*100)+'%':'—';
   const el = document.getElementById('total-'+si);
   const col = sec.color;
@@ -292,29 +472,77 @@ function renderTotal(si){
   `;
 }
 
+/* ---------- edits (propagate forward) ---------- */
+function setField(si,ri,field,value){
+  const sec=SECTIONS[si];
+  const row=sec.rows[ri];
+  if(!row) return;
+  const oldName=row.name;
+  row[field]=value;
+
+  let touched=0;
+  if(field==='name'){
+    touched=propagate(m=>{ const t=matchRow(m,sec.key,ri,oldName); if(t){ t.name=value; } });
+  }else{
+    touched=propagate(m=>{ const t=matchRow(m,sec.key,ri,row.name); if(t){ t[field]=value; } });
+  }
+  propStatus(touched,'updated');
+
+  if(field==='name') save(); else recalc();
+}
+
 function addRow(si){
-  SECTIONS[si].rows.push({name:'',planned:0,actual:0});
+  const sec=SECTIONS[si];
+  sec.rows.push({name:'',planned:0,actual:0});
+  const ri=sec.rows.length-1;
+  const touched=propagate(m=>{
+    const rows=m.sections[sec.key];
+    rows.splice(Math.min(ri,rows.length),0,{name:'',planned:0,actual:0});
+  });
+  propStatus(touched,'added');
   renderRows(si);
   recalc();
-  // focus new name input
   const container = document.getElementById('rows-'+si);
   const inputs = container.querySelectorAll('.name-in');
   if(inputs.length) inputs[inputs.length-1].focus();
 }
 
 function delRow(si,ri){
-  SECTIONS[si].rows.splice(ri,1);
+  const sec=SECTIONS[si];
+  const gone=sec.rows[ri];
+  if(!gone) return;
+  const name=gone.name;
+  let touched=0;
+  propagate(m=>{
+    const rows=m.sections[sec.key];
+    const t=matchRow(m,sec.key,ri,name);
+    if(t){ rows.splice(rows.indexOf(t),1); touched++; }
+  });
+  sec.rows.splice(ri,1);
+  propStatus(touched,'removed');
   renderRows(si);
   recalc();
 }
 
 function sectionTotal(si, field){
-  return SECTIONS[si].rows.reduce((a,r)=>a+(+r[field]||0),0);
+  return SECTIONS[si].rows.reduce((a,r)=>a+num(r[field]),0);
+}
+
+function onRollover(){
+  const m=month();
+  m.rvPlanned = +document.getElementById('rv-planned').value||0;
+  m.rvActual  = +document.getElementById('rv-actual').value||0;
+  recalc();
+}
+
+function renderAll(){
+  buildSections();
+  recalc();
 }
 
 function recalc(){
-  const rvP = +document.getElementById('rv-planned').value||0;
-  const rvA = +document.getElementById('rv-actual').value||0;
+  const m=month();
+  const rvP = m.rvPlanned, rvA = m.rvActual;
 
   const incP = sectionTotal(0,'planned'), incA = sectionTotal(0,'actual');
   const expP = sectionTotal(1,'planned'), expA = sectionTotal(1,'actual');
@@ -383,25 +611,65 @@ function recalc(){
   ovContainer.appendChild(remDiv);
 
   document.getElementById('big-remaining').textContent = fmt(remA);
+
+  save();
 }
 
-function updateMonthLabel(){
-  document.getElementById('month-label').textContent = MONTHS[currentMonth]+' '+currentYear;
-}
-function prevMonth(){
-  currentMonth--;
-  if(currentMonth<0){currentMonth=11;currentYear--;}
-  updateMonthLabel();
-}
-function nextMonth(){
-  currentMonth++;
-  if(currentMonth>11){currentMonth=0;currentYear++;}
-  updateMonthLabel();
+/* ---------- export / import ---------- */
+function exportData(){
+  const payload={
+    app:'budget-tracker',
+    version:2,
+    exported:new Date().toISOString(),
+    current:state.current,
+    months:state.months
+  };
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download='budget-tracker-'+new Date().toISOString().slice(0,10)+'.json';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+  const n=Object.keys(state.months).length;
+  status('Exported '+n+' month'+(n===1?'':'s'));
 }
 
-updateMonthLabel();
-buildSections();
-recalc();
+function importData(input){
+  const file=input.files&&input.files[0];
+  if(!file) return;
+  const reader=new FileReader();
+  reader.onload=function(){
+    let parsed=null;
+    try{ parsed=normalize(JSON.parse(reader.result)); }catch(e){ parsed=null; }
+    if(!parsed){
+      alert('That file could not be read as a budget export.');
+      input.value='';
+      return;
+    }
+    const n=Object.keys(parsed.months).length;
+    const ok=confirm('Import '+n+' month'+(n===1?'':'s')+' from "'+file.name+'"?\n\nThis replaces everything currently saved in this tool.');
+    if(!ok){ input.value=''; return; }
+    state=parsed;
+    propStatus(0);
+    bind();
+    renderAll();
+    saveNow();
+    status('Imported '+n+' month'+(n===1?'':'s'));
+    input.value='';
+  };
+  reader.onerror=function(){ alert('Could not read that file.'); input.value=''; };
+  reader.readAsText(file);
+}
+
+/* ---------- boot ---------- */
+state=loadState();
+bind();
+renderAll();
+saveNow();
+window.addEventListener('beforeunload',saveNow);
 </script>
 </body>
 </html>
