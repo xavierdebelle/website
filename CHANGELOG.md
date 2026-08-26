@@ -5,6 +5,28 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v8 — 2026-08-26
+
+**Volley & BBQ Zine updated to v3**
+- Adds "no dish" tracking: BBQ attendees who haven't claimed a potluck slot
+  are flagged in the admin list as well as the public chips, and the list is
+  frozen into each week's history snapshot so past weeks keep the record.
+  Week summaries now show a "N no dish" count.
+- Shared helpers pulled out (`eatsBBQ`, `claimerSet`, `noDishNames`) so the
+  public view, admin list and history all derive the same answer.
+- Otherwise unchanged — 98.6% identical to the previous build.
+- Card and map copy rewritten: it was billed as a standalone zine, but it's a
+  working RSVP and potluck coordinator with an admin panel and weekly history.
+
+**Unchanged, and still outstanding**
+- Same Firebase project, still no authentication, `ADMIN_PASSWORD` still
+  hardcoded as a literal in the client source. The v3 update does not touch
+  any of that, so the analysis from earlier still stands in full.
+- The new `noDish` field adds names to history. The append-only history rule
+  drafted earlier still fits it — no rule changes needed.
+
+---
+
 ## v7 — 2026-08-25
 
 **Budget Tracker replaced with v3**
