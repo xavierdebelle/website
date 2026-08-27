@@ -35,6 +35,8 @@
   .month-nav button:hover,.io-btn:hover{border-color:var(--border2);background:var(--surface3)}
   .io-btn{font-weight:600;letter-spacing:.3px}
   .io-group{display:flex;align-items:center;gap:6px}
+  .goals-btn{border-color:#1e5a7a;background:var(--blue-dim);color:var(--blue-text)}
+  .goals-btn:hover{background:#1e4a63;border-color:var(--blue)}
   .month-label{font-weight:700;font-size:15px;min-width:110px;text-align:center}
   .save-status{font-family:'DM Mono',monospace;font-size:11px;color:var(--text3);text-align:right}
   .save-status.warn{color:var(--yellow)}
@@ -130,6 +132,29 @@
   .rv-remaining-big .rv-rem-val{font-family:'DM Mono',monospace;font-size:24px;font-weight:500;color:var(--teal-text)}
 
   .income-color{color:#b3acff} .expenses-color{color:var(--purple-text)} .bills-color{color:var(--pink-text)} .savings-color{color:var(--teal-text)} .debt-color{color:#ff8f8f}
+
+  /* GOALS MODAL */
+  .modal-overlay{position:fixed;inset:0;background:rgba(3,6,10,.65);display:none;align-items:center;justify-content:center;z-index:100;padding:20px}
+  .modal-overlay.show{display:flex}
+  .modal-panel{background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);max-width:560px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 24px 70px rgba(0,0,0,.55)}
+  .modal-header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border)}
+  .modal-header-text .modal-title{font-size:15px;font-weight:800;letter-spacing:-.3px}
+  .modal-header-text .modal-subtitle{font-size:11px;color:var(--text3);margin-top:2px}
+  .modal-close{background:transparent;border:none;color:var(--text2);font-size:20px;cursor:pointer;line-height:1;padding:2px 8px;border-radius:var(--radius-sm);transition:.15s}
+  .modal-close:hover{background:var(--surface3);color:var(--text)}
+  .modal-body{padding:18px;display:flex;flex-direction:column;gap:14px}
+  .goal-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden}
+  .goal-card-header{padding:10px 14px;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--blue-text);border-bottom:1px solid var(--border)}
+  .goal-card-body{padding:14px;display:flex;flex-direction:column;gap:12px}
+  .goal-row{display:flex;gap:10px}
+  .goal-row .rv-field{flex:1}
+  .goal-hint{font-size:11px;color:var(--text3);line-height:1.4}
+  .goal-result{padding:12px 14px;background:var(--teal-dim);border:1px solid #1a5a55;border-radius:var(--radius-sm);color:var(--teal-text);font-size:13px;line-height:1.5;min-height:16px}
+  .goal-result strong{font-family:'DM Mono',monospace;font-weight:500}
+  .goal-result.empty{background:var(--surface3);border-color:var(--border);color:var(--text3)}
+  .goal-result.warn{background:var(--red-dim);border-color:#5a2a2a;color:var(--red)}
+  .goal-input{width:100%}
+  input.rv-input[type=date]{color-scheme:dark;font-size:14px}
 </style>
 </head>
 <body>
@@ -145,6 +170,7 @@
         <span class="prop-status" id="prop-status"></span>
       </div>
       <div class="io-group">
+        <button class="io-btn goals-btn" onclick="openGoals()" title="Plan a savings goal">Goals</button>
         <button class="io-btn" onclick="exportData()" title="Download every month as a .json file">Export</button>
         <button class="io-btn" onclick="document.getElementById('import-file').click()" title="Load a previously exported .json file">Import</button>
         <input type="file" id="import-file" accept="application/json,.json" style="display:none" onchange="importData(this)">
@@ -189,6 +215,47 @@
         <div class="rv-remaining-big">
           <div class="rv-rem-label">Remaining (actual)</div>
           <div class="rv-rem-val" id="big-remaining">$0</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="goals-overlay" onmousedown="closeGoalsOnOverlay(event)">
+    <div class="modal-panel" onmousedown="event.stopPropagation()">
+      <div class="modal-header">
+        <div class="modal-header-text">
+          <div class="modal-title">Goal Calculator</div>
+          <div class="modal-subtitle">Plan a savings target off your tracked actuals</div>
+        </div>
+        <button class="modal-close" onclick="closeGoals()" title="Close">&#215;</button>
+      </div>
+      <div class="modal-body">
+        <div class="goal-card">
+          <div class="goal-card-header">Time to goal</div>
+          <div class="goal-card-body">
+            <div class="rv-field">
+              <label>Target amount</label>
+              <input class="rv-input goal-input" type="number" id="goal-time-target" placeholder="e.g. 10000" step="1" oninput="calcTimeToGoal()">
+            </div>
+            <div class="goal-hint" id="goal-time-hint"></div>
+            <div class="goal-result" id="goal-time-result">Enter a target amount above.</div>
+          </div>
+        </div>
+        <div class="goal-card">
+          <div class="goal-card-header">Required monthly contribution</div>
+          <div class="goal-card-body">
+            <div class="goal-row">
+              <div class="rv-field">
+                <label>Target amount</label>
+                <input class="rv-input goal-input" type="number" id="goal-contrib-target" placeholder="e.g. 10000" step="1" oninput="calcContribution()">
+              </div>
+              <div class="rv-field">
+                <label>Target date</label>
+                <input class="rv-input goal-input" type="date" id="goal-contrib-date" oninput="calcContribution()">
+              </div>
+            </div>
+            <div class="goal-result" id="goal-contrib-result">Enter a target amount and date above.</div>
+          </div>
         </div>
       </div>
     </div>
@@ -663,6 +730,93 @@ function importData(input){
   reader.onerror=function(){ alert('Could not read that file.'); input.value=''; };
   reader.readAsText(file);
 }
+
+/* ---------- goal calculator ---------- */
+function avgMonthlySurplus(){
+  const keys=Object.keys(state.months);
+  if(!keys.length) return 0;
+  let sum=0;
+  keys.forEach(k=>{
+    const m=state.months[k];
+    const incA=m.sections.income.reduce((a,r)=>a+num(r.actual),0);
+    const expA=m.sections.expenses.reduce((a,r)=>a+num(r.actual),0);
+    sum+=incA-expA;
+  });
+  return sum/keys.length;
+}
+
+function describeMonths(n){
+  const years=Math.floor(n/12), rem=n%12;
+  const parts=[];
+  if(years) parts.push(years+' yr'+(years===1?'':'s'));
+  if(rem||!years) parts.push(rem+' mo'+(rem===1?'':'s'));
+  const d=new Date(); d.setDate(1); d.setMonth(d.getMonth()+n);
+  return {label:parts.join(' '), dateLabel:MONTHS[d.getMonth()]+' '+d.getFullYear()};
+}
+
+function calcTimeToGoal(){
+  const target=+document.getElementById('goal-time-target').value||0;
+  const surplus=avgMonthlySurplus();
+  const n=Object.keys(state.months).length;
+  document.getElementById('goal-time-hint').textContent=
+    'Based on your average monthly surplus of '+fmt(surplus)+' (actual income − actual expenses) across '+n+' tracked month'+(n===1?'':'s')+'.';
+
+  const resEl=document.getElementById('goal-time-result');
+  if(target<=0){
+    resEl.className='goal-result empty';
+    resEl.textContent='Enter a target amount above.';
+    return;
+  }
+  if(surplus<=0){
+    resEl.className='goal-result warn';
+    resEl.textContent="Your average monthly surplus is "+fmt(surplus)+" — at this pace you won't reach this goal. Increase income or cut expenses to make progress.";
+    return;
+  }
+  const months=Math.ceil(target/surplus);
+  const {label,dateLabel}=describeMonths(months);
+  resEl.className='goal-result';
+  resEl.innerHTML=`<strong>${label}</strong> to reach ${fmt(target)} — around <strong>${dateLabel}</strong>.`;
+}
+
+function calcContribution(){
+  const target=+document.getElementById('goal-contrib-target').value||0;
+  const dateStr=document.getElementById('goal-contrib-date').value;
+  const resEl=document.getElementById('goal-contrib-result');
+  if(target<=0||!dateStr){
+    resEl.className='goal-result empty';
+    resEl.textContent='Enter a target amount and date above.';
+    return;
+  }
+  const targetDate=new Date(dateStr+'T00:00:00');
+  const now=new Date();
+  if(targetDate<=now){
+    resEl.className='goal-result warn';
+    resEl.textContent='Pick a target date in the future.';
+    return;
+  }
+  let months=(targetDate.getFullYear()-now.getFullYear())*12+(targetDate.getMonth()-now.getMonth());
+  if(targetDate.getDate()<now.getDate()) months-=1;
+  months=Math.max(1,months);
+  const monthly=target/months;
+  resEl.className='goal-result';
+  resEl.innerHTML=`Set aside <strong>${fmt(monthly)}</strong> per month for <strong>${months} month${months===1?'':'s'}</strong> to reach ${fmt(target)} by ${targetDate.toLocaleDateString('en-CA',{year:'numeric',month:'long',day:'numeric'})}.`;
+}
+
+function openGoals(){
+  document.getElementById('goals-overlay').classList.add('show');
+  calcTimeToGoal();
+  calcContribution();
+  document.getElementById('goal-time-target').focus();
+}
+function closeGoals(){
+  document.getElementById('goals-overlay').classList.remove('show');
+}
+function closeGoalsOnOverlay(e){
+  if(e.target.id==='goals-overlay') closeGoals();
+}
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape' && document.getElementById('goals-overlay').classList.contains('show')) closeGoals();
+});
 
 /* ---------- boot ---------- */
 state=loadState();
