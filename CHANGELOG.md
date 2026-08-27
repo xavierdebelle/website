@@ -5,6 +5,29 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v9 — 2026-08-27
+
+**New tool**
+- **Idea Bank** added to Personal, after the Budget Tracker. Capture ideas
+  without judging them, score each on impact × confidence × ease, see them
+  plotted on an impact/ease matrix, then push them across a Next / In progress
+  / Shipped board. Steps, owners, due dates, JSON export and import.
+- Tool count is now 14, in five categories.
+
+**Checked before publishing**
+- The cleanest tool on the site: **no external URLs at all**, no network calls
+  of any kind, no credentials, and it starts empty rather than seeded. Data
+  lives in `localStorage` under `ideabank.v1` and in files you download.
+- Exercised the real pipeline before shipping — captured, scored (auto-switches
+  to Prioritise, plots on the matrix), committed to the board, and confirmed it
+  persisted. No console errors.
+
+**Copy**
+- The Personal section blurb and the map's action label were both written when
+  that category held a single tool. Both now read for more than one.
+
+---
+
 ## v8 — 2026-08-26
 
 **Volley & BBQ Zine updated to v3**
