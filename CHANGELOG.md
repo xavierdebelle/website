@@ -5,6 +5,88 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v16 — 2026-09-01
+
+**Feed Planner updated to v12 — IndexedDB, and sharper exports**
+
+*Storage*
+- Photos move out of `localStorage` and into IndexedDB. They were being kept as
+  base64 text in a store meant for settings: ~33% larger than the file itself,
+  and capped around 5MB. Measured on a normal portrait that was **~24 images
+  total** — one twenty-slide carousel was very nearly the whole budget. The new
+  quota on this machine reports **3,189MB** against roughly 5.
+- Each photo is now three records: the full one, only ever read to build an
+  export, plus a 720px copy for the editor and a 320px one for tiles and chips.
+  They are separate records on purpose, so fetching a 5KB thumbnail does not
+  drag the 110KB original out of the database with it.
+- Deleting a photo, removing a slide, or discarding an edit collects the images
+  nothing points at any more. Clear all leaves zero records behind, verified.
+- Saving is no longer "rewrite everything": the plan is a small piece of JSON
+  naming which image goes where, and images are written once when added.
+
+*Sharper exports*
+- The import ceiling goes from 1080px to 2400px on the long side, at quality
+  0.92. This is what actually decides sharpness — PNG only removed the loss on
+  the way out, and the loss was happening on the way in.
+- Every shape now feeds the export more real pixels than it needs, instead of
+  being stretched to fill it:
+
+  | Source | Before | After |
+  |---|---|---|
+  | iPhone 4:3 | 648x810 — 36% of the export | 1440x1800 — 178% |
+  | Portrait 4:5 | 864x1080 — 64% | 1920x2400 — 316% |
+  | Portrait 2:3 | 720x900 — 44% | 1600x2000 — 219% |
+  | Landscape 3:2 | 576x720 — 28% | 1280x1600 — 140% |
+
+- 4.9x more pixel data in every case, and a 1080x1350 export is now a genuine
+  downsample rather than an upscale. Worth being straight about the size of it:
+  measured on a structured test pattern the contrast improvement is about 8%,
+  because even the old 1.25x upscale on a 4:5 crop was fairly gentle. The
+  clear-cut part is that nothing is invented any more, which is what shows on
+  texture — hair, fabric, foliage.
+- **Photos already in the grid keep the resolution they were imported at.** Only
+  new imports benefit; re-add anything you want at the new quality.
+
+*The import crash the Carousel Planner hit in v15, pre-empted here*
+- That tool's start-up rebuilt thumbnails by decoding every stored photo at full
+  size, ran out of memory, reloaded, and did it again. This tool cannot loop that
+  way, because its thumbnails are stored rather than rebuilt — but its **import**
+  had the same underlying fault: a 12MP photo was decoded to a ~47MB bitmap
+  before being scaled down.
+- The decoder is now asked for the size wanted up front, so that bitmap never
+  exists. A 4032x3024 import writes 2400x1800, 720x540 and 320x240 without
+  materialising the original.
+- Peak live bitmap, twelve posts with one twenty-slide carousel: **50.4
+  megapixels (~202MB) in v10, 6.4 in v11, now 3.5 (~14MB)**, and the grid on its
+  own is 1.0. Closing the editor releases the chips and stage image rather than
+  leaving twenty decoded.
+
+**Checked before publishing**
+- Scan clean: no external hosts, no endpoints, no secrets, no personal data.
+- Migration from the old `localStorage` plan verified end to end, twice: profile,
+  captions, carousels and crops all carried over, it runs once rather than on
+  every load, and **the old copy is deliberately left in place, untouched**, as
+  the fallback. Its notice is no longer styled as an error.
+- ZIP validated by recomputing every CRC with an independent implementation
+  (itself checked against the standard vector); exports are 1080x1350 PNG in
+  posting order; share hands over real PNG `File` objects and survives a
+  dismissed sheet. Reorder-to-database, orphan collection, discard-on-close and
+  the grid sheet all verified.
+- Hit-testing for drag could not be exercised — `elementFromPoint` returns null
+  in a hidden preview pane — so the drag engine was diffed against v11, where it
+  was verified with the pane visible, and confirmed byte-identical; the new part,
+  writing a reorder to the database, was tested directly.
+
+**Still outstanding**
+- Safari can clear script-writable storage for sites left unvisited, and that
+  applies to IndexedDB as much as it did to localStorage. This bought room, not
+  durability — the ZIP export is still the only real backup.
+- No crash guard on start-up. The Carousel Planner needed one because its boot
+  decoded photos; this one's does not, so it was left out rather than added
+  speculatively.
+
+---
+
 ## v15 — 2026-09-01
 
 **Carousel Planner v6 — the reload loop**

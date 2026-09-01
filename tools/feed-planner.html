@@ -188,6 +188,11 @@
     color: var(--ink);
   }
   .storage-warn[hidden] { display: none; }
+  /* the same strip carries good news too, and red is the wrong colour for it */
+  .storage-warn.info {
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+  }
   .storage-warn button {
     margin-left: auto;
     border: none;
@@ -1125,54 +1130,185 @@
 </div>
 
 <script>
-(() => {
+(async () => {
   const STORAGE_KEY = "feed-planner-state-v1";
-  const MAX_DIM = 1080;
   const AVATAR_DIM = 320;
   const MAX_SLIDES = 20;          // Instagram's own ceiling for one carousel
   const POST_W = 1080, POST_H = 1350;
 
   function pad(n) { return String(n).padStart(2, "0"); }
 
-  // A tile is ~125px wide on a phone and a slide chip is 54px, so putting the
-  // stored 864x1080 image in them costs ~90x the pixels it can show. iOS counts
-  // that decoded bitmap against the tab and reloads the page when it runs out,
-  // which reads as the tool crashing. Display copies are kept in memory only —
-  // exports always read the stored original, never these.
-  const GRID_THUMB = 480;
-  const CHIP_THUMB = 160;
-  const gridThumbs = new Map();
-  const chipThumbs = new Map();
+// ---- image store ----
+  // Photos live in IndexedDB as real files rather than as base64 text in
+  // localStorage, which was both ~33% larger and capped around 5MB. Each photo
+  // is kept at three sizes: the full one is only ever read to build an export,
+  // and the small ones are what the page actually displays — putting a 2400px
+  // image in a 54px chip is what made iOS discard the tab.
+  const DB_NAME = "feed-planner";
+  const DB_VERSION = 1;
+  const FULL_DIM = 2400;    // large enough that a 4:5 export never has to upscale
+  const VIEW_DIM = 720;     // crop stage and carousel preview
+  const THUMB_DIM = 320;    // grid tiles and slide chips
+  const TIERS = ["full", "view", "thumb"];
 
-  let thumbQueue = Promise.resolve();
+  let db = null;
 
-  function makeThumb(dataUrl, maxDim, cache) {
-    const cached = cache.get(dataUrl);
-    if (cached) return Promise.resolve(cached);
-    return loadImageEl(dataUrl).then(img => {
-      const scale = Math.min(1, maxDim / Math.max(img.naturalWidth, img.naturalHeight));
-      const w = Math.max(1, Math.round(img.naturalWidth * scale));
-      const h = Math.max(1, Math.round(img.naturalHeight * scale));
-      const canvas = document.createElement("canvas");
-      canvas.width = w;
-      canvas.height = h;
-      canvas.getContext("2d").drawImage(img, 0, 0, w, h);
-      const out = canvas.toDataURL("image/jpeg", 0.82);
-      canvas.width = canvas.height = 0;   // iOS holds the backing store until this is done
-      cache.set(dataUrl, out);
-      return out;
-    }).catch(() => dataUrl);              // a copy that won't build is not worth failing over
+  function openDb() {
+    return new Promise((resolve, reject) => {
+      const req = indexedDB.open(DB_NAME, DB_VERSION);
+      req.onupgradeneeded = () => {
+        const d = req.result;
+        if (!d.objectStoreNames.contains("images")) d.createObjectStore("images", { keyPath: "key" });
+        if (!d.objectStoreNames.contains("meta")) d.createObjectStore("meta", { keyPath: "key" });
+      };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+      req.onblocked = () => reject(new Error("another tab is holding the database open"));
+    });
   }
 
-  // queued, so first paint decodes one original at a time instead of all of them
-  function setThumb(imgEl, dataUrl, maxDim, cache) {
-    const cached = cache.get(dataUrl);
-    if (cached) { imgEl.src = cached; return; }
-    thumbQueue = thumbQueue.then(() => makeThumb(dataUrl, maxDim, cache));
-    thumbQueue.then(src => { imgEl.src = src; });
+  function idb(request) {
+    return new Promise((resolve, reject) => {
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  }
+  const store = (name, mode) => db.transaction(name, mode).objectStore(name);
+  const tierKey = (id, tier) => id + "::" + tier;
+  const putTier = (id, tier, blob) => idb(store("images", "readwrite").put({ key: tierKey(id, tier), blob }));
+  const getTier = (id, tier) => idb(store("images", "readonly").get(tierKey(id, tier)));
+  const delTier = (id, tier) => idb(store("images", "readwrite").delete(tierKey(id, tier)));
+  const allTierKeys = () => idb(store("images", "readonly").getAllKeys());
+  const putMeta = (key, value) => idb(store("meta", "readwrite").put({ key, value }));
+  const getMeta = (key) => idb(store("meta", "readonly").get(key));
+
+  function newId() {
+    if (crypto.randomUUID) return crypto.randomUUID();
+    return Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 10);
   }
 
-  const state = loadState();
+  function canvasBlob(canvas, quality) {
+    return new Promise(resolve => canvas.toBlob(resolve, "image/jpeg", quality));
+  }
+
+  // The decoder is asked for the size we actually want. Drawing a 12MP phone
+  // photo through a full-size <img> would materialise a ~47MB bitmap first,
+  // which is what makes importing a few shots fall over on a phone.
+  async function renderTier(blob, fallbackImg, dims, maxDim, quality) {
+    const scale = Math.min(1, maxDim / Math.max(dims.w, dims.h));
+    const w = Math.max(1, Math.round(dims.w * scale));
+    const h = Math.max(1, Math.round(dims.h * scale));
+
+    let bitmap = null;
+    try {
+      bitmap = await createImageBitmap(blob, { resizeWidth: w, resizeHeight: h, resizeQuality: "high" });
+    } catch (e) {
+      bitmap = null;                    // older browsers ignore the resize options
+    }
+
+    const canvas = document.createElement("canvas");
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext("2d");
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+    if (bitmap) { ctx.drawImage(bitmap, 0, 0, w, h); bitmap.close(); }
+    else ctx.drawImage(fallbackImg, 0, 0, w, h);
+    const out = await canvasBlob(canvas, quality);
+    canvas.width = canvas.height = 0;   // iOS holds the backing store until this is done
+    return out;
+  }
+
+  const TIER_SPEC = [["full", FULL_DIM, 0.92], ["view", VIEW_DIM, 0.86], ["thumb", THUMB_DIM, 0.82]];
+
+  async function storeImageBlob(blob) {
+    const url = URL.createObjectURL(blob);
+    try {
+      // read the dimensions only — this image is never drawn at full size
+      const img = await loadImageEl(url);
+      const dims = { w: img.naturalWidth, h: img.naturalHeight };
+      if (!dims.w || !dims.h) return null;
+      const id = newId();
+      for (const [tier, dim, quality] of TIER_SPEC) {
+        const tierBlob = await renderTier(blob, img, dims, dim, quality);
+        if (!tierBlob) return null;
+        await putTier(id, tier, tierBlob);
+      }
+      return id;
+    } finally {
+      URL.revokeObjectURL(url);
+    }
+  }
+
+  const storeImageFile = (file) => storeImageBlob(file);
+
+  async function storeImageFrom(dataUrl) {
+    const blob = await (await fetch(dataUrl)).blob();
+    return storeImageBlob(blob);
+  }
+
+  // Small tiers are held for the session — an object URL keeps its blob in
+  // memory, and a thumb is ~25KB. The full one is created per export and
+  // revoked straight after, because it is not.
+  const urlCache = new Map();
+
+  async function imageUrl(id, tier) {
+    if (!db || !id) return null;
+    const key = id + ":" + tier;
+    if (urlCache.has(key)) return urlCache.get(key);
+    let rec = null;
+    try { rec = await getTier(id, tier); } catch (e) { return null; }
+    if (!rec || !rec.blob) return null;
+    if (urlCache.has(key)) return urlCache.get(key);   // another caller won the race
+    const url = URL.createObjectURL(rec.blob);
+    urlCache.set(key, url);
+    return url;
+  }
+
+  function setImageSrc(imgEl, id, tier) {
+    imageUrl(id, tier).then(url => { if (url) imgEl.src = url; });
+  }
+
+  async function withFullImage(id, fn) {
+    if (!db) return null;
+    const rec = await getTier(id, "full");
+    if (!rec || !rec.blob) return null;
+    const url = URL.createObjectURL(rec.blob);
+    try {
+      return await fn(url);
+    } finally {
+      URL.revokeObjectURL(url);
+    }
+  }
+
+  function releaseUrls(id) {
+    for (const tier of TIERS) {
+      const key = id + ":" + tier;
+      const url = urlCache.get(key);
+      if (url) { URL.revokeObjectURL(url); urlCache.delete(key); }
+    }
+  }
+
+  // An image nothing points at any more is dead weight; the editor's working
+  // copy counts as a reference, or adding slides and saving would delete them.
+  async function collectGarbage() {
+    if (!db) return;
+    const used = new Set();
+    for (const post of state.photos) for (const slide of post.slides) used.add(slide.imageId);
+    if (editSlides) for (const slide of editSlides) used.add(slide.imageId);
+    let keys = [];
+    try { keys = await allTierKeys(); } catch (e) { return; }
+    for (const key of keys) {
+      const cut = key.lastIndexOf("::");
+      if (cut < 0) continue;
+      const id = key.slice(0, cut);
+      if (used.has(id)) continue;
+      releaseUrls(id);
+      try { await delTier(id, key.slice(cut + 2)); } catch (e) {}
+    }
+  }
+
+  let state = { profile: blankProfile(), photos: [] };
 
   const grid = document.getElementById("grid");
   const addTile = document.getElementById("addTile");
@@ -1250,64 +1386,79 @@
     imgEl.style.transform = z > 1 ? `scale(${z})` : "";
   }
 
-  // A tile used to be one flat photo. It is now a post that holds one or more
-  // slides, so older saves get lifted into a one-slide post on the way in.
+  const num = (v, fallback) => (Number.isFinite(v) ? v : fallback);
+
+  function blankProfile() {
+    return { username: "your.handle", bio: "", followers: "0", following: "0", avatar: null };
+  }
+
   function normalizePost(raw) {
     if (!raw) return null;
-    const source = Array.isArray(raw.slides) && raw.slides.length
-      ? raw.slides
-      : (raw.dataUrl ? [raw] : []);
-    const slides = source
-      .filter(s => s && typeof s.dataUrl === "string")
+    const slides = (raw.slides || [])
+      .filter(s => s && typeof s.imageId === "string")
       .slice(0, MAX_SLIDES)
       .map(s => ({
-        dataUrl: s.dataUrl,
-        focusX: Number.isFinite(s.focusX) ? s.focusX : 50,
-        focusY: Number.isFinite(s.focusY) ? s.focusY : 50,
-        zoom: Number.isFinite(s.zoom) ? s.zoom : 1
+        imageId: s.imageId,
+        focusX: num(s.focusX, 50),
+        focusY: num(s.focusY, 50),
+        zoom: num(s.zoom, 1)
       }));
     if (!slides.length) return null;
     return { slides, caption: typeof raw.caption === "string" ? raw.caption : "" };
   }
 
-  function loadState() {
-    const blank = {
-      profile: { username: "your.handle", bio: "", followers: "0", following: "0", avatar: null },
-      photos: []
-    };
+  // The old localStorage plan is read once and rewritten into the database.
+  // It is deliberately left in place afterwards rather than cleared: it costs
+  // nothing to keep and it is the only copy if anything here goes wrong.
+  async function migrateFromLocalStorage() {
+    let raw = null;
+    try { raw = localStorage.getItem(STORAGE_KEY); } catch (e) { return null; }
+    if (!raw) return null;
     let parsed = null;
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) parsed = JSON.parse(raw);
-    } catch (e) {
-      console.warn("Saved plan could not be read.", e);
+    try { parsed = JSON.parse(raw); } catch (e) { return null; }
+
+    const photos = [];
+    for (const rawPost of (parsed.photos || [])) {
+      const source = Array.isArray(rawPost.slides) && rawPost.slides.length
+        ? rawPost.slides
+        : (rawPost.dataUrl ? [rawPost] : []);
+      const slides = [];
+      for (const old of source) {
+        if (!old || typeof old.dataUrl !== "string") continue;
+        const imageId = await storeImageFrom(old.dataUrl);
+        slides.push({
+          imageId,
+          focusX: num(old.focusX, 50),
+          focusY: num(old.focusY, 50),
+          zoom: num(old.zoom, 1)
+        });
+      }
+      if (slides.length) {
+        photos.push({ slides, caption: typeof rawPost.caption === "string" ? rawPost.caption : "" });
+      }
     }
-    if (!parsed) return blank;
-    // deliberately outside the catch: a bug in here must not silently look
-    // like an empty grid, which is what losing the whole plan looks like too
-    return {
-      profile: { ...blank.profile, ...(parsed.profile || {}) },
-      photos: (parsed.photos || []).map(normalizePost).filter(Boolean)
-    };
+    return { profile: { ...blankProfile(), ...(parsed.profile || {}) }, photos };
   }
 
-  function showStorageWarning(msg) {
+  function showStorageWarning(msg, tone) {
     storageWarnText.textContent = msg;
+    storageWarn.classList.toggle("info", tone === "info");
     storageWarn.hidden = false;
   }
   storageWarnClose.addEventListener("click", () => { storageWarn.hidden = true; });
 
-  // Carousels multiply how much every tile costs, so a full quota is now a
-  // question of when rather than if — and it used to fail with only a console
-  // warning, which made a lost plan look exactly like a saved one.
-  function saveState() {
+  // Only the plan itself is rewritten here — a small piece of JSON naming which
+  // images go where. The images were written once, when they were added.
+  async function saveState() {
+    if (!db) return false;
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      await putMeta("state", { profile: state.profile, photos: state.photos });
+      await collectGarbage();
       storageWarn.hidden = true;
       return true;
     } catch (e) {
-      showStorageWarning("This browser's storage is full, so that last change only exists in this tab — reloading loses it. Export what you have, then remove a few slides or photos.");
-      console.warn("Storage full — try removing a few photos.", e);
+      showStorageWarning("That change could not be saved — the browser refused the write, most likely out of disk space. Export what you have before closing the tab.");
+      console.warn("Save failed.", e);
       return false;
     }
   }
@@ -1341,11 +1492,14 @@
   }
 
   // ---- profile fields ----
-  usernameEl.value = state.profile.username;
-  bioEl.value = state.profile.bio;
-  followersEl.value = state.profile.followers;
-  followingEl.value = state.profile.following;
-  if (state.profile.avatar) setAvatarPreview(state.profile.avatar);
+  function applyProfile() {
+    usernameEl.value = state.profile.username;
+    bioEl.value = state.profile.bio;
+    followersEl.value = state.profile.followers;
+    followingEl.value = state.profile.following;
+    if (state.profile.avatar) setAvatarPreview(state.profile.avatar);
+    else { avatarImg.hidden = true; avatarHint.hidden = false; }
+  }
 
   usernameEl.addEventListener("input", () => { state.profile.username = usernameEl.value; saveState(); });
   bioEl.addEventListener("input", () => { state.profile.bio = bioEl.value; saveState(); });
@@ -1398,7 +1552,7 @@
       img.alt = "";
       img.draggable = false;
       applyPhotoStyle(img, cover);
-      setThumb(img, cover.dataUrl, GRID_THUMB, gridThumbs);
+      setImageSrc(img, cover.imageId, "thumb");
       tile.appendChild(img);
 
       if (slideCount > 1) {
@@ -1483,9 +1637,9 @@
       if (isFileDrag(e)) {
         const files = Array.from(e.dataTransfer.files || []).filter(f => f.type.startsWith("image/"));
         if (!files.length) return;
-        const dataUrl = await resizeToDataURL(files[0], MAX_DIM);
+        const imageId = await storeImageFile(files[0]);
         const existing = state.photos[dropIndex];
-        const slide = { dataUrl, focusX: 50, focusY: 50, zoom: 1 };
+        const slide = { imageId, focusX: 50, focusY: 50, zoom: 1 };
         // the slot keeps its plan: caption and any other slides stay put
         if (existing) existing.slides[0] = slide;
         else state.photos[dropIndex] = { slides: [slide], caption: "" };
@@ -1717,8 +1871,8 @@
   async function handleFiles(fileList) {
     const files = Array.from(fileList).filter(f => f.type.startsWith("image/"));
     for (const file of files) {
-      const dataUrl = await resizeToDataURL(file, MAX_DIM);
-      state.photos.push({ slides: [{ dataUrl, focusX: 50, focusY: 50, zoom: 1 }], caption: "" });
+      const imageId = await storeImageFile(file);
+      state.photos.push({ slides: [{ imageId, focusX: 50, focusY: 50, zoom: 1 }], caption: "" });
     }
     saveState();
     render();
@@ -1741,14 +1895,9 @@
     if (!state.photos.length && !state.profile.avatar) return;
     if (!confirm("Remove all photos and reset the profile preview?")) return;
     state.photos = [];
-    state.profile = { username: "your.handle", bio: "", followers: "0", following: "0", avatar: null };
-    usernameEl.value = state.profile.username;
-    bioEl.value = "";
-    followersEl.value = "0";
-    followingEl.value = "0";
-    avatarImg.hidden = true;
-    avatarHint.hidden = false;
-    saveState();
+    state.profile = blankProfile();
+    applyProfile();
+    saveState();          // the garbage pass inside it drops the orphaned images
     render();
   });
 
@@ -1788,10 +1937,13 @@
     const slide = currentSlide();
     cropFocus = { x: slide.focusX ?? 50, y: slide.focusY ?? 50 };
     cropZoom = slide.zoom ?? 1;
-    cropImg.src = slide.dataUrl;
-    cropPreviewImg.src = slide.dataUrl;
-    if (cropImg.complete && cropImg.naturalWidth) updateCropVisuals();
-    else cropImg.addEventListener("load", updateCropVisuals, { once: true });
+    imageUrl(slide.imageId, "view").then(url => {
+      if (!editSlides || slideIndex !== i || !url) return;   // moved on while it loaded
+      cropImg.src = url;
+      cropPreviewImg.src = url;
+      if (cropImg.complete && cropImg.naturalWidth) updateCropVisuals();
+      else cropImg.addEventListener("load", updateCropVisuals, { once: true });
+    });
   }
 
   // the stage holds the crop for the slide being edited; put it back before moving on
@@ -1826,7 +1978,7 @@
       img.alt = "";
       img.draggable = false;
       applyPhotoStyle(img, slide);
-      setThumb(img, slide.dataUrl, CHIP_THUMB, chipThumbs);
+      setImageSrc(img, slide.imageId, "thumb");
       chip.appendChild(img);
 
       const n = document.createElement("span");
@@ -1890,9 +2042,9 @@
     const room = MAX_SLIDES - editSlides.length;
     stashCrop();
     for (const file of files.slice(0, room)) {
-      const dataUrl = await resizeToDataURL(file, MAX_DIM);
+      const imageId = await storeImageFile(file);
       if (!editSlides) return;             // the editor was closed mid-import
-      editSlides.push({ dataUrl, focusX: 50, focusY: 50, zoom: 1 });
+      editSlides.push({ imageId, focusX: 50, focusY: 50, zoom: 1 });
     }
     markDirty();
     renderSlideStrip();
@@ -1908,11 +2060,17 @@
     closeCarousel();
     cropBackdrop.hidden = true;
     document.body.classList.remove("modal-open");
+    const discarded = cropDirty;
     cropIndex = null;
     editSlides = null;
     cropDirty = false;
+    // a closed editor should not keep twenty chips and the stage image decoded
+    slideStrip.innerHTML = "";
+    cropImg.removeAttribute("src");
+    cropPreviewImg.removeAttribute("src");
     endCropDrag();
     resetCropPointers();
+    if (discarded) collectGarbage();   // slides added and then abandoned
   }
 
   function stageMetrics() {
@@ -2059,9 +2217,9 @@
     cropReplaceInput.value = "";
     if (!file || !editSlides || !file.type.startsWith("image/")) return;
 
-    const dataUrl = await resizeToDataURL(file, MAX_DIM);
+    const imageId = await storeImageFile(file);
     if (!editSlides || !editSlides[at]) return;   // the editor was closed mid-import
-    editSlides[at] = { dataUrl, focusX: 50, focusY: 50, zoom: 1 };
+    editSlides[at] = { imageId, focusX: 50, focusY: 50, zoom: 1 };
     markDirty();
     renderSlideStrip();
     if (slideIndex === at) loadSlide(at);
@@ -2135,8 +2293,14 @@
       const img = cell.querySelector("img");
       if (!img) return;
       const near = Math.abs(i - at) <= 1;
-      if (near && !img.getAttribute("src")) img.src = carouselSlides[i].dataUrl;
-      else if (!near && img.getAttribute("src")) img.removeAttribute("src");
+      if (near && !img.dataset.loaded) {
+        img.dataset.loaded = "1";
+        const want = carouselSlides[i].imageId;
+        imageUrl(want, "view").then(url => { if (url && img.dataset.loaded) img.src = url; });
+      } else if (!near && img.dataset.loaded) {
+        delete img.dataset.loaded;
+        img.removeAttribute("src");
+      }
     });
   }
 
@@ -2275,8 +2439,10 @@
       const row = Math.floor(i / cols);
       const dx = col * (tileW + gapPx);
       const dy = row * (cellH + gapPx);
-      const img = await loadImageEl(photo.slides[0].dataUrl);   // decoded one at a time, released after
       const cover = photo.slides[0];
+      const coverUrl = await imageUrl(cover.imageId, "view");
+      if (!coverUrl) continue;
+      const img = await loadImageEl(coverUrl);   // decoded one at a time, released after
       const iw = img.naturalWidth, ih = img.naturalHeight;
 
       // same window the tile shows on screen: cover, shrunk by zoom, placed by focus
@@ -2407,7 +2573,8 @@
   // One slide, cropped exactly as the tile shows it, at Instagram's 4:5 size.
   // PNG, so the export adds no compression of its own on top of the import.
   function renderSlideBlob(slide) {
-    return loadImageEl(slide.dataUrl).then(img => {
+    return withFullImage(slide.imageId, async (url) => {
+      const img = await loadImageEl(url);
       const iw = img.naturalWidth, ih = img.naturalHeight;
       const { sw, sh } = cropWindow(iw, ih, slide.zoom ?? 1);
       const sx = (iw - sw) * ((slide.focusX ?? 50) / 100);
@@ -2419,11 +2586,14 @@
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = "high";
       ctx.drawImage(img, sx, sy, sw, sh, 0, 0, POST_W, POST_H);
-      return new Promise(resolve => canvas.toBlob(blob => {
-        canvas.width = canvas.height = 0;    // 1080x1350 is ~5.8MB of backing store
-        resolve(blob);
-      }, "image/png"));
+      const blob = await canvasBlob2(canvas);
+      canvas.width = canvas.height = 0;      // 1080x1350 is ~5.8MB of backing store
+      return blob;
     });
+  }
+
+  function canvasBlob2(canvas) {
+    return new Promise(resolve => canvas.toBlob(resolve, "image/png"));
   }
 
   async function collectPosts(stamp) {
@@ -2445,6 +2615,7 @@
       for (let i = 0; i < total; i++) {
         const name = slideFileName(seq, frame, i + 1, total);
         const blob = await renderSlideBlob(post.slides[i]);
+        if (!blob) continue;
         files.push({ name, blob });
         names.push(name);
       }
@@ -2587,6 +2758,47 @@
   const shareItem = exportMenu.querySelector('[data-format="share"]');
   if (!canSharePosts()) shareItem.remove();
 
-  render();
+  async function boot() {
+    try {
+      db = await openDb();
+    } catch (e) {
+      console.warn("IndexedDB unavailable.", e);
+      showStorageWarning("This browser would not open its database, so nothing you do here will be saved. Any plan you saved before is untouched — try reloading, or open the tool in Safari or Chrome rather than a private window.");
+      applyProfile();
+      render();
+      return;
+    }
+
+    let loaded = null;
+    try {
+      const rec = await getMeta("state");
+      if (rec && rec.value) {
+        loaded = {
+          profile: { ...blankProfile(), ...(rec.value.profile || {}) },
+          photos: (rec.value.photos || []).map(normalizePost).filter(Boolean)
+        };
+      } else {
+        const migrated = await migrateFromLocalStorage();
+        if (migrated) {
+          loaded = migrated;
+          await putMeta("state", { profile: migrated.profile, photos: migrated.photos });
+          const count = migrated.photos.reduce((n, p) => n + p.slides.length, 0);
+          showStorageWarning(`Moved ${count} image${count === 1 ? "" : "s"} into this browser's database, which has far more room than the old storage did. Your previous copy has been left where it was, untouched.`, "info");
+        }
+      }
+    } catch (e) {
+      console.warn("Could not read the saved plan.", e);
+      showStorageWarning("The saved plan could not be read. Nothing has been deleted — reload before making changes, so a fresh save does not overwrite it.");
+      applyProfile();
+      render();
+      return;
+    }
+
+    if (loaded) state = loaded;
+    applyProfile();
+    render();
+  }
+
+  await boot();
 })();
 </script>
