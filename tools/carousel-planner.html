@@ -124,9 +124,34 @@
   aside {
     border-right: 1px solid var(--line);
     background: var(--surface);
-    overflow-y: auto;
+    overflow: hidden;
     display: flex; flex-direction: column;
   }
+  .panel-scroll { flex: 1; min-height: 0; overflow-y: auto; }
+
+  /* bottom-sheet handle, phone only */
+  .sheet-bar {
+    display: none;
+    align-items: center; gap: .5rem;
+    padding: .5rem .7rem;
+    height: 52px; flex: none;
+    border-bottom: 1px solid var(--line);
+    background: var(--surface);
+    touch-action: none;
+  }
+  .sheet-bar .grab {
+    border: none; padding: .4rem .3rem; background: none; flex: none;
+  }
+  .sheet-bar .grab i {
+    display: block; width: 30px; height: 4px; border-radius: 2px;
+    background: var(--ink-faint);
+  }
+  .sheet-title {
+    flex: 1; min-width: 0; font-size: .8rem; color: var(--ink-dim);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .sheet-quick { display: flex; gap: .3rem; flex: none; }
+  .sheet-quick button { padding: .38rem .5rem; font-size: .72rem; }
   .sect { padding: .8rem .9rem; border-bottom: 1px solid var(--line); }
   .sect h2 {
     margin: 0 0 .6rem; font-size: .68rem; letter-spacing: .1em;
@@ -172,7 +197,10 @@
     min-height: 0;
   }
   .viewport.panning { cursor: grabbing; }
-  .canvas-pad { padding: 46px; width: max-content; }
+  .canvas-pad {
+    padding: 46px; width: max-content;
+    min-height: 100%; display: flex; align-items: center;
+  }
   .strip-wrap { position: relative; }
   .strip {
     position: relative;
@@ -321,9 +349,42 @@
     color: var(--ink-dim);
   }
 
+  /* ---------- phone layout ---------- */
   @media (max-width: 860px) {
     .main { grid-template-columns: 1fr; }
-    aside { display: none; }
+    .brand { display: none; }
+    header.bar { padding: .45rem .55rem; gap: .4rem; }
+    header.bar button { padding: .4rem .58rem; font-size: .85rem; }
+    header.bar .zoomgrp, header.bar .spacer { display: none; }
+    .bar select, .bar input[type="number"] { min-width: 54px; }
+
+    aside {
+      position: fixed; left: 0; right: 0; bottom: 0; z-index: 60;
+      height: 52vh;
+      border-right: none;
+      border-top: 1px solid var(--line);
+      border-radius: 14px 14px 0 0;
+      box-shadow: 0 -8px 28px rgba(0, 0, 0, .22);
+      transform: translateY(calc(100% - 52px));
+      transition: transform .22s ease;
+    }
+    aside.open { transform: translateY(0); }
+    @media (prefers-reduced-motion: reduce) { aside { transition: none; } }
+    .sheet-bar { display: flex; }
+    .shortcuts-sect { display: none; }
+    .rail { padding-bottom: 58px; }
+    .toast { bottom: 68px; }                   /* clear of the sheet bar */
+    body.sheet-open .canvas-pad { padding-bottom: var(--sheet-pad, 46px); }
+    header.bar button.ghost { border-color: var(--line); }
+    .sheet { padding: .85rem .9rem 1rem; }
+    .phone { border-width: 6px; border-radius: 26px; }
+  }
+
+  /* ---------- touch input ---------- */
+  @media (pointer: coarse) {
+    .viewport { touch-action: none; }          /* pan and pinch are handled in JS */
+    .handle { width: 20px; height: 20px; border-width: 2px; }
+    .strip { --rot-off: 38px; }
   }
 </style>
 </head>
@@ -354,10 +415,13 @@
 
     <div class="spacer"></div>
 
-    <div class="group">
+    <div class="group zoomgrp">
       <button id="btnZoomOut" class="ghost" title="Zoom out">&minus;</button>
       <span id="zoomLabel" style="font:500 .74rem/1 var(--font-mono); color:var(--ink-dim); min-width:42px; text-align:center;">100%</span>
       <button id="btnZoomIn" class="ghost" title="Zoom in">+</button>
+    </div>
+
+    <div class="group">
       <button id="btnFit" class="ghost" title="Fit to window">Fit</button>
     </div>
 
@@ -368,7 +432,17 @@
   </header>
 
   <div class="main">
-    <aside>
+    <aside id="panel">
+      <div class="sheet-bar" id="sheetBar">
+        <button class="grab" id="sheetToggle" aria-label="Show or hide the controls"><i></i></button>
+        <span class="sheet-title" id="sheetTitle">Carousel</span>
+        <div class="sheet-quick">
+          <button id="mUndo" title="Undo">Undo</button>
+          <button id="mDup" title="Duplicate selected photo">Copy</button>
+          <button id="mDel" class="danger" title="Delete selected photo">Delete</button>
+        </div>
+      </div>
+      <div class="panel-scroll">
       <div class="sect">
         <h2>Canvas</h2>
         <div class="grid2">
@@ -389,7 +463,7 @@
         </div>
       </div>
 
-      <div class="sect">
+      <div class="sect" id="selSect">
         <h2>Selection</h2>
         <div id="selPanel" style="display:none">
           <div class="grid2">
@@ -459,7 +533,7 @@
         </div>
       </div>
 
-      <div class="sect" style="border-bottom:none">
+      <div class="sect shortcuts-sect" style="border-bottom:none">
         <h2>Shortcuts</h2>
         <p class="hint">
           <kbd>drag</kbd> move &nbsp; <kbd>&#8997;</kbd>+drag reposition crop<br />
@@ -468,6 +542,7 @@
           <kbd>space</kbd>+drag pan &nbsp; <kbd>&#8984;</kbd>+wheel zoom<br />
           <kbd>&#9003;</kbd> delete &nbsp; <kbd>esc</kbd> deselect
         </p>
+      </div>
       </div>
     </aside>
 
@@ -536,6 +611,7 @@
     <div class="exp-list" id="expList" style="margin-top:.8rem"></div>
     <div class="sheet-actions">
       <button id="closeExport">Cancel</button>
+      <button id="btnExportShare" class="primary" style="display:none">Share slides</button>
       <button id="btnExportZip" class="primary">Download all (.zip)</button>
     </div>
   </div>
@@ -584,6 +660,7 @@ function uid() { return Math.random().toString(36).slice(2, 10); }
 function clamp(v, a, b) { return Math.min(b, Math.max(a, v)); }
 function byId(id) { for (var i = 0; i < state.items.length; i++) if (state.items[i].id === id) return state.items[i]; return null; }
 function sel() { return selectedId ? byId(selectedId) : null; }
+function isNarrow() { return window.matchMedia("(max-width: 860px)").matches; }
 
 /* ============================================================
    Elements
@@ -806,10 +883,22 @@ function layoutStrip() {
   stripWrap.style.height = Math.round(th * zoom) + "px";
 }
 
+// Zoom while keeping whatever sits under (cx, cy) pinned to that spot.
+function zoomAt(z, cx, cy) {
+  var r = strip.getBoundingClientRect();
+  var ax = (cx - r.left) / zoom, ay = (cy - r.top) / zoom;
+  zoom = clamp(z, 0.03, 2);
+  layoutStrip();
+  $("zoomLabel").textContent = Math.round(zoom * 100) + "%";
+  var r2 = strip.getBoundingClientRect();
+  viewport.scrollLeft += (ax * zoom + r2.left) - cx;
+  viewport.scrollTop += (ay * zoom + r2.top) - cy;
+}
+
 function fitToWindow() {
   if (!viewport.clientWidth || !viewport.clientHeight) return;
   userZoomed = false;
-  var pad = 110;
+  var pad = isNarrow() ? 44 : 110;
   var zx = (viewport.clientWidth - pad) / stripW();
   var zy = (viewport.clientHeight - pad) / SH();
   setZoom(Math.min(zx, zy), false);
@@ -950,7 +1039,7 @@ function renderFrame() {
     r.dataset.h = "rot";
     r.style.left = "50%";
     r.style.top = "0%";
-    r.style.transform = "translate(-50%,-50%) scale(var(--invz)) translateY(-26px)";
+    r.style.transform = "translate(-50%,-50%) scale(var(--invz)) translateY(calc(-1 * var(--rot-off, 26px)))";
     frameEl.appendChild(r);
   }
   strip.appendChild(frameEl);
@@ -1041,7 +1130,7 @@ function renderThumbs() {
   var host = $("slides");
   host.textContent = "";
   host.style.gap = state.gutter + "px";
-  var H = 132;
+  var H = isNarrow() ? 92 : 132;
   var k = Math.min(H / SH(), 200 / SW());
   for (var i = 0; i < state.slides; i++) {
     (function (i) {
@@ -1090,7 +1179,27 @@ function selectItem(id) {
   syncSelPanel();
 }
 
+// The phone sheet's summary line and always-visible actions.
+function syncSheet() {
+  var it = sel();
+  var a = it ? assets.get(it.aid) : null;
+  if (it) {
+    var sp = slideSpan(it);
+    $("sheetTitle").textContent =
+      (a && a.name ? a.name.replace(/\.[^.]+$/, "") : "photo") +
+      " · " + (sp[0] === sp[1] ? "slide " + sp[0] : "slides " + sp[0] + "\u2013" + sp[1]);
+  } else {
+    $("sheetTitle").textContent = state.items.length
+      ? "Tap a photo to edit it"
+      : "Add photos to start";
+  }
+  $("mDup").disabled = !it;
+  $("mDel").disabled = !it;
+  $("mUndo").disabled = !undoStack.length;
+}
+
 function syncSelPanel() {
+  syncSheet();
   var it = sel();
   $("selPanel").style.display = it ? "block" : "none";
   $("selEmpty").style.display = it ? "none" : "block";
@@ -1185,7 +1294,7 @@ strip.addEventListener("pointerdown", function (e) {
       p0: toStrip(e)
     };
     drag.a0 = Math.atan2(drag.p0.y - drag.cy, drag.p0.x - drag.cx) * 180 / Math.PI;
-    strip.setPointerCapture(e.pointerId);
+    try { strip.setPointerCapture(e.pointerId); } catch (err) {}
     return;
   }
 
@@ -1207,8 +1316,8 @@ strip.addEventListener("pointerdown", function (e) {
     } else {
       drag = { mode: "move", it: item, start: { x: item.x, y: item.y }, p0: toStrip(e) };
     }
-    strip.setPointerCapture(e.pointerId);
-  } else {
+    try { strip.setPointerCapture(e.pointerId); } catch (err) {}
+  } else if (e.pointerType !== "touch") {
     selectItem(null);
   }
 });
@@ -1417,17 +1526,91 @@ viewport.addEventListener("wheel", function (e) {
   if (e.ctrlKey || e.metaKey) {
     e.preventDefault();
     userZoomed = true;
-    var r = strip.getBoundingClientRect();
-    var ax = (e.clientX - r.left) / zoom, ay = (e.clientY - r.top) / zoom;
-    var z = clamp(zoom * (1 - e.deltaY * 0.0025), 0.03, 2);
-    zoom = z;
-    layoutStrip();
-    $("zoomLabel").textContent = Math.round(zoom * 100) + "%";
-    var r2 = strip.getBoundingClientRect();
-    viewport.scrollLeft += (ax * zoom + r2.left) - e.clientX;
-    viewport.scrollTop += (ay * zoom + r2.top) - e.clientY;
+    zoomAt(zoom * (1 - e.deltaY * 0.0025), e.clientX, e.clientY);
   }
 }, { passive: false });
+
+/* ---- touch gestures ----
+   A finger that lands on a photo is handled by the strip listener above (it sets
+   `drag`). Anything else pans the canvas, and a second finger takes over as a
+   pinch-zoom. */
+
+var tp = new Map();          // live touch points
+var pinch = null;
+var touchPan = null;
+
+function ptDist(a, b) { return Math.hypot(b.x - a.x, b.y - a.y); }
+function ptMid(a, b) { return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }; }
+
+// A second finger arriving mid-drag shouldn't leave the photo where it slipped to.
+function abortDrag() {
+  if (!drag) return;
+  var it = drag.it, st = drag.start;
+  if (drag.mode === "move") { it.x = st.x; it.y = st.y; }
+  else if (drag.mode === "resize") { it.x = st.x; it.y = st.y; it.w = st.w; it.h = st.h; }
+  else if (drag.mode === "rotate") { it.rot = st.rot; }
+  else if (drag.mode === "crop") { it.ox = st.ox; it.oy = st.oy; }
+  if (undoStack.length) undoStack.pop();
+  drag = null;
+  clearGuides();
+  paintItem(it);
+}
+
+viewport.addEventListener("pointerdown", function (e) {
+  if (e.pointerType !== "touch") return;
+  tp.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+  if (tp.size === 2) {
+    abortDrag();
+    touchPan = null;
+    var p = Array.from(tp.values());
+    pinch = { d0: ptDist(p[0], p[1]), z0: zoom, mid: ptMid(p[0], p[1]) };
+    return;
+  }
+  if (tp.size === 1 && !drag) {
+    touchPan = {
+      x: e.clientX, y: e.clientY,
+      sl: viewport.scrollLeft, st: viewport.scrollTop, moved: 0
+    };
+  }
+});
+
+viewport.addEventListener("pointermove", function (e) {
+  if (e.pointerType !== "touch") return;
+  if (tp.has(e.pointerId)) tp.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+  if (pinch && tp.size >= 2) {
+    var p = Array.from(tp.values());
+    var m = ptMid(p[0], p[1]);
+    if (pinch.d0 > 8) {
+      userZoomed = true;
+      zoomAt(pinch.z0 * (ptDist(p[0], p[1]) / pinch.d0), pinch.mid.x, pinch.mid.y);
+    }
+    viewport.scrollLeft -= (m.x - pinch.mid.x);
+    viewport.scrollTop -= (m.y - pinch.mid.y);
+    pinch.mid = m;
+    return;
+  }
+
+  if (touchPan && !drag) {
+    var dx = e.clientX - touchPan.x, dy = e.clientY - touchPan.y;
+    touchPan.moved = Math.max(touchPan.moved, Math.abs(dx) + Math.abs(dy));
+    viewport.scrollLeft = touchPan.sl - dx;
+    viewport.scrollTop = touchPan.st - dy;
+  }
+});
+
+function endTouch(e) {
+  if (e.pointerType !== "touch") return;
+  tp.delete(e.pointerId);
+  if (tp.size < 2) pinch = null;
+  if (tp.size === 0) {
+    if (touchPan && touchPan.moved < 8 && !drag) selectItem(null);   // a tap, not a pan
+    touchPan = null;
+  }
+}
+viewport.addEventListener("pointerup", endTouch);
+viewport.addEventListener("pointercancel", endTouch);
 
 /* ============================================================
    Keyboard
@@ -1520,6 +1703,45 @@ function coverBox(bx, bw) {
 /* ============================================================
    Controls
    ============================================================ */
+
+$("sheetBar").addEventListener("click", function (e) {
+  if (e.target.closest(".sheet-quick")) return;      // the quick buttons act, not the sheet
+  var opened = $("panel").classList.toggle("open");
+  if (opened && sel()) {
+    // Land on the fit/crop block: the position fields are rarely what you want on a phone.
+    var scroller = document.querySelector(".panel-scroll");
+    var target = $("btnFitSlide").parentNode;
+    scroller.scrollTop += target.getBoundingClientRect().top - scroller.getBoundingClientRect().top - 24;
+  }
+  reserveForSheet();
+  if (opened) centreSelection();
+});
+// The open sheet overlays the lower half of the canvas. Pad the canvas by the
+// hidden amount so its contents centre in the strip that's still visible.
+function reserveForSheet() {
+  var open = $("panel").classList.contains("open") && isNarrow();
+  document.body.classList.toggle("sheet-open", open);
+  if (!open) return;
+  var vr = viewport.getBoundingClientRect();
+  var hidden = Math.max(0, vr.bottom - document.documentElement.clientHeight * 0.48);
+  canvasPad.style.setProperty("--sheet-pad", (46 + hidden) + "px");
+}
+
+// The open sheet covers the lower half, so pull the selection into what's left.
+function centreSelection() {
+  var it = sel(); if (!it) return;
+  var el = elMap.get(it.id); if (!el) return;
+  var r = el.getBoundingClientRect();
+  var vr = viewport.getBoundingClientRect();
+  var visibleBottom = Math.min(vr.bottom, document.documentElement.clientHeight * 0.48);
+  if (visibleBottom <= vr.top) return;
+  viewport.scrollTop += (r.top + r.height / 2) - (vr.top + visibleBottom) / 2;
+  viewport.scrollLeft += (r.left + r.width / 2) - (vr.left + vr.width / 2);
+}
+
+$("mUndo").onclick = function () { undo(); syncSheet(); };
+$("mDup").onclick = function () { duplicate(); };
+$("mDel").onclick = function () { var it = sel(); if (it) removeItem(it.id); };
 
 $("btnAdd").onclick = function () { $("filePick").click(); };
 $("filePick").onchange = function (e) { addFiles(e.target.files, null); e.target.value = ""; };
@@ -1776,6 +1998,7 @@ function download(blob, name) {
 }
 
 $("expQuality").oninput = function () { $("expQualityVal").textContent = $("expQuality").value; };
+$("expQuality").onchange = buildExportList;
 $("expFormat").onchange = function () {
   $("expQuality").parentNode.style.opacity = $("expFormat").value === "png" ? ".4" : "1";
   buildExportList();
@@ -1804,7 +2027,59 @@ function buildExportList() {
       list.appendChild(row);
     })(i);
   }
+  prepareShare();
 }
+
+var shareFiles = null, shareToken = 0;
+
+function shareSupported() {
+  return !!(navigator.canShare && navigator.share) &&
+         (isNarrow() || window.matchMedia("(pointer: coarse)").matches);
+}
+
+// Rendered up front so the share call itself stays inside the tap that triggered it,
+// which is what iOS requires.
+function prepareShare() {
+  var btn = $("btnExportShare");
+  shareFiles = null;
+  var token = ++shareToken;
+  if (!shareSupported()) { btn.style.display = "none"; return; }
+
+  btn.style.display = "";
+  btn.disabled = true;
+  btn.textContent = "Preparing\u2026";
+
+  var files = [];
+  var chain = Promise.resolve();
+  for (var i = 0; i < state.slides; i++) {
+    (function (i) {
+      chain = chain.then(function () {
+        if (token !== shareToken) return;
+        return slideBlob(i).then(function (b) {
+          files.push(new File([b], slideName(i), { type: b.type }));
+        });
+      });
+    })(i);
+  }
+  chain.then(function () {
+    if (token !== shareToken) return;
+    if (!files.length || !navigator.canShare({ files: files })) {
+      btn.style.display = "none";
+      return;
+    }
+    shareFiles = files;
+    btn.disabled = false;
+    btn.textContent = "Share " + files.length + " slides";
+  }).catch(function () { btn.style.display = "none"; });
+}
+
+$("btnExportShare").onclick = function () {
+  if (!shareFiles) return;
+  navigator.share({ files: shareFiles, title: "Carousel slides" })
+    .catch(function (err) {
+      if (err && err.name !== "AbortError") toast("Your browser wouldn't open the share sheet");
+    });
+};
 
 $("btnExport").onclick = function () {
   if (!state.items.length) { toast("Add some photos first"); return; }
@@ -1954,6 +2229,7 @@ window.addEventListener("resize", function () {
   clearTimeout(resizeTimer);
   resizeTimer = setTimeout(function () {
     renderThumbs();
+    reserveForSheet();
     if (!userZoomed) fitToWindow();
   }, 120);
 });

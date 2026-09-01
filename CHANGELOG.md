@@ -5,6 +5,55 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v11 — 2026-09-01
+
+**Carousel Planner updated to v3 — it works on a phone now**
+- **The controls became a bottom sheet.** Below 860px the side panel was simply
+  hidden, and it took every control with it — cover slide, span a photo across
+  slides, crop, layers, delete. It now lives in a sheet at the bottom: a 52px
+  bar naming what's selected with Undo / Copy / Delete always in reach, and a
+  tap raises the full panel to half height. Opening it with a photo selected
+  lands on the fit and crop block rather than the position fields.
+- **Touch gestures on the canvas.** One finger on a photo moves it, one finger
+  anywhere else pans, two fingers pinch to zoom, and a tap on empty canvas
+  deselects. A second finger arriving mid-drag cancels the nudge the first one
+  started, instead of leaving the photo wherever it slipped to.
+- The canvas reserves the height the open sheet covers, so the strip you are
+  cropping stays visible above it rather than hiding underneath.
+- Handles go from 11px to 20px on touch and the rotation handle moves further
+  out. Two-row compact header, smaller slide previews, and the keyboard
+  shortcuts panel is hidden since there is no keyboard.
+- **Export can hand off to the share sheet.** On a phone a download lands in
+  Files, which is the wrong place for something you are about to post. Where
+  the browser can share files there is now a Share slides button that opens the
+  OS share sheet. The slides are rendered when the dialog opens so the share
+  call happens inside the tap that asked for it, which is what iOS requires.
+  Where it isn't supported the button hides itself and the .zip works as before.
+
+**Checked before publishing**
+- Exercised at 375×812 with real touch events: pinch ran 8% → 15% → 23% across
+  a spread, one-finger pan scrolled the canvas, tap selected and deselected,
+  drag moved a photo, and the sheet opened scrolled to the crop controls with
+  the strip still visible above it. Export dialog and swipe preview both fit
+  inside the screen.
+- Desktop re-checked afterwards and is unchanged — static sidebar, no sheet
+  bar, 11px handles, `touch-action` untouched — and the exporter is still
+  pixel-accurate: a known test square measured 538px against 540 predicted at
+  200% crop zoom, in a 1080×1350 slide.
+- Still no network calls of any kind. Layout in `localStorage`, photos in
+  IndexedDB, same keys as before, so a carousel saved in a browser survives
+  the update.
+
+**Outstanding**
+- The share button is unverified on a real iPhone. The test browser doesn't
+  expose `navigator.share`, so only the fallback was actually exercised — it
+  hides itself and leaves the .zip.
+- One desktop-visible change came along with it: the canvas now centres
+  vertically when the strip is smaller than the window, instead of sitting at
+  the top. It is the same mechanism the phone layout uses to reserve space.
+
+---
+
 ## v10 — 2026-09-01
 
 **Feed Planner updated to v8 — it works on a phone now**
