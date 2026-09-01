@@ -5,6 +5,55 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v13 — 2026-09-01
+
+**Carousel Planner v5 — the rest of the memory problem**
+v12 cut the worst of it and the phone still misbehaved once more than a
+couple of photos were loaded. v12 fixed the previews; what was left was the
+editor itself, and it cost per photo, which is why it only showed up with
+several.
+
+- **A phone no longer loads a big copy of anything.** The editor canvas was
+  still handing each photo over at 1600px — about 7.7MB of bitmap each, so
+  six photos meant roughly 46MB before anything else. On a phone the strip is
+  shown between 8% and 40%, where a whole slide is 90 to 400 pixels wide, so
+  the 512px copy the previews already load is finer than the screen can
+  resolve. Touch devices now use that copy in the editor too, and skip making
+  the desktop-sized one at all.
+- **Canvas backing stores are released explicitly.** iOS keeps the memory
+  behind a canvas alive well after the canvas itself is garbage. Every
+  throwaway canvas — three per photo on import, one per slide on export, and
+  every preview replaced during a drag — is now zeroed the moment it's done.
+- **Exports no longer finish holding every original decoded.** They're
+  released as it goes, so a ten-slide export holds two at a time rather than
+  ten.
+- Measured the same way each time, six 4032×3024 photos across ten slides:
+  1,055 megapixels in v11, 12.7 in v12, and **2.4 on a phone in v13** — about
+  10MB of images, down from roughly 4GB.
+
+**Checked before publishing**
+- Exports are untouched by any of it. Recorded what actually gets drawn into
+  the export canvases on a phone: only the 2400px originals, never the 512px
+  copy the editor shows. The known test square still measures 538px at 200%
+  crop zoom — the same figure v11 and v12 produced.
+- Phone re-checked end to end: pinch 10% → 35%, pan, tap to select, the sheet,
+  and a ten-slide export. Desktop still uses the full-size copy in the editor
+  and is otherwise unchanged. No console errors.
+- Ruled out EXIF orientation as a cause with a rotated test file rather than
+  assuming: `naturalWidth` and canvas drawing agree, so iPhone photos are not
+  being turned sideways.
+
+**Outstanding**
+- This was diagnosed by measuring in a desktop browser at phone size, not on
+  the actual iPhone that reported it. The numbers are much healthier, but the
+  device itself is still the real test.
+- Import writes two sizes per photo on a phone and three on a desktop, one
+  photo at a time, so a large batch takes a while. That work could move off
+  the main thread if it becomes the annoying part.
+- The share button is still unverified on a real iPhone.
+
+---
+
 ## v12 — 2026-09-01
 
 **Carousel Planner v4 — fixes the phone reloading the page**

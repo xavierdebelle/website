@@ -634,9 +634,21 @@ var RATIOS = {
 
 // One photo is kept at three sizes. Handing a 12MP original to a 30px layer
 // thumbnail is what made phones run out of memory and reload the page.
-var EXPORT_EDGE = 2400;      // what the finished slides are rendered from
-var DISPLAY_EDGE = 1600;     // what the editor canvas shows
-var THUMB_EDGE = 400;        // slide rail, layers list, previews
+// Asked each time rather than snapshotted at load: a media query can resolve
+// after scripts run, and a stale "no" here is what puts a 1600px photo on a phone.
+function touchDevice() { return window.matchMedia("(pointer: coarse)").matches; }
+
+var EXPORT_EDGE = 2400;      // the finished slides are rendered from this
+var DISPLAY_EDGE = 1600;     // desktop editor canvas
+var THUMB_EDGE = 512;        // rail, layers, previews — and the phone canvas
+
+// A phone shows the strip somewhere between 8% and 40%, so a slide occupies
+// roughly 90-400 screen pixels. Handing it a 1200px copy of every photo is
+// what was still filling memory; the 512px copy is already more than the
+// screen can resolve, and it is the one image the previews were loading anyway.
+function editorSrc(a) {
+  return (touchDevice() ? a.thumb : a.disp) || a.src;
+}
 var SAFE_INSET = 0.06;        // where Instagram UI tends to sit
 
 var state = {
@@ -754,7 +766,9 @@ function scaledDataURL(im, edge, isPng, quality) {
   var x = c.getContext("2d");
   x.imageSmoothingQuality = "high";
   x.drawImage(im, 0, 0, c.width, c.height);
-  return c.toDataURL(isPng ? "image/png" : "image/jpeg", quality);
+  var url = c.toDataURL(isPng ? "image/png" : "image/jpeg", quality);
+  c.width = c.height = 0;    // iOS holds the backing store until this is done
+  return url;
 }
 
 function normalise(src, isPng) {
@@ -762,9 +776,9 @@ function normalise(src, isPng) {
     var out = {
       w: im.naturalWidth, h: im.naturalHeight,
       src: scaledDataURL(im, EXPORT_EDGE, isPng, 0.94),
-      disp: scaledDataURL(im, DISPLAY_EDGE, isPng, 0.88),
       thumb: scaledDataURL(im, THUMB_EDGE, false, 0.72)
     };
+    if (!touchDevice()) out.disp = scaledDataURL(im, DISPLAY_EDGE, isPng, 0.88);
     var k = Math.min(1, EXPORT_EDGE / Math.max(im.naturalWidth, im.naturalHeight));
     out.w = Math.round(im.naturalWidth * k);
     out.h = Math.round(im.naturalHeight * k);
@@ -781,10 +795,11 @@ function registerAsset(a) {
 // smaller ones once, one at a time so the phone isn't asked to hold several
 // full decodes at the same moment.
 function upgradeAsset(a) {
-  if (a.thumb && a.disp) return Promise.resolve(a);
+  var wants = !a.thumb || (!touchDevice() && !a.disp);
+  if (!wants) return Promise.resolve(a);
   return loadImage(a.src).then(function (im) {
-    a.disp = scaledDataURL(im, DISPLAY_EDGE, false, 0.88);
-    a.thumb = scaledDataURL(im, THUMB_EDGE, false, 0.72);
+    if (!a.thumb) a.thumb = scaledDataURL(im, THUMB_EDGE, false, 0.72);
+    if (!touchDevice() && !a.disp) a.disp = scaledDataURL(im, DISPLAY_EDGE, false, 0.88);
     dbPut(a);
     return a;
   });
@@ -803,13 +818,14 @@ function addFiles(fileList, dropPt) {
       return readFileAsDataURL(file)
         .then(function (src) { return normalise(src, /png$/i.test(file.type)); })
         .then(function (n) {
-          var a = { id: uid(), src: n.src, disp: n.disp, thumb: n.thumb, w: n.w, h: n.h, name: file.name };
+          var a = { id: uid(), src: n.src, disp: n.disp || null, thumb: n.thumb, w: n.w, h: n.h, name: file.name };
           dbPut(a);
           return registerAsset(a);
         })
         .then(function (a) {
           var it = makeItem(a, startCount + i, dropPt);
           state.items.push(it);
+          return new Promise(function (r) { setTimeout(r, 30); });
         });
     });
   });
@@ -965,7 +981,7 @@ function paintItem(it) {
   if (!el) return;
   var a = assets.get(it.aid);
   var im = el.firstChild;
-  if (a && a.disp && im.getAttribute("src") !== a.disp) im.src = a.disp;
+  if (a) { var want = editorSrc(a); if (im.getAttribute("src") !== want) im.src = want; }
   el.style.left = it.x + "px";
   el.style.top = it.y + "px";
   el.style.width = it.w + "px";
@@ -1164,8 +1180,15 @@ function slideCanvas(i, cssW, cssH) {
   return c;
 }
 
+function dropCanvases(host) {
+  Array.prototype.slice.call(host.querySelectorAll("canvas")).forEach(function (c) {
+    c.width = c.height = 0;
+  });
+}
+
 function renderThumbs() {
   var host = $("slides");
+  dropCanvases(host);
   host.textContent = "";
   host.style.gap = state.gutter + "px";
   var H = isNarrow() ? 92 : 132;
@@ -1951,6 +1974,7 @@ $("btnPreview").onclick = function () {
   phone.style.height = Hp + "px";
 
   var sw = $("swiper");
+  dropCanvases(sw);
   sw.textContent = "";
   for (var i = 0; i < state.slides; i++) {
     var pane = document.createElement("div");
@@ -2003,6 +2027,9 @@ function fullImage(aid) {
 
 function releaseFullImages() { fullCache.clear(); }
 
+// A ten-slide export would otherwise finish holding every original decoded.
+function capFullCache(limit) { if (fullCache.size > limit) fullCache.clear(); }
+
 // Async now: the originals are decoded while a slide is written out, then let go.
 function renderSlide(i) {
   return Promise.all(assetsForSlide(i).map(fullImage)).then(function () {
@@ -2022,7 +2049,11 @@ function slideBlob(i) {
   var q = parseInt($("expQuality").value, 10) / 100;
   return renderSlide(i).then(function (c) {
     return new Promise(function (resolve) {
-      c.toBlob(function (b) { resolve(b); }, fmt === "png" ? "image/png" : "image/jpeg", q);
+      c.toBlob(function (b) {
+        c.width = c.height = 0;   // free the 1080x1350 backing store straight away
+        capFullCache(2);
+        resolve(b);
+      }, fmt === "png" ? "image/png" : "image/jpeg", q);
     });
   });
 }
@@ -2051,6 +2082,7 @@ $("expName").onchange = buildExportList;
 
 function buildExportList() {
   var list = $("expList");
+  dropCanvases(list);
   list.textContent = "";
   for (var i = 0; i < state.slides; i++) {
     (function (i) {
@@ -2277,6 +2309,7 @@ window.addEventListener("resize", function () {
   resizeTimer = setTimeout(function () {
     renderThumbs();
     reserveForSheet();
+    state.items.forEach(paintItem);   // re-picks the right copy if pointer/size changed
     if (!userZoomed) fitToWindow();
   }, 120);
 });
