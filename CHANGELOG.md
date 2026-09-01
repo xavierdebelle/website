@@ -5,6 +5,56 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v15 — 2026-09-01
+
+**Carousel Planner v6 — the reload loop**
+A screenshot of the failure changed the diagnosis. It wasn't a slow leak: the
+tab was being killed and reloaded over and over until Chrome gave up on it.
+
+- **Start-up was re-running whatever had just killed the tab.** Restoring a
+  carousel decoded every stored photo at full size to rebuild its thumbnails.
+  If that ran the tab out of memory the page reloaded and did exactly the same
+  thing again, so it could never get back in — and because nothing was saved
+  before the crash, it never got further the second time either.
+- **The photos are now stored as binary rather than base64 text.** They were
+  always in IndexedDB, but as text, which is a third larger and has to be held
+  in memory as a string. 2.9MB instead of 4.7MB for six photos, and the bytes
+  can live outside the JS heap.
+- **A photo is never decoded at full size any more.** Importing used to decode
+  the original before shrinking it — for a 12MP phone photo that is a 47MB
+  bitmap per photo, invisible to every measurement taken so far, and it
+  happened once per photo added, which is why trouble arrived with the second
+  and third. The decoder is now asked for the size wanted up front, using a
+  32px probe to read the aspect ratio after EXIF rotation, so the full frame
+  never exists. Import also got about fifteen times faster as a side effect —
+  0.9s for six photos, against roughly 2.3s each.
+- **A crash now has a way out.** A flag is set while starting up and cleared
+  once the page has survived a few seconds. A run that finds it still set knows
+  the last attempt died, skips loading the photos, and says so, with a Try
+  again and a Clear photos button. The saved layout is left untouched, so
+  nothing is lost either way.
+
+**Checked before publishing**
+- Exports still identical: the known test square measures 538px at 200% crop
+  zoom, the same figure v11, v12 and v13 produced.
+- A carousel saved by v13 opens in v14, its base64 photos converted to binary
+  on load with no decode, layout intact.
+- The crash guard was exercised by simulating a killed load: banner shown,
+  photos held back, saved layout preserved, Try again recovering fully.
+- Phone path: 4 photos across 6 slides, 512px copies in the editor, no broken
+  images, no console errors, pinch and pan working.
+- Also fixed a stray request for a file called "undefined" caused by an image
+  source being set before its URL existed.
+
+**Outstanding**
+- Still diagnosed on a desktop browser at phone size. The device remains the
+  real test.
+- The failure was in Chrome on iOS with 83 tabs open, which shares one memory
+  budget across the app — worth closing tabs regardless of what this tool does.
+- The share button is still unverified on a real iPhone.
+
+---
+
 ## v14 — 2026-09-01
 
 **Feed Planner updated to v11 — carousels, per-post export, phone memory**

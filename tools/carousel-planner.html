@@ -170,6 +170,7 @@
   .full { width: 100%; }
 
   .empty-note { font-size: .78rem; color: var(--ink-faint); line-height: 1.5; }
+  .sect.banner { background: var(--surface-sunken); border-left: 3px solid var(--danger); }
 
   /* layers */
   .layers { display: flex; flex-direction: column; gap: 2px; max-height: 230px; overflow-y: auto; }
@@ -443,6 +444,16 @@
         </div>
       </div>
       <div class="panel-scroll">
+      <div class="sect banner" id="safeBanner" style="display:none">
+        <h2>Photos not reloaded</h2>
+        <p class="empty-note">The last session ran out of memory before it finished
+        loading. Your slides and layout are still here — the photos were left
+        alone so the same thing doesn't happen again.</p>
+        <div class="grid2" style="margin-top:.55rem">
+          <button id="safeRetry" class="primary">Try again</button>
+          <button id="safeClear" class="danger">Clear photos</button>
+        </div>
+      </div>
       <div class="sect">
         <h2>Canvas</h2>
         <div class="grid2">
@@ -647,7 +658,9 @@ var THUMB_EDGE = 512;        // rail, layers, previews — and the phone canvas
 // what was still filling memory; the 512px copy is already more than the
 // screen can resolve, and it is the one image the previews were loading anyway.
 function editorSrc(a) {
-  return (touchDevice() ? a.thumb : a.disp) || a.src;
+  // Never hand back undefined: assigning that to img.src makes the browser
+  // request a file literally called "undefined".
+  return (touchDevice() ? a.thumb : a.disp) || a.thumb || a.src || "";
 }
 var SAFE_INSET = 0.06;        // where Instagram UI tends to sit
 
@@ -694,7 +707,25 @@ var frameEl = null;
    ============================================================ */
 
 var LS_KEY = "carouselPlanner.layout.v1";
+var BOOT_FLAG = "carouselPlanner.booting";
 var db = null;
+
+// Loading stored photos is the heaviest thing this page does. If a phone runs
+// out of memory doing it the tab is killed and reloaded, which starts the same
+// work again — a loop the page can never escape on its own. The flag is set
+// while starting up and cleared once the page has survived a few seconds, so a
+// run that finds it still set knows the last attempt died and skips the photos.
+var lastBootFailed = false;
+try {
+  lastBootFailed = localStorage.getItem(BOOT_FLAG) === "1";
+  localStorage.setItem(BOOT_FLAG, "1");
+} catch (e) {}
+
+function markBootHealthy() {
+  setTimeout(function () {
+    try { localStorage.removeItem(BOOT_FLAG); } catch (e) {}
+  }, 4000);
+}
 
 function openDB() {
   return new Promise(function (resolve) {
@@ -709,12 +740,27 @@ function openDB() {
 }
 function dbPut(a) {
   if (!db) return;
-  try { db.transaction("assets", "readwrite").objectStore("assets").put(a); } catch (e) {}
+  var rec = {                      // blobs only; object URLs are per-session
+    id: a.id, w: a.w, h: a.h, name: a.name,
+    fullBlob: a.fullBlob, dispBlob: a.dispBlob || null, thumbBlob: a.thumbBlob
+  };
+  try { db.transaction("assets", "readwrite").objectStore("assets").put(rec); } catch (e) {}
 }
 function dbDelete(id) {
   if (!db) return;
   try { db.transaction("assets", "readwrite").objectStore("assets").delete(id); } catch (e) {}
 }
+function dbClear() {
+  return new Promise(function (resolve) {
+    if (!db) return resolve();
+    try {
+      var rq = db.transaction("assets", "readwrite").objectStore("assets").clear();
+      rq.onsuccess = function () { resolve(); };
+      rq.onerror = function () { resolve(); };
+    } catch (e) { resolve(); }
+  });
+}
+
 function dbAll() {
   return new Promise(function (resolve) {
     if (!db) return resolve([]);
@@ -728,6 +774,7 @@ function dbAll() {
 
 var saveTimer = null;
 function saveSoon() {
+  if (safeMode) return;          // keep the saved layout intact for a retry
   clearTimeout(saveTimer);
   saveTimer = setTimeout(function () {
     try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch (e) {}
@@ -738,6 +785,67 @@ function saveSoon() {
    Assets
    ============================================================ */
 
+// Pixel dimensions straight out of the file header. Decoding a 12MP photo just
+// to learn how big it is costs ~47MB of bitmap; the header costs a few hundred bytes.
+function sizeFromHeader(buf) {
+  var d = new DataView(buf);
+  try {
+    if (d.byteLength > 24 && d.getUint32(0) === 0x89504E47) {          // PNG
+      return { w: d.getUint32(16), h: d.getUint32(20) };
+    }
+    if (d.byteLength > 4 && d.getUint16(0) === 0xFFD8) {               // JPEG
+      var i = 2;
+      while (i + 9 < d.byteLength) {
+        if (d.getUint8(i) !== 0xFF) { i++; continue; }
+        var m = d.getUint8(i + 1);
+        if (m >= 0xC0 && m <= 0xCF && m !== 0xC4 && m !== 0xC8 && m !== 0xCC) {
+          return { h: d.getUint16(i + 5), w: d.getUint16(i + 7) };
+        }
+        if (m === 0xD8 || (m >= 0xD0 && m <= 0xD9)) { i += 2; continue; }
+        i += 2 + d.getUint16(i + 2);
+      }
+    }
+  } catch (e) {}
+  return null;
+}
+
+// Decode a photo no larger than `edge` on its long side, without ever
+// materialising it at full size. A 32px probe reveals the aspect ratio after
+// EXIF rotation has been applied, so the real decode can be asked for exactly
+// the right shape; passing only resizeWidth keeps that aspect.
+function decodeSized(blob, edge) {
+  if (!window.createImageBitmap) return loadImage(URL.createObjectURL(blob));
+  return blob.slice(0, 65536).arrayBuffer().then(function (head) {
+    var size = sizeFromHeader(head);
+    if (!size || Math.max(size.w, size.h) <= edge) return createImageBitmap(blob);
+    return createImageBitmap(blob, { resizeWidth: 32, resizeQuality: "low" }).then(function (probe) {
+      var aspect = probe.height / probe.width;
+      if (probe.close) probe.close();
+      var w = aspect >= 1 ? Math.round(edge / aspect) : edge;
+      return createImageBitmap(blob, { resizeWidth: Math.max(1, w), resizeQuality: "high" });
+    });
+  }).catch(function () { return createImageBitmap(blob); });
+}
+
+// Scale an already-decoded bitmap down and encode it. Deriving the smaller
+// sizes from the one bitmap we already hold avoids decoding the file again per
+// size, and the peak stays at that single bounded bitmap.
+function bitmapToBlob(bm, edge, isPng, quality) {
+  var k = Math.min(1, edge / Math.max(bm.width, bm.height));
+  var c = document.createElement("canvas");
+  c.width = Math.max(1, Math.round(bm.width * k));
+  c.height = Math.max(1, Math.round(bm.height * k));
+  var x = c.getContext("2d");
+  x.imageSmoothingQuality = "high";
+  x.drawImage(bm, 0, 0, c.width, c.height);
+  return new Promise(function (res) {
+    c.toBlob(function (b) {
+      c.width = c.height = 0;          // iOS holds the backing store until this is done
+      res(b);
+    }, isPng ? "image/png" : "image/jpeg", quality);
+  });
+}
+
 function loadImage(src) {
   return new Promise(function (resolve, reject) {
     var im = new Image();
@@ -747,67 +855,89 @@ function loadImage(src) {
   });
 }
 
-function readFileAsDataURL(file) {
-  return new Promise(function (resolve, reject) {
-    var fr = new FileReader();
-    fr.onload = function () { resolve(fr.result); };
-    fr.onerror = reject;
-    fr.readAsDataURL(file);
+function sizedBlob(source, edge, isPng, quality, into, key) {
+  return decodeSized(source, edge).then(function (bm) {
+    return bitmapToBlob(bm, edge, isPng, quality).then(function (b) {
+      into[key] = b;
+      if (bm.close) bm.close();
+    });
   });
 }
 
-// Decode the photo once, then write out the three sizes we actually use.
-function scaledDataURL(im, edge, isPng, quality) {
-  var big = Math.max(im.naturalWidth, im.naturalHeight);
-  var k = Math.min(1, edge / big);
-  var c = document.createElement("canvas");
-  c.width = Math.max(1, Math.round(im.naturalWidth * k));
-  c.height = Math.max(1, Math.round(im.naturalHeight * k));
-  var x = c.getContext("2d");
-  x.imageSmoothingQuality = "high";
-  x.drawImage(im, 0, 0, c.width, c.height);
-  var url = c.toDataURL(isPng ? "image/png" : "image/jpeg", quality);
-  c.width = c.height = 0;    // iOS holds the backing store until this is done
-  return url;
-}
-
-function normalise(src, isPng) {
-  return loadImage(src).then(function (im) {
-    var out = {
-      w: im.naturalWidth, h: im.naturalHeight,
-      src: scaledDataURL(im, EXPORT_EDGE, isPng, 0.94),
-      thumb: scaledDataURL(im, THUMB_EDGE, false, 0.72)
-    };
-    if (!touchDevice()) out.disp = scaledDataURL(im, DISPLAY_EDGE, isPng, 0.88);
-    var k = Math.min(1, EXPORT_EDGE / Math.max(im.naturalWidth, im.naturalHeight));
-    out.w = Math.round(im.naturalWidth * k);
-    out.h = Math.round(im.naturalHeight * k);
-    return out;
+// The file is decoded once, bounded to the export size, and the smaller copies
+// are derived from that one bitmap. The original never exists at full size.
+function buildSizes(file) {
+  var isPng = /png$/i.test(file.type);
+  var out = {};
+  return decodeSized(file, EXPORT_EDGE).then(function (bm) {
+    out.w = bm.width;
+    out.h = bm.height;
+    return bitmapToBlob(bm, EXPORT_EDGE, isPng, 0.94).then(function (b) {
+      out.fullBlob = b;
+      return bitmapToBlob(bm, THUMB_EDGE, false, 0.72);
+    }).then(function (b) {
+      out.thumbBlob = b;
+      if (touchDevice()) return null;      // a phone never needs the desktop copy
+      return bitmapToBlob(bm, DISPLAY_EDGE, isPng, 0.88);
+    }).then(function (b) {
+      if (b) out.dispBlob = b;
+      if (bm.close) bm.close();
+      return out;
+    });
   });
 }
 
 function registerAsset(a) {
   assets.set(a.id, a);
-  return loadImage(a.thumb).then(function (im) { thumbs.set(a.id, im); return a; });
+  if (a.fullBlob && !a.src) a.src = URL.createObjectURL(a.fullBlob);
+  if (a.dispBlob && !a.disp) a.disp = URL.createObjectURL(a.dispBlob);
+  if (a.thumbBlob && !a.thumb) a.thumb = URL.createObjectURL(a.thumbBlob);
+  if (!a.thumbBlob) return Promise.resolve(a);
+  var decode = window.createImageBitmap
+    ? createImageBitmap(a.thumbBlob)
+    : loadImage(a.thumb);
+  return decode.then(function (im) { thumbs.set(a.id, im); return a; })
+               .catch(function () { return a; });
 }
 
 // Photos saved by an older version only have the full size. Rebuild the
 // smaller ones once, one at a time so the phone isn't asked to hold several
 // full decodes at the same moment.
+// Older versions stored the photo as base64 text. Turning that into binary is
+// a byte conversion, not an image decode, so this is cheap even on a phone —
+// unlike the previous version, which decoded every stored photo at full size
+// during start-up and could run the tab out of memory before it finished.
+function toBlobFromDataURL(url) {
+  return fetch(url).then(function (r) { return r.blob(); });
+}
+
 function upgradeAsset(a) {
-  var wants = !a.thumb || (!touchDevice() && !a.disp);
-  if (!wants) return Promise.resolve(a);
-  return loadImage(a.src).then(function (im) {
-    if (!a.thumb) a.thumb = scaledDataURL(im, THUMB_EDGE, false, 0.72);
-    if (!touchDevice() && !a.disp) a.disp = scaledDataURL(im, DISPLAY_EDGE, false, 0.88);
-    dbPut(a);
-    return a;
+  var chain = Promise.resolve(), changed = false;
+
+  [["src", "fullBlob"], ["disp", "dispBlob"], ["thumb", "thumbBlob"]].forEach(function (pair) {
+    var urlKey = pair[0], blobKey = pair[1];
+    if (a[blobKey] || typeof a[urlKey] !== "string" || a[urlKey].indexOf("data:") !== 0) return;
+    chain = chain.then(function () {
+      return toBlobFromDataURL(a[urlKey]).then(function (b) {
+        a[blobKey] = b; a[urlKey] = null; changed = true;
+      });
+    });
   });
+
+  return chain.then(function () {
+    if (a.thumbBlob || !a.fullBlob) return;
+    changed = true;                      // a v3-era photo with no thumbnail yet
+    return sizedBlob(a.fullBlob, THUMB_EDGE, false, 0.72, a, "thumbBlob");
+  }).then(function () {
+    if (changed) dbPut(a);
+    return a;
+  }).catch(function () { return a; });
 }
 
 function addFiles(fileList, dropPt) {
   var files = Array.prototype.slice.call(fileList).filter(function (f) { return /^image\//.test(f.type); });
   if (!files.length) return Promise.resolve();
+  if (safeMode) { safeMode = false; $("safeBanner").style.display = "none"; }
   toast("Loading " + files.length + " photo" + (files.length > 1 ? "s" : "") + "…");
   pushUndo();
 
@@ -815,10 +945,12 @@ function addFiles(fileList, dropPt) {
   var chain = Promise.resolve();
   files.forEach(function (file, i) {
     chain = chain.then(function () {
-      return readFileAsDataURL(file)
-        .then(function (src) { return normalise(src, /png$/i.test(file.type)); })
+      return buildSizes(file)
         .then(function (n) {
-          var a = { id: uid(), src: n.src, disp: n.disp || null, thumb: n.thumb, w: n.w, h: n.h, name: file.name };
+          var a = {
+            id: uid(), name: file.name, w: n.w, h: n.h,
+            fullBlob: n.fullBlob, dispBlob: n.dispBlob || null, thumbBlob: n.thumbBlob
+          };
           dbPut(a);
           return registerAsset(a);
         })
@@ -981,7 +1113,7 @@ function paintItem(it) {
   if (!el) return;
   var a = assets.get(it.aid);
   var im = el.firstChild;
-  if (a) { var want = editorSrc(a); if (im.getAttribute("src") !== want) im.src = want; }
+  if (a) { var want = editorSrc(a); if (want && im.getAttribute("src") !== want) im.src = want; }
   el.style.left = it.x + "px";
   el.style.top = it.y + "px";
   el.style.width = it.w + "px";
@@ -1114,7 +1246,8 @@ function renderLayers() {
       var row = document.createElement("button");
       row.className = "layer" + (it.id === selectedId ? " sel" : "");
       var th = document.createElement("img");
-      th.src = a.thumb || a.src || "";
+      var tsrc = a.thumb || a.src;
+      if (tsrc) th.src = tsrc;
       row.appendChild(th);
       var m = document.createElement("span");
       m.className = "meta";
@@ -1150,7 +1283,7 @@ function paintSlide(x, i, k, getImg) {
     var a = assets.get(it.aid);
     if (!a) return;
     var im = getImg(it.aid);
-    if (!im || !im.naturalWidth) return;
+    if (!im || !(im.naturalWidth || im.width)) return;
     var g = fitGeom(it, a.w, a.h);
     x.save();
     x.globalAlpha = it.op / 100;
@@ -2021,11 +2154,17 @@ function assetsForSlide(i) {
 function fullImage(aid) {
   if (fullCache.has(aid)) return Promise.resolve(fullCache.get(aid));
   var a = assets.get(aid);
-  if (!a) return Promise.resolve(null);
-  return loadImage(a.src).then(function (im) { fullCache.set(aid, im); return im; });
+  if (!a || !(a.fullBlob || a.src)) return Promise.resolve(null);
+  var decode = (window.createImageBitmap && a.fullBlob)
+    ? createImageBitmap(a.fullBlob)
+    : loadImage(a.src);
+  return decode.then(function (im) { fullCache.set(aid, im); return im; });
 }
 
-function releaseFullImages() { fullCache.clear(); }
+function releaseFullImages() {
+  fullCache.forEach(function (im) { if (im && im.close) im.close(); });
+  fullCache.clear();
+}
 
 // A ten-slide export would otherwise finish holding every original decoded.
 function capFullCache(limit) { if (fullCache.size > limit) fullCache.clear(); }
@@ -2257,6 +2396,7 @@ function zipStore(files) {
    ============================================================ */
 
 var restoreLostPhotos = false;
+var safeMode = false;
 
 function restore() {
   var raw = null;
@@ -2264,6 +2404,11 @@ function restore() {
   if (!raw) return Promise.resolve();
   var saved;
   try { saved = JSON.parse(raw); } catch (e) { return Promise.resolve(); }
+
+  if (lastBootFailed) {
+    safeMode = true;                 // don't repeat whatever killed the last run
+    return Promise.resolve();
+  }
 
   return dbAll().then(function (rows) {
     var used = {};
@@ -2299,9 +2444,39 @@ openDB()
     syncControls();
     render();
     requestAnimationFrame(function () { requestAnimationFrame(fitToWindow); });
-    if (state.items.length) toast("Restored your last carousel");
-    else if (restoreLostPhotos) toast("Your last layout was found, but this browser wouldn't keep the photos");
+
+    if (safeMode) {
+      $("safeBanner").style.display = "";
+      $("panel").classList.add("open");
+      toast("Photos weren't reloaded — the last session ran out of memory");
+    } else if (state.items.length) {
+      toast("Restored your last carousel");
+    } else if (restoreLostPhotos) {
+      toast("Your last layout was found, but this browser wouldn't keep the photos");
+    }
+    markBootHealthy();
   });
+
+$("safeRetry").onclick = function () {
+  try { localStorage.removeItem(BOOT_FLAG); } catch (e) {}
+  location.reload();
+};
+
+$("safeClear").onclick = function () {
+  if (!confirm("Remove the stored photos? Your slide setup stays.")) return;
+  dbClear().then(function () {
+    try {
+      localStorage.removeItem(BOOT_FLAG);
+      var raw = localStorage.getItem(LS_KEY);
+      if (raw) {
+        var o = JSON.parse(raw);
+        o.items = [];
+        localStorage.setItem(LS_KEY, JSON.stringify(o));
+      }
+    } catch (e) {}
+    location.reload();
+  });
+};
 
 var resizeTimer = null;
 window.addEventListener("resize", function () {
