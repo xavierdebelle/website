@@ -5,6 +5,41 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v10 — 2026-09-01
+
+**Feed Planner updated to v8 — it works on a phone now**
+- **Drag to reorder on iPhone.** Touch has no HTML5 drag-and-drop, so the drag
+  is built by hand: a press-and-hold of 250ms lifts a photo, a copy of it
+  follows your finger, the frame numbers renumber live as it passes its
+  neighbours, and releasing drops it. The hold is what tells the three gestures
+  apart — a tap still opens the editor, a swipe still scrolls the page, and only
+  a hold picks a photo up. Dragging near the top or bottom edge auto-scrolls.
+- The editor is a full-screen sheet on a phone with a sticky header, instead of
+  a centred dialog that had no room left once the keyboard came up. Crop stage
+  sized to the viewport and re-measured on rotate.
+- Pinch to zoom in the crop stage. It sets `touch-action: none`, so a pinch
+  there used to be a dead gesture.
+- Bio, caption and the follower counts bumped to 16px, which is what stops iOS
+  zooming the whole page when a field takes focus. Full-width Export / Clear
+  all, 44px minimum on every button, safe-area padding at the bottom.
+
+**Checked before publishing**
+- Exercised in a 375×812 viewport with real touch events, light and dark: the
+  hold-drag reorders and persists, a tap opens the editor, a swipe never lifts
+  a photo, and the release that ends a drag doesn't open the editor. Pinch ran
+  1.00× → 2.50× without jerking the crop when a finger lifted.
+- Desktop is untouched by all of this — mouse drag-to-reorder and
+  drop-a-file-onto-a-tile-to-replace both still work.
+- Same `feed-planner-state-v1` storage key, so any grid saved in a browser
+  survives the update. Still no network calls of any kind.
+
+**Outstanding**
+- The tile delete (×) still has no confirmation and is permanently visible on
+  touch. That is unchanged from before, but a mis-tap on a phone is easier than
+  a mis-click on a desktop, and there is no undo.
+
+---
+
 ## v9 — 2026-08-27
 
 **New tool**

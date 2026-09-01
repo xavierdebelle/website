@@ -1,6 +1,6 @@
 <meta charset="utf-8" />
 <title>Feed Planner</title>
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <style>
   :root {
     --bg: #f3f1ec;
@@ -278,7 +278,12 @@
     display: block;
     -webkit-user-drag: element;
   }
-  .tile.photo { cursor: grab; }
+  .tile.photo {
+    cursor: grab;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
   .tile.photo:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
   .tile.photo:active { cursor: grabbing; }
   .tile.photo.dragging { opacity: .35; }
@@ -288,6 +293,32 @@
     border: 2px solid var(--accent);
     pointer-events: none;
   }
+
+  /* touch reorder: the tile stays in the grid as the empty slot, and a floating
+     copy follows the finger */
+  .tile.photo.drag-source img { opacity: .18; }
+  .tile.photo.drag-source { background: var(--surface-sunken); }
+  .tile.photo.drag-source .frame-no,
+  .tile.photo.drag-source .caption-flag,
+  .tile.photo.drag-source .remove { display: none; }
+  .drag-ghost {
+    position: fixed;
+    left: 0; top: 0;
+    z-index: 80;
+    overflow: hidden;
+    border-radius: 4px;
+    outline: 2px solid var(--accent);
+    box-shadow: 0 14px 34px rgba(12,10,8,.45);
+    pointer-events: none;
+    will-change: transform;
+  }
+  .drag-ghost img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  body.dragging-touch {
+    -webkit-user-select: none;
+    user-select: none;
+    overscroll-behavior: contain;
+  }
+  body.modal-open { overflow: hidden; }
 
   .tile .frame-no {
     position: absolute;
@@ -595,15 +626,68 @@
   @media (hover: none) {
     .tile .remove {
       opacity: 1;
-      width: 26px;
-      height: 26px;
-      font-size: 1rem;
+      width: 28px;
+      height: 28px;
+      font-size: 1.05rem;
     }
+    /* the long press belongs to the reorder drag, not to Safari's own image drag */
+    .tile img { -webkit-user-drag: none; }
+    /* iOS zooms the whole page when a field smaller than 16px takes focus */
+    .bio,
+    .stats .editable,
+    .crop-caption textarea { font-size: 16px; }
+    .stats .editable { width: 3.6ch; margin-right: .25em; }
+    .masthead .actions button,
+    .dropdown-menu button,
+    .crop-actions button,
+    .crop-replace { min-height: 44px; }
+    .crop-zoom input[type="range"] { height: 34px; }
   }
 
-  @media (max-width: 420px) {
-    .wrap { padding: 1.25rem .75rem 4rem; }
-    .avatar-btn { width: 60px; height: 60px; }
+  @media (max-width: 560px) {
+    .wrap { padding: 1.1rem .75rem calc(3rem + env(safe-area-inset-bottom)); }
+
+    .masthead {
+      flex-wrap: wrap;
+      gap: .7rem;
+      margin-bottom: 1.25rem;
+      padding-bottom: .8rem;
+    }
+    .masthead h1 { font-size: .85rem; }
+    .masthead .actions { width: 100%; gap: .5rem; }
+    .masthead .actions button { flex: 1; border-color: var(--line); }
+    .dropdown { flex: 1; }
+    .dropdown > button { width: 100%; }
+    .dropdown-menu { left: 0; right: auto; min-width: 100%; }
+
+    .profile { gap: .85rem 1rem; margin-bottom: 1.6rem; }
+    .avatar-btn { width: 64px; height: 64px; }
+    .stats { flex-wrap: wrap; gap: .5rem .9rem; font-size: .8rem; }
+    .bio { grid-column: 1 / -1; }
+
+    /* the editor becomes a full-screen sheet — a centred dialog leaves no room
+       for the crop stage once the keyboard is up */
+    .modal-backdrop { padding: 0; align-items: stretch; }
+    .modal {
+      max-width: none;
+      max-height: none;
+      height: 100%;
+      border: none;
+      border-radius: 0;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    .modal-head {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      background: var(--surface);
+      padding: .9rem 1rem;
+    }
+    .modal-head button { font-size: 1.5rem; padding: 0 .4rem; }
+    .crop-stage { height: min(42vh, 320px); }
+    .crop-foot { gap: .75rem; }
+    .crop-actions { flex: 1; }
+    .crop-actions button { flex: 1; }
   }
 </style>
 
@@ -658,7 +742,7 @@
   </div>
 
   <footer class="note">
-    Tap a photo to crop, zoom, caption, or replace it. On a computer you can also drag photos to reorder, or drop a new image onto one to replace it. Everything is stored in this browser only — nothing uploads anywhere. Frame numbers show posting order, first tile last.
+    Tap a photo to crop, zoom, caption, or replace it. To reorder, press and hold a photo until it lifts, then drag it where you want it — on a computer, just drag. You can also drop a new image onto a tile to replace it. Everything is stored in this browser only — nothing uploads anywhere. Frame numbers show posting order, first tile last.
   </footer>
 </div>
 
@@ -856,8 +940,8 @@
       tile.setAttribute("role", "button");
       const caption = (photo.caption || "").trim();
       tile.title = caption
-        ? `${caption}\n\nClick to edit · drag to reorder`
-        : "Click to crop and caption · drag to reorder";
+        ? `${caption}\n\nTap to edit · hold and drag to reorder`
+        : "Tap to crop and caption · hold and drag to reorder";
 
       const img = document.createElement("img");
       img.src = photo.dataUrl;
@@ -891,7 +975,10 @@
       });
       tile.appendChild(remove);
 
-      tile.addEventListener("click", () => openCropModal(i));
+      tile.addEventListener("click", () => {
+        if (suppressClick) return;
+        openCropModal(i);
+      });
       tile.addEventListener("keydown", (e) => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
@@ -901,6 +988,7 @@
 
       grid.insertBefore(tile, addTile);
       wireDrag(tile);
+      wireTouchDrag(tile);
     });
 
     gridCount.textContent = state.photos.length === 1 ? "1 photo" : `${state.photos.length} photos`;
@@ -969,6 +1057,150 @@
       .forEach(t => t.classList.remove("drop-target", "replace-target"));
   }
 
+  // ---- touch reorder ----
+  // Touch has no HTML5 drag-and-drop, so the drag is built by hand. The press-and-hold
+  // is what tells the three gestures apart: a tap opens the editor, a swipe scrolls the
+  // page, and only a hold picks the photo up.
+  const HOLD_MS = 250;
+  const HOLD_SLOP = 10;      // px of finger drift allowed before the hold becomes a scroll
+  const EDGE_BAND = 76;      // auto-scroll starts this close to the top/bottom of the screen
+
+  let touchDrag = null;
+  let suppressClick = false;
+  let autoScrollDy = 0;
+  let autoScrollFrame = null;
+
+  function wireTouchDrag(tile) {
+    tile.addEventListener("pointerdown", (e) => {
+      if (e.pointerType === "mouse" || !e.isPrimary) return;
+      if (e.target.closest(".remove")) return;
+      endTouchDrag();
+      const start = { x: e.clientX, y: e.clientY };
+      touchDrag = {
+        tile, start, last: start, active: false,
+        pointerId: e.pointerId,
+        timer: setTimeout(() => beginTouchDrag(), HOLD_MS)
+      };
+      // iPadOS would otherwise start its own drag out of the image on a long press
+      tile.draggable = false;
+    });
+  }
+
+  function beginTouchDrag() {
+    if (!touchDrag || touchDrag.active) return;
+    const { tile, start } = touchDrag;
+    const rect = tile.getBoundingClientRect();
+    const ghost = document.createElement("div");
+    ghost.className = "drag-ghost";
+    ghost.style.width = rect.width + "px";
+    ghost.style.height = rect.height + "px";
+    const img = tile.querySelector("img");
+    if (img) ghost.appendChild(img.cloneNode(true));
+    document.body.appendChild(ghost);
+
+    touchDrag.active = true;
+    touchDrag.ghost = ghost;
+    touchDrag.grab = { x: start.x - rect.left, y: start.y - rect.top };
+    moveGhost(start.x, start.y);
+    tile.classList.add("drag-source");
+    document.body.classList.add("dragging-touch");
+    if (navigator.vibrate) navigator.vibrate(12);
+  }
+
+  function moveGhost(x, y) {
+    const { ghost, grab } = touchDrag;
+    ghost.style.transform = `translate(${x - grab.x}px, ${y - grab.y}px) scale(1.06)`;
+  }
+
+  // The dragged tile keeps its place in the grid, so the tile under the finger is
+  // always a different one — which makes each pass over a neighbour a single swap.
+  function reorderUnder(x, y) {
+    const under = document.elementFromPoint(x, y);
+    const target = under && under.closest(".tile.photo");
+    if (!target || target === touchDrag.tile || !grid.contains(target)) return;
+    const targetIsLater = !!(touchDrag.tile.compareDocumentPosition(target) & Node.DOCUMENT_POSITION_FOLLOWING);
+    if (targetIsLater) target.after(touchDrag.tile);
+    else target.before(touchDrag.tile);
+    renumberTiles();
+  }
+
+  function renumberTiles() {
+    grid.querySelectorAll(".tile.photo").forEach((t, i) => {
+      const n = t.querySelector(".frame-no");
+      if (n) n.textContent = String(i + 1).padStart(2, "0");
+    });
+  }
+
+  function autoScroll(y) {
+    const h = window.innerHeight;
+    autoScrollDy = y < EDGE_BAND ? -(EDGE_BAND - y) / 5
+                 : y > h - EDGE_BAND ? (y - (h - EDGE_BAND)) / 5
+                 : 0;
+    if (autoScrollDy && autoScrollFrame === null) stepAutoScroll();
+  }
+
+  function stepAutoScroll() {
+    autoScrollFrame = requestAnimationFrame(() => {
+      autoScrollFrame = null;
+      if (!touchDrag || !touchDrag.active || !autoScrollDy) return;
+      window.scrollBy(0, autoScrollDy);
+      reorderUnder(touchDrag.last.x, touchDrag.last.y);
+      stepAutoScroll();
+    });
+  }
+
+  function stopAutoScroll() {
+    autoScrollDy = 0;
+    if (autoScrollFrame !== null) cancelAnimationFrame(autoScrollFrame);
+    autoScrollFrame = null;
+  }
+
+  document.addEventListener("pointermove", (e) => {
+    if (!touchDrag || e.pointerId !== touchDrag.pointerId) return;
+    if (!touchDrag.active) {
+      // the finger moved before the hold finished — treat it as a scroll and let go
+      if (Math.hypot(e.clientX - touchDrag.start.x, e.clientY - touchDrag.start.y) > HOLD_SLOP) endTouchDrag();
+      return;
+    }
+    touchDrag.last = { x: e.clientX, y: e.clientY };
+    moveGhost(e.clientX, e.clientY);
+    reorderUnder(e.clientX, e.clientY);
+    autoScroll(e.clientY);
+  });
+
+  // The page would otherwise scroll under the finger; nothing has claimed the
+  // gesture yet at this point, because the hold ruled a scroll out.
+  document.addEventListener("touchmove", (e) => {
+    if (touchDrag && touchDrag.active) e.preventDefault();
+  }, { passive: false });
+
+  document.addEventListener("pointerup", (e) => { if (touchDrag && e.pointerId === touchDrag.pointerId) endTouchDrag(); });
+  document.addEventListener("pointercancel", (e) => { if (touchDrag && e.pointerId === touchDrag.pointerId) endTouchDrag(); });
+
+  function endTouchDrag() {
+    if (!touchDrag) return;
+    const { tile, ghost, active, timer } = touchDrag;
+    clearTimeout(timer);
+    touchDrag = null;
+    stopAutoScroll();
+    if (ghost) ghost.remove();
+    document.body.classList.remove("dragging-touch");
+    tile.draggable = true;
+    if (!active) return;
+
+    tile.classList.remove("drag-source");
+    // the release that ends a drag also fires a click on the tile
+    suppressClick = true;
+    setTimeout(() => { suppressClick = false; }, 500);
+
+    const order = Array.from(grid.querySelectorAll(".tile.photo"))
+      .map(t => state.photos[Number(t.dataset.index)])
+      .filter(Boolean);
+    if (order.length === state.photos.length) state.photos = order;
+    saveState();
+    render();
+  }
+
   async function handleFiles(fileList) {
     const files = Array.from(fileList).filter(f => f.type.startsWith("image/"));
     for (const file of files) {
@@ -1025,14 +1257,17 @@
     cropPreviewImg.src = photo.dataUrl;
     // the stage has no layout box while the modal is hidden — show it, then measure
     cropBackdrop.hidden = false;
+    document.body.classList.add("modal-open");
     if (cropImg.complete && cropImg.naturalWidth) updateCropVisuals();
     else cropImg.addEventListener("load", updateCropVisuals, { once: true });
   }
 
   function closeCropModal() {
     cropBackdrop.hidden = true;
+    document.body.classList.remove("modal-open");
     cropIndex = null;
     endCropDrag();
+    resetCropPointers();
   }
 
   function stageMetrics() {
@@ -1102,7 +1337,30 @@
     cropStage.classList.remove("grabbing");
   }
 
+  function resetCropPointers() {
+    cropPointers.clear();
+    pinch = null;
+  }
+
+  // the stage swallows the page pinch (touch-action: none), so it handles the
+  // two-finger gesture itself rather than letting it do nothing
+  const cropPointers = new Map();
+  let pinch = null;
+
+  function pinchSpan() {
+    const [a, b] = [...cropPointers.values()];
+    return Math.hypot(a.x - b.x, a.y - b.y);
+  }
+
   cropStage.addEventListener("pointerdown", (e) => {
+    cropPointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (cropPointers.size === 2) {
+      pinch = { span: pinchSpan() || 1, zoom: cropZoom };
+      endCropDrag();          // the second finger takes over from the pan
+      cropStage.setPointerCapture(e.pointerId);
+      return;
+    }
+    if (cropPointers.size > 2) return;
     const p = pointerToImage(e);
     if (!p) return;
     const iw = cropImg.naturalWidth, ih = cropImg.naturalHeight;
@@ -1118,14 +1376,24 @@
     cropStage.setPointerCapture(e.pointerId);
   });
   cropStage.addEventListener("pointermove", (e) => {
+    if (cropPointers.has(e.pointerId)) cropPointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pinch && cropPointers.size >= 2) {
+      setZoom(pinch.zoom * (pinchSpan() / pinch.span));
+      return;
+    }
     if (!cropDragging) return;
     const p = pointerToImage(e);
     if (!p) return;
     centerFocusOn(p.x - grabOffset.x, p.y - grabOffset.y);
     updateCropVisuals();
   });
-  cropStage.addEventListener("pointerup", endCropDrag);
-  cropStage.addEventListener("pointercancel", endCropDrag);
+  function releaseCropPointer(e) {
+    cropPointers.delete(e.pointerId);
+    if (cropPointers.size < 2) pinch = null;
+    endCropDrag();            // lifting one finger of a pinch must not resume the pan
+  }
+  cropStage.addEventListener("pointerup", releaseCropPointer);
+  cropStage.addEventListener("pointercancel", releaseCropPointer);
   cropStage.addEventListener("wheel", (e) => {
     e.preventDefault();
     setZoom(cropZoom * (e.deltaY < 0 ? 1.09 : 1 / 1.09));
@@ -1163,6 +1431,9 @@
   });
 
   window.addEventListener("resize", () => { if (!cropBackdrop.hidden) updateCropVisuals(); });
+  window.addEventListener("orientationchange", () => {
+    if (!cropBackdrop.hidden) setTimeout(updateCropVisuals, 250);
+  });
 
   cropReset.addEventListener("click", () => {
     cropFocus = { x: 50, y: 50 };
