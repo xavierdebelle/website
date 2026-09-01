@@ -5,6 +5,72 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v14 — 2026-09-01
+
+**Feed Planner updated to v11 — carousels, per-post export, phone memory**
+
+*Carousels*
+- A tile is now a post that can hold up to 20 slides rather than a single
+  photo. The editor gained a slide strip: `+` adds images, each slide keeps its
+  own crop and zoom, and slides reorder by hold-and-drag (mouse too, not just
+  touch). Slide 1 is what shows in the grid, and carousel tiles carry a
+  stacked-squares badge with the slide count.
+- **Preview carousel** opens a swipeable 4:5 preview with dots and the caption,
+  built on scroll-snap so the swipe is native on iOS.
+- The editor now works on a copy: Save commits, closing asks before discarding.
+  That is a change — Replace photo used to apply instantly — and it is what
+  makes adding five slides and changing your mind safe.
+
+*Export*
+- New **Posts, in order** group. The grid reads newest-first, so posting runs
+  the other way: files are numbered in the order they get posted, and named
+  `post-01_frame-04.png` so both orders stay legible. Carousels expand to
+  `_slide-1`, `_slide-2`. A `captions.txt` carries every caption in the same
+  order.
+- **Save to Photos** uses the share sheet, so on an iPhone the images go
+  straight into the camera roll instead of seven downloads landing in Files.
+  It only appears where the browser can actually share files. The sheet opens
+  on a second, deliberate tap because iOS spends the first one on the render.
+- Images export as lossless PNG at 1080x1350. Note the ceiling: photos are
+  stored at 1080px on the long side, so a 4:5 crop is still upscaled 1.25x
+  (1.67x for a 4:3 phone photo). PNG removes the export-side loss, not the
+  import-side one. Deliberately left as is — raising the import cap roughly
+  doubles per-photo storage.
+- PDF removed from the grid sheet, along with the hand-rolled PDF writer it
+  needed. Grid sheet is PNG and JPEG.
+
+*The same phone memory bug v12 and v13 fixed next door*
+- Found before publishing, not after: this tool had the same shape of problem
+  the Carousel Planner had just been through. Grid tiles and 54px slide chips
+  were holding the stored 864x1080 images, and the carousel preview decoded
+  every slide at once.
+- Twelve posts with one twenty-slide carousel: **50.4 megapixels (~202MB) of
+  live bitmap with the preview open, now 6.4 (~25MB)**. Display copies at 480px
+  for tiles and 160px for chips, the preview windowed to the current slide and
+  its neighbours, every throwaway canvas zeroed, and the contact sheet decodes
+  one photo at a time instead of holding all of them.
+- Exports were checked against this, since display copies must never reach
+  output: a striped test image exports with all 108 stripes intact and zero
+  midtone pixels, so the full stored original is still the source.
+
+**Checked before publishing**
+- Scan clean: no external hosts, no endpoints, no secrets, no personal data.
+- Same `feed-planner-state-v1` key, and grids saved by earlier versions migrate
+  into the new shape on load. A bug in that migration used to be swallowed by a
+  `catch` and shown as an empty grid — a wiped plan looking like a fresh start.
+  The catch now only covers JSON parsing.
+- Verified in a 375x812 viewport, light and dark: slides add, remove and
+  reorder; carousel preview; discard-on-close; ZIP validated by recomputing
+  every CRC with an independent implementation; share sends real PNG `File`
+  objects in posting order and handles a dismissed sheet without an error; no
+  regressions in touch drag, desktop drag, or the grid sheet.
+
+**Housekeeping**
+- The footer version marker still read v9 — it was never bumped for v10, v11,
+  v12 or v13. Now v14 on all four pages.
+
+---
+
 ## v13 — 2026-09-01
 
 **Carousel Planner v5 — the rest of the memory problem**

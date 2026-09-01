@@ -143,7 +143,7 @@
     right: 0;
     display: flex;
     flex-direction: column;
-    min-width: 120px;
+    min-width: 168px;
     background: var(--surface);
     border: 1px solid var(--line);
     border-radius: var(--radius-s);
@@ -160,6 +160,42 @@
   .dropdown-menu button + button { border-top: 1px solid var(--line); }
   .dropdown-menu button:hover { background: var(--surface-sunken); }
   .dropdown-menu[hidden] { display: none; }
+  .menu-label {
+    font-family: var(--font-mono);
+    font-size: .56rem;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    padding: .5rem .75rem .3rem;
+    border-top: 1px solid var(--line);
+    background: var(--surface-sunken);
+  }
+  .menu-label:first-child { border-top: none; }
+
+  /* localStorage fills up fast once posts carry several slides, and the old
+     silent console warning meant a lost plan looked like a saved one */
+  .storage-warn {
+    display: flex;
+    align-items: flex-start;
+    gap: .6rem;
+    margin-bottom: 1.25rem;
+    padding: .7rem .85rem;
+    border: 1px solid var(--danger);
+    border-radius: var(--radius-s);
+    background: color-mix(in srgb, var(--danger) 12%, transparent);
+    font-size: .78rem;
+    line-height: 1.5;
+    color: var(--ink);
+  }
+  .storage-warn[hidden] { display: none; }
+  .storage-warn button {
+    margin-left: auto;
+    border: none;
+    padding: 0 .2rem;
+    color: var(--ink-dim);
+    font-size: 1rem;
+    line-height: 1;
+  }
 
   /* profile header */
   .profile {
@@ -349,6 +385,20 @@
   .tile .remove:focus-visible { opacity: 1; }
   .tile .remove:hover { background: var(--danger); }
 
+  .tile .carousel-badge {
+    position: absolute;
+    left: 4px; top: 4px;
+    display: flex;
+    align-items: center;
+    gap: .18rem;
+    font-family: var(--font-mono);
+    font-size: .6rem;
+    line-height: 1;
+    color: #fff;
+    filter: drop-shadow(0 0 2px rgba(0,0,0,.9));
+    pointer-events: none;
+  }
+
   .tile .caption-flag {
     position: absolute;
     right: 5px; bottom: 5px;
@@ -467,6 +517,242 @@
     padding: .6rem 1rem 0;
     font-size: .74rem;
     color: var(--ink-dim);
+  }
+
+  .slides-row {
+    padding: .75rem 1rem 0;
+  }
+  .slides-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .6rem;
+    margin-bottom: .45rem;
+  }
+  .slides-head .label {
+    font-family: var(--font-mono);
+    font-size: .6rem;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+  .slides-head .label b {
+    color: var(--ink-dim);
+    font-weight: 400;
+    margin-left: .5em;
+  }
+  .slides-head button {
+    padding: .3rem .55rem;
+    font-size: .7rem;
+  }
+  .slides {
+    display: flex;
+    gap: .4rem;
+    overflow-x: auto;
+    padding-bottom: .35rem;
+    scrollbar-width: thin;
+  }
+  .slide-chip {
+    position: relative;
+    flex: 0 0 auto;
+    width: 54px;
+    aspect-ratio: 4 / 5;
+    padding: 0;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    background: var(--surface-sunken);
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  .slide-chip img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .slide-chip.current { border-color: var(--accent); box-shadow: inset 0 0 0 2px var(--accent); }
+  .slide-chip.drag-source img { opacity: .18; }
+  .slide-chip .n {
+    position: absolute;
+    left: 3px; bottom: 2px;
+    font-family: var(--font-mono);
+    font-size: .55rem;
+    color: #fff;
+    text-shadow: 0 0 3px rgba(0,0,0,.9);
+    pointer-events: none;
+  }
+  .slide-chip .kill {
+    position: absolute;
+    top: 2px; right: 2px;
+    width: 17px; height: 17px;
+    border-radius: 50%;
+    border: none;
+    padding: 0;
+    background: rgba(20,18,16,.6);
+    color: #fff;
+    font-size: .75rem;
+    line-height: 1;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .slide-chip .kill:hover { background: var(--danger); }
+  .slide-add {
+    flex: 0 0 auto;
+    width: 54px;
+    aspect-ratio: 4 / 5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px dashed var(--line);
+    border-radius: 2px;
+    color: var(--ink-faint);
+    font-family: var(--font-mono);
+    font-size: 1.1rem;
+    padding: 0;
+  }
+  .slide-add:hover { color: var(--ink-dim); border-color: var(--ink-faint); border-style: solid; }
+  .slides-hint {
+    margin: .1rem 0 0;
+    font-size: .68rem;
+    line-height: 1.45;
+    color: var(--ink-faint);
+  }
+
+  /* ---- save / share sheet ---- */
+  .share-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 70;
+    background: rgba(16,14,12,.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.25rem;
+  }
+  .share-backdrop[hidden] { display: none; }
+  .share-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    width: 100%;
+    max-width: 390px;
+    padding: 1.1rem;
+    display: flex;
+    flex-direction: column;
+    gap: .55rem;
+  }
+  .share-card h3 {
+    margin: 0;
+    font-size: .95rem;
+    font-weight: 600;
+  }
+  .share-card p {
+    margin: 0;
+    font-size: .8rem;
+    line-height: 1.5;
+    color: var(--ink-dim);
+  }
+  .share-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+    margin-top: .45rem;
+  }
+  .share-actions button { flex: 1 1 8rem; }
+  .share-actions .primary { flex: 1 1 100%; order: -1; }
+
+  /* ---- carousel preview ---- */
+  .carousel-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    background: rgba(10,9,8,.82);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.25rem;
+  }
+  .carousel-backdrop[hidden] { display: none; }
+  .carousel {
+    width: 100%;
+    max-width: 380px;
+    display: flex;
+    flex-direction: column;
+    gap: .7rem;
+  }
+  .carousel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-family: var(--font-mono);
+    font-size: .66rem;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,.72);
+  }
+  .carousel-head button {
+    border: none;
+    background: none;
+    color: rgba(255,255,255,.72);
+    font-size: 1.35rem;
+    line-height: 1;
+    padding: 0 .25rem;
+  }
+  .carousel-head button:hover { color: #fff; border-color: transparent; }
+  .carousel-stage { position: relative; }
+  /* scroll snap does the swiping — native momentum on iOS, no gesture code */
+  .carousel-track {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    aspect-ratio: 4 / 5;
+    background: #000;
+    border-radius: 3px;
+  }
+  .carousel-track::-webkit-scrollbar { display: none; }
+  .carousel-track .slide {
+    flex: 0 0 100%;
+    scroll-snap-align: center;
+    height: 100%;
+    overflow: hidden;
+  }
+  .carousel-track .slide img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .carousel-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    border: none;
+    padding: 0;
+    background: rgba(20,18,16,.55);
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .carousel-arrow:hover { background: rgba(20,18,16,.8); border-color: transparent; }
+  .carousel-arrow[hidden] { display: none; }
+  .carousel-arrow.prev { left: 8px; }
+  .carousel-arrow.next { right: 8px; }
+  .carousel-dots {
+    display: flex;
+    justify-content: center;
+    gap: .3rem;
+  }
+  .carousel-dots i {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.32);
+  }
+  .carousel-dots i.on { background: #fff; }
+  .carousel-caption {
+    margin: 0;
+    font-size: .8rem;
+    line-height: 1.5;
+    color: rgba(255,255,255,.82);
+    max-height: 22vh;
+    overflow: auto;
+    white-space: pre-wrap;
+  }
+  .carousel-caption:empty::before {
+    content: "No caption yet";
+    color: rgba(255,255,255,.4);
   }
 
   .crop-stage {
@@ -641,6 +927,8 @@
     .dropdown-menu button,
     .crop-actions button,
     .crop-replace { min-height: 44px; }
+    .slide-chip, .slide-add { width: 60px; }
+    .slides-head button { min-height: 36px; }
     .crop-zoom input[type="range"] { height: 34px; }
   }
 
@@ -698,13 +986,22 @@
       <div class="dropdown" id="exportDropdown">
         <button class="ghost" id="exportBtn" type="button" aria-haspopup="true" aria-expanded="false">Export</button>
         <div class="dropdown-menu" id="exportMenu" hidden>
+          <span class="menu-label">Grid sheet</span>
           <button type="button" data-format="png">PNG</button>
           <button type="button" data-format="jpeg">JPEG</button>
-          <button type="button" data-format="pdf">PDF</button>
+          <span class="menu-label">Posts, in order</span>
+          <button type="button" data-format="share">Save to Photos</button>
+          <button type="button" data-format="zip">All as ZIP</button>
+          <button type="button" data-format="files">One by one</button>
         </div>
       </div>
       <button class="ghost" id="clearBtn" type="button">Clear all</button>
     </div>
+  </div>
+
+  <div class="storage-warn" id="storageWarn" hidden>
+    <span id="storageWarnText"></span>
+    <button type="button" id="storageWarnClose" aria-label="Dismiss">×</button>
   </div>
 
   <div class="profile">
@@ -742,15 +1039,24 @@
   </div>
 
   <footer class="note">
-    Tap a photo to crop, zoom, caption, or replace it. To reorder, press and hold a photo until it lifts, then drag it where you want it — on a computer, just drag. You can also drop a new image onto a tile to replace it. Everything is stored in this browser only — nothing uploads anywhere. Frame numbers show posting order, first tile last.
+    Tap a photo to crop, caption, or turn it into a carousel by adding slides. To reorder, press and hold a photo until it lifts, then drag it where you want it — on a computer, just drag. You can also drop a new image onto a tile to replace it. On a phone, Export › Save to Photos opens the share sheet so the images go straight into your camera roll. Everything is stored in this browser only — nothing uploads anywhere. Frame numbers show posting order, first tile last — so Export › Posts numbers them the other way round, in the order you actually post them.
   </footer>
 </div>
 
 <div class="modal-backdrop" id="cropBackdrop" hidden>
   <div class="modal" role="dialog" aria-modal="true" aria-label="Edit photo">
     <div class="modal-head">
-      <span>Edit photo</span>
+      <span id="cropTitle">Edit post</span>
       <button class="ghost" id="cropClose" type="button" aria-label="Close">×</button>
+    </div>
+    <div class="slides-row">
+      <div class="slides-head">
+        <span class="label">Slides <b id="slidesCount">1 of 1</b></span>
+        <button class="ghost" id="carouselPreviewBtn" type="button" hidden>Preview carousel</button>
+      </div>
+      <div class="slides" id="slideStrip"></div>
+      <input type="file" id="slideInput" accept="image/*" multiple hidden />
+      <p class="slides-hint" id="slidesHint"></p>
     </div>
     <p class="modal-hint">Drag the frame to choose what shows in the tile. Zoom to crop in closer.</p>
     <div class="crop-stage" id="cropStage">
@@ -786,11 +1092,85 @@
   </div>
 </div>
 
+<div class="share-backdrop" id="shareBackdrop" hidden>
+  <div class="share-card" role="dialog" aria-modal="true" aria-labelledby="shareTitle">
+    <h3 id="shareTitle">Images ready</h3>
+    <p id="shareNote"></p>
+    <div class="share-actions">
+      <button class="primary" id="shareGo" type="button">Save to Photos</button>
+      <button class="ghost" id="shareCaptions" type="button">Copy captions</button>
+      <button class="ghost" id="shareCancel" type="button">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div class="carousel-backdrop" id="carouselBackdrop" hidden>
+  <div class="carousel" role="dialog" aria-modal="true" aria-label="Carousel preview">
+    <div class="carousel-head">
+      <span id="carouselCounter">1 / 1</span>
+      <button id="carouselClose" type="button" aria-label="Close preview">×</button>
+    </div>
+    <div class="carousel-stage">
+      <div class="carousel-track" id="carouselTrack"></div>
+      <button class="carousel-arrow prev" id="carouselPrev" type="button" aria-label="Previous slide">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
+      </button>
+      <button class="carousel-arrow next" id="carouselNext" type="button" aria-label="Next slide">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+    <div class="carousel-dots" id="carouselDots"></div>
+    <p class="carousel-caption" id="carouselCaption"></p>
+  </div>
+</div>
+
 <script>
 (() => {
   const STORAGE_KEY = "feed-planner-state-v1";
   const MAX_DIM = 1080;
   const AVATAR_DIM = 320;
+  const MAX_SLIDES = 20;          // Instagram's own ceiling for one carousel
+  const POST_W = 1080, POST_H = 1350;
+
+  function pad(n) { return String(n).padStart(2, "0"); }
+
+  // A tile is ~125px wide on a phone and a slide chip is 54px, so putting the
+  // stored 864x1080 image in them costs ~90x the pixels it can show. iOS counts
+  // that decoded bitmap against the tab and reloads the page when it runs out,
+  // which reads as the tool crashing. Display copies are kept in memory only —
+  // exports always read the stored original, never these.
+  const GRID_THUMB = 480;
+  const CHIP_THUMB = 160;
+  const gridThumbs = new Map();
+  const chipThumbs = new Map();
+
+  let thumbQueue = Promise.resolve();
+
+  function makeThumb(dataUrl, maxDim, cache) {
+    const cached = cache.get(dataUrl);
+    if (cached) return Promise.resolve(cached);
+    return loadImageEl(dataUrl).then(img => {
+      const scale = Math.min(1, maxDim / Math.max(img.naturalWidth, img.naturalHeight));
+      const w = Math.max(1, Math.round(img.naturalWidth * scale));
+      const h = Math.max(1, Math.round(img.naturalHeight * scale));
+      const canvas = document.createElement("canvas");
+      canvas.width = w;
+      canvas.height = h;
+      canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+      const out = canvas.toDataURL("image/jpeg", 0.82);
+      canvas.width = canvas.height = 0;   // iOS holds the backing store until this is done
+      cache.set(dataUrl, out);
+      return out;
+    }).catch(() => dataUrl);              // a copy that won't build is not worth failing over
+  }
+
+  // queued, so first paint decodes one original at a time instead of all of them
+  function setThumb(imgEl, dataUrl, maxDim, cache) {
+    const cached = cache.get(dataUrl);
+    if (cached) { imgEl.src = cached; return; }
+    thumbQueue = thumbQueue.then(() => makeThumb(dataUrl, maxDim, cache));
+    thumbQueue.then(src => { imgEl.src = src; });
+  }
 
   const state = loadState();
 
@@ -824,6 +1204,29 @@
   const cropClose = document.getElementById("cropClose");
   const cropSave = document.getElementById("cropSave");
   const cropReset = document.getElementById("cropReset");
+  const cropTitle = document.getElementById("cropTitle");
+  const slideStrip = document.getElementById("slideStrip");
+  const slideInput = document.getElementById("slideInput");
+  const slidesCount = document.getElementById("slidesCount");
+  const slidesHint = document.getElementById("slidesHint");
+  const carouselPreviewBtn = document.getElementById("carouselPreviewBtn");
+  const carouselBackdrop = document.getElementById("carouselBackdrop");
+  const carouselTrack = document.getElementById("carouselTrack");
+  const carouselDots = document.getElementById("carouselDots");
+  const carouselCaption = document.getElementById("carouselCaption");
+  const carouselCounter = document.getElementById("carouselCounter");
+  const carouselClose = document.getElementById("carouselClose");
+  const carouselPrev = document.getElementById("carouselPrev");
+  const carouselNext = document.getElementById("carouselNext");
+  const shareBackdrop = document.getElementById("shareBackdrop");
+  const shareTitle = document.getElementById("shareTitle");
+  const shareNote = document.getElementById("shareNote");
+  const shareGo = document.getElementById("shareGo");
+  const shareCaptions = document.getElementById("shareCaptions");
+  const shareCancel = document.getElementById("shareCancel");
+  const storageWarn = document.getElementById("storageWarn");
+  const storageWarnText = document.getElementById("storageWarnText");
+  const storageWarnClose = document.getElementById("storageWarnClose");
 
   const TILE_W = 4, TILE_H = 5;
   const MAX_ZOOM = 4;
@@ -847,22 +1250,65 @@
     imgEl.style.transform = z > 1 ? `scale(${z})` : "";
   }
 
+  // A tile used to be one flat photo. It is now a post that holds one or more
+  // slides, so older saves get lifted into a one-slide post on the way in.
+  function normalizePost(raw) {
+    if (!raw) return null;
+    const source = Array.isArray(raw.slides) && raw.slides.length
+      ? raw.slides
+      : (raw.dataUrl ? [raw] : []);
+    const slides = source
+      .filter(s => s && typeof s.dataUrl === "string")
+      .slice(0, MAX_SLIDES)
+      .map(s => ({
+        dataUrl: s.dataUrl,
+        focusX: Number.isFinite(s.focusX) ? s.focusX : 50,
+        focusY: Number.isFinite(s.focusY) ? s.focusY : 50,
+        zoom: Number.isFinite(s.zoom) ? s.zoom : 1
+      }));
+    if (!slides.length) return null;
+    return { slides, caption: typeof raw.caption === "string" ? raw.caption : "" };
+  }
+
   function loadState() {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) return JSON.parse(raw);
-    } catch (e) {}
-    return {
+    const blank = {
       profile: { username: "your.handle", bio: "", followers: "0", following: "0", avatar: null },
       photos: []
     };
+    let parsed = null;
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) parsed = JSON.parse(raw);
+    } catch (e) {
+      console.warn("Saved plan could not be read.", e);
+    }
+    if (!parsed) return blank;
+    // deliberately outside the catch: a bug in here must not silently look
+    // like an empty grid, which is what losing the whole plan looks like too
+    return {
+      profile: { ...blank.profile, ...(parsed.profile || {}) },
+      photos: (parsed.photos || []).map(normalizePost).filter(Boolean)
+    };
   }
 
+  function showStorageWarning(msg) {
+    storageWarnText.textContent = msg;
+    storageWarn.hidden = false;
+  }
+  storageWarnClose.addEventListener("click", () => { storageWarn.hidden = true; });
+
+  // Carousels multiply how much every tile costs, so a full quota is now a
+  // question of when rather than if — and it used to fail with only a console
+  // warning, which made a lost plan look exactly like a saved one.
   function saveState() {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      storageWarn.hidden = true;
+      return true;
     } catch (e) {
+      showStorageWarning("This browser's storage is full, so that last change only exists in this tab — reloading loses it. Export what you have, then remove a few slides or photos.");
       console.warn("Storage full — try removing a few photos.", e);
+      return false;
     }
   }
 
@@ -886,7 +1332,9 @@
         canvas.width = width;
         canvas.height = height;
         canvas.getContext("2d").drawImage(img, 0, 0, width, height);
-        resolve(canvas.toDataURL("image/jpeg", 0.85));
+        const out = canvas.toDataURL("image/jpeg", 0.85);
+        canvas.width = canvas.height = 0;
+        resolve(out);
       };
       reader.readAsDataURL(file);
     });
@@ -939,16 +1387,27 @@
       tile.tabIndex = 0;
       tile.setAttribute("role", "button");
       const caption = (photo.caption || "").trim();
+      const cover = photo.slides[0];
+      const slideCount = photo.slides.length;
+      const what = slideCount > 1 ? `Carousel, ${slideCount} slides` : "Single image";
       tile.title = caption
-        ? `${caption}\n\nTap to edit · hold and drag to reorder`
-        : "Tap to crop and caption · hold and drag to reorder";
+        ? `${caption}\n\n${what} · tap to edit · hold and drag to reorder`
+        : `${what} · tap to edit · hold and drag to reorder`;
 
       const img = document.createElement("img");
-      img.src = photo.dataUrl;
       img.alt = "";
       img.draggable = false;
-      applyPhotoStyle(img, photo);
+      applyPhotoStyle(img, cover);
+      setThumb(img, cover.dataUrl, GRID_THUMB, gridThumbs);
       tile.appendChild(img);
+
+      if (slideCount > 1) {
+        const badge = document.createElement("span");
+        badge.className = "carousel-badge";
+        badge.innerHTML = '<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="3" width="13" height="13" rx="2"/><path d="M16 20H5a2 2 0 0 1-2-2V7"/></svg>'
+          + `<span>${slideCount}</span>`;
+        tile.appendChild(badge);
+      }
 
       const frameNo = document.createElement("span");
       frameNo.className = "frame-no";
@@ -988,7 +1447,7 @@
 
       grid.insertBefore(tile, addTile);
       wireDrag(tile);
-      wireTouchDrag(tile);
+      makeSortable(tile, TILE_SORT);
     });
 
     gridCount.textContent = state.photos.length === 1 ? "1 photo" : `${state.photos.length} photos`;
@@ -1026,13 +1485,10 @@
         if (!files.length) return;
         const dataUrl = await resizeToDataURL(files[0], MAX_DIM);
         const existing = state.photos[dropIndex];
-        state.photos[dropIndex] = {
-          dataUrl,
-          focusX: 50,
-          focusY: 50,
-          zoom: 1,
-          caption: existing ? (existing.caption || "") : ""
-        };
+        const slide = { dataUrl, focusX: 50, focusY: 50, zoom: 1 };
+        // the slot keeps its plan: caption and any other slides stay put
+        if (existing) existing.slides[0] = slide;
+        else state.photos[dropIndex] = { slides: [slide], caption: "" };
         saveState();
         render();
         if (files.length > 1) handleFiles(files.slice(1));
@@ -1057,44 +1513,82 @@
       .forEach(t => t.classList.remove("drop-target", "replace-target"));
   }
 
-  // ---- touch reorder ----
+  // ---- drag to reorder ----
   // Touch has no HTML5 drag-and-drop, so the drag is built by hand. The press-and-hold
   // is what tells the three gestures apart: a tap opens the editor, a swipe scrolls the
-  // page, and only a hold picks the photo up.
+  // page, and only a hold picks a photo up. The same engine sorts the slide strip
+  // inside the editor, which is horizontal and takes a mouse too.
   const HOLD_MS = 250;
-  const HOLD_SLOP = 10;      // px of finger drift allowed before the hold becomes a scroll
-  const EDGE_BAND = 76;      // auto-scroll starts this close to the top/bottom of the screen
+  const HOLD_SLOP = 10;      // px of finger drift allowed before the hold is treated as a scroll
+  const EDGE_BAND = 76;      // auto-scroll band at the top/bottom of the screen
+  const STRIP_BAND = 44;     // the same, at the ends of the slide strip
+
+  const TILE_SORT = {
+    container: () => grid,
+    itemSelector: ".tile.photo",
+    ignore: ".remove",
+    axis: "y",
+    mouse: false,            // on a desktop the tiles use real HTML5 drag-and-drop
+    restoreDraggable: true,
+    renumber: renumberTiles,
+    commit: (order) => {
+      const moved = order.map(t => state.photos[Number(t.dataset.index)]).filter(Boolean);
+      if (moved.length === state.photos.length) state.photos = moved;
+      saveState();
+      render();
+    }
+  };
+
+  const SLIDE_SORT = {
+    container: () => slideStrip,
+    itemSelector: ".slide-chip",
+    ignore: ".kill",
+    axis: "x",
+    mouse: true,
+    renumber: renumberSlides,
+    commit: (order) => {
+      if (!editSlides) return;
+      const staying = editSlides[slideIndex];
+      const moved = order.map(c => editSlides[Number(c.dataset.slide)]).filter(Boolean);
+      if (moved.length !== editSlides.length) return;
+      editSlides = moved;
+      slideIndex = Math.max(0, editSlides.indexOf(staying));   // keep editing the same slide
+      markDirty();
+      renderSlideStrip();
+    }
+  };
 
   let touchDrag = null;
   let suppressClick = false;
-  let autoScrollDy = 0;
+  let autoScrollDx = 0, autoScrollDy = 0;
   let autoScrollFrame = null;
 
-  function wireTouchDrag(tile) {
-    tile.addEventListener("pointerdown", (e) => {
-      if (e.pointerType === "mouse" || !e.isPrimary) return;
-      if (e.target.closest(".remove")) return;
+  function makeSortable(el, opts) {
+    el.addEventListener("pointerdown", (e) => {
+      if (!e.isPrimary) return;
+      if (e.pointerType === "mouse" && !opts.mouse) return;
+      if (opts.ignore && e.target.closest(opts.ignore)) return;
       endTouchDrag();
       const start = { x: e.clientX, y: e.clientY };
       touchDrag = {
-        tile, start, last: start, active: false,
-        pointerId: e.pointerId,
-        timer: setTimeout(() => beginTouchDrag(), HOLD_MS)
+        el, opts, start, last: start, active: false, pointerId: e.pointerId,
+        // a mouse has nothing to disambiguate, so it waits for movement instead
+        timer: e.pointerType === "mouse" ? null : setTimeout(() => beginTouchDrag(), HOLD_MS)
       };
       // iPadOS would otherwise start its own drag out of the image on a long press
-      tile.draggable = false;
+      if (opts.restoreDraggable) el.draggable = false;
     });
   }
 
   function beginTouchDrag() {
     if (!touchDrag || touchDrag.active) return;
-    const { tile, start } = touchDrag;
-    const rect = tile.getBoundingClientRect();
+    const { el, start } = touchDrag;
+    const rect = el.getBoundingClientRect();
     const ghost = document.createElement("div");
     ghost.className = "drag-ghost";
     ghost.style.width = rect.width + "px";
     ghost.style.height = rect.height + "px";
-    const img = tile.querySelector("img");
+    const img = el.querySelector("img");
     if (img) ghost.appendChild(img.cloneNode(true));
     document.body.appendChild(ghost);
 
@@ -1102,7 +1596,7 @@
     touchDrag.ghost = ghost;
     touchDrag.grab = { x: start.x - rect.left, y: start.y - rect.top };
     moveGhost(start.x, start.y);
-    tile.classList.add("drag-source");
+    el.classList.add("drag-source");
     document.body.classList.add("dragging-touch");
     if (navigator.vibrate) navigator.vibrate(12);
   }
@@ -1112,44 +1606,65 @@
     ghost.style.transform = `translate(${x - grab.x}px, ${y - grab.y}px) scale(1.06)`;
   }
 
-  // The dragged tile keeps its place in the grid, so the tile under the finger is
-  // always a different one — which makes each pass over a neighbour a single swap.
+  // The dragged item keeps its place in the list, so whatever is under the finger
+  // is always a different one — which makes each pass over a neighbour one swap.
   function reorderUnder(x, y) {
+    if (!touchDrag) return;
+    const { el, opts } = touchDrag;
+    const container = opts.container();
     const under = document.elementFromPoint(x, y);
-    const target = under && under.closest(".tile.photo");
-    if (!target || target === touchDrag.tile || !grid.contains(target)) return;
-    const targetIsLater = !!(touchDrag.tile.compareDocumentPosition(target) & Node.DOCUMENT_POSITION_FOLLOWING);
-    if (targetIsLater) target.after(touchDrag.tile);
-    else target.before(touchDrag.tile);
-    renumberTiles();
+    const target = under && under.closest(opts.itemSelector);
+    if (!target || target === el || !container || !container.contains(target)) return;
+    const targetIsLater = !!(el.compareDocumentPosition(target) & Node.DOCUMENT_POSITION_FOLLOWING);
+    if (targetIsLater) target.after(el);
+    else target.before(el);
+    if (opts.renumber) opts.renumber();
   }
 
   function renumberTiles() {
     grid.querySelectorAll(".tile.photo").forEach((t, i) => {
       const n = t.querySelector(".frame-no");
-      if (n) n.textContent = String(i + 1).padStart(2, "0");
+      if (n) n.textContent = pad(i + 1);
     });
   }
 
-  function autoScroll(y) {
-    const h = window.innerHeight;
-    autoScrollDy = y < EDGE_BAND ? -(EDGE_BAND - y) / 5
-                 : y > h - EDGE_BAND ? (y - (h - EDGE_BAND)) / 5
-                 : 0;
-    if (autoScrollDy && autoScrollFrame === null) stepAutoScroll();
+  function renumberSlides() {
+    slideStrip.querySelectorAll(".slide-chip").forEach((c, i) => {
+      const n = c.querySelector(".n");
+      if (n) n.textContent = i + 1;
+    });
+  }
+
+  function autoScroll(x, y) {
+    const opts = touchDrag.opts;
+    autoScrollDx = 0;
+    autoScrollDy = 0;
+    if (opts.axis === "x") {
+      const r = opts.container().getBoundingClientRect();
+      if (x < r.left + STRIP_BAND) autoScrollDx = -(r.left + STRIP_BAND - x) / 4;
+      else if (x > r.right - STRIP_BAND) autoScrollDx = (x - (r.right - STRIP_BAND)) / 4;
+    } else {
+      const h = window.innerHeight;
+      if (y < EDGE_BAND) autoScrollDy = -(EDGE_BAND - y) / 5;
+      else if (y > h - EDGE_BAND) autoScrollDy = (y - (h - EDGE_BAND)) / 5;
+    }
+    if ((autoScrollDx || autoScrollDy) && autoScrollFrame === null) stepAutoScroll();
   }
 
   function stepAutoScroll() {
     autoScrollFrame = requestAnimationFrame(() => {
       autoScrollFrame = null;
-      if (!touchDrag || !touchDrag.active || !autoScrollDy) return;
-      window.scrollBy(0, autoScrollDy);
+      if (!touchDrag || !touchDrag.active) return;
+      if (!autoScrollDx && !autoScrollDy) return;
+      if (autoScrollDx) touchDrag.opts.container().scrollLeft += autoScrollDx;
+      if (autoScrollDy) window.scrollBy(0, autoScrollDy);
       reorderUnder(touchDrag.last.x, touchDrag.last.y);
       stepAutoScroll();
     });
   }
 
   function stopAutoScroll() {
+    autoScrollDx = 0;
     autoScrollDy = 0;
     if (autoScrollFrame !== null) cancelAnimationFrame(autoScrollFrame);
     autoScrollFrame = null;
@@ -1158,14 +1673,16 @@
   document.addEventListener("pointermove", (e) => {
     if (!touchDrag || e.pointerId !== touchDrag.pointerId) return;
     if (!touchDrag.active) {
-      // the finger moved before the hold finished — treat it as a scroll and let go
-      if (Math.hypot(e.clientX - touchDrag.start.x, e.clientY - touchDrag.start.y) > HOLD_SLOP) endTouchDrag();
-      return;
+      if (Math.hypot(e.clientX - touchDrag.start.x, e.clientY - touchDrag.start.y) <= HOLD_SLOP) return;
+      // a finger that moves before the hold is done is scrolling; a mouse is dragging
+      if (e.pointerType === "mouse" && touchDrag.opts.mouse) beginTouchDrag();
+      else { endTouchDrag(); return; }
+      if (!touchDrag || !touchDrag.active) return;
     }
     touchDrag.last = { x: e.clientX, y: e.clientY };
     moveGhost(e.clientX, e.clientY);
     reorderUnder(e.clientX, e.clientY);
-    autoScroll(e.clientY);
+    autoScroll(e.clientX, e.clientY);
   });
 
   // The page would otherwise scroll under the finger; nothing has claimed the
@@ -1179,33 +1696,29 @@
 
   function endTouchDrag() {
     if (!touchDrag) return;
-    const { tile, ghost, active, timer } = touchDrag;
+    const { el, opts, ghost, active, timer } = touchDrag;
     clearTimeout(timer);
     touchDrag = null;
     stopAutoScroll();
     if (ghost) ghost.remove();
     document.body.classList.remove("dragging-touch");
-    tile.draggable = true;
+    if (opts.restoreDraggable) el.draggable = true;
     if (!active) return;
 
-    tile.classList.remove("drag-source");
-    // the release that ends a drag also fires a click on the tile
+    el.classList.remove("drag-source");
+    // the release that ends a drag also fires a click on the item
     suppressClick = true;
     setTimeout(() => { suppressClick = false; }, 500);
 
-    const order = Array.from(grid.querySelectorAll(".tile.photo"))
-      .map(t => state.photos[Number(t.dataset.index)])
-      .filter(Boolean);
-    if (order.length === state.photos.length) state.photos = order;
-    saveState();
-    render();
+    const container = opts.container();
+    if (container) opts.commit(Array.from(container.querySelectorAll(opts.itemSelector)));
   }
 
   async function handleFiles(fileList) {
     const files = Array.from(fileList).filter(f => f.type.startsWith("image/"));
     for (const file of files) {
       const dataUrl = await resizeToDataURL(file, MAX_DIM);
-      state.photos.push({ dataUrl, focusX: 50, focusY: 50, zoom: 1, caption: "" });
+      state.photos.push({ slides: [{ dataUrl, focusX: 50, focusY: 50, zoom: 1 }], caption: "" });
     }
     saveState();
     render();
@@ -1239,33 +1752,165 @@
     render();
   });
 
-  // ---- crop + caption modal ----
+  // ---- post editor: slides, crop, caption ----
+  // Everything here edits a working copy. Save commits it, closing throws it
+  // away — which is what makes adding five slides and changing your mind safe.
   let cropIndex = null;
+  let editSlides = null;
+  let slideIndex = 0;
+  let cropDirty = false;
   let cropFocus = { x: 50, y: 50 };
   let cropZoom = 1;
   let cropDragging = false;
   let grabOffset = { x: 0, y: 0 };
 
+  function currentSlide() { return editSlides ? editSlides[slideIndex] : null; }
+  function markDirty() { cropDirty = true; }
+
   function openCropModal(index) {
-    const photo = state.photos[index];
-    if (!photo) return;
+    const post = state.photos[index];
+    if (!post || !post.slides.length) return;
     cropIndex = index;
-    cropFocus = { x: photo.focusX ?? 50, y: photo.focusY ?? 50 };
-    cropZoom = photo.zoom ?? 1;
-    cropCaptionInput.value = photo.caption || "";
-    cropImg.src = photo.dataUrl;
-    cropPreviewImg.src = photo.dataUrl;
+    editSlides = post.slides.map(s => ({ ...s }));
+    slideIndex = 0;
+    cropDirty = false;
+    cropCaptionInput.value = post.caption || "";
     // the stage has no layout box while the modal is hidden — show it, then measure
     cropBackdrop.hidden = false;
     document.body.classList.add("modal-open");
+    renderSlideStrip();
+    loadSlide(0);
+  }
+
+  function loadSlide(i) {
+    if (!editSlides || !editSlides.length) return;
+    slideIndex = clamp(i, 0, editSlides.length - 1);
+    const slide = currentSlide();
+    cropFocus = { x: slide.focusX ?? 50, y: slide.focusY ?? 50 };
+    cropZoom = slide.zoom ?? 1;
+    cropImg.src = slide.dataUrl;
+    cropPreviewImg.src = slide.dataUrl;
     if (cropImg.complete && cropImg.naturalWidth) updateCropVisuals();
     else cropImg.addEventListener("load", updateCropVisuals, { once: true });
   }
 
-  function closeCropModal() {
+  // the stage holds the crop for the slide being edited; put it back before moving on
+  function stashCrop() {
+    const slide = currentSlide();
+    if (!slide) return;
+    slide.focusX = Math.round(cropFocus.x * 10) / 10;
+    slide.focusY = Math.round(cropFocus.y * 10) / 10;
+    slide.zoom = Math.round(cropZoom * 100) / 100;
+  }
+
+  function selectSlide(i) {
+    if (!editSlides || i === slideIndex) return;
+    stashCrop();
+    loadSlide(i);
+    renderSlideStrip();
+  }
+
+  function renderSlideStrip() {
+    if (!editSlides) return;
+    const count = editSlides.length;
+    slideStrip.innerHTML = "";
+
+    editSlides.forEach((slide, i) => {
+      const chip = document.createElement("button");
+      chip.type = "button";
+      chip.className = "slide-chip" + (i === slideIndex ? " current" : "");
+      chip.dataset.slide = i;
+      chip.setAttribute("aria-label", `Slide ${i + 1} of ${count}`);
+
+      const img = document.createElement("img");
+      img.alt = "";
+      img.draggable = false;
+      applyPhotoStyle(img, slide);
+      setThumb(img, slide.dataUrl, CHIP_THUMB, chipThumbs);
+      chip.appendChild(img);
+
+      const n = document.createElement("span");
+      n.className = "n";
+      n.textContent = i + 1;
+      chip.appendChild(n);
+
+      // a post always keeps at least one slide; the tile's own × removes the post
+      if (count > 1) {
+        const kill = document.createElement("span");
+        kill.className = "kill";
+        kill.setAttribute("role", "button");
+        kill.setAttribute("aria-label", `Remove slide ${i + 1}`);
+        kill.tabIndex = 0;
+        kill.textContent = "×";
+        kill.addEventListener("click", (e) => { e.stopPropagation(); removeSlide(i); });
+        kill.addEventListener("keydown", (e) => {
+          if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); removeSlide(i); }
+        });
+        chip.appendChild(kill);
+      }
+
+      chip.addEventListener("click", () => { if (!suppressClick) selectSlide(i); });
+      slideStrip.appendChild(chip);
+      makeSortable(chip, SLIDE_SORT);
+    });
+
+    if (count < MAX_SLIDES) {
+      const add = document.createElement("button");
+      add.type = "button";
+      add.className = "slide-add";
+      add.title = "Add images to this post";
+      add.setAttribute("aria-label", "Add slides");
+      add.textContent = "+";
+      add.addEventListener("click", () => slideInput.click());
+      slideStrip.appendChild(add);
+    }
+
+    slidesCount.textContent = count > 1 ? `${slideIndex + 1} of ${count}` : "1 of 1";
+    cropTitle.textContent = count > 1 ? "Edit carousel" : "Edit post";
+    carouselPreviewBtn.hidden = count < 2;
+    slidesHint.textContent = count > 1
+      ? "Slide 1 is what shows in the grid. Hold and drag a slide to reorder it."
+      : "Add a second image with + to make this post a carousel.";
+  }
+
+  function removeSlide(i) {
+    if (!editSlides || editSlides.length < 2) return;
+    if (i !== slideIndex) stashCrop();     // don't lose crop work on the slide in the stage
+    editSlides.splice(i, 1);
+    markDirty();
+    slideIndex = clamp(slideIndex > i ? slideIndex - 1 : slideIndex, 0, editSlides.length - 1);
+    renderSlideStrip();
+    loadSlide(slideIndex);
+  }
+
+  slideInput.addEventListener("change", async () => {
+    const files = Array.from(slideInput.files || []).filter(f => f.type.startsWith("image/"));
+    slideInput.value = "";
+    if (!files.length || !editSlides) return;
+    const room = MAX_SLIDES - editSlides.length;
+    stashCrop();
+    for (const file of files.slice(0, room)) {
+      const dataUrl = await resizeToDataURL(file, MAX_DIM);
+      if (!editSlides) return;             // the editor was closed mid-import
+      editSlides.push({ dataUrl, focusX: 50, focusY: 50, zoom: 1 });
+    }
+    markDirty();
+    renderSlideStrip();
+    loadSlide(editSlides.length - 1);      // land on the slide just added
+    renderSlideStrip();
+    if (files.length > room) {
+      alert(`A post holds up to ${MAX_SLIDES} slides, so ${files.length - room} image(s) were left out.`);
+    }
+  });
+
+  function closeCropModal(force) {
+    if (!force && cropDirty && !confirm("Discard the unsaved changes to this post?")) return;
+    closeCarousel();
     cropBackdrop.hidden = true;
     document.body.classList.remove("modal-open");
     cropIndex = null;
+    editSlides = null;
+    cropDirty = false;
     endCropDrag();
     resetCropPointers();
   }
@@ -1370,7 +2015,7 @@
     const inside = p.x >= left && p.x <= left + sw && p.y >= top && p.y <= top + sh;
     // grabbing inside the frame keeps your grip on it; clicking outside jumps it there
     grabOffset = inside ? { x: p.x - (left + sw / 2), y: p.y - (top + sh / 2) } : { x: 0, y: 0 };
-    if (!inside) { centerFocusOn(p.x, p.y); updateCropVisuals(); }
+    if (!inside) { centerFocusOn(p.x, p.y); updateCropVisuals(); markDirty(); }
     cropDragging = true;
     cropStage.classList.add("grabbing");
     cropStage.setPointerCapture(e.pointerId);
@@ -1379,6 +2024,7 @@
     if (cropPointers.has(e.pointerId)) cropPointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (pinch && cropPointers.size >= 2) {
       setZoom(pinch.zoom * (pinchSpan() / pinch.span));
+      markDirty();
       return;
     }
     if (!cropDragging) return;
@@ -1386,6 +2032,7 @@
     if (!p) return;
     centerFocusOn(p.x - grabOffset.x, p.y - grabOffset.y);
     updateCropVisuals();
+    markDirty();
   });
   function releaseCropPointer(e) {
     cropPointers.delete(e.pointerId);
@@ -1397,37 +2044,27 @@
   cropStage.addEventListener("wheel", (e) => {
     e.preventDefault();
     setZoom(cropZoom * (e.deltaY < 0 ? 1.09 : 1 / 1.09));
+    markDirty();
   }, { passive: false });
 
-  cropZoomInput.addEventListener("input", () => setZoom(cropZoomInput.value));
+  cropZoomInput.addEventListener("input", () => { setZoom(cropZoomInput.value); markDirty(); });
+  cropCaptionInput.addEventListener("input", markDirty);
 
-  // Swapping the photo from inside the editor: the touch equivalent of dropping
-  // a file onto a tile, so it applies straight away just like the drop does.
+  // Swapping the image in the slot being edited — the touch equivalent of
+  // dropping a file onto a tile.
   cropReplaceBtn.addEventListener("click", () => cropReplaceInput.click());
   cropReplaceInput.addEventListener("change", async () => {
     const file = cropReplaceInput.files[0];
-    const index = cropIndex;
+    const at = slideIndex;
     cropReplaceInput.value = "";
-    if (!file || index === null || !file.type.startsWith("image/")) return;
+    if (!file || !editSlides || !file.type.startsWith("image/")) return;
 
     const dataUrl = await resizeToDataURL(file, MAX_DIM);
-    const photo = state.photos[index];
-    if (!photo) return;
-    photo.dataUrl = dataUrl;
-    photo.focusX = 50;
-    photo.focusY = 50;
-    photo.zoom = 1;          // the caption stays — the slot keeps its plan
-    saveState();
-    render();
-
-    // only refresh the editor if it is still showing this same photo
-    if (cropIndex !== index) return;
-    cropFocus = { x: 50, y: 50 };
-    cropZoom = 1;
-    cropImg.src = dataUrl;
-    cropPreviewImg.src = dataUrl;
-    if (cropImg.complete && cropImg.naturalWidth) updateCropVisuals();
-    else cropImg.addEventListener("load", updateCropVisuals, { once: true });
+    if (!editSlides || !editSlides[at]) return;   // the editor was closed mid-import
+    editSlides[at] = { dataUrl, focusX: 50, focusY: 50, zoom: 1 };
+    markDirty();
+    renderSlideStrip();
+    if (slideIndex === at) loadSlide(at);
   });
 
   window.addEventListener("resize", () => { if (!cropBackdrop.hidden) updateCropVisuals(); });
@@ -1439,22 +2076,106 @@
     cropFocus = { x: 50, y: 50 };
     cropZoom = 1;
     updateCropVisuals();
+    markDirty();
   });
-  cropClose.addEventListener("click", closeCropModal);
+  cropClose.addEventListener("click", () => closeCropModal());
   cropBackdrop.addEventListener("click", (e) => { if (e.target === cropBackdrop) closeCropModal(); });
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && !cropBackdrop.hidden) closeCropModal();
+    if (e.key !== "Escape") return;
+    if (!shareBackdrop.hidden) closeShareCard();
+    else if (!carouselBackdrop.hidden) closeCarousel();
+    else if (!cropBackdrop.hidden) closeCropModal();
   });
   cropSave.addEventListener("click", () => {
-    if (cropIndex === null) return;
-    const photo = state.photos[cropIndex];
-    photo.focusX = Math.round(cropFocus.x * 10) / 10;
-    photo.focusY = Math.round(cropFocus.y * 10) / 10;
-    photo.zoom = Math.round(cropZoom * 100) / 100;
-    photo.caption = cropCaptionInput.value.trim();
+    if (cropIndex === null || !editSlides) return;
+    stashCrop();
+    state.photos[cropIndex] = { slides: editSlides, caption: cropCaptionInput.value.trim() };
     saveState();
     render();
-    closeCropModal();
+    closeCropModal(true);
+  });
+
+  // ---- carousel preview ----
+  // A scroll-snap track does the swiping: native momentum on iOS, no gesture code.
+  function openCarousel() {
+    if (!editSlides || editSlides.length < 2) return;
+    stashCrop();
+    carouselTrack.innerHTML = "";
+    carouselDots.innerHTML = "";
+    carouselSlides = editSlides;
+    editSlides.forEach((slide) => {
+      const cell = document.createElement("div");
+      cell.className = "slide";
+      const img = document.createElement("img");
+      img.alt = "";
+      img.draggable = false;
+      applyPhotoStyle(img, slide);
+      cell.appendChild(img);
+      carouselTrack.appendChild(cell);
+      carouselDots.appendChild(document.createElement("i"));
+    });
+    carouselCaption.textContent = cropCaptionInput.value.trim();
+    carouselBackdrop.hidden = false;
+    carouselTrack.scrollLeft = 0;
+    syncCarousel();
+  }
+
+  function closeCarousel() {
+    carouselBackdrop.hidden = true;
+    carouselTrack.innerHTML = "";
+    carouselSlides = null;
+  }
+
+  // A twenty-slide carousel holding every image decoded at once was the single
+  // biggest cost in the tool; only the current slide and its neighbours load.
+  function updateCarouselWindow() {
+    if (!carouselSlides) return;
+    const at = carouselIndex();
+    [...carouselTrack.children].forEach((cell, i) => {
+      const img = cell.querySelector("img");
+      if (!img) return;
+      const near = Math.abs(i - at) <= 1;
+      if (near && !img.getAttribute("src")) img.src = carouselSlides[i].dataUrl;
+      else if (!near && img.getAttribute("src")) img.removeAttribute("src");
+    });
+  }
+
+  function carouselIndex() {
+    const w = carouselTrack.clientWidth || 1;
+    return clamp(Math.round(carouselTrack.scrollLeft / w), 0, carouselTrack.children.length - 1);
+  }
+
+  function syncCarousel() {
+    const total = carouselTrack.children.length;
+    if (!total) return;
+    updateCarouselWindow();
+    const at = carouselIndex();
+    carouselCounter.textContent = `${at + 1} / ${total}`;
+    [...carouselDots.children].forEach((d, i) => d.classList.toggle("on", i === at));
+    carouselPrev.hidden = at === 0;
+    carouselNext.hidden = at === total - 1;
+  }
+
+  let carouselSlides = null;
+  let carouselTick = null;
+  carouselTrack.addEventListener("scroll", () => {
+    if (carouselTick !== null) return;
+    carouselTick = requestAnimationFrame(() => { carouselTick = null; syncCarousel(); });
+  });
+
+  function goToSlide(i) {
+    const w = carouselTrack.clientWidth;
+    carouselTrack.scrollTo({ left: clamp(i, 0, carouselTrack.children.length - 1) * w, behavior: "smooth" });
+  }
+  carouselPrev.addEventListener("click", () => goToSlide(carouselIndex() - 1));
+  carouselNext.addEventListener("click", () => goToSlide(carouselIndex() + 1));
+  carouselPreviewBtn.addEventListener("click", openCarousel);
+  carouselClose.addEventListener("click", closeCarousel);
+  carouselBackdrop.addEventListener("click", (e) => { if (e.target === carouselBackdrop) closeCarousel(); });
+  document.addEventListener("keydown", (e) => {
+    if (carouselBackdrop.hidden) return;
+    if (e.key === "ArrowLeft") { e.preventDefault(); goToSlide(carouselIndex() - 1); }
+    if (e.key === "ArrowRight") { e.preventDefault(); goToSlide(carouselIndex() + 1); }
   });
 
   // ---- export ----
@@ -1473,7 +2194,13 @@
     btn.addEventListener("click", () => {
       exportMenu.hidden = true;
       exportBtn.setAttribute("aria-expanded", "false");
-      exportGrid(btn.dataset.format);
+      const format = btn.dataset.format;
+      if (format === "zip" || format === "files" || format === "share") {
+        if (!state.photos.length) { alert("Add a few photos before exporting."); return; }
+        exportPosts(format);
+      } else {
+        exportGrid(format);
+      }
     });
   });
 
@@ -1543,23 +2270,36 @@
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, width, height);
 
-    const images = await Promise.all(state.photos.map(p => loadImageEl(p.dataUrl)));
-
-    state.photos.forEach((photo, i) => {
+    for (const [i, photo] of state.photos.entries()) {
       const col = i % cols;
       const row = Math.floor(i / cols);
       const dx = col * (tileW + gapPx);
       const dy = row * (cellH + gapPx);
-      const img = images[i];
+      const img = await loadImageEl(photo.slides[0].dataUrl);   // decoded one at a time, released after
+      const cover = photo.slides[0];
       const iw = img.naturalWidth, ih = img.naturalHeight;
 
       // same window the tile shows on screen: cover, shrunk by zoom, placed by focus
-      const { sw, sh } = cropWindow(iw, ih, photo.zoom ?? 1);
-      const sx = (iw - sw) * ((photo.focusX ?? 50) / 100);
-      const sy = (ih - sh) * ((photo.focusY ?? 50) / 100);
+      const { sw, sh } = cropWindow(iw, ih, cover.zoom ?? 1);
+      const sx = (iw - sw) * ((cover.focusX ?? 50) / 100);
+      const sy = (ih - sh) * ((cover.focusY ?? 50) / 100);
       ctx.drawImage(img, sx, sy, sw, sh, dx, dy, tileW, tileH);
 
-      if (!hasCaptions) return;
+      if (photo.slides.length > 1) {
+        const label = `1/${photo.slides.length}`;
+        ctx.save();
+        ctx.font = '600 15px -apple-system, BlinkMacSystemFont, Helvetica, Arial, sans-serif';
+        ctx.textBaseline = "middle";
+        const w = ctx.measureText(label).width + 18;
+        ctx.fillStyle = "rgba(20,18,16,.62)";
+        if (ctx.roundRect) { ctx.beginPath(); ctx.roundRect(dx + 9, dy + 9, w, 23, 11.5); ctx.fill(); }
+        else ctx.fillRect(dx + 9, dy + 9, w, 23);
+        ctx.fillStyle = "#ffffff";
+        ctx.fillText(label, dx + 18, dy + 21);
+        ctx.restore();
+      }
+
+      if (!hasCaptions) continue;
       const bandY = dy + tileH;
       ctx.save();
       ctx.beginPath();
@@ -1575,7 +2315,7 @@
         ctx.fillText(line, dx + padX + gutter, bandY + padTop + li * lineH);
       });
       ctx.restore();
-    });
+    }
 
     return canvas;
   }
@@ -1591,40 +2331,238 @@
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
-  function buildSingleImagePdf(jpegBytes, width, height) {
+  // ---- posts export ----
+  const CRC_TABLE = (() => {
+    const t = new Uint32Array(256);
+    for (let n = 0; n < 256; n++) {
+      let c = n;
+      for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1;
+      t[n] = c >>> 0;
+    }
+    return t;
+  })();
+
+  function crc32(bytes) {
+    let crc = 0xFFFFFFFF;
+    for (let i = 0; i < bytes.length; i++) crc = (crc >>> 8) ^ CRC_TABLE[(crc ^ bytes[i]) & 0xFF];
+    return (crc ^ 0xFFFFFFFF) >>> 0;
+  }
+
+  // A stored (uncompressed) zip — JPEGs are already compressed, so deflate would
+  // only cost time, and this keeps the tool dependency-free.
+  function buildZip(entries) {
     const enc = new TextEncoder();
     const chunks = [];
     let offset = 0;
-    const objOffsets = {};
-    function push(data) {
-      const bytes = typeof data === "string" ? enc.encode(data) : data;
-      chunks.push(bytes);
-      offset += bytes.length;
+    const push = (b) => { chunks.push(b); offset += b.length; };
+    const u16 = (v) => { const a = new Uint8Array(2); new DataView(a.buffer).setUint16(0, v & 0xFFFF, true); return a; };
+    const u32 = (v) => { const a = new Uint8Array(4); new DataView(a.buffer).setUint32(0, v >>> 0, true); return a; };
+    const now = new Date();
+    const time = ((now.getHours() << 11) | (now.getMinutes() << 5) | Math.floor(now.getSeconds() / 2)) & 0xFFFF;
+    const date = (((now.getFullYear() - 1980) << 9) | ((now.getMonth() + 1) << 5) | now.getDate()) & 0xFFFF;
+    const dir = [];
+
+    for (const entry of entries) {
+      const name = enc.encode(entry.name);
+      const crc = crc32(entry.bytes);
+      const start = offset;
+      push(u32(0x04034b50)); push(u16(20)); push(u16(0)); push(u16(0));
+      push(u16(time)); push(u16(date));
+      push(u32(crc)); push(u32(entry.bytes.length)); push(u32(entry.bytes.length));
+      push(u16(name.length)); push(u16(0));
+      push(name); push(entry.bytes);
+      dir.push({ name, crc, size: entry.bytes.length, start });
     }
-    push("%PDF-1.4\n");
-    objOffsets[1] = offset;
-    push("1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n");
-    objOffsets[2] = offset;
-    push("2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n");
-    objOffsets[3] = offset;
-    push(`3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${width} ${height}] /Resources << /XObject << /Im0 4 0 R >> >> /Contents 5 0 R >>\nendobj\n`);
-    objOffsets[4] = offset;
-    push(`4 0 obj\n<< /Type /XObject /Subtype /Image /Width ${width} /Height ${height} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${jpegBytes.length} >>\nstream\n`);
-    push(jpegBytes);
-    push("\nendstream\nendobj\n");
-    objOffsets[5] = offset;
-    const content = `q ${width} 0 0 ${height} 0 0 cm /Im0 Do Q`;
-    push(`5 0 obj\n<< /Length ${content.length} >>\nstream\n${content}\nendstream\nendobj\n`);
-    const xrefStart = offset;
-    let xref = "xref\n0 6\n0000000000 65535 f \n";
-    for (let i = 1; i <= 5; i++) xref += String(objOffsets[i]).padStart(10, "0") + " 00000 n \n";
-    push(xref);
-    push(`trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n${xrefStart}\n%%EOF`);
-    const total = chunks.reduce((a, c) => a + c.length, 0);
-    const out = new Uint8Array(total);
+
+    const dirStart = offset;
+    for (const e of dir) {
+      push(u32(0x02014b50)); push(u16(20)); push(u16(20)); push(u16(0)); push(u16(0));
+      push(u16(time)); push(u16(date));
+      push(u32(e.crc)); push(u32(e.size)); push(u32(e.size));
+      push(u16(e.name.length)); push(u16(0)); push(u16(0));
+      push(u16(0)); push(u16(0)); push(u32(0)); push(u32(e.start));
+      push(e.name);
+    }
+    push(u32(0x06054b50)); push(u16(0)); push(u16(0));
+    push(u16(dir.length)); push(u16(dir.length));
+    push(u32(offset - dirStart)); push(u32(dirStart)); push(u16(0));
+
+    const out = new Uint8Array(offset);
     let pos = 0;
     for (const c of chunks) { out.set(c, pos); pos += c.length; }
     return out;
+  }
+
+  // The grid shows the newest post first, so posting runs the other way round:
+  // the last tile is what goes up first.
+  function postingOrder() {
+    return state.photos.map((post, i) => ({ post, frame: i + 1 })).reverse();
+  }
+
+  function slideFileName(seq, frame, slideNo, total) {
+    const base = `post-${pad(seq)}_frame-${pad(frame)}`;
+    return total > 1 ? `${base}_slide-${slideNo}.png` : `${base}.png`;
+  }
+
+  // One slide, cropped exactly as the tile shows it, at Instagram's 4:5 size.
+  // PNG, so the export adds no compression of its own on top of the import.
+  function renderSlideBlob(slide) {
+    return loadImageEl(slide.dataUrl).then(img => {
+      const iw = img.naturalWidth, ih = img.naturalHeight;
+      const { sw, sh } = cropWindow(iw, ih, slide.zoom ?? 1);
+      const sx = (iw - sw) * ((slide.focusX ?? 50) / 100);
+      const sy = (ih - sh) * ((slide.focusY ?? 50) / 100);
+      const canvas = document.createElement("canvas");
+      canvas.width = POST_W;
+      canvas.height = POST_H;
+      const ctx = canvas.getContext("2d");
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = "high";
+      ctx.drawImage(img, sx, sy, sw, sh, 0, 0, POST_W, POST_H);
+      return new Promise(resolve => canvas.toBlob(blob => {
+        canvas.width = canvas.height = 0;    // 1080x1350 is ~5.8MB of backing store
+        resolve(blob);
+      }, "image/png"));
+    });
+  }
+
+  async function collectPosts(stamp) {
+    const files = [];
+    const notes = [
+      "FEED PLANNER — posts in the order you post them",
+      `Exported ${stamp}`,
+      "",
+      "The grid shows the newest post at the top left, so this list runs the",
+      "other way round: post 01 is the LAST tile in the grid, and it goes up",
+      "first. Frame numbers below match the numbers on the tiles.",
+      ""
+    ];
+    let seq = 0;
+    for (const { post, frame } of postingOrder()) {
+      seq++;
+      const total = post.slides.length;
+      const names = [];
+      for (let i = 0; i < total; i++) {
+        const name = slideFileName(seq, frame, i + 1, total);
+        const blob = await renderSlideBlob(post.slides[i]);
+        files.push({ name, blob });
+        names.push(name);
+      }
+      notes.push("=".repeat(58));
+      notes.push(`POST ${pad(seq)}  ·  grid frame ${pad(frame)}  ·  ${total > 1 ? `carousel, ${total} slides` : "single image"}`);
+      names.forEach(n => notes.push(`  ${n}`));
+      notes.push("");
+      notes.push((post.caption || "").trim() || "(no caption)");
+      notes.push("");
+    }
+    return { files, captions: notes.join("\n") };
+  }
+
+  // iOS can put these straight into Photos through the share sheet, which beats
+  // seven separate downloads landing in Files.
+  function canSharePosts() {
+    if (!navigator.share || !navigator.canShare) return false;
+    try {
+      const probe = new File([new Blob([new Uint8Array(1)], { type: "image/png" })], "probe.png", { type: "image/png" });
+      return navigator.canShare({ files: [probe] });
+    } catch (e) {
+      return false;
+    }
+  }
+
+  let pendingShare = null;
+
+  function formatSize(bytes) {
+    return bytes >= 1048576 ? (bytes / 1048576).toFixed(1) + " MB" : Math.round(bytes / 1024) + " KB";
+  }
+
+  function closeShareCard() {
+    shareBackdrop.hidden = true;
+    pendingShare = null;          // the files are large; don't sit on them
+    shareGo.disabled = false;
+    shareCaptions.textContent = "Copy captions";
+  }
+
+  // Rendering has to finish before the share sheet can be asked for, and by then
+  // iOS no longer counts the menu tap as a gesture — so the sheet opens on a
+  // second, deliberate tap instead.
+  async function preparePostShare(stamp) {
+    const { files, captions } = await collectPosts(stamp);
+    const shareFiles = files.map(f => new File([f.blob], f.name, { type: "image/png" }));
+    if (!navigator.canShare({ files: shareFiles })) {
+      alert("This browser won't share that many images at once. Use Export › All as ZIP instead.");
+      return;
+    }
+    pendingShare = { files: shareFiles, captions };
+    const total = shareFiles.reduce((sum, f) => sum + f.size, 0);
+    shareTitle.textContent = `${shareFiles.length} image${shareFiles.length === 1 ? "" : "s"} ready`;
+    shareNote.textContent = `${formatSize(total)} of lossless PNG. Tap Save to Photos, then choose "Save Images" in the share sheet — they land in Photos in posting order, so post 01 is the first of the batch.`;
+    shareBackdrop.hidden = false;
+  }
+
+  shareGo.addEventListener("click", async () => {
+    if (!pendingShare) return;
+    shareGo.disabled = true;
+    try {
+      await navigator.share({ files: pendingShare.files });
+      closeShareCard();
+    } catch (e) {
+      shareGo.disabled = false;
+      if (e && e.name === "AbortError") return;      // sheet dismissed, nothing went wrong
+      shareNote.textContent = "That didn't go through — the batch may be too large. Try Export › All as ZIP instead.";
+    }
+  });
+
+  shareCaptions.addEventListener("click", async () => {
+    if (!pendingShare) return;
+    try {
+      await navigator.clipboard.writeText(pendingShare.captions);
+      shareCaptions.textContent = "Captions copied";
+    } catch (e) {
+      shareCaptions.textContent = "Couldn't copy";
+    }
+    setTimeout(() => { shareCaptions.textContent = "Copy captions"; }, 2200);
+  });
+
+  shareCancel.addEventListener("click", closeShareCard);
+  shareBackdrop.addEventListener("click", (e) => { if (e.target === shareBackdrop) closeShareCard(); });
+
+  function busyExport(on) {
+    exportBtn.disabled = on;
+    exportBtn.textContent = on ? "Exporting…" : "Export";
+  }
+
+  const wait = (ms) => new Promise(r => setTimeout(r, ms));
+
+  async function exportPosts(mode) {
+    const stamp = new Date().toISOString().slice(0, 10);
+    busyExport(true);
+    try {
+      if (mode === "share") {
+        await preparePostShare(stamp);
+        return;
+      }
+
+      const { files, captions } = await collectPosts(stamp);
+      const captionBlob = new Blob([captions], { type: "text/plain" });
+
+      if (mode === "zip") {
+        const entries = [];
+        for (const f of files) entries.push({ name: f.name, bytes: new Uint8Array(await f.blob.arrayBuffer()) });
+        entries.push({ name: "captions.txt", bytes: new Uint8Array(await captionBlob.arrayBuffer()) });
+        triggerDownload(new Blob([buildZip(entries)], { type: "application/zip" }), `feed-posts-${stamp}.zip`);
+        return;
+      }
+
+      // one at a time, paced so the browser doesn't drop the later downloads
+      for (const f of files) {
+        triggerDownload(f.blob, f.name);
+        await wait(400);
+      }
+      triggerDownload(captionBlob, "captions.txt");
+    } finally {
+      busyExport(false);
+    }
   }
 
   async function exportGrid(format) {
@@ -1635,18 +2573,19 @@
     const canvas = await composeGridCanvas();
     const stamp = new Date().toISOString().slice(0, 10);
 
+    const done = (blob, name) => {
+      triggerDownload(blob, name);
+      canvas.width = canvas.height = 0;
+    };
     if (format === "png") {
-      canvas.toBlob(blob => triggerDownload(blob, `feed-grid-${stamp}.png`), "image/png");
+      canvas.toBlob(blob => done(blob, `feed-grid-${stamp}.png`), "image/png");
     } else if (format === "jpeg") {
-      canvas.toBlob(blob => triggerDownload(blob, `feed-grid-${stamp}.jpg`), "image/jpeg", 0.92);
-    } else if (format === "pdf") {
-      canvas.toBlob(async blob => {
-        const buf = new Uint8Array(await blob.arrayBuffer());
-        const pdfBytes = buildSingleImagePdf(buf, canvas.width, canvas.height);
-        triggerDownload(new Blob([pdfBytes], { type: "application/pdf" }), `feed-grid-${stamp}.pdf`);
-      }, "image/jpeg", 0.92);
+      canvas.toBlob(blob => done(blob, `feed-grid-${stamp}.jpg`), "image/jpeg", 0.92);
     }
   }
+
+  const shareItem = exportMenu.querySelector('[data-format="share"]');
+  if (!canSharePosts()) shareItem.remove();
 
   render();
 })();
