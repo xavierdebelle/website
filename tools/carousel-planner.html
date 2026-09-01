@@ -324,7 +324,7 @@
     font-size: .8rem;
   }
   .exp-row .nm { flex: 1; font-family: var(--font-mono); font-size: .74rem; color: var(--ink-dim); }
-  .exp-row img { width: 34px; height: 42px; object-fit: cover; border-radius: 2px; }
+  .exp-row img, .exp-row canvas { width: 34px; object-fit: cover; border-radius: 2px; flex: none; }
 
   .toast {
     position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%);
@@ -632,7 +632,11 @@ var RATIOS = {
   "1.91:1": { w: 1080, h: 566  }
 };
 
-var MAX_IMPORT_EDGE = 4000;   // photos are downscaled on import to keep things quick
+// One photo is kept at three sizes. Handing a 12MP original to a 30px layer
+// thumbnail is what made phones run out of memory and reload the page.
+var EXPORT_EDGE = 2400;      // what the finished slides are rendered from
+var DISPLAY_EDGE = 1600;     // what the editor canvas shows
+var THUMB_EDGE = 400;        // slide rail, layers list, previews
 var SAFE_INSET = 0.06;        // where Instagram UI tends to sit
 
 var state = {
@@ -643,8 +647,9 @@ var state = {
   items: []      // z-order: last = front
 };
 
-var assets = new Map();   // assetId -> { id, src, w, h, name }
-var imgs   = new Map();   // assetId -> HTMLImageElement (decoded, export-ready)
+var assets = new Map();   // assetId -> { id, src, disp, thumb, w, h, name }
+var thumbs = new Map();   // assetId -> decoded thumbnail, the only image kept decoded
+var fullCache = new Map();// assetId -> full-size image, held only during an export
 
 var selectedId = null;
 var zoom = 1;
@@ -739,28 +744,50 @@ function readFileAsDataURL(file) {
   });
 }
 
-// Downscale oversized photos so dragging stays smooth; keeps PNG alpha intact.
+// Decode the photo once, then write out the three sizes we actually use.
+function scaledDataURL(im, edge, isPng, quality) {
+  var big = Math.max(im.naturalWidth, im.naturalHeight);
+  var k = Math.min(1, edge / big);
+  var c = document.createElement("canvas");
+  c.width = Math.max(1, Math.round(im.naturalWidth * k));
+  c.height = Math.max(1, Math.round(im.naturalHeight * k));
+  var x = c.getContext("2d");
+  x.imageSmoothingQuality = "high";
+  x.drawImage(im, 0, 0, c.width, c.height);
+  return c.toDataURL(isPng ? "image/png" : "image/jpeg", quality);
+}
+
 function normalise(src, isPng) {
   return loadImage(src).then(function (im) {
-    var big = Math.max(im.naturalWidth, im.naturalHeight);
-    if (big <= MAX_IMPORT_EDGE) return { src: src, w: im.naturalWidth, h: im.naturalHeight };
-    var k = MAX_IMPORT_EDGE / big;
-    var c = document.createElement("canvas");
-    c.width = Math.round(im.naturalWidth * k);
-    c.height = Math.round(im.naturalHeight * k);
-    var x = c.getContext("2d");
-    x.imageSmoothingQuality = "high";
-    x.drawImage(im, 0, 0, c.width, c.height);
-    return {
-      src: c.toDataURL(isPng ? "image/png" : "image/jpeg", 0.94),
-      w: c.width, h: c.height
+    var out = {
+      w: im.naturalWidth, h: im.naturalHeight,
+      src: scaledDataURL(im, EXPORT_EDGE, isPng, 0.94),
+      disp: scaledDataURL(im, DISPLAY_EDGE, isPng, 0.88),
+      thumb: scaledDataURL(im, THUMB_EDGE, false, 0.72)
     };
+    var k = Math.min(1, EXPORT_EDGE / Math.max(im.naturalWidth, im.naturalHeight));
+    out.w = Math.round(im.naturalWidth * k);
+    out.h = Math.round(im.naturalHeight * k);
+    return out;
   });
 }
 
 function registerAsset(a) {
   assets.set(a.id, a);
-  return loadImage(a.src).then(function (im) { imgs.set(a.id, im); return a; });
+  return loadImage(a.thumb).then(function (im) { thumbs.set(a.id, im); return a; });
+}
+
+// Photos saved by an older version only have the full size. Rebuild the
+// smaller ones once, one at a time so the phone isn't asked to hold several
+// full decodes at the same moment.
+function upgradeAsset(a) {
+  if (a.thumb && a.disp) return Promise.resolve(a);
+  return loadImage(a.src).then(function (im) {
+    a.disp = scaledDataURL(im, DISPLAY_EDGE, false, 0.88);
+    a.thumb = scaledDataURL(im, THUMB_EDGE, false, 0.72);
+    dbPut(a);
+    return a;
+  });
 }
 
 function addFiles(fileList, dropPt) {
@@ -776,7 +803,7 @@ function addFiles(fileList, dropPt) {
       return readFileAsDataURL(file)
         .then(function (src) { return normalise(src, /png$/i.test(file.type)); })
         .then(function (n) {
-          var a = { id: uid(), src: n.src, w: n.w, h: n.h, name: file.name };
+          var a = { id: uid(), src: n.src, disp: n.disp, thumb: n.thumb, w: n.w, h: n.h, name: file.name };
           dbPut(a);
           return registerAsset(a);
         })
@@ -938,7 +965,7 @@ function paintItem(it) {
   if (!el) return;
   var a = assets.get(it.aid);
   var im = el.firstChild;
-  if (a && im.getAttribute("src") !== a.src) im.src = a.src;
+  if (a && a.disp && im.getAttribute("src") !== a.disp) im.src = a.disp;
   el.style.left = it.x + "px";
   el.style.top = it.y + "px";
   el.style.width = it.w + "px";
@@ -1071,7 +1098,7 @@ function renderLayers() {
       var row = document.createElement("button");
       row.className = "layer" + (it.id === selectedId ? " sel" : "");
       var th = document.createElement("img");
-      th.src = a.src || "";
+      th.src = a.thumb || a.src || "";
       row.appendChild(th);
       var m = document.createElement("span");
       m.className = "meta";
@@ -1099,31 +1126,42 @@ function slideSpan(it) {
 
 /* ---- slide-by-slide rail + phone preview share this renderer ---- */
 
-function stripClone(scale) {
-  var wrap = document.createElement("div");
-  wrap.className = "inner";
-  wrap.style.width = stripW() + "px";
-  wrap.style.height = SH() + "px";
-  wrap.style.transform = "scale(" + scale + ")";
-  wrap.style.background = state.bg;
+// One routine draws a slide, for previews and for the exported file alike.
+// `k` is canvas pixels per strip pixel; `getImg` decides which copy of the
+// photo gets used, so a preview costs thumbnails and an export costs originals.
+function paintSlide(x, i, k, getImg) {
   state.items.forEach(function (it) {
     var a = assets.get(it.aid);
     if (!a) return;
+    var im = getImg(it.aid);
+    if (!im || !im.naturalWidth) return;
     var g = fitGeom(it, a.w, a.h);
-    var d = document.createElement("div");
-    d.style.cssText =
-      "position:absolute;overflow:hidden;left:" + it.x + "px;top:" + it.y + "px;width:" + it.w + "px;height:" + it.h +
-      "px;transform:rotate(" + it.rot + "deg) scale(" + (it.flipH ? -1 : 1) + "," + (it.flipV ? -1 : 1) +
-      ");opacity:" + (it.op / 100) + ";";
-    var im = document.createElement("img");
-    im.src = a.src;
-    im.draggable = false;
-    im.style.cssText = "position:absolute;display:block;left:" + g.dx + "px;top:" + g.dy +
-      "px;width:" + g.dw + "px;height:" + g.dh + "px";
-    d.appendChild(im);
-    wrap.appendChild(d);
+    x.save();
+    x.globalAlpha = it.op / 100;
+    x.translate((it.x + it.w / 2 - i * SW()) * k, (it.y + it.h / 2) * k);
+    x.rotate(it.rot * Math.PI / 180);
+    x.beginPath();
+    x.rect(-it.w / 2 * k, -it.h / 2 * k, it.w * k, it.h * k);
+    x.clip();
+    x.scale(it.flipH ? -1 : 1, it.flipV ? -1 : 1);
+    x.drawImage(im, (-it.w / 2 + g.dx) * k, (-it.h / 2 + g.dy) * k, g.dw * k, g.dh * k);
+    x.restore();
   });
-  return wrap;
+}
+
+// A preview of one slide, drawn from thumbnails into a canvas of its own size.
+function slideCanvas(i, cssW, cssH) {
+  var dpr = Math.min(window.devicePixelRatio || 1, 2);
+  var c = document.createElement("canvas");
+  c.width = Math.max(1, Math.round(cssW * dpr));
+  c.height = Math.max(1, Math.round(cssH * dpr));
+  c.style.cssText = "display:block;width:" + cssW + "px;height:" + cssH + "px";
+  var x = c.getContext("2d");
+  x.imageSmoothingQuality = "high";
+  x.fillStyle = state.bg;
+  x.fillRect(0, 0, c.width, c.height);
+  paintSlide(x, i, c.width / SW(), function (aid) { return thumbs.get(aid); });
+  return c;
 }
 
 function renderThumbs() {
@@ -1132,17 +1170,16 @@ function renderThumbs() {
   host.style.gap = state.gutter + "px";
   var H = isNarrow() ? 92 : 132;
   var k = Math.min(H / SH(), 200 / SW());
+  var tw = Math.round(SW() * k), thh = Math.round(SH() * k);
   for (var i = 0; i < state.slides; i++) {
     (function (i) {
       var card = document.createElement("div");
       card.className = "slide-card";
       var th = document.createElement("div");
       th.className = "slide-thumb";
-      th.style.width = Math.round(SW() * k) + "px";
-      th.style.height = H + "px";
-      var inner = stripClone(k);
-      inner.style.left = Math.round(-i * SW() * k) + "px";
-      th.appendChild(inner);
+      th.style.width = tw + "px";
+      th.style.height = thh + "px";
+      th.appendChild(slideCanvas(i, tw, thh));
       th.onclick = function () { scrollToSlide(i); };
       var cap = document.createElement("div");
       cap.className = "slide-cap";
@@ -1895,6 +1932,7 @@ viewport.addEventListener("drop", function (e) {
 function closeModals() {
   $("previewModal").classList.remove("open");
   $("exportModal").classList.remove("open");
+  releaseFullImages();
 }
 $("closePreview").onclick = closeModals;
 $("closeExport").onclick = closeModals;
@@ -1908,8 +1946,6 @@ $("btnPreview").onclick = function () {
   var Hp = Math.round(Wp * SH() / SW());
   var maxH = Math.round(vh * 0.58);
   if (Hp > maxH) { Wp = Math.max(160, Math.round(Wp * maxH / Hp)); Hp = Math.round(Wp * SH() / SW()); }
-  var k = Wp / SW();
-
   var phone = $("phone");
   phone.style.width = Wp + "px";
   phone.style.height = Hp + "px";
@@ -1921,9 +1957,7 @@ $("btnPreview").onclick = function () {
     pane.className = "pane";
     pane.style.width = Wp + "px";
     pane.style.height = Hp + "px";
-    var inner = stripClone(k);
-    inner.style.left = Math.round(-i * SW() * k) + "px";
-    pane.appendChild(inner);
+    pane.appendChild(slideCanvas(i, Wp, Hp));
     sw.appendChild(pane);
   }
 
@@ -1949,37 +1983,47 @@ function markDot(i) {
    Export
    ============================================================ */
 
-function renderSlide(i) {
-  var c = document.createElement("canvas");
-  c.width = SW(); c.height = SH();
-  var x = c.getContext("2d");
-  x.imageSmoothingQuality = "high";
-  x.fillStyle = state.bg;
-  x.fillRect(0, 0, c.width, c.height);
+// Which photos actually land on slide i, allowing for rotation.
+function assetsForSlide(i) {
+  var need = {}, left = i * SW(), right = (i + 1) * SW();
   state.items.forEach(function (it) {
-    var im = imgs.get(it.aid);
-    if (!im) return;
-    var g = fitGeom(it, im.naturalWidth, im.naturalHeight);
-
-    x.save();
-    x.globalAlpha = it.op / 100;
-    x.translate(it.x + it.w / 2 - i * SW(), it.y + it.h / 2);
-    x.rotate(it.rot * Math.PI / 180);
-    x.beginPath();
-    x.rect(-it.w / 2, -it.h / 2, it.w, it.h);
-    x.clip();
-    x.scale(it.flipH ? -1 : 1, it.flipV ? -1 : 1);
-    x.drawImage(im, -it.w / 2 + g.dx, -it.h / 2 + g.dy, g.dw, g.dh);
-    x.restore();
+    var cx = it.x + it.w / 2;
+    var reach = Math.sqrt(it.w * it.w + it.h * it.h) / 2;
+    if (cx + reach > left && cx - reach < right) need[it.aid] = true;
   });
-  return c;
+  return Object.keys(need);
+}
+
+function fullImage(aid) {
+  if (fullCache.has(aid)) return Promise.resolve(fullCache.get(aid));
+  var a = assets.get(aid);
+  if (!a) return Promise.resolve(null);
+  return loadImage(a.src).then(function (im) { fullCache.set(aid, im); return im; });
+}
+
+function releaseFullImages() { fullCache.clear(); }
+
+// Async now: the originals are decoded while a slide is written out, then let go.
+function renderSlide(i) {
+  return Promise.all(assetsForSlide(i).map(fullImage)).then(function () {
+    var c = document.createElement("canvas");
+    c.width = SW(); c.height = SH();
+    var x = c.getContext("2d");
+    x.imageSmoothingQuality = "high";
+    x.fillStyle = state.bg;
+    x.fillRect(0, 0, c.width, c.height);
+    paintSlide(x, i, 1, function (aid) { return fullCache.get(aid); });
+    return c;
+  });
 }
 
 function slideBlob(i) {
   var fmt = $("expFormat").value;
   var q = parseInt($("expQuality").value, 10) / 100;
-  return new Promise(function (resolve) {
-    renderSlide(i).toBlob(function (b) { resolve(b); }, fmt === "png" ? "image/png" : "image/jpeg", q);
+  return renderSlide(i).then(function (c) {
+    return new Promise(function (resolve) {
+      c.toBlob(function (b) { resolve(b); }, fmt === "png" ? "image/png" : "image/jpeg", q);
+    });
   });
 }
 function slideName(i) {
@@ -2012,9 +2056,7 @@ function buildExportList() {
     (function (i) {
       var row = document.createElement("div");
       row.className = "exp-row";
-      var th = document.createElement("img");
-      th.src = renderSlide(i).toDataURL("image/jpeg", 0.5);
-      row.appendChild(th);
+      row.appendChild(slideCanvas(i, 34, Math.round(34 * SH() / SW())));
       var nm = document.createElement("span");
       nm.className = "nm";
       nm.textContent = slideName(i);
@@ -2022,7 +2064,7 @@ function buildExportList() {
       var b = document.createElement("button");
       b.className = "ghost";
       b.textContent = "Download";
-      b.onclick = function () { slideBlob(i).then(function (bl) { download(bl, slideName(i)); }); };
+      b.onclick = function () { slideBlob(i).then(function (bl) { download(bl, slideName(i)); releaseFullImages(); }); };
       row.appendChild(b);
       list.appendChild(row);
     })(i);
@@ -2062,6 +2104,7 @@ function prepareShare() {
     })(i);
   }
   chain.then(function () {
+    releaseFullImages();
     if (token !== shareToken) return;
     if (!files.length || !navigator.canShare({ files: files })) {
       btn.style.display = "none";
@@ -2107,11 +2150,13 @@ $("btnExportZip").onclick = function () {
   chain.then(function () {
     var base = ($("expName").value || "carousel").replace(/[^\w\-]+/g, "-");
     download(zipStore(files), base + "-slides.zip");
+    releaseFullImages();
     btn.disabled = false;
     btn.textContent = "Download all (.zip)";
     toast("Exported " + files.length + " slides");
   }).catch(function (e) {
     console.error(e);
+    releaseFullImages();
     btn.disabled = false;
     btn.textContent = "Download all (.zip)";
     toast("Export failed");
@@ -2191,12 +2236,14 @@ function restore() {
   return dbAll().then(function (rows) {
     var used = {};
     (saved.items || []).forEach(function (it) { used[it.aid] = true; });
-    var jobs = [];
+    var chain = Promise.resolve();
     rows.forEach(function (a) {
-      if (used[a.id]) jobs.push(registerAsset(a));
-      else dbDelete(a.id);            // photo from an older session nobody is using
+      if (!used[a.id]) { dbDelete(a.id); return; }   // nobody is using it any more
+      chain = chain.then(function () {
+        return upgradeAsset(a).then(function () { return registerAsset(a); });
+      });
     });
-    return Promise.all(jobs).then(function () {
+    return chain.then(function () {
       state.slides = clamp(saved.slides || 4, 2, 20);
       state.ratio = RATIOS[saved.ratio] ? saved.ratio : "4:5";
       state.bg = saved.bg || "#111111";

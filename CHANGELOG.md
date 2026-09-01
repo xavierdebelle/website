@@ -5,6 +5,50 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v12 — 2026-09-01
+
+**Carousel Planner v4 — fixes the phone reloading the page**
+v3 made the tool usable on a phone and then ran it out of memory. Reported as
+"the page keeps on crashing", which is what iOS does when a tab exceeds its
+budget: it discards the tab and reloads.
+
+- **The cause was resolution, not the layout.** Every preview was a real copy
+  of every photo at full size. With six 12MP photos across ten slides the page
+  held 124 `<img>` elements referencing 1,055 megapixels — about 4GB of bitmap
+  if the browser decoded it all — to paint previews needing 3. The slide rail
+  built one full copy of every photo per slide (310× more pixels than it
+  drew), and the layers list fed 12MP originals into 30px squares (9,711×).
+- **Each photo is now kept at three sizes**: 2400px for export, 1600px for the
+  editor canvas, 400px for thumbnails. Nothing is handed a source larger than
+  it draws.
+- **The slide rail and the swipe preview are drawn, not cloned.** Both now
+  paint into a small canvas through the same routine the exporter uses, so ten
+  slides cost ten canvases instead of a hundred copies of the strip. That also
+  removes the rebuild of a hundred image elements that ran during every drag.
+- **Originals are decoded only while an export is being written**, one slide's
+  worth at a time, and released afterwards.
+- Same measurement after the change: 12 `<img>` elements, 12.2 megapixels,
+  about 47MB — down from roughly 4GB, an 86× reduction.
+
+**Checked before publishing**
+- Same stress test both sides: six 4032×3024 photos across ten slides.
+- Exported files are unchanged. Captured the actual canvases handed to the
+  encoder: the known test square measures 538px at 200% crop zoom, the same
+  figure v3 produced, and empty slides come out as background.
+- A carousel saved by v3 opens in v4 — the older photos have their smaller
+  copies rebuilt on load, written back, and the layout restores intact.
+- Phone behaviour re-checked: pinch 10% → 35%, one-finger pan, tap to select,
+  sheet opening with the crop zoom in reach, and the swipe preview now using
+  canvases and no image clones. Desktop unchanged, no console errors.
+
+**Outstanding**
+- Importing now writes three sizes per photo, so adding a batch takes longer
+  than it did. It runs one photo at a time on purpose, to avoid holding
+  several full decodes at once.
+- The share button is still unverified on a real iPhone.
+
+---
+
 ## v11 — 2026-09-01
 
 **Carousel Planner updated to v3 — it works on a phone now**
