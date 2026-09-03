@@ -5,6 +5,39 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v19 — 2026-09-03
+
+**Carousel Planner v9 — the sixth slide**
+Two reports from the iPhone on v8: everything from the sixth slide on
+vanished, and the slide rail at the bottom could not be scrolled into view.
+Both are WebKit limits, not logic, and the "five works, six doesn't" line
+gave the first one away.
+
+- **Slides beyond the fifth were unpaintable.** The divider lines between
+  slides used `mix-blend-mode`, which makes WebKit render the whole strip as
+  a single GPU texture at its unscaled size: 1080px a slide, times three on a
+  phone. Five slides is 16,200 pixels wide; six is 19,440; the GPU's ceiling
+  is 16,384. Past that the texture is refused and nothing draws. The lines
+  now take their contrast from a dark edge instead of a blend, the strip is
+  ordinary content again, and any count paints.
+- **The rail sat behind the browser bar.** The app was `height: 100%`, which
+  Chrome on iOS resolves to the taller viewport behind its toolbar, so the
+  bottom of the page — the rail — was off-screen with the page unable to
+  scroll. The app and the bottom sheet now use `dvh`, the visible height.
+
+**Checked before publishing**
+- Scan: storage key unchanged; the same `dataTransfer` false positive as
+  before.
+- Under phone emulation with thirteen slides: all fourteen dividers present
+  with no blend mode, the app and rail bottom aligned to the visible screen,
+  the end of the strip reachable, no console errors.
+
+**Outstanding**
+- The texture ceiling cannot be reproduced here; the arithmetic matches the
+  report exactly, and the device confirms it or it doesn't.
+
+---
+
 ## v18 — 2026-09-03
 
 **Carousel Planner v8 — the phone, second pass**
