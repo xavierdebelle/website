@@ -5,6 +5,57 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v17 — 2026-09-03
+
+**Carousel Planner v7 — fixed views on a phone**
+v6 stopped the reload loop at start-up and the phone still died, now while
+pinching, panning, or resizing a photo. That is the editor, not the import: a
+strip up to twenty slides wide, scaled with a transform, with every photo on
+its own GPU layer. Each pinch step and each resize step re-rasterised all of
+them at 3x, and the slide rail was rebuilt as fresh canvases six times a
+second underneath. The Feed Planner shows the same photos as a plain grid of
+thumbnails, which is why it never had the problem.
+
+- **No pinch or wheel zoom on a phone.** Two fixed views instead: an overview
+  of two and a half slides on load, and a *Show 1 slide* button for close
+  work. Switching keeps the slide you were on. Desktop keeps its zoom.
+- **Panning is the browser's own scroll.** A finger on empty canvas or a
+  locked photo scrolls the strip; a finger on a photo moves it. Tapping a slide
+  in the rail scrolls to it, and the rail now outlines the slide under the
+  middle of the screen.
+- **Photos are no longer separate GPU layers**, and the rail waits until the
+  finger lifts before redrawing. Those two were the per-frame churn.
+- **Import saves after every photo.** A tab killed mid-batch keeps what was
+  already done; v6 threw the whole batch away and then deleted the stored
+  copies on the next load, which read as "keeps failing".
+- **The fallback decode is cheap.** When the bitmap decoder refuses a file, v6
+  decoded it at full size — 200MB for a 48MP phone photo. It now goes through
+  an image element drawn small, which iOS subsamples. The normal path also asks
+  for exact dimensions, so a rotated iPhone photo stores at a full 1800x2400
+  rather than 1786x2382.
+- iOS guards: `-webkit-user-select`, `-webkit-touch-callout`,
+  `overscroll-behavior` (no pull-to-refresh in Chrome on iOS), and a second
+  finger can no longer start a second drag.
+
+**Checked before publishing**
+- Scan: one flag, a false positive — its "e-transfer" pattern matches the word
+  `dataTransfer` in the drag-and-drop code. Storage keys unchanged, so saved
+  carousels carry over.
+- Under phone emulation: boot at 13% showing 2½ slides, the view toggle, tap
+  to select, drag, corner resize, the rail not rebuilding mid-drag, a second
+  finger ignored, restore from storage, the fallback decode path producing
+  1800x2400, and a reload mid-import keeping the finished photos. No console
+  errors. Desktop layout keeps Fit, the zoom buttons and wheel zoom.
+
+**Outstanding**
+- Still not verified on the iPhone itself: this Mac has no Xcode for the
+  simulator and Safari's remote automation is off. The device remains the
+  real test, and resizing a photo in the 1-slide view is the case to try.
+- The rail's smooth scroll could not be exercised in a hidden tab.
+- The share button is still unverified on a real iPhone.
+
+---
+
 ## v16 — 2026-09-01
 
 **Feed Planner updated to v12 — IndexedDB, and sharper exports**

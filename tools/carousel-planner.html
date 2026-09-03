@@ -51,7 +51,7 @@
   }
 
   * { box-sizing: border-box; }
-  html, body { height: 100%; }
+  html, body { height: 100%; overscroll-behavior: none; }   /* no pull-to-refresh in Chrome on iOS */
   body {
     margin: 0;
     background: var(--bg);
@@ -127,7 +127,7 @@
     overflow: hidden;
     display: flex; flex-direction: column;
   }
-  .panel-scroll { flex: 1; min-height: 0; overflow-y: auto; }
+  .panel-scroll { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
 
   /* bottom-sheet handle, phone only */
   .sheet-bar {
@@ -182,7 +182,7 @@
   }
   .layer:hover { background: var(--surface-sunken); }
   .layer.sel { border-color: var(--accent); background: var(--surface-sunken); }
-  .layer img { width: 30px; height: 30px; object-fit: cover; border-radius: 2px; background: var(--surface-sunken); flex: none; }
+  .layer img { width: 30px; height: 30px; object-fit: cover; border-radius: 2px; background: var(--surface-sunken); flex: none; -webkit-touch-callout: none; }
   .layer .meta { flex: 1; min-width: 0; font-size: .74rem; color: var(--ink-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .layer .lockmark { font-size: .7rem; color: var(--ink-faint); }
 
@@ -192,6 +192,7 @@
   .viewport {
     position: relative;
     overflow: auto;
+    overscroll-behavior: contain;
     background:
       repeating-conic-gradient(var(--surface-sunken) 0% 25%, transparent 0% 50%) 50% / 18px 18px;
     background-color: var(--bg);
@@ -208,13 +209,17 @@
     transform-origin: top left;
     background: #111;
     box-shadow: 0 2px 30px rgba(0,0,0,.28);
+    -webkit-user-select: none;
     user-select: none;
-    touch-action: none;
+    -webkit-touch-callout: none;
+    touch-action: pan-x pan-y;      /* a finger on empty canvas scrolls it natively */
   }
 
-  .item { position: absolute; transform-origin: center center; will-change: transform; overflow: hidden; }
-  .item img { position: absolute; display: block; pointer-events: none; }
-  .item.locked { cursor: default; }
+  /* No will-change here: it gave every photo its own GPU layer, re-rasterised
+     at 3x on every resize or zoom step, which is what killed the tab on iOS. */
+  .item { position: absolute; transform-origin: center center; overflow: hidden; touch-action: none; }
+  .item img { position: absolute; display: block; pointer-events: none; -webkit-user-drag: none; -webkit-touch-callout: none; }
+  .item.locked { cursor: default; touch-action: pan-x pan-y; }   /* a locked photo scrolls like empty canvas */
 
   .frame {
     position: absolute; z-index: 900;
@@ -228,6 +233,7 @@
     border-radius: 2px;
     transform: translate(-50%, -50%) scale(var(--invz));
     pointer-events: auto;
+    touch-action: none;
   }
   .handle.rot {
     border-radius: 50%;
@@ -271,12 +277,14 @@
     text-transform: uppercase; color: var(--ink-faint); font-weight: 600;
   }
   .rail-head .spacer { flex: 1; }
-  .slides { display: flex; gap: .5rem; overflow-x: auto; padding-bottom: .25rem; }
+  .slides { display: flex; gap: .5rem; overflow-x: auto; padding-bottom: .25rem; overscroll-behavior-x: contain; }
   .slide-card { flex: none; display: flex; flex-direction: column; gap: .25rem; }
   .slide-thumb {
     position: relative; overflow: hidden; border-radius: 2px;
     background: #111; border: 1px solid var(--line); cursor: pointer;
+    -webkit-touch-callout: none;
   }
+  .slide-thumb.current { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
   .slide-thumb .inner { position: absolute; top: 0; left: 0; transform-origin: top left; }
   .slide-cap { font: 500 .68rem/1 var(--font-mono); color: var(--ink-faint); text-align: center; }
 
@@ -344,6 +352,8 @@
   }
   .drop-veil.on { display: flex; }
 
+  .bar .viewgrp { display: none; }         /* phone only */
+
   kbd {
     font: 500 .7rem/1 var(--font-mono); border: 1px solid var(--line);
     border-bottom-width: 2px; border-radius: 3px; padding: .12rem .3rem;
@@ -356,7 +366,9 @@
     .brand { display: none; }
     header.bar { padding: .45rem .55rem; gap: .4rem; }
     header.bar button { padding: .4rem .58rem; font-size: .85rem; }
-    header.bar .zoomgrp, header.bar .spacer { display: none; }
+    header.bar .zoomgrp, header.bar .spacer, header.bar .fitgrp { display: none; }
+    .bar .viewgrp { display: flex; }
+    .canvas-pad { padding: 24px 12px; }
     .bar select, .bar input[type="number"] { min-width: 54px; }
 
     aside {
@@ -383,7 +395,6 @@
 
   /* ---------- touch input ---------- */
   @media (pointer: coarse) {
-    .viewport { touch-action: none; }          /* pan and pinch are handled in JS */
     .handle { width: 20px; height: 20px; border-width: 2px; }
     .strip { --rot-off: 38px; }
   }
@@ -422,8 +433,12 @@
       <button id="btnZoomIn" class="ghost" title="Zoom in">+</button>
     </div>
 
-    <div class="group">
+    <div class="group fitgrp">
       <button id="btnFit" class="ghost" title="Fit to window">Fit</button>
+    </div>
+
+    <div class="group viewgrp">
+      <button id="btnView" class="ghost" title="Switch between one slide up close and an overview of two and a half">Show 1 slide</button>
     </div>
 
     <div class="group">
@@ -532,7 +547,7 @@
             <button id="btnDel" class="danger">Delete</button>
           </div>
         </div>
-        <p id="selEmpty" class="empty-note">Nothing selected. Click a photo on the canvas, or drop image files anywhere onto it.</p>
+        <p id="selEmpty" class="empty-note">Nothing selected. Tap a photo on the canvas, or drop image files anywhere onto it. Tap a slide below to scroll to it.</p>
       </div>
 
       <div class="sect">
@@ -682,6 +697,7 @@ var undoStack = [];
 var redoStack = [];
 var spaceDown = false;
 var userZoomed = false;
+var phoneView = 2.5;      // slides across the screen on a phone: 2.5 (overview) or 1 (close)
 
 function SW() { return RATIOS[state.ratio].w; }
 function SH() { return RATIOS[state.ratio].h; }
@@ -814,17 +830,49 @@ function sizeFromHeader(buf) {
 // EXIF rotation has been applied, so the real decode can be asked for exactly
 // the right shape; passing only resizeWidth keeps that aspect.
 function decodeSized(blob, edge) {
-  if (!window.createImageBitmap) return loadImage(URL.createObjectURL(blob));
+  if (!window.createImageBitmap) return decodeViaImage(blob, edge);
   return blob.slice(0, 65536).arrayBuffer().then(function (head) {
     var size = sizeFromHeader(head);
-    if (!size || Math.max(size.w, size.h) <= edge) return createImageBitmap(blob);
+    if (size && Math.max(size.w, size.h) <= edge) return createImageBitmap(blob);
     return createImageBitmap(blob, { resizeWidth: 32, resizeQuality: "low" }).then(function (probe) {
-      var aspect = probe.height / probe.width;
+      var pw = probe.width, ph = probe.height;
       if (probe.close) probe.close();
-      var w = aspect >= 1 ? Math.round(edge / aspect) : edge;
-      return createImageBitmap(blob, { resizeWidth: Math.max(1, w), resizeQuality: "high" });
+      // The header has the exact pixels but not the EXIF rotation; the probe has
+      // the rotation but only 32px of precision. Use both to ask for the exact size.
+      var sw, sh;
+      if (size) {
+        var rotated = (ph > pw) !== (size.h > size.w);
+        sw = rotated ? size.h : size.w;
+        sh = rotated ? size.w : size.h;
+      } else { sw = pw; sh = ph; }
+      var k = edge / Math.max(sw, sh);
+      return createImageBitmap(blob, {
+        resizeWidth: Math.max(1, Math.round(sw * k)),
+        resizeHeight: Math.max(1, Math.round(sh * k)),
+        resizeQuality: "high"
+      });
     });
-  }).catch(function () { return createImageBitmap(blob); });
+  }).catch(function () { return decodeViaImage(blob, edge); });
+}
+
+// The fallback when the bitmap decoder refuses a file. An <img> drawn straight
+// into a canvas of the wanted size: iOS decodes a big JPEG subsampled when it
+// is drawn small, so this never holds the full frame either. v6 fell back to a
+// full-size decode here — 200MB for a 48MP phone photo.
+function decodeViaImage(blob, edge) {
+  var url = URL.createObjectURL(blob);
+  return loadImage(url).then(function (im) {
+    URL.revokeObjectURL(url);
+    var k = Math.min(1, edge / Math.max(im.naturalWidth, im.naturalHeight));
+    var c = document.createElement("canvas");
+    c.width = Math.max(1, Math.round(im.naturalWidth * k));
+    c.height = Math.max(1, Math.round(im.naturalHeight * k));
+    var x = c.getContext("2d");
+    x.imageSmoothingQuality = "high";
+    x.drawImage(im, 0, 0, c.width, c.height);
+    c.close = function () { c.width = c.height = 0; };
+    return c;
+  }, function (err) { URL.revokeObjectURL(url); throw err; });
 }
 
 // Scale an already-decoded bitmap down and encode it. Deriving the smaller
@@ -957,6 +1005,8 @@ function addFiles(fileList, dropPt) {
         .then(function (a) {
           var it = makeItem(a, startCount + i, dropPt);
           state.items.push(it);
+          render();
+          saveSoon();          // a tab killed mid-batch keeps the photos already done
           return new Promise(function (r) { setTimeout(r, 30); });
         });
     });
@@ -1073,7 +1123,19 @@ function zoomAt(z, cx, cy) {
 function fitToWindow() {
   if (!viewport.clientWidth || !viewport.clientHeight) return;
   userZoomed = false;
-  var pad = isNarrow() ? 44 : 110;
+  if (isNarrow()) {
+    // A phone gets a fixed view instead of a free zoom: continuous zooming
+    // re-rasterised every photo on every finger movement, which is what ran
+    // the tab out of memory. Width only, so the keyboard opening (which
+    // shrinks the height) leaves the view alone.
+    var keep = centreSlide();
+    setZoom((viewport.clientWidth - 24) / (SW() * phoneView), false);
+    scrollToSlide(keep, false);
+    viewport.scrollTop = Math.max(0, (stripWrap.offsetHeight - viewport.clientHeight) / 2 + 24);
+    markCurrentSlide();
+    return;
+  }
+  var pad = 110;
   var zx = (viewport.clientWidth - pad) / stripW();
   var zy = (viewport.clientHeight - pad) / SH();
   setZoom(Math.min(zx, zy), false);
@@ -1346,12 +1408,32 @@ function renderThumbs() {
     })(i);
   }
   $("railNote").textContent = SW() + " × " + SH() + " px each";
+  markCurrentSlide();
 }
 
-function scrollToSlide(i) {
+function scrollToSlide(i, smooth) {
   var target = (i * SW() + SW() / 2) * zoom - viewport.clientWidth / 2;
-  viewport.scrollTo({ left: target, behavior: "smooth" });
+  viewport.scrollTo({ left: Math.max(0, target), behavior: smooth === false ? "auto" : "smooth" });
 }
+
+// The slide sitting under the middle of the screen.
+function centreSlide() {
+  var c = (viewport.scrollLeft + viewport.clientWidth / 2) / zoom;
+  return clamp(Math.floor(c / SW()), 0, state.slides - 1);
+}
+
+// Outline that slide in the rail, so the rail reads as "where am I" as well as "go there".
+function markCurrentSlide() {
+  var cur = centreSlide();
+  Array.prototype.slice.call($("slides").querySelectorAll(".slide-thumb")).forEach(function (t, i) {
+    t.classList.toggle("current", i === cur);
+  });
+}
+var railMarkTimer = 0;
+viewport.addEventListener("scroll", function () {
+  if (railMarkTimer) return;
+  railMarkTimer = setTimeout(function () { railMarkTimer = 0; markCurrentSlide(); }, 80);
+}, { passive: true });
 
 function toast(msg) {
   var t = $("toast");
@@ -1465,11 +1547,13 @@ function rot2(px, py, deg) {
 var drag = null;
 var thumbThrottle = 0;
 function liveUpdate() {
+  if (touchDevice()) return;   // on a phone the rail redraws when the finger lifts; rebuilding it mid-drag churned canvases on iOS
   var now = Date.now();
   if (now - thumbThrottle > 160) { thumbThrottle = now; renderThumbs(); }
 }
 
 strip.addEventListener("pointerdown", function (e) {
+  if (drag) return;                              // a second finger never starts a second drag
   if (e.button === 1 || spaceDown) { startPan(e); return; }
   if (e.button !== 0) return;
 
@@ -1484,7 +1568,7 @@ strip.addEventListener("pointerdown", function (e) {
       it: it,
       start: { x: it.x, y: it.y, w: it.w, h: it.h, rot: it.rot },
       cx: it.x + it.w / 2, cy: it.y + it.h / 2,
-      p0: toStrip(e)
+      p0: toStrip(e), pid: e.pointerId
     };
     drag.a0 = Math.atan2(drag.p0.y - drag.cy, drag.p0.x - drag.cx) * 180 / Math.PI;
     try { strip.setPointerCapture(e.pointerId); } catch (err) {}
@@ -1502,12 +1586,12 @@ strip.addEventListener("pointerdown", function (e) {
     if (e.altKey) {
       var ov = overflowOf(item);
       drag = {
-        mode: "crop", it: item, p0: toStrip(e),
+        mode: "crop", it: item, p0: toStrip(e), pid: e.pointerId,
         start: { ox: item.ox == null ? 0.5 : item.ox, oy: item.oy == null ? 0.5 : item.oy },
         ovX: ov.x, ovY: ov.y
       };
     } else {
-      drag = { mode: "move", it: item, start: { x: item.x, y: item.y }, p0: toStrip(e) };
+      drag = { mode: "move", it: item, start: { x: item.x, y: item.y }, p0: toStrip(e), pid: e.pointerId };
     }
     try { strip.setPointerCapture(e.pointerId); } catch (err) {}
   } else if (e.pointerType !== "touch") {
@@ -1516,7 +1600,7 @@ strip.addEventListener("pointerdown", function (e) {
 });
 
 strip.addEventListener("pointermove", function (e) {
-  if (!drag) return;
+  if (!drag || e.pointerId !== drag.pid) return;
   var p = toStrip(e);
   var it = drag.it;
 
@@ -1553,7 +1637,7 @@ strip.addEventListener("pointermove", function (e) {
 });
 
 function endDrag(e) {
-  if (!drag) return;
+  if (!drag || (e && e.pointerId !== drag.pid)) return;
   var it = drag.it;
   it.x = Math.round(it.x); it.y = Math.round(it.y);
   it.w = Math.round(it.w); it.h = Math.round(it.h);
@@ -1716,6 +1800,7 @@ function startPan(e) {
 }
 
 viewport.addEventListener("wheel", function (e) {
+  if (isNarrow()) return;                        // phones have fixed views, no free zoom
   if (e.ctrlKey || e.metaKey) {
     e.preventDefault();
     userZoomed = true;
@@ -1723,87 +1808,24 @@ viewport.addEventListener("wheel", function (e) {
   }
 }, { passive: false });
 
-/* ---- touch gestures ----
-   A finger that lands on a photo is handled by the strip listener above (it sets
-   `drag`). Anything else pans the canvas, and a second finger takes over as a
-   pinch-zoom. */
+/* ---- touch ----
+   Panning is the viewport's own scroll (touch-action lets a finger on empty
+   canvas or a locked photo scroll it), and there is no pinch: a phone gets two
+   fixed views instead. All that is left to do here is treat a tap on empty
+   canvas as "deselect". */
 
-var tp = new Map();          // live touch points
-var pinch = null;
-var touchPan = null;
-
-function ptDist(a, b) { return Math.hypot(b.x - a.x, b.y - a.y); }
-function ptMid(a, b) { return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }; }
-
-// A second finger arriving mid-drag shouldn't leave the photo where it slipped to.
-function abortDrag() {
-  if (!drag) return;
-  var it = drag.it, st = drag.start;
-  if (drag.mode === "move") { it.x = st.x; it.y = st.y; }
-  else if (drag.mode === "resize") { it.x = st.x; it.y = st.y; it.w = st.w; it.h = st.h; }
-  else if (drag.mode === "rotate") { it.rot = st.rot; }
-  else if (drag.mode === "crop") { it.ox = st.ox; it.oy = st.oy; }
-  if (undoStack.length) undoStack.pop();
-  drag = null;
-  clearGuides();
-  paintItem(it);
-}
-
+var touchTap = null;
 viewport.addEventListener("pointerdown", function (e) {
-  if (e.pointerType !== "touch") return;
-  tp.set(e.pointerId, { x: e.clientX, y: e.clientY });
-
-  if (tp.size === 2) {
-    abortDrag();
-    touchPan = null;
-    var p = Array.from(tp.values());
-    pinch = { d0: ptDist(p[0], p[1]), z0: zoom, mid: ptMid(p[0], p[1]) };
-    return;
-  }
-  if (tp.size === 1 && !drag) {
-    touchPan = {
-      x: e.clientX, y: e.clientY,
-      sl: viewport.scrollLeft, st: viewport.scrollTop, moved: 0
-    };
-  }
+  if (e.pointerType !== "touch" || drag) { touchTap = null; return; }
+  touchTap = { x: e.clientX, y: e.clientY };
 });
-
-viewport.addEventListener("pointermove", function (e) {
-  if (e.pointerType !== "touch") return;
-  if (tp.has(e.pointerId)) tp.set(e.pointerId, { x: e.clientX, y: e.clientY });
-
-  if (pinch && tp.size >= 2) {
-    var p = Array.from(tp.values());
-    var m = ptMid(p[0], p[1]);
-    if (pinch.d0 > 8) {
-      userZoomed = true;
-      zoomAt(pinch.z0 * (ptDist(p[0], p[1]) / pinch.d0), pinch.mid.x, pinch.mid.y);
-    }
-    viewport.scrollLeft -= (m.x - pinch.mid.x);
-    viewport.scrollTop -= (m.y - pinch.mid.y);
-    pinch.mid = m;
-    return;
-  }
-
-  if (touchPan && !drag) {
-    var dx = e.clientX - touchPan.x, dy = e.clientY - touchPan.y;
-    touchPan.moved = Math.max(touchPan.moved, Math.abs(dx) + Math.abs(dy));
-    viewport.scrollLeft = touchPan.sl - dx;
-    viewport.scrollTop = touchPan.st - dy;
-  }
+viewport.addEventListener("pointerup", function (e) {
+  if (e.pointerType !== "touch" || !touchTap) return;
+  var moved = Math.abs(e.clientX - touchTap.x) + Math.abs(e.clientY - touchTap.y);
+  touchTap = null;
+  if (moved < 8 && !drag) selectItem(null);
 });
-
-function endTouch(e) {
-  if (e.pointerType !== "touch") return;
-  tp.delete(e.pointerId);
-  if (tp.size < 2) pinch = null;
-  if (tp.size === 0) {
-    if (touchPan && touchPan.moved < 8 && !drag) selectItem(null);   // a tap, not a pan
-    touchPan = null;
-  }
-}
-viewport.addEventListener("pointerup", endTouch);
-viewport.addEventListener("pointercancel", endTouch);
+viewport.addEventListener("pointercancel", function () { touchTap = null; });
 
 /* ============================================================
    Keyboard
@@ -1970,6 +1992,11 @@ $("optSafe").onchange = renderChrome;
 $("btnZoomIn").onclick = function () { userZoomed = true; setZoom(zoom * 1.25); };
 $("btnZoomOut").onclick = function () { userZoomed = true; setZoom(zoom / 1.25); };
 $("btnFit").onclick = fitToWindow;
+$("btnView").onclick = function () {
+  phoneView = phoneView === 1 ? 2.5 : 1;
+  $("btnView").textContent = phoneView === 1 ? "Show 2\u00bd slides" : "Show 1 slide";
+  fitToWindow();
+};
 
 ["inX", "inY", "inW", "inH", "inR", "inO"].forEach(function (id) {
   $(id).onchange = function () {
