@@ -5,6 +5,44 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v18 — 2026-09-03
+
+**Carousel Planner v8 — the phone, second pass**
+v7 held up on the iPhone: no more crashes. Four things it left awkward, all
+reported from the device.
+
+- **The last slide is reachable.** After adding a slide the strip could not be
+  scrolled far enough to see it. Chromium at phone size reached the end fine,
+  so this is WebKit's doing; rather than chase it, the canvas now has room
+  after the last slide so it can be centred like any other, and the rail keeps
+  the current slide's thumbnail in view.
+- **− and + beside the slide count**, on desktop too. The number field needed
+  a return key to apply on a phone. They stop at 2 and 20, typing still works,
+  and adding a slide scrolls to it.
+- **The 1-slide / 2½-slide toggle is gone.** The 2½-slide view is the phone
+  view.
+- **Export on a phone.** The popup was taller than the visible screen (`vh`
+  counts the space behind the browser bar), so Cancel was out of reach. It is
+  now sized to the visible area. Where the share sheet is available the ZIP
+  and per-slide download buttons step aside and the one button reads
+  *Download N slides* — the share sheet's Save Images is the download on a
+  phone. Without share support the ZIP button stays. Desktop unchanged.
+
+**Checked before publishing**
+- Scan: the same single false positive as v17 (`dataTransfer` matching the
+  "e-transfer" pattern). Storage keys unchanged.
+- Under phone emulation: stepper at both limits, typed count applied, rail
+  marker and nudge, export popup with Cancel visible, no console errors.
+  Desktop: stepper, zoom buttons, Fit, ZIP and per-row downloads all present.
+
+**Outstanding**
+- The end-of-strip fix is a workaround for a WebKit behaviour not reproduced
+  here; the device confirms it or it doesn't.
+- The share sheet path is still unverified on a real iPhone, though v7's
+  version of it reportedly worked.
+
+---
+
 ## v17 — 2026-09-03
 
 **Carousel Planner v7 — fixed views on a phone**

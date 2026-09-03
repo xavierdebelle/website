@@ -117,6 +117,9 @@
   .bar .group { display: flex; align-items: center; gap: .35rem; }
   .bar label.inline { font-size: .75rem; color: var(--ink-dim); }
   .bar select, .bar input[type="number"] { width: auto; min-width: 62px; }
+  .bar .stepper { display: flex; align-items: center; gap: .2rem; }
+  .bar .stepper input { min-width: 48px; width: 48px; text-align: center; }
+  .bar .stepper button { padding: .4rem .6rem; font-size: 1rem; line-height: 1; }
 
   .main { display: grid; grid-template-columns: 268px 1fr; min-height: 0; }
 
@@ -299,11 +302,11 @@
   .sheet {
     background: var(--surface); border: 1px solid var(--line);
     border-radius: 6px; padding: 1rem 1.1rem 1.1rem;
-    max-width: 92vw; max-height: 92vh; overflow: auto;
+    max-width: 92vw; max-height: 92vh; max-height: 92dvh; overflow: auto;
   }
   .sheet h3 { margin: 0 0 .1rem; font-size: 1rem; }
   .sheet .sub { margin: 0 0 .9rem; font-size: .78rem; color: var(--ink-faint); }
-  .sheet-actions { display: flex; gap: .5rem; justify-content: flex-end; margin-top: 1rem; }
+  .sheet-actions { display: flex; gap: .5rem; justify-content: flex-end; margin-top: 1rem; flex-wrap: wrap; }
 
   /* phone preview */
   .phone-wrap { display: flex; flex-direction: column; align-items: center; gap: .7rem; }
@@ -352,8 +355,6 @@
   }
   .drop-veil.on { display: flex; }
 
-  .bar .viewgrp { display: none; }         /* phone only */
-
   kbd {
     font: 500 .7rem/1 var(--font-mono); border: 1px solid var(--line);
     border-bottom-width: 2px; border-radius: 3px; padding: .12rem .3rem;
@@ -367,8 +368,12 @@
     header.bar { padding: .45rem .55rem; gap: .4rem; }
     header.bar button { padding: .4rem .58rem; font-size: .85rem; }
     header.bar .zoomgrp, header.bar .spacer, header.bar .fitgrp { display: none; }
-    .bar .viewgrp { display: flex; }
-    .canvas-pad { padding: 24px 12px; }
+    /* Room after the last slide so it can be centred like every other one —
+       and so the end is reachable whatever the browser makes of the padding. */
+    .canvas-pad { padding: 24px 32vw 24px 12px; }
+    .modal { padding: .8rem; }
+    .exp-list { max-height: 30vh; max-height: 30dvh; }
+    .exp-row button { display: none; }        /* the share sheet is the way to save on a phone */
     .bar select, .bar input[type="number"] { min-width: 54px; }
 
     aside {
@@ -408,7 +413,11 @@
 
     <div class="group">
       <label class="inline" for="slideCount">Slides</label>
-      <input type="number" id="slideCount" min="2" max="20" step="1" value="4" />
+      <div class="stepper">
+        <button id="slidesMinus" class="ghost" title="One slide fewer" aria-label="One slide fewer">&minus;</button>
+        <input type="number" id="slideCount" min="2" max="20" step="1" value="4" inputmode="numeric" />
+        <button id="slidesPlus" class="ghost" title="One more slide" aria-label="One more slide">+</button>
+      </div>
     </div>
 
     <div class="group">
@@ -437,9 +446,6 @@
       <button id="btnFit" class="ghost" title="Fit to window">Fit</button>
     </div>
 
-    <div class="group viewgrp">
-      <button id="btnView" class="ghost" title="Switch between one slide up close and an overview of two and a half">Show 1 slide</button>
-    </div>
 
     <div class="group">
       <button id="btnPreview">Preview swipe</button>
@@ -637,7 +643,7 @@
     <div class="exp-list" id="expList" style="margin-top:.8rem"></div>
     <div class="sheet-actions">
       <button id="closeExport">Cancel</button>
-      <button id="btnExportShare" class="primary" style="display:none">Share slides</button>
+      <button id="btnExportShare" class="primary" style="display:none">Download slides</button>
       <button id="btnExportZip" class="primary">Download all (.zip)</button>
     </div>
   </div>
@@ -697,7 +703,7 @@ var undoStack = [];
 var redoStack = [];
 var spaceDown = false;
 var userZoomed = false;
-var phoneView = 2.5;      // slides across the screen on a phone: 2.5 (overview) or 1 (close)
+var PHONE_SLIDES = 2.5;   // slides across the screen on a phone — one fixed view, no zoom
 
 function SW() { return RATIOS[state.ratio].w; }
 function SH() { return RATIOS[state.ratio].h; }
@@ -1129,7 +1135,7 @@ function fitToWindow() {
     // the tab out of memory. Width only, so the keyboard opening (which
     // shrinks the height) leaves the view alone.
     var keep = centreSlide();
-    setZoom((viewport.clientWidth - 24) / (SW() * phoneView), false);
+    setZoom((viewport.clientWidth - 24) / (SW() * PHONE_SLIDES), false);
     scrollToSlide(keep, false);
     viewport.scrollTop = Math.max(0, (stripWrap.offsetHeight - viewport.clientHeight) / 2 + 24);
     markCurrentSlide();
@@ -1425,8 +1431,14 @@ function centreSlide() {
 // Outline that slide in the rail, so the rail reads as "where am I" as well as "go there".
 function markCurrentSlide() {
   var cur = centreSlide();
-  Array.prototype.slice.call($("slides").querySelectorAll(".slide-thumb")).forEach(function (t, i) {
+  var rail = $("slides");
+  Array.prototype.slice.call(rail.querySelectorAll(".slide-thumb")).forEach(function (t, i) {
     t.classList.toggle("current", i === cur);
+    if (i !== cur) return;
+    // keep the current slide's thumbnail in view, so the rail never hides the end
+    var d = t.getBoundingClientRect(), b = rail.getBoundingClientRect();
+    if (d.left < b.left) rail.scrollLeft += d.left - b.left - 8;
+    else if (d.right > b.right) rail.scrollLeft += d.right - b.right + 8;
   });
 }
 var railMarkTimer = 0;
@@ -1518,6 +1530,8 @@ function fillSlideSelect(selEl, value) {
 
 function syncControls() {
   $("slideCount").value = state.slides;
+  $("slidesMinus").disabled = state.slides <= 2;
+  $("slidesPlus").disabled = state.slides >= 20;
   $("ratio").value = state.ratio;
   $("bgColor").value = state.bg;
   $("gutter").value = state.gutter;
@@ -1961,13 +1975,21 @@ $("mDel").onclick = function () { var it = sel(); if (it) removeItem(it.id); };
 $("btnAdd").onclick = function () { $("filePick").click(); };
 $("filePick").onchange = function (e) { addFiles(e.target.files, null); e.target.value = ""; };
 
-$("slideCount").onchange = function (e) {
-  var n = clamp(parseInt(e.target.value, 10) || 2, 2, 20);
-  e.target.value = n;
+// One place for the slide count: the number field, and the − / + beside it,
+// which are what a phone actually uses. Adding a slide scrolls to it.
+function setSlides(n) {
+  n = clamp(parseInt(n, 10) || 2, 2, 20);
+  if (n === state.slides) { syncControls(); return; }
+  var grew = n > state.slides;
   pushUndo();
   state.slides = n;
+  syncControls();
   render(); saveSoon();
-};
+  if (grew) scrollToSlide(n - 1);
+}
+$("slideCount").onchange = function (e) { setSlides(e.target.value); };
+$("slidesMinus").onclick = function () { setSlides(state.slides - 1); };
+$("slidesPlus").onclick = function () { setSlides(state.slides + 1); };
 
 $("ratio").onchange = function (e) {
   var oldH = SH();
@@ -1992,11 +2014,6 @@ $("optSafe").onchange = renderChrome;
 $("btnZoomIn").onclick = function () { userZoomed = true; setZoom(zoom * 1.25); };
 $("btnZoomOut").onclick = function () { userZoomed = true; setZoom(zoom / 1.25); };
 $("btnFit").onclick = fitToWindow;
-$("btnView").onclick = function () {
-  phoneView = phoneView === 1 ? 2.5 : 1;
-  $("btnView").textContent = phoneView === 1 ? "Show 2\u00bd slides" : "Show 1 slide";
-  fitToWindow();
-};
 
 ["inX", "inY", "inW", "inH", "inR", "inO"].forEach(function (id) {
   $(id).onchange = function () {
@@ -2280,11 +2297,15 @@ function shareSupported() {
 // Rendered up front so the share call itself stays inside the tap that triggered it,
 // which is what iOS requires.
 function prepareShare() {
-  var btn = $("btnExportShare");
+  var btn = $("btnExportShare"), zip = $("btnExportZip");
   shareFiles = null;
   var token = ++shareToken;
+  zip.style.display = "";
   if (!shareSupported()) { btn.style.display = "none"; return; }
 
+  // On a phone the share sheet ("Save Images") is the download, so the ZIP
+  // button — which a phone browser handles badly anyway — steps aside for it.
+  if (isNarrow()) zip.style.display = "none";
   btn.style.display = "";
   btn.disabled = true;
   btn.textContent = "Preparing\u2026";
@@ -2306,12 +2327,13 @@ function prepareShare() {
     if (token !== shareToken) return;
     if (!files.length || !navigator.canShare({ files: files })) {
       btn.style.display = "none";
+      zip.style.display = "";
       return;
     }
     shareFiles = files;
     btn.disabled = false;
-    btn.textContent = "Share " + files.length + " slides";
-  }).catch(function () { btn.style.display = "none"; });
+    btn.textContent = (isNarrow() ? "Download " : "Share ") + files.length + " slides";
+  }).catch(function () { btn.style.display = "none"; zip.style.display = ""; });
 }
 
 $("btnExportShare").onclick = function () {
