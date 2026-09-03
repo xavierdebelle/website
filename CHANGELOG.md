@@ -5,6 +5,40 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v21 — 2026-09-03
+
+**Carousel Planner v10 — the slides past the fifth, actually fixed**
+Built from v8. v9 guessed at this and guessed wrong; this time the bug was
+reproduced and measured before anything was changed.
+
+- **The rail was stretching the page.** The slide-by-slide rail is a row of
+  thumbnails inside a grid column that was sized to its widest content. Once
+  there were more thumbnails than fit the screen the column grew, and the
+  canvas above it grew with it — both laid out wider than the phone, with
+  `body { overflow: hidden }` clipping the excess and no way to scroll to it.
+  The far slides and the far thumbnails were rendered, just placed where a
+  finger could not go. Measured at 375px wide: no overflow at four slides,
+  then 80, 168, 256, 344 pixels out of reach at five, six, seven, eight.
+- Five CSS lines constrain that column and the two rows inside it. No
+  JavaScript changed, the dividers are v8's, and nothing from v9 is here.
+
+*On v9, for the record:* it read the same "five works, six doesn't" boundary
+as a GPU texture ceiling — 1080px a slide at 3x crosses 16,384 between the
+fifth and sixth — and removed the dividers' blend mode on that theory. The
+arithmetic was a coincidence. It was rolled back in v20.
+
+**Checked before publishing**
+- Scan: storage key unchanged, saved carousels carry over; the same
+  `dataTransfer` false positive as the last three releases.
+- Measured at 4, 6, 8, 12 and 20 slides: page overflow zero at every count,
+  the canvas exactly the screen width, the last slide reachable, the rail
+  scrolling to its last thumbnail. Import, drag, select and the stepper
+  still work; desktop keeps its sidebar, zoom and Fit. No console errors.
+- The rail's "1080 × 1350 px each" label was being clipped off-screen and now
+  sits where it belongs — the same overflow, visible on the page all along.
+
+---
+
 ## v20 — 2026-09-03
 
 **Carousel Planner rolled back to v8**

@@ -190,10 +190,17 @@
   .layer .lockmark { font-size: .7rem; color: var(--ink-faint); }
 
   /* ---------- canvas area ---------- */
-  .stage { display: grid; grid-template-rows: 1fr auto; min-width: 0; min-height: 0; }
+  /* minmax(0,1fr), and min-width:0 on both rows below. Without them the grid
+     column is sized to its widest content — the rail's row of slide
+     thumbnails — so from the fifth slide on the canvas and the rail were laid
+     out wider than the screen, and `body { overflow: hidden }` clipped the
+     excess with no way to scroll to it. That is why slides past the fifth,
+     and thumbnails past the fourth, could not be reached. */
+  .stage { display: grid; grid-template-rows: 1fr auto; grid-template-columns: minmax(0, 1fr); min-width: 0; min-height: 0; }
 
   .viewport {
     position: relative;
+    min-width: 0;
     overflow: auto;
     overscroll-behavior: contain;
     background:
@@ -271,16 +278,19 @@
     border-top: 1px solid var(--line);
     background: var(--surface);
     padding: .6rem .9rem .7rem;
+    min-width: 0;
   }
   .rail-head {
     display: flex; align-items: center; gap: .6rem; margin-bottom: .5rem;
+    min-width: 0;
   }
+  .rail-head #railNote { white-space: nowrap; }
   .rail-head h2 {
     margin: 0; font-size: .68rem; letter-spacing: .1em;
     text-transform: uppercase; color: var(--ink-faint); font-weight: 600;
   }
   .rail-head .spacer { flex: 1; }
-  .slides { display: flex; gap: .5rem; overflow-x: auto; padding-bottom: .25rem; overscroll-behavior-x: contain; }
+  .slides { display: flex; gap: .5rem; overflow-x: auto; padding-bottom: .25rem; overscroll-behavior-x: contain; min-width: 0; }
   .slide-card { flex: none; display: flex; flex-direction: column; gap: .25rem; }
   .slide-thumb {
     position: relative; overflow: hidden; border-radius: 2px;
