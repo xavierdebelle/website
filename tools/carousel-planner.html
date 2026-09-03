@@ -101,9 +101,7 @@
   input[type="range"] { width: 100%; accent-color: var(--accent); }
 
   /* ---------- shell ---------- */
-  /* dvh is the visible height on a phone; 100% can resolve to the taller
-     viewport behind the browser bar, which hid the rail at the bottom. */
-  .app { display: grid; grid-template-rows: auto 1fr; height: 100%; height: 100dvh; }
+  .app { display: grid; grid-template-rows: auto 1fr; height: 100%; }
 
   header.bar {
     display: flex; align-items: center; gap: .8rem;
@@ -251,15 +249,11 @@
   .handle[data-h="e"], .handle[data-h="w"] { cursor: ew-resize; }
 
   .divider { position: absolute; top: 0; bottom: 0; pointer-events: none; }
-  /* No blend mode on these. mix-blend-mode forced the whole strip onto one
-     GPU texture at its unscaled size (1080px a slide, x3 on a phone), and a
-     texture wider than 16384px — six slides — simply stops painting on iOS.
-     A dark edge on a light line reads on any photo without it. */
   .divider i {
     position: absolute; top: 0; bottom: 0; left: 0;
     width: calc(1px * var(--invz));
-    background: rgba(255,255,255,.7);
-    box-shadow: 0 0 0 calc(1px * var(--invz)) rgba(0,0,0,.35);
+    background: rgba(255,255,255,.55);
+    mix-blend-mode: difference;
   }
   .divider b {
     position: absolute; top: calc(-30px * var(--invz)); left: 0;
@@ -384,7 +378,7 @@
 
     aside {
       position: fixed; left: 0; right: 0; bottom: 0; z-index: 60;
-      height: 52vh; height: 52dvh;
+      height: 52vh;
       border-right: none;
       border-top: 1px solid var(--line);
       border-radius: 14px 14px 0 0;

@@ -5,6 +5,21 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v20 — 2026-09-03
+
+**Carousel Planner rolled back to v8**
+v9 was worse on the iPhone than v8, by Xavier's report, so the site serves
+v8 again while the cause is looked at. v9's two changes — divider lines
+without a blend mode, and `dvh` for the app and sheet heights — are
+withdrawn together; which of them did the damage is not yet known. The v9
+file stays in the tool folder for the next attempt.
+
+**Checked before publishing**
+- The served file matches `carousel_planner_v8.html` byte for byte, the copy
+  that was live as v18.
+
+---
+
 ## v19 — 2026-09-03
 
 **Carousel Planner v9 — the sixth slide**
