@@ -1,0 +1,1309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Neural Mind Map</title>
+<style>
+  html,body{margin:0;padding:0;height:100%;width:100%;background:#000;overflow:hidden;
+            overscroll-behavior:none;-webkit-tap-highlight-color:transparent}
+  canvas{display:block;position:fixed;top:0;left:0;width:100%;height:100%;
+         touch-action:none;cursor:grab;background:#000}
+  canvas.dragging{cursor:grabbing}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+"use strict";
+(function(){
+
+/* ==========================================================================
+   1 · MAP DATA
+   Plain data. Edit labels / add children here; everything downstream adapts.
+   ========================================================================== */
+const MAP = [
+  { label:"Work",     children:["Photography","Commercial","Direction","Post","Clients"] },
+  { label:"Personal", children:["Reading","Training","Cooking","Music"] },
+  { label:"Family",   children:["Sundays","Travel","Archive","Recipes","Letters"] },
+  { label:"Dreams",   children:["Own Studio","Patagonia","A Book","Slow Year","Cabin","Workshop"] },
+  { label:"About",    children:["Story","Process","Contact","Now"] }
+];
+
+/* ==========================================================================
+   2 · COLOUR TOKENS  —  two themes, crossfaded
+   The resting cloud is monochrome in both. Gold stays the single accent: a
+   true photographic inversion would send it blue, so the light theme uses a
+   darker gold of the same hue instead, which still reads against white.
+   ========================================================================== */
+const THEME = {
+  dark : {
+    bg       : [0,0,0],
+    particle : [255,255,255],       // white; the greys come from alpha alone
+    accent   : [243,201,63],        // hsl(46,88%,60%) — warm gold, not orange
+    label    : [236,238,242],
+    labelDim : [176,180,190],
+    hint     : [150,154,164],
+    alphaK   : 1.00                 // particle alpha scale
+  },
+  light: {
+    bg       : [246,246,244],       // near-white; pure #fff is harsh at this density
+    particle : [8,8,10],
+    accent   : [176,124,6],         // the same gold, darkened to hold on white
+    label    : [16,17,20],
+    labelDim : [96,100,108],
+    hint     : [122,126,134],
+    alphaK   : 0.86                 // black on white bites harder — ease it off
+  }
+};
+
+/* ==========================================================================
+   3 · MOTION + FORM TUNING
+   Every magic number that shapes the piece lives here.
+   ========================================================================== */
+const T = {
+  /* cloud ---------------------------------------------------------------- */
+  countDesktop   : 6000,
+  countMobile    : 2500,
+  cloudRadius    : 560,      // layout units (≈ CSS px at zoom 1)
+  cloudSquash    : [1.16, 0.94, 0.92],   // x,y,z ellipsoid bias
+  filamentShare  : 0.64,     // fraction of particles laid along strands
+  fov            : 1600,     // perspective focal length
+
+  /* rotation + drift ------------------------------------------------------ */
+  yawSpeed       : 0.030,    // radians / second — slow, time-based only
+  tiltBase       : 0.20,
+  tiltSwing      : 0.11,
+  tiltRate       : 0.017,
+  driftAmp       : 13,       // how far a free particle wanders from home
+  driftRate      : [0.035, 0.085],
+
+  /* springs --------------------------------------------------------------- */
+  stiffFree      : [0.055, 0.105],
+  stiffNode      : [0.115, 0.215],
+  dampFree       : 0.86,
+  dampNode       : 0.80,
+
+  /* bloom / release staggering -------------------------------------------- */
+  bloomSpread    : 0.85,     // seconds between centre and rim starting
+  bloomJitter    : 0.30,
+  releaseJitter  : 0.40,
+
+  /* recruitment sizes ----------------------------------------------------- */
+  nAnchor        : 76,       // particles orbiting an anchor node
+  nChild         : 24,
+  nLinkRoot      : 26,       // particles strung along a root→anchor link
+  nLinkChild     : 15,
+  orbitAnchor    : 17,       // orbit radius, layout units
+  orbitChild     : 9.5,
+  orbitFlatten   : 0.45,     // squash orbit in z so nodes read as discs
+  linkJitter     : 2.4,
+  linkJitterZ    : 4.0,
+
+  /* breath ---------------------------------------------------------------- */
+  breathPeriod   : 7.0,      // seconds, one full sine cycle
+  breathBright   : 0.26,     // ± brightness swing
+  breathOrbit    : 0.11,     // ± node orbit radius swing
+
+  /* firing ---------------------------------------------------------------- */
+  fireRate       : 1.15,     // base spontaneous firings per second at peak
+  fireTravel     : 0.62,     // seconds for a wave to cross one link
+  fireWidth      : 0.30,     // wave width in path-fraction
+  fireNodeDecay  : 0.85,     // seconds a node stays lit after arrival
+  cascadeChance  : 0.55,     // at breath peak, chance arrival spills onward
+
+  /* negative space -------------------------------------------------------- */
+  carveGrid      : 64,
+  carveAnchor    : [104, 74, 50],  // rx, ry, strength  (covers node + label)
+  carveChild     : [70, 46, 30],
+  carveMax       : 46,
+  carveEase      : 0.040,
+
+  /* camera ---------------------------------------------------------------- */
+  zoomRange      : [0.42, 3.20],
+  panLimit       : 900,
+  tapSlop        : 7,        // px of movement still counted as a tap
+
+  /* theme ----------------------------------------------------------------- */
+  doubleTap      : 0.32,     // seconds — window for a double tap on the mark
+  themeEase      : 0.075,    // crossfade speed between dark and light
+
+  /* first run ------------------------------------------------------------- */
+  autoOpenAfter  : 1.6       // seconds — the map blooms on its own
+};
+
+/* layout: anchors sit on a pentagon; the ellipse changes with orientation
+   so the map genuinely recomposes rather than just shrinking.              */
+const LAYOUT = {
+  portrait : { rx:0.74, ry:0.90, childR:0.48, spread:1.72, sx:0.44, sy:0.44, cx:620, cy:520 },
+  landscape: { rx:0.95, ry:0.80, childR:0.48, spread:1.48, sx:0.44, sy:0.44, cx:640, cy:520 }
+};
+
+/* logo — the four triangles of the mark, from the source SVG (0 0 1571 1584),
+   normalised around the mark's own centre. Drawn as sharp vectors, always.  */
+const LOGO_SRC = [
+  [[184,81],[555,81],[749,693]],
+  [[1015,81],[1386,81],[821,693]],
+  [[184,1503],[563,1503],[762,876]],
+  [[1007,1503],[1386,1503],[808,876]]
+];
+const LOGO = LOGO_SRC.map(function(tri){
+  return tri.map(function(p){ return [(p[0]-785.5)/1584, (p[1]-792)/1584]; });
+});
+
+/* ==========================================================================
+   4 · SMALL UTILITIES  (deterministic noise, sine table, easing)
+   ========================================================================== */
+const TAU = Math.PI*2;
+
+function mulberry32(a){
+  return function(){
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/* sine table — drift and twinkle sample this instead of Math.sin, so the hot
+   loop never calls a transcendental. Phase is in TURNS, not radians.        */
+const SIN_N = 2048, SIN_MASK = SIN_N - 1;
+const SINTAB = new Float32Array(SIN_N);
+for(let i=0;i<SIN_N;i++) SINTAB[i] = Math.sin(i/SIN_N*TAU);
+function sinT(turns){ return SINTAB[(turns*SIN_N)&SIN_MASK]; }
+
+function hashN(i,j,k){
+  let n = (i*1619 + j*31337 + k*6971) | 0;
+  n = (n<<13) ^ n;
+  return 1 - ((Math.imul(n, Math.imul(n,Math.imul(n,15731)) + 789221) + 1376312589) & 0x7fffffff) / 1073741824;
+}
+function smooth(t){ return t*t*(3-2*t); }
+function vnoise(x,y,z){
+  const ix=Math.floor(x), iy=Math.floor(y), iz=Math.floor(z);
+  const fx=smooth(x-ix), fy=smooth(y-iy), fz=smooth(z-iz);
+  let a,b,c,d,e,f,g,h;
+  a=hashN(ix,iy,iz);       b=hashN(ix+1,iy,iz);
+  c=hashN(ix,iy+1,iz);     d=hashN(ix+1,iy+1,iz);
+  e=hashN(ix,iy,iz+1);     f=hashN(ix+1,iy,iz+1);
+  g=hashN(ix,iy+1,iz+1);   h=hashN(ix+1,iy+1,iz+1);
+  const x1=a+(b-a)*fx, x2=c+(d-c)*fx, x3=e+(f-e)*fx, x4=g+(h-g)*fx;
+  const y1=x1+(x2-x1)*fy, y2=x3+(x4-x3)*fy;
+  return y1+(y2-y1)*fz;                        // −1 … 1
+}
+function fbm(x,y,z){
+  let v=0, amp=0.55, fr=1;
+  for(let o=0;o<3;o++){ v += vnoise(x*fr,y*fr,z*fr)*amp; fr*=2.07; amp*=0.5; }
+  return Math.max(0, Math.min(1, v*0.5+0.5));  // 0 … 1
+}
+function clamp(v,a,b){ return v<a?a:(v>b?b:v); }
+
+/* ==========================================================================
+   5 · CANVAS + VIEWPORT
+   One canvas. One context. Everything is drawn in device pixels.
+   ========================================================================== */
+const cv  = document.getElementById("c");
+const ctx = cv.getContext("2d", { alpha:false, desynchronized:true });
+
+let vw=0, vh=0, cw=0, ch=0, dpr=1, uiScale=1, isPortrait=true, isSmall=false;
+
+const rmq = window.matchMedia ? window.matchMedia("(prefers-reduced-motion: reduce)") : null;
+let reduced = rmq ? rmq.matches : false;
+if(rmq && rmq.addEventListener) rmq.addEventListener("change", function(e){ reduced = e.matches; });
+
+/* ==========================================================================
+   6 · PARTICLE STORE  — flat typed arrays, allocated once
+   role 0 = free      : position lives in WORLD space, rotated at draw time
+   role 1 = recruited : position lives in LAYOUT space, drawn unrotated
+   Swapping role converts the position once, so a particle never jumps.
+   ========================================================================== */
+const ROLE_FREE = 0, ROLE_TAKEN = 1;
+let N = 0;
+let hx,hy,hz,       // home (world)
+    px,py,pz,       // current
+    vx,vy,vz,       // velocity
+    ox,oy,oz,       // per-particle offset: orbit vector, or link jitter
+    role, own, upos,// own >=0 → node index ;  own <0 → link index (-1-i)
+    stiff, damp,    // spring constants
+    bri, szb,       // base brightness / base size
+    dphA,dphB,dphC, // drift phases
+    drt,            // drift rate
+    twp,twr,        // twinkle phase / rate
+    t0,             // absolute time this particle starts migrating
+    sxp,syp,ssz,    // computed screen position + size (device px)
+    bkt;            // render bucket
+
+function allocParticles(n){
+  N = n;
+  const F = function(){ return new Float32Array(n); };
+  hx=F(); hy=F(); hz=F();
+  px=F(); py=F(); pz=F();
+  vx=F(); vy=F(); vz=F();
+  ox=F(); oy=F(); oz=F();
+  role = new Uint8Array(n);
+  own  = new Int32Array(n);
+  upos = F(); stiff = F(); damp = F();
+  bri = F(); szb = F();
+  dphA=F(); dphB=F(); dphC=F(); drt=F();
+  twp=F(); twr=F(); t0=F();
+  sxp=F(); syp=F(); ssz=F();
+  bkt = new Int8Array(n);
+}
+
+/* ==========================================================================
+   7 · CLOUD GENERATION
+   Layered: strands laid along smooth 3D curves (the visible filaments and
+   wisps), then dust rejection-sampled against a noise field so the space
+   between strands has real voids instead of even fuzz.
+   ========================================================================== */
+const _sp = [0,0,0];
+function splineAt(cps, t){
+  const n = cps.length, f = t*(n-1);
+  let i = Math.min(n-2, Math.floor(f));
+  if(i<0) i=0;
+  const u = f-i, u2=u*u, u3=u2*u;
+  const p0=cps[Math.max(0,i-1)], p1=cps[i], p2=cps[i+1], p3=cps[Math.min(n-1,i+2)];
+  for(let d=0;d<3;d++){
+    _sp[d] = 0.5*( 2*p1[d]
+                 + (-p0[d]+p2[d])*u
+                 + (2*p0[d]-5*p1[d]+4*p2[d]-p3[d])*u2
+                 + (-p0[d]+3*p1[d]-3*p2[d]+p3[d])*u3 );
+  }
+  return _sp;
+}
+
+function buildCloud(){
+  const rnd = mulberry32(20260907);
+  const g = function(){ return (rnd()+rnd()+rnd()-1.5)*1.15; };   // ~gaussian
+  const R  = T.cloudRadius;
+  const SQ = T.cloudSquash;
+  let i = 0;
+
+  /* ---- strands -------------------------------------------------------- */
+  const nFil   = Math.max(12, Math.round(N/210));
+  const filEnd = Math.floor(N*T.filamentShare);
+  const perFil = Math.floor(filEnd/nFil);
+
+  for(let f=0; f<nFil && i<filEnd; f++){
+    const cps = [];
+    const a0 = rnd()*TAU, e0 = (rnd()-0.5)*1.5;
+    let cxp = Math.cos(a0)*Math.cos(e0), cyp = Math.sin(e0), czp = Math.sin(a0)*Math.cos(e0);
+    let rr  = R*(0.14 + rnd()*0.86);
+    let X = cxp*rr, Y = cyp*rr*0.90, Z = czp*rr;
+    cps.push([X,Y,Z]);
+    let dx=(rnd()-0.5), dy=(rnd()-0.5)*0.6, dz=(rnd()-0.5);
+    for(let k=0;k<5;k++){
+      dx += (rnd()-0.5)*0.95; dy += (rnd()-0.5)*0.80; dz += (rnd()-0.5)*0.95;
+      const L = Math.sqrt(dx*dx+dy*dy+dz*dz) || 1;
+      const st = R*(0.30 + rnd()*0.34);
+      X += dx/L*st; Y += dy/L*st*0.86; Z += dz/L*st;
+      const rl = Math.sqrt(X*X+Y*Y+Z*Z);
+      if(rl > R*1.04){ const s = R*1.04/rl; X*=s; Y*=s; Z*=s; }
+      cps.push([X,Y,Z]);
+    }
+    const thick = R*(0.016 + rnd()*0.040);
+    const wob   = 1.9 + rnd()*2.4, wph = rnd();
+    for(let k=0; k<perFil && i<filEnd; k++, i++){
+      const t = rnd();
+      const p = splineAt(cps, t);
+      const w = thick*(0.32 + 1.55*Math.abs(sinT(t*wob + wph)));
+      const g1=g(), g2=g(), g3=g();
+      hx[i] = (p[0] + g1*w)*SQ[0];
+      hy[i] = (p[1] + g2*w)*SQ[1];
+      hz[i] = (p[2] + g3*w)*SQ[2];
+      const core = Math.exp(-(g1*g1+g2*g2+g3*g3)*0.30);   // tight to the strand = brighter
+      bri[i] = 0.30 + 0.70*core*(0.58 + 0.42*rnd());
+      szb[i] = 0.82 + 0.60*core;
+    }
+  }
+
+  /* ---- dust ----------------------------------------------------------- */
+  for(; i<N; i++){
+    let X=0,Y=0,Z=0, ok=false;
+    for(let tries=0; tries<16 && !ok; tries++){
+      let u,v,w,rl;
+      do {
+        u=rnd()*2-1; v=rnd()*2-1; w=rnd()*2-1;
+        rl = Math.sqrt(u*u+v*v+w*w);
+      } while(rl>1 || rl<0.0001);
+      const rad = Math.pow(rnd(), 0.44);
+      X = u/rl*rad*R*SQ[0]; Y = v/rl*rad*R*SQ[1]; Z = w/rl*rad*R*SQ[2];
+      const d      = fbm(X*0.0056, Y*0.0056, Z*0.0056);
+      const radial = 1 - Math.pow(rad, 3.2)*0.55;
+      if(rnd() < d*d*radial*2.6) ok = true;   // squared → voids without an empty frame
+    }
+    hx[i]=X; hy[i]=Y; hz[i]=Z;
+    bri[i] = 0.12 + 0.44*rnd();
+    szb[i] = 0.70 + 0.34*rnd();
+  }
+
+  /* ---- shared per-particle character ---------------------------------- */
+  for(let k=0;k<N;k++){
+    px[k]=hx[k]; py[k]=hy[k]; pz[k]=hz[k];
+    role[k]=ROLE_FREE; own[k]=-1; t0[k]=0;
+    stiff[k] = T.stiffFree[0] + rnd()*(T.stiffFree[1]-T.stiffFree[0]);
+    damp[k]  = T.dampFree;
+    dphA[k]=rnd(); dphB[k]=rnd(); dphC[k]=rnd();
+    drt[k]  = T.driftRate[0] + rnd()*(T.driftRate[1]-T.driftRate[0]);
+    twp[k]  = rnd();
+    twr[k]  = 0.06 + rnd()*0.20;
+  }
+}
+
+/* the cloud is generated once in fixed units, then stretched per axis to the
+   viewport so it fills the frame instead of spilling most of itself offscreen */
+let cKX = 1, cKY = 1, cKZ = 1;
+function applyCloudScale(kx, ky, kz){
+  const rx = kx/cKX, ry = ky/cKY, rz = kz/cKZ;
+  if(Math.abs(rx-1) < 0.003 && Math.abs(ry-1) < 0.003 && Math.abs(rz-1) < 0.003) return;
+  for(let i=0;i<N;i++){
+    hx[i]*=rx; hy[i]*=ry; hz[i]*=rz;
+    if(role[i]===ROLE_FREE){ px[i]*=rx; py[i]*=ry; pz[i]*=rz; }
+  }
+  cKX=kx; cKY=ky; cKZ=kz;
+}
+
+/* ==========================================================================
+   8 · MAP GEOMETRY  — nodes + links in LAYOUT space (z ≈ 0 plane)
+   Node 0 is the root: it holds no particles, because the logo lives there.
+   ========================================================================== */
+let nodes = [], links = [];
+let nodeX, nodeY, linkAX, linkAY, linkBX, linkBY;   // hot-loop mirrors
+let mapHalfW = 400, mapHalfH = 400;   // full extent, incl. every child + label
+let ancHalfW = 400, ancHalfH = 400;   // anchors only
+
+let geomBuilt = false;
+function buildGeometry(){
+  const L  = isPortrait ? LAYOUT.portrait : LAYOUT.landscape;
+  const Sx = Math.min(vw*L.sx, L.cx);
+  const Sy = Math.min(vh*L.sy, L.cy);
+  const S  = Math.min(Sx, Sy);
+
+  /* ---- structure: built once, never replaced (nodes own live particles) -- */
+  if(!geomBuilt){
+    nodes = [{ x:0, y:0, kind:0, label:"", anchor:-1, expanded:true,
+               labelA:0, arriveAt:0, fireAt:-99, parts:[] }];
+    links = [];
+    for(let a=0; a<MAP.length; a++){
+      const ai = nodes.length;
+      nodes.push({ x:0, y:0, kind:1, label:MAP[a].label, anchor:a, expanded:!isSmall,
+                   labelA:0, arriveAt:0, fireAt:-99, parts:[] });
+      links.push({ a:0, b:ai, kind:0, anchor:a, parts:[] });
+      const kids = MAP[a].children;
+      for(let k=0;k<kids.length;k++){
+        const ki = nodes.length;
+        nodes.push({ x:0, y:0, kind:2, label:kids[k], anchor:a, expanded:true,
+                     lox:0, loy:1, labelA:0, arriveAt:0, fireAt:-99, parts:[] });
+        links.push({ a:ai, b:ki, kind:1, anchor:a, parts:[] });
+      }
+    }
+    nodeX  = new Float32Array(nodes.length); nodeY  = new Float32Array(nodes.length);
+    linkAX = new Float32Array(links.length); linkAY = new Float32Array(links.length);
+    linkBX = new Float32Array(links.length); linkBY = new Float32Array(links.length);
+    fireAt   = new Float32Array(links.length).fill(-99);
+    fireDone = new Uint8Array(links.length);
+    geomBuilt = true;
+  }
+
+  /* ---- positions: a pentagon whose ellipse and child fan change with the
+          orientation, so rotating the device recomposes the map ----------- */
+  let ni = 1;
+  for(let a=0; a<MAP.length; a++){
+    const ang = -Math.PI/2 + a*(TAU/MAP.length);
+    const ax  = Math.cos(ang)*L.rx*Sx;
+    const ay  = Math.sin(ang)*L.ry*Sy;
+    nodes[ni].x = ax; nodes[ni].y = ay; ni++;
+
+    const kids = MAP[a].children, n = kids.length;
+    const out  = Math.atan2(ay, ax);
+    const cr   = L.childR*S;
+    const span = L.spread * (n>1 ? 1 : 0);
+    for(let k=0;k<n;k++){
+      const t  = n>1 ? (k/(n-1) - 0.5) : 0;
+      const ca = out + t*span;
+      const rd = cr * (1 + (k%2 ? 0.21 : -0.09));   // two rings, so labels clear
+      nodes[ni].x = ax + Math.cos(ca)*rd;
+      nodes[ni].y = ay + Math.sin(ca)*rd;
+      nodes[ni].lox = Math.cos(ca);                 // label radiates outward
+      nodes[ni].loy = Math.sin(ca);
+      ni++;
+    }
+  }
+  syncGeometry();
+
+  mapHalfW = 40; mapHalfH = 40; ancHalfW = 40; ancHalfH = 40;
+  for(let i=1;i<nodes.length;i++){
+    const anc = nodes[i].kind===1;
+    const ex = Math.abs(nodes[i].x) + (anc ? 58 : 76);   // room for the label too
+    const ey = Math.abs(nodes[i].y) + (anc ? 42 : 30);
+    mapHalfW = Math.max(mapHalfW, ex);
+    mapHalfH = Math.max(mapHalfH, ey);
+    if(anc){ ancHalfW = Math.max(ancHalfW, ex); ancHalfH = Math.max(ancHalfH, ey); }
+  }
+}
+
+function syncGeometry(){
+  for(let i=0;i<nodes.length;i++){ nodeX[i]=nodes[i].x; nodeY[i]=nodes[i].y; }
+  for(let i=0;i<links.length;i++){
+    const l = links[i];
+    linkAX[i]=nodes[l.a].x; linkAY[i]=nodes[l.a].y;
+    linkBX[i]=nodes[l.b].x; linkBY[i]=nodes[l.b].y;
+  }
+}
+
+function nodeVisible(i){
+  const n = nodes[i];
+  if(!mapOpen) return false;
+  if(n.kind<=1) return true;
+  return nodes[anchorNodeIndex(n.anchor)].expanded;
+}
+function anchorNodeIndex(a){
+  for(let i=1;i<nodes.length;i++) if(nodes[i].kind===1 && nodes[i].anchor===a) return i;
+  return 1;
+}
+function linkVisible(i){
+  const l = links[i];
+  if(!mapOpen) return false;
+  return l.kind===0 ? true : nodes[l.a].expanded;
+}
+
+/* ==========================================================================
+   9 · NEGATIVE SPACE FIELD
+   A precomputed push-vector grid in layout space. Free particles sample it,
+   so the cloud parts around nodes and labels and the holes stay put while
+   the cloud keeps rotating through them.
+   ========================================================================== */
+const CG = T.carveGrid;
+const carveU = new Float32Array(CG*CG);
+const carveV = new Float32Array(CG*CG);
+let cgX0=0, cgY0=0, cgSX=1, cgSY=1;
+let carveAmt = 0;
+
+function buildCarve(){
+  const padX = 130, padY = 110;
+  cgX0 = -mapHalfW-padX; cgY0 = -mapHalfH-padY;
+  const spanX = (mapHalfW+padX)*2, spanY = (mapHalfH+padY)*2;
+  cgSX = (CG-1)/spanX; cgSY = (CG-1)/spanY;
+
+  const vis = [];
+  for(let i=1;i<nodes.length;i++){
+    if(!mapOpen) break;
+    if(nodes[i].kind===2 && !nodes[anchorNodeIndex(nodes[i].anchor)].expanded) continue;
+    const p = nodes[i].kind===1 ? T.carveAnchor : T.carveChild;
+    vis.push([nodes[i].x, nodes[i].y, p[0]*uiScale, p[1]*uiScale, p[2]*uiScale]);
+  }
+
+  for(let gy=0; gy<CG; gy++){
+    const wy = cgY0 + gy/cgSY;
+    for(let gx=0; gx<CG; gx++){
+      const wx = cgX0 + gx/cgSX;
+      let ax=0, ay=0;
+      for(let k=0;k<vis.length;k++){
+        const n = vis[k];
+        const dx = wx-n[0], dy = wy-n[1];
+        const ex = dx/n[2], ey = dy/n[3];
+        const d2 = ex*ex + ey*ey;
+        if(d2 >= 1) continue;
+        const f = (1-d2)*(1-d2);
+        const d = Math.sqrt(dx*dx+dy*dy) + 0.001;
+        ax += dx/d*f*n[4];
+        ay += dy/d*f*n[4];
+      }
+      const m = Math.sqrt(ax*ax+ay*ay);
+      if(m > T.carveMax*uiScale){ const s = T.carveMax*uiScale/m; ax*=s; ay*=s; }
+      const idx = gy*CG+gx;
+      carveU[idx]=ax; carveV[idx]=ay;
+    }
+  }
+}
+
+/* ==========================================================================
+   10 · FREE-PARTICLE LOOKUP GRID
+   Lets "recruit the nearest available free particle" run in ~O(1) instead of
+   scanning the whole cloud per target. Rebuilt before each batch, never
+   allocated inside the frame loop.
+   ========================================================================== */
+const FG = 40;
+let fgStart, fgCount, fgItems, fgCur;
+let fgX0=0, fgY0=0, fgS=1;
+
+function initFreeGrid(){
+  fgStart = new Int32Array(FG*FG+1);
+  fgCount = new Int32Array(FG*FG);
+  fgCur   = new Int32Array(FG*FG);
+  fgItems = new Int32Array(N);
+}
+function rebuildFreeGrid(){
+  const R = T.cloudRadius*Math.max(cKX,cKY)*1.35;
+  fgX0 = -R; fgY0 = -R; fgS = (FG-1)/(R*2);
+  fgCount.fill(0);
+  const cell = function(x,y){
+    let gx = ((x-fgX0)*fgS)|0, gy = ((y-fgY0)*fgS)|0;
+    if(gx<0)gx=0; else if(gx>=FG)gx=FG-1;
+    if(gy<0)gy=0; else if(gy>=FG)gy=FG-1;
+    return gy*FG+gx;
+  };
+  /* particles are bucketed by their CURRENT layout-space xy */
+  for(let i=0;i<N;i++){
+    if(role[i]!==ROLE_FREE) continue;
+    fgCount[cell(w2lX(i), w2lY(i))]++;
+  }
+  let acc=0;
+  for(let c=0;c<FG*FG;c++){ fgStart[c]=acc; fgCur[c]=acc; acc+=fgCount[c]; }
+  fgStart[FG*FG]=acc;
+  for(let i=0;i<N;i++){
+    if(role[i]!==ROLE_FREE) continue;
+    fgItems[fgCur[cell(w2lX(i), w2lY(i))]++] = i;
+  }
+}
+function takeNearestFree(lx, ly){
+  let gx = ((lx-fgX0)*fgS)|0, gy = ((ly-fgY0)*fgS)|0;
+  if(gx<0)gx=0; else if(gx>=FG)gx=FG-1;
+  if(gy<0)gy=0; else if(gy>=FG)gy=FG-1;
+  let best=-1, bestCell=-1, bestSlot=-1, bestD=Infinity, foundRing=-1;
+  for(let r=0; r<FG; r++){
+    if(foundRing>=0 && r > foundRing+1) break;
+    const x0=gx-r, x1=gx+r, y0=gy-r, y1=gy+r;
+    for(let y=y0; y<=y1; y++){
+      if(y<0||y>=FG) continue;
+      const edgeRow = (y===y0 || y===y1);
+      for(let x=x0; x<=x1; x++){
+        if(x<0||x>=FG) continue;
+        if(!edgeRow && x!==x0 && x!==x1) continue;
+        const c = y*FG+x, s = fgStart[c], n = fgCount[c];
+        for(let k=0;k<n;k++){
+          const p = fgItems[s+k];
+          const dx = w2lX(p)-lx, dy = w2lY(p)-ly;
+          const d  = dx*dx+dy*dy;
+          if(d<bestD){ bestD=d; best=p; bestCell=c; bestSlot=k; }
+        }
+        if(n>0 && foundRing<0) foundRing = r;
+      }
+    }
+  }
+  if(best<0) return -1;
+  const s = fgStart[bestCell], n = fgCount[bestCell];
+  fgItems[s+bestSlot] = fgItems[s+n-1];
+  fgCount[bestCell] = n-1;
+  return best;
+}
+
+/* ==========================================================================
+   11 · ROTATION  (world ⇄ layout)
+   The cloud spins in world space. The map is fixed in layout space. A
+   particle changing role is converted once, so it never jumps or desyncs.
+   ========================================================================== */
+let yaw = 0, tilt = T.tiltBase;
+let cyR = 1, syR = 0, ctR = 1, stR = 0;
+function updateRot(){ cyR=Math.cos(yaw); syR=Math.sin(yaw); ctR=Math.cos(tilt); stR=Math.sin(tilt); }
+updateRot();
+
+function w2lX(i){ return px[i]*cyR + pz[i]*syR; }
+function w2lY(i){ return py[i]*ctR - (-px[i]*syR + pz[i]*cyR)*stR; }
+function w2lZ(i){ return py[i]*stR + (-px[i]*syR + pz[i]*cyR)*ctR; }
+
+function toLayout(i){
+  const X=px[i], Y=py[i], Z=pz[i];
+  const x1 = X*cyR + Z*syR, z1 = -X*syR + Z*cyR;
+  px[i]=x1; py[i]=Y*ctR - z1*stR; pz[i]=Y*stR + z1*ctR;
+  const VX=vx[i], VY=vy[i], VZ=vz[i];
+  const vx1 = VX*cyR + VZ*syR, vz1 = -VX*syR + VZ*cyR;
+  vx[i]=vx1; vy[i]=VY*ctR - vz1*stR; vz[i]=VY*stR + vz1*ctR;
+}
+function toWorld(i){
+  const X=px[i], Y=py[i], Z=pz[i];
+  const y1 = Y*ctR + Z*stR, z1 = -Y*stR + Z*ctR;
+  px[i]=X*cyR - z1*syR; py[i]=y1; pz[i]=X*syR + z1*cyR;
+  const VX=vx[i], VY=vy[i], VZ=vz[i];
+  const vy1 = VY*ctR + VZ*stR, vz1 = -VY*stR + VZ*ctR;
+  vx[i]=VX*cyR - vz1*syR; vy[i]=vy1; vz[i]=VX*syR + vz1*cyR;
+}
+
+/* ==========================================================================
+   12 · RECRUITMENT
+   Nodes: N nearest free particles pulled into a tight flattened orbit — it is
+   the DENSITY that makes a node read as bright, nothing is stroked or filled.
+   Links: a thin chain spaced along the parent→child path, so a connection is
+   a filament of the same cloud.
+   ========================================================================== */
+const rr = mulberry32(778811);
+let mapOpen = false, mapOpenAt = 0;
+let fireAt, fireDone;                       // per-link, sized in buildGeometry
+
+function stagger(x, y, now){
+  const d = Math.sqrt(x*x+y*y);
+  const m = Math.max(1, Math.sqrt(mapHalfW*mapHalfW + mapHalfH*mapHalfH));
+  return now + (d/m)*T.bloomSpread + rr()*T.bloomJitter;
+}
+
+function recruitNode(ni, now){
+  const n = nodes[ni];
+  if(n.parts.length || n.kind===0) return;
+  const count = Math.round((n.kind===1 ? T.nAnchor : T.nChild) * densityK);
+  const rad   = (n.kind===1 ? T.orbitAnchor : T.orbitChild) * uiScale;
+  const base  = stagger(n.x, n.y, now);
+  for(let k=0;k<count;k++){
+    const a = rr()*TAU, e = Math.acos(rr()*2-1);
+    const r = rad*Math.pow(rr(), 0.42);
+    const lx = n.x + Math.sin(e)*Math.cos(a)*r;
+    const ly = n.y + Math.sin(e)*Math.sin(a)*r;
+    const i = takeNearestFree(lx, ly);
+    if(i<0) break;
+    toLayout(i);
+    role[i] = ROLE_TAKEN; own[i] = ni;
+    ox[i] = Math.sin(e)*Math.cos(a)*r;
+    oy[i] = Math.sin(e)*Math.sin(a)*r;
+    oz[i] = Math.cos(e)*r*T.orbitFlatten;
+    stiff[i] = T.stiffNode[0] + rr()*(T.stiffNode[1]-T.stiffNode[0]);
+    damp[i]  = T.dampNode;
+    t0[i]    = base + rr()*0.22;
+    n.parts.push(i);
+  }
+  n.arriveAt = base + 0.75;
+}
+
+function recruitLink(li, now){
+  const l = links[li];
+  if(l.parts.length) return;
+  const A = nodes[l.a], B = nodes[l.b];
+  const count = Math.round((l.kind===0 ? T.nLinkRoot : T.nLinkChild) * densityK);
+  const dx = B.x-A.x, dy = B.y-A.y;
+  const len = Math.sqrt(dx*dx+dy*dy) || 1;
+  const nx = -dy/len, ny = dx/len;
+  const u0 = l.kind===0 ? 0.16 : 0.13, u1 = l.kind===0 ? 0.88 : 0.87;
+  const base = stagger((A.x+B.x)*0.5, (A.y+B.y)*0.5, now);
+  for(let k=0;k<count;k++){
+    const u = u0 + (u1-u0)*(count>1 ? k/(count-1) : 0.5) + (rr()-0.5)*0.012;
+    const j = (rr()-0.5)*2*T.linkJitter*uiScale;
+    const lx = A.x + dx*u + nx*j, ly = A.y + dy*u + ny*j;
+    const i = takeNearestFree(lx, ly);
+    if(i<0) break;
+    toLayout(i);
+    role[i] = ROLE_TAKEN; own[i] = -1-li; upos[i] = u;
+    ox[i] = nx*j; oy[i] = ny*j; oz[i] = (rr()-0.5)*2*T.linkJitterZ;
+    stiff[i] = T.stiffNode[0] + rr()*(T.stiffNode[1]-T.stiffNode[0]);
+    damp[i]  = T.dampNode;
+    t0[i]    = base + u*0.30 + rr()*0.14;
+    l.parts.push(i);
+  }
+}
+
+function releaseParts(list, now){
+  for(let k=0;k<list.length;k++){
+    const i = list[k];
+    if(role[i]!==ROLE_TAKEN) continue;
+    toWorld(i);
+    role[i] = ROLE_FREE; own[i] = -1;
+    stiff[i] = T.stiffFree[0] + rr()*(T.stiffFree[1]-T.stiffFree[0]);
+    damp[i]  = T.dampFree;
+    t0[i]    = now + rr()*T.releaseJitter;
+  }
+  list.length = 0;
+}
+
+/* ==========================================================================
+   13 · MAP STATE
+   ========================================================================== */
+let selected = -1;
+let lastLogoTap = -99, pendingToggle = 0;
+
+function openMap(now){
+  if(mapOpen) return;
+  mapOpen = true; mapOpenAt = now;
+  rebuildFreeGrid();
+  for(let i=1;i<nodes.length;i++){ if(nodeVisible(i)) recruitNode(i, now); }
+  for(let i=0;i<links.length;i++){ if(linkVisible(i)) recruitLink(i, now); }
+  buildCarve();
+}
+function closeMap(now){
+  if(!mapOpen) return;
+  mapOpen = false; selected = -1;
+  for(let i=0;i<nodes.length;i++){ releaseParts(nodes[i].parts, now); nodes[i].labelA = 0; }
+  for(let i=0;i<links.length;i++){ releaseParts(links[i].parts, now); fireAt[i] = -99; }
+  buildCarve();
+}
+function toggleAnchor(ni, now){
+  const n = nodes[ni];
+  n.expanded = !n.expanded;
+  if(n.expanded){
+    rebuildFreeGrid();
+    for(let i=1;i<nodes.length;i++)
+      if(nodes[i].kind===2 && nodes[i].anchor===n.anchor) recruitNode(i, now);
+    for(let i=0;i<links.length;i++)
+      if(links[i].kind===1 && links[i].a===ni) recruitLink(i, now);
+  } else {
+    for(let i=1;i<nodes.length;i++)
+      if(nodes[i].kind===2 && nodes[i].anchor===n.anchor){
+        releaseParts(nodes[i].parts, now); nodes[i].labelA = 0;
+      }
+    for(let i=0;i<links.length;i++)
+      if(links[i].kind===1 && links[i].a===ni){ releaseParts(links[i].parts, now); fireAt[i]=-99; }
+  }
+  buildCarve();
+}
+
+/* ==========================================================================
+   14 · FIRING
+   A firing is a brightness wave running along a link's own particle chain.
+   It reaches the child late, so the travel is visible; at the breath peak it
+   can spill into the neighbouring cluster.
+   ========================================================================== */
+function fireLink(li, when){
+  if(!linkVisible(li)) return;
+  if(when - fireAt[li] < T.fireTravel*1.15) return;
+  fireAt[li] = when; fireDone[li] = 0;
+}
+function fireNode(ni, now){
+  nodes[ni].fireAt = now;
+  for(let i=0;i<links.length;i++)
+    if(links[i].a===ni && linkVisible(i)) fireLink(i, now + 0.05);
+}
+function updateFirings(now, breath, dt){
+  /* spontaneous, clustered near the breath peak */
+  if(!reduced){
+    const p = T.fireRate*dt*(0.10 + breath*breath*breath*1.35);
+    if(Math.random() < p){
+      let tries = 0;
+      do { const li = (Math.random()*links.length)|0;
+           if(linkVisible(li)){ fireLink(li, now); break; }
+      } while(++tries < 12);
+    }
+  }
+  /* arrivals + cascade */
+  for(let i=0;i<links.length;i++){
+    if(fireDone[i] || fireAt[i] < -50) continue;
+    if(now - fireAt[i] >= T.fireTravel){
+      fireDone[i] = 1;
+      const b = links[i].b;
+      nodes[b].fireAt = now;
+      if(!reduced && breath > 0.72 && Math.random() < T.cascadeChance){
+        let spilled = 0;
+        for(let j=0;j<links.length && spilled<3;j++){
+          if(links[j].a===b && linkVisible(j)){ fireLink(j, now + 0.04 + spilled*0.07); spilled++; }
+        }
+      }
+    }
+  }
+}
+
+/* ==========================================================================
+   15 · CAMERA + RENDER BUCKETS
+   Zoom always moves the camera so the point under the cursor / pinch midpoint
+   stays put — never a scale about screen centre.
+   ========================================================================== */
+let camX = 0, camY = 0, zoom = 1, densityK = 1;
+
+const WB = 14, GB = 8;                       // white levels, gold levels
+const STYLES = new Array(WB+GB);
+let bList = null;
+const bCount = new Int32Array(WB+GB);
+
+/* Live palette. Every draw call reads CUR, which is re-derived only while the
+   two themes are crossfading — never per particle. */
+let themeT = 0, themeTarget = 0, themeBuilt = -1;
+const CUR = { bg:"#000000", particle:"255,255,255", accent:"243,201,63",
+              label:"rgba(236,238,242,", labelDim:"rgba(176,180,190,",
+              hint:"rgba(150,154,164," };
+
+function mix3(a,b,t){
+  return ((a[0]+(b[0]-a[0])*t)|0)+","+((a[1]+(b[1]-a[1])*t)|0)+","+((a[2]+(b[2]-a[2])*t)|0);
+}
+function applyTheme(t){
+  const A = THEME.dark, B = THEME.light;
+  CUR.bg       = "rgb("  + mix3(A.bg, B.bg, t) + ")";
+  CUR.particle = mix3(A.particle, B.particle, t);
+  CUR.accent   = mix3(A.accent,   B.accent,   t);
+  CUR.label    = "rgba(" + mix3(A.label,    B.label,    t) + ",";
+  CUR.labelDim = "rgba(" + mix3(A.labelDim, B.labelDim, t) + ",";
+  CUR.hint     = "rgba(" + mix3(A.hint,     B.hint,     t) + ",";
+  const ak = A.alphaK + (B.alphaK-A.alphaK)*t;
+  for(let i=0;i<WB;i++) STYLES[i]    = "rgba("+CUR.particle+","+(((i+0.5)/WB)*0.92*ak).toFixed(4)+")";
+  for(let i=0;i<GB;i++) STYLES[WB+i] = "rgba("+CUR.accent  +","+(((i+0.6)/GB)*0.96).toFixed(4)+")";
+  themeBuilt = t;
+}
+function initBuckets(){
+  bList = new Array(WB+GB);
+  for(let b=0;b<WB+GB;b++) bList[b] = new Int32Array(N);
+}
+
+/* ==========================================================================
+   16 · FRAME
+   One update+draw pass, no allocation inside.
+   ========================================================================== */
+let breath = 0.5, hintA = 1, logoPulse = 0;
+
+function frame(now, dt){
+  const dts = clamp(dt*60, 0.35, 2.2);
+
+  /* --- global breath: one slow sine driving brightness and orbit radius --- */
+  breath = reduced ? 0.5 : 0.5 + 0.5*Math.sin(now*TAU/T.breathPeriod);
+  const gBri   = 1 - T.breathBright*0.5 + T.breathBright*breath;
+  const orbitK = 1 - T.breathOrbit*0.5 + T.breathOrbit*breath;
+
+  /* --- rotation is time-based only ------------------------------------- */
+  yaw  += T.yawSpeed*dt;
+  tilt  = T.tiltBase + sinT(now*T.tiltRate)*T.tiltSwing;
+  updateRot();
+
+  updateFirings(now, breath, dt);
+  carveAmt += ((mapOpen?1:0) - carveAmt)*T.carveEase*dts;
+  logoPulse *= Math.pow(0.90, dts);
+
+  /* a single tap on the mark is held back until the double-tap window closes,
+     so the two gestures never fight each other */
+  if(pendingToggle > 0 && now >= pendingToggle){
+    pendingToggle = 0;
+    if(mapOpen) closeMap(now); else openMap(now);
+  }
+
+  /* theme crossfade */
+  if(themeT !== themeTarget){
+    themeT += (themeTarget-themeT)*T.themeEase*dts;
+    if(Math.abs(themeTarget-themeT) < 0.002){
+      themeT = themeTarget;
+      document.documentElement.style.background = CUR.bg;   // only when settled
+    }
+  }
+  if(themeBuilt < 0 || Math.abs(themeT-themeBuilt) > 0.003) applyTheme(themeT);
+
+  const FOV = T.fov, halfW = cw*0.5, halfH = ch*0.5, Zd = zoom*dpr;
+  const drift = T.driftAmp * (reduced ? 0.45 : 1);
+  bCount.fill(0);
+
+  for(let i=0;i<N;i++){
+    let tX, tY, tZ, isFree = (role[i]===ROLE_FREE);
+
+    /* ---- target ------------------------------------------------------- */
+    if(isFree){
+      const dr = drt[i]*now;
+      tX = hx[i] + sinT(dr + dphA[i])*drift;
+      tY = hy[i] + sinT(dr*0.83 + dphB[i])*drift;
+      tZ = hz[i] + sinT(dr*1.19 + dphC[i])*drift;
+    } else {
+      const o = own[i];
+      if(o >= 0){
+        tX = nodeX[o] + ox[i]*orbitK;
+        tY = nodeY[o] + oy[i]*orbitK;
+        tZ = oz[i]*orbitK;
+      } else {
+        const li = -1-o, u = upos[i];
+        tX = linkAX[li] + (linkBX[li]-linkAX[li])*u + ox[i];
+        tY = linkAY[li] + (linkBY[li]-linkAY[li])*u + oy[i];
+        tZ = oz[i];
+      }
+    }
+
+    /* ---- spring (staggered start, slight per-particle randomness) ------ */
+    if(now >= t0[i]){
+      const k = stiff[i]*dts, d = 1 - (1-damp[i])*dts;
+      let a;
+      a = vx[i] + (tX-px[i])*k; vx[i] = a*d; px[i] += a*dts;
+      a = vy[i] + (tY-py[i])*k; vy[i] = a*d; py[i] += a*dts;
+      a = vz[i] + (tZ-pz[i])*k; vz[i] = a*d; pz[i] += a*dts;
+    } else {                                   /* still waiting its turn: coast */
+      const d = 1 - 0.06*dts;
+      px[i] += vx[i]*dts; py[i] += vy[i]*dts; pz[i] += vz[i]*dts;
+      vx[i]*=d; vy[i]*=d; vz[i]*=d;
+    }
+
+    /* ---- world → layout → screen -------------------------------------- */
+    let X, Y, Z;
+    if(isFree){
+      const x1 = px[i]*cyR + pz[i]*syR, z1 = -px[i]*syR + pz[i]*cyR;
+      X = x1; Y = py[i]*ctR - z1*stR; Z = py[i]*stR + z1*ctR;
+    } else { X = px[i]; Y = py[i]; Z = pz[i]; }
+
+    const s = FOV/(FOV+Z);
+    X *= s; Y *= s;
+
+    /* ---- the cloud parts around nodes and labels ----------------------- */
+    if(isFree && carveAmt > 0.002){
+      const fx = (X-cgX0)*cgSX, fy = (Y-cgY0)*cgSY;
+      if(fx >= 0 && fy >= 0 && fx < CG-1 && fy < CG-1){
+        const ix=fx|0, iy=fy|0, ux=fx-ix, uy=fy-iy;
+        const i00=iy*CG+ix, i10=i00+1, i01=i00+CG, i11=i01+1;
+        X += ((carveU[i00]+(carveU[i10]-carveU[i00])*ux)*(1-uy)
+            + (carveU[i01]+(carveU[i11]-carveU[i01])*ux)*uy)*carveAmt;
+        Y += ((carveV[i00]+(carveV[i10]-carveV[i00])*ux)*(1-uy)
+            + (carveV[i01]+(carveV[i11]-carveV[i01])*ux)*uy)*carveAmt;
+      }
+    }
+
+    const SX = (X-camX)*Zd + halfW;
+    const SY = (Y-camY)*Zd + halfH;
+    if(SX < -6 || SX > cw+6 || SY < -6 || SY > ch+6) continue;
+
+    /* ---- brightness: depth, density, breath, twinkle ------------------- */
+    let lum = bri[i]*(0.30 + 0.78*s)*gBri;
+    lum *= 0.80 + 0.20*sinT(now*twr[i] + twp[i]);
+
+    /* ---- firing / selection: the only gold in the piece ---------------- */
+    let e = 0;
+    if(!isFree){
+      const o = own[i];
+      if(o >= 0){
+        lum *= 1.22;
+        const n = nodes[o];
+        const ag = (now-n.fireAt)/T.fireNodeDecay;
+        if(ag >= 0 && ag < 1){ const w = 1-ag; e = w*w; }
+        if(o === selected) e = Math.max(e, 0.52 + 0.16*breath);
+      } else {
+        lum *= 1.12;
+        const li = -1-o, d = (now-fireAt[li])/T.fireTravel - upos[i];
+        if(d > -0.06 && d < T.fireWidth){
+          const w = d < 0 ? (1 + d/0.06) : (1 - d/T.fireWidth);
+          e = w*w;
+        }
+      }
+    }
+
+    let sz = szb[i]*(0.62 + 0.80*s);
+    let b;
+    if(e > 0.10){
+      lum = clamp(lum*(0.55 + 0.75*e) + e*0.55, 0, 1);
+      sz *= 1 + 0.85*e;
+      b = WB + clamp((lum*GB)|0, 0, GB-1);
+    } else {
+      lum = clamp(lum, 0, 1);
+      b = clamp((lum*WB)|0, 0, WB-1);
+    }
+
+    sxp[i] = SX; syp[i] = SY; ssz[i] = Math.max(0.8, sz*dpr);
+    bList[b][bCount[b]++] = i;
+  }
+
+  /* ---- draw ----------------------------------------------------------- */
+  ctx.fillStyle = CUR.bg;
+  ctx.fillRect(0,0,cw,ch);
+  for(let b=0; b<WB+GB; b++){
+    const n = bCount[b];
+    if(!n) continue;
+    ctx.fillStyle = STYLES[b];
+    const L = bList[b];
+    for(let k=0;k<n;k++){
+      const i = L[k], z = ssz[i], h = z*0.5;
+      ctx.fillRect(sxp[i]-h, syp[i]-h, z, z);
+    }
+  }
+
+  drawLabels(now, dts);
+  drawLogo();
+  drawHint(dts);
+}
+
+/* ==========================================================================
+   17 · LABELS  — real text, quiet, fading in only once their particles land
+   ========================================================================== */
+const FONT = '-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Helvetica,Arial,sans-serif';
+
+function drawLabels(now, dts){
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  const Zd = zoom*dpr, halfW = cw*0.5, halfH = ch*0.5;
+  const aSize = (isSmall ? 10.5 : 11.5)*dpr;
+  const cSize = (isSmall ? 9.5  : 10.5)*dpr;
+
+  for(let i=1;i<nodes.length;i++){
+    const n = nodes[i];
+    const vis = nodeVisible(i);
+    const want = (vis && now > n.arriveAt) ? 1 : 0;
+    n.labelA += (want - n.labelA)*0.055*dts;
+    if(n.labelA < 0.01) continue;
+
+    const SX = (n.x-camX)*Zd + halfW;
+    const SY = (n.y-camY)*Zd + halfH;
+    if(SX < -140 || SX > cw+140 || SY < -40 || SY > ch+40) continue;
+
+    const anchor = n.kind === 1;
+    let a = n.labelA * (anchor ? 0.92 : 0.68);
+    const gold = (i === selected) || (now - n.fireAt < T.fireNodeDecay*0.9);
+    if(gold) a = Math.min(1, a + 0.22);
+
+    /* placement: anchors read below the node; a child's label radiates away
+       from its parent, so a fan of siblings never stacks on itself */
+    let tx, ty;
+    if(anchor){
+      ctx.textAlign = "center";
+      tx = SX; ty = SY + 26*dpr;
+    } else if(Math.abs(n.lox) > 0.58){
+      ctx.textAlign = n.lox > 0 ? "left" : "right";
+      tx = SX + (n.lox > 0 ? 13 : -13)*dpr; ty = SY + 0.5*dpr;
+    } else {
+      ctx.textAlign = "center";
+      tx = SX; ty = SY + (n.loy >= 0 ? 18 : -17)*dpr;
+    }
+
+    ctx.font = (anchor ? "600 " : "400 ") + (anchor?aSize:cSize).toFixed(1) + "px " + FONT;
+    if("letterSpacing" in ctx) ctx.letterSpacing = anchor ? (1.2*dpr)+"px" : (0.3*dpr)+"px";
+    ctx.fillStyle = gold
+      ? "rgba("+CUR.accent+","+a.toFixed(3)+")"
+      : (anchor ? CUR.label : CUR.labelDim) + a.toFixed(3) + ")";
+    ctx.fillText(anchor ? n.label.toUpperCase() : n.label, tx, ty);
+
+    /* a hairline tick under a collapsed anchor, so it reads as openable */
+    if(anchor && !n.expanded && n.labelA > 0.3){
+      ctx.fillStyle = CUR.labelDim + (n.labelA*0.34).toFixed(3) + ")";
+      ctx.fillRect(SX-5*dpr, SY+35*dpr, 10*dpr, Math.max(1, dpr*0.8));
+    }
+  }
+  if("letterSpacing" in ctx) ctx.letterSpacing = "0px";
+}
+
+/* ==========================================================================
+   18 · LOGO  — sharp vector mark at the heart of the cloud. Never dissolves,
+   never blurs, never scales with zoom. Soft cloud, hard mark.
+   Size is a fixed screen height in CSS px; the tap target follows it.
+   ========================================================================== */
+let logoX = 0, logoY = 0, logoR = 0;
+function drawLogo(){
+  const Zd = zoom*dpr;
+  const size = (isSmall ? 70 : 86)*dpr*(1 + logoPulse*0.10);
+  logoX = (0-camX)*Zd + cw*0.5;
+  logoY = (0-camY)*Zd + ch*0.5;
+  logoR = size*0.62;
+  ctx.fillStyle = "rgba("+CUR.particle+",0.97)";
+  ctx.beginPath();
+  for(let t=0;t<LOGO.length;t++){
+    const tri = LOGO[t];
+    ctx.moveTo(logoX + tri[0][0]*size, logoY + tri[0][1]*size);
+    ctx.lineTo(logoX + tri[1][0]*size, logoY + tri[1][1]*size);
+    ctx.lineTo(logoX + tri[2][0]*size, logoY + tri[2][1]*size);
+    ctx.closePath();
+  }
+  ctx.fill();
+}
+
+/* ==========================================================================
+   19 · HINT
+   ========================================================================== */
+let hintFade = false;
+function drawHint(dts){
+  hintA += ((hintFade?0:1) - hintA)*0.045*dts;
+  if(hintA < 0.02) return;
+  ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
+  ctx.font = "500 " + (9.5*dpr).toFixed(1) + "px " + FONT;
+  if("letterSpacing" in ctx) ctx.letterSpacing = (1.6*dpr)+"px";
+  ctx.fillStyle = CUR.hint + (hintA*0.75).toFixed(3) + ")";
+  ctx.fillText(isSmall ? "TAP THE MARK  ·  DOUBLE-TAP TO INVERT  ·  DRAG  ·  PINCH"
+                       : "TAP THE MARK  ·  DOUBLE-CLICK TO INVERT  ·  DRAG TO PAN  ·  SCROLL TO ZOOM",
+               cw*0.5, ch - 22*dpr);
+  if("letterSpacing" in ctx) ctx.letterSpacing = "0px";
+}
+
+/* ==========================================================================
+   20 · RESIZE
+   ========================================================================== */
+let userZoomed = false;
+function fitZoom(){
+  /* With every anchor collapsed (the small-screen default) there is no reason
+     to shrink the map down to an extent nothing is occupying yet — fit closer,
+     and let the fan overrun a little when one is opened. */
+  let open = false;
+  for(let i=1;i<nodes.length;i++) if(nodes[i].kind===1 && nodes[i].expanded){ open = true; break; }
+  const k  = open ? 1 : 0.80;
+  const fw = Math.max(ancHalfW, mapHalfW*k);
+  const fh = Math.max(ancHalfH, mapHalfH*k);
+  zoom = clamp(Math.min((vw*0.5 - 18)/fw, (vh*0.5 - 26)/fh), T.zoomRange[0], 1.25);
+  camX = 0; camY = 0;
+}
+function resize(){
+  const wasPortrait = isPortrait;
+  vw = window.innerWidth; vh = window.innerHeight;
+  dpr = Math.min(2, window.devicePixelRatio || 1);
+  cw = Math.round(vw*dpr); ch = Math.round(vh*dpr);
+  cv.width = cw; cv.height = ch;
+  cv.style.width = vw+"px"; cv.style.height = vh+"px";
+  isPortrait = vh >= vw;
+  isSmall    = Math.min(vw,vh) < 620;
+
+  const L  = isPortrait ? LAYOUT.portrait : LAYOUT.landscape;
+  const S  = Math.min(Math.min(vw*L.sx,L.cx), Math.min(vh*L.sy,L.cy));
+  uiScale  = clamp(S/380, 0.70, 1.15);
+
+  buildGeometry();
+  buildCarve();
+  if(!userZoomed || wasPortrait !== isPortrait) fitZoom();
+  const hwL = (vw*0.5)/zoom, hhL = (vh*0.5)/zoom;
+  const kx = clamp(hwL/T.cloudRadius, 0.35, 2.4);
+  const ky = clamp(hhL/T.cloudRadius, 0.35, 2.4);
+  applyCloudScale(kx, ky, Math.min(kx,ky));
+  clampCam();
+}
+function clampCam(){
+  const lim = T.panLimit;
+  camX = clamp(camX, -lim, lim);
+  camY = clamp(camY, -lim, lim);
+}
+
+/* ==========================================================================
+   21 · INTERACTION  — pointer events only, one code path for mouse and touch
+   ========================================================================== */
+const ptrs = new Map();
+let dragging = false, moved = 0, downX = 0, downY = 0, downT = 0;
+let lastX = 0, lastY = 0;
+let pinchD = 0, pinchZ = 1, pinchUX = 0, pinchUY = 0;
+
+function midOf(){
+  let sx=0, sy=0, n=0;
+  ptrs.forEach(function(p){ sx+=p.x; sy+=p.y; n++; });
+  return [sx/n, sy/n];
+}
+function distOf(){
+  const it = ptrs.values();
+  const a = it.next().value, b = it.next().value;
+  return Math.hypot(a.x-b.x, a.y-b.y);
+}
+function zoomAt(nz, sx, sy){
+  nz = clamp(nz, T.zoomRange[0], T.zoomRange[1]);
+  const ux = (sx - vw*0.5)/zoom + camX;
+  const uy = (sy - vh*0.5)/zoom + camY;
+  zoom = nz;
+  camX = ux - (sx - vw*0.5)/zoom;
+  camY = uy - (sy - vh*0.5)/zoom;
+  userZoomed = true;
+  clampCam();
+}
+
+cv.addEventListener("pointerdown", function(e){
+  try{ cv.setPointerCapture(e.pointerId); }catch(_){}
+  ptrs.set(e.pointerId, {x:e.clientX, y:e.clientY});
+  hintFade = true;
+  if(ptrs.size === 1){
+    dragging = true; moved = 0;
+    downX = lastX = e.clientX; downY = lastY = e.clientY;
+    downT = performance.now()/1000;
+    cv.classList.add("dragging");
+  } else if(ptrs.size === 2){
+    dragging = false;
+    cv.classList.remove("dragging");
+    pinchD = distOf() || 1; pinchZ = zoom;
+    const m = midOf();
+    pinchUX = (m[0]-vw*0.5)/zoom + camX;
+    pinchUY = (m[1]-vh*0.5)/zoom + camY;
+  }
+});
+
+cv.addEventListener("pointermove", function(e){
+  const p = ptrs.get(e.pointerId);
+  if(!p) return;
+  p.x = e.clientX; p.y = e.clientY;
+  if(ptrs.size === 1 && dragging){
+    const dx = e.clientX-lastX, dy = e.clientY-lastY;
+    lastX = e.clientX; lastY = e.clientY;
+    moved += Math.abs(dx)+Math.abs(dy);
+    camX -= dx/zoom; camY -= dy/zoom;
+    userZoomed = true;
+    clampCam();
+  } else if(ptrs.size === 2){
+    const d = distOf() || 1;
+    const m = midOf();
+    zoom = clamp(pinchZ*(d/pinchD), T.zoomRange[0], T.zoomRange[1]);
+    camX = pinchUX - (m[0]-vw*0.5)/zoom;
+    camY = pinchUY - (m[1]-vh*0.5)/zoom;
+    userZoomed = true;
+    clampCam();
+  }
+});
+
+function pointerEnd(e){
+  const was = ptrs.size;
+  ptrs.delete(e.pointerId);
+  cv.classList.remove("dragging");
+  if(was === 1 && dragging){
+    if(moved < T.tapSlop && performance.now()/1000 - downT < 0.7)
+      handleTap(downX, downY, clock);   // the loop's clock, not wall time
+  }
+  if(ptrs.size === 1){                       // pinch → drag handoff
+    const it = ptrs.values().next().value;
+    dragging = true; moved = 999;
+    lastX = it.x; lastY = it.y;
+  } else if(ptrs.size === 0){
+    dragging = false;
+  }
+}
+cv.addEventListener("pointerup", pointerEnd);
+cv.addEventListener("pointercancel", pointerEnd);
+
+cv.addEventListener("wheel", function(e){
+  e.preventDefault();
+  hintFade = true;
+  const k = Math.exp(-e.deltaY * (e.deltaMode === 1 ? 0.028 : 0.0016));
+  zoomAt(zoom*k, e.clientX, e.clientY);
+}, {passive:false});
+
+function handleTap(x, y, now){
+  /* the mark: one tap toggles the map, two invert the whole piece */
+  const ldx = x*dpr - logoX, ldy = y*dpr - logoY;
+  if(ldx*ldx + ldy*ldy < (logoR + 12*dpr)*(logoR + 12*dpr)){
+    logoPulse = 1;                                   // feedback is immediate
+    if(now - lastLogoTap < T.doubleTap){
+      lastLogoTap  = -99;
+      pendingToggle = 0;                             // cancel the queued toggle
+      themeTarget   = 1 - themeTarget;
+    } else {
+      lastLogoTap   = now;
+      pendingToggle = now + T.doubleTap;             // fires from the loop
+    }
+    return;
+  }
+  if(!mapOpen){ selected = -1; return; }
+
+  /* nearest node within reach */
+  let best = -1, bestD = (isSmall ? 34 : 30)*(isSmall ? 34 : 30);
+  for(let i=1;i<nodes.length;i++){
+    if(!nodeVisible(i)) continue;
+    const sx = (nodes[i].x-camX)*zoom + vw*0.5;
+    const sy = (nodes[i].y-camY)*zoom + vh*0.5;
+    const dx = x-sx, dy = y-sy, d = dx*dx+dy*dy;
+    if(d < bestD){ bestD = d; best = i; }
+  }
+  if(best < 0){ selected = -1; return; }
+
+  selected = best;
+  fireNode(best, now);                       // tapping any node fires it
+  if(nodes[best].kind === 1) toggleAnchor(best, now);
+}
+
+/* ==========================================================================
+   22 · LOOP
+   ========================================================================== */
+let raf = 0, last = 0, running = false, clock = 0;
+function tick(ts){
+  raf = requestAnimationFrame(tick);
+  const t = ts/1000;
+  let dt = last ? t-last : 1/60;
+  last = t;
+  if(dt > 0.05) dt = 0.05;                   // never let a stall detonate the springs
+  clock += dt;
+  frame(clock, dt);
+  if(!mapOpen && !autoDone && clock > T.autoOpenAfter){ autoDone = true; openMap(clock); }
+}
+let autoDone = false;
+function start(){ if(running) return; running = true; last = 0; raf = requestAnimationFrame(tick); }
+function stop(){ running = false; cancelAnimationFrame(raf); }
+
+document.addEventListener("visibilitychange", function(){
+  if(document.hidden) stop(); else start();
+});
+window.addEventListener("resize", resize);
+window.addEventListener("orientationchange", function(){ setTimeout(resize, 120); });
+
+/* ==========================================================================
+   23 · BOOT
+   ========================================================================== */
+(function boot(){
+  vw = window.innerWidth; vh = window.innerHeight;
+  isSmall = Math.min(vw,vh) < 620;
+  densityK = isSmall ? 0.78 : 1;
+  allocParticles(isSmall ? T.countMobile : T.countDesktop);
+  buildCloud();
+  initFreeGrid();
+  initBuckets();
+  applyTheme(0);
+  resize();
+  start();
+})();
+
+})();
+</script>
+</body>
+</html>

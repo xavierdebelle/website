@@ -5,6 +5,34 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v22 — 2026-09-01
+
+**New piece**
+- **Neural Mind Map** added to Art & Experiments, after Organic Loops. A
+  particle field that gathers itself into a mind map, with the logo mark held
+  sharp at the centre while the cloud around it dissolves and reforms. Tap the
+  mark to toggle the map, double-click to invert the theme, drag to pan,
+  scroll or pinch to zoom. One pointer code path for mouse and touch.
+- It draws the mark from the same four-triangle coordinates as
+  `assets/logo.svg`, so the piece and the site share one geometry.
+- That makes 15 tools, and Art becomes 3 Pieces.
+
+**Checked before publishing**
+- Scan came back clean: no external hosts, no endpoints, no credentials,
+  nothing persisted.
+- Verified it renders and animates, the mark stays sharp, the double-click
+  invert works, and the console is silent. The labelled-node phase is in the
+  source but I did not manage to capture it in a still, so the card describes
+  the behaviour without naming the labels.
+
+**Skill**
+- The `publish-tool` skill did this end to end for the first time. Using it
+  turned up a false positive in its scanner — "INTERACTION" matched the
+  "interac" payment pattern — now fixed with word boundaries, since a scanner
+  that cries wolf gets ignored.
+
+---
+
 ## v21 — 2026-09-03
 
 **Carousel Planner v10 — the slides past the fifth, actually fixed**
