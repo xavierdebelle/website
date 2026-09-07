@@ -5,6 +5,53 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v24 — 2026-09-01
+
+**The homepage map is now the particle point cloud**
+- The old DOM map — absolutely-positioned node boxes, an SVG wire layer and a
+  spring simulation — is gone, not layered over. No `#stage`, `#world`,
+  `#wires`, `.node`, `.wire`, and no second render loop. One canvas, one
+  camera, one loop; the particles *are* the nodes and the links.
+- The layout is grown by space colonization and stored, so it does not
+  regenerate on load. Breath and firing behaviour, monochrome cloud with
+  yellow kept for signal and selection, and the mark that never dissolves.
+- Portrait and landscape have separate arrangements; verified at 380px wide.
+
+**Map content**
+- Work (Real Estate, 333 Photo, De Belle Photo), Tools (Portfolio Makers,
+  De Belle Tools, Personal, Events, Art), Connect (Email, Instagram), and
+  About as a childless anchor. Clusters left deliberately uneven.
+- Every node leads where its text-index entry leads — checked link by link.
+  External nodes open in a new tab and keep the ↗ marker; Email is a mailto.
+
+**Kept exactly as it was**
+- Header, tagline and the Tools / Work / Instagram links. The zoom, Recentre
+  and Index controls, rewired to the new camera — Recentre restores the
+  default view. The full text index and all twelve of its links, the
+  "Back to the map" control, the noscript fallback, the skip link, the detail
+  panel and its close control, and all existing styling and meta.
+- The instruction line stays; its wording now names the interactions that
+  actually changed (tap the mark to open, twice to invert).
+- The engine drew its own hint line along the bottom, which duplicated that
+  instruction and collided with the controls. Removed, along with its state,
+  rather than left as dead code.
+
+**Quality floor**
+- Focus stays visible on every control, and closing the index returns focus to
+  the button that opened it. `prefers-reduced-motion` is respected by the
+  engine and the panel. The loop stops on `visibilitychange`. With JavaScript
+  off, the existing fallback still lists everything.
+
+**A note on testing**
+- The map appearing not to open in earlier sessions was my test environment,
+  not the tool: the preview pane is hidden between screenshots, so
+  `requestAnimationFrame` is paused and the clock never reached the 1.6s
+  auto-open. Instrumenting the page directly showed `mapOpen: true` and the
+  expected 15 nodes. A stale browser cache was also masking edits. Both worth
+  remembering — earlier notes calling this a possible tool bug were wrong.
+
+---
+
 ## v23 — 2026-09-01
 
 **Neural Mind Map updated to v5**

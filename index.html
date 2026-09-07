@@ -10,128 +10,21 @@
 <style>
   html, body { height: 100%; overflow: hidden; }
 
-  /* ============ STAGE ============ */
+  /* ============ THE MAP ============ */
 
-  #stage {
+  /* One canvas, drawn by the particle engine below. Everything the old DOM
+     map needed — stage, world, wires, node boxes — is gone with it. */
+  #c {
+    display: block;
     position: fixed;
     inset: 0;
-    background:
-      linear-gradient(to right, rgba(255,255,255,.05) 1px, transparent 1px) 0 0 / 64px 64px,
-      linear-gradient(to bottom, rgba(255,255,255,.05) 1px, transparent 1px) 0 0 / 64px 64px,
-      var(--ink);
+    width: 100%;
+    height: 100%;
+    background: var(--ink);
+    touch-action: none;
     cursor: grab;
-    touch-action: none;
-    overscroll-behavior: none;
   }
-  #stage.is-panning { cursor: grabbing; }
-
-  #world {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    width: 0;
-    height: 0;
-    transform-origin: 0 0;
-    will-change: transform;
-  }
-
-  #wires {
-    position: absolute;
-    left: 0; top: 0;
-    width: 1px; height: 1px;
-    overflow: visible;
-    pointer-events: none;
-  }
-
-  .wire {
-    stroke: #3a3a3a;
-    stroke-width: 2;
-    fill: none;
-    transition: stroke .25s;
-  }
-  .wire.is-live { stroke: var(--paper); stroke-width: 3; }
-  .wire.is-hot  { stroke: var(--volt); stroke-width: 4; }
-
-  /* ============ NODES ============ */
-
-  .node {
-    position: absolute;
-    left: 0; top: 0;
-    margin: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: var(--stack);
-    font-weight: 900;
-    text-transform: uppercase;
-    text-decoration: none;
-    letter-spacing: -0.01em;
-    white-space: nowrap;
-    cursor: pointer;
-    user-select: none;
-    -webkit-user-select: none;
-    touch-action: none;
-    will-change: transform;
-    transition: background .16s, color .16s, border-color .16s, box-shadow .16s;
-  }
-
-  /* root */
-  .node--root {
-    width: 172px; height: 172px;
-    background: var(--ink);
-    border: 4px solid var(--volt);
-    box-shadow: 0 0 0 10px rgba(255,232,0,.08);
-  }
-  .node--root img { width: 92px; height: 92px; display: block; }
-
-  /* hub */
-  .node--hub {
-    padding: 18px 26px;
-    background: var(--volt);
-    border: 3px solid var(--volt);
-    color: var(--ink);
-    font-size: 19px;
-    letter-spacing: -0.02em;
-  }
-  .node--hub:hover { background: var(--paper); border-color: var(--paper); }
-  .node--hub .count {
-    font-family: var(--mono);
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: .1em;
-    margin-left: 12px;
-    opacity: .55;
-  }
-
-  /* leaf */
-  .node--leaf {
-    padding: 13px 19px;
-    background: var(--ink);
-    border: 3px solid var(--paper);
-    color: var(--paper);
-    font-size: 14px;
-  }
-  .node--leaf:hover { background: var(--volt); border-color: var(--volt); color: var(--ink); }
-
-  .node--leaf .ext {
-    font-family: var(--mono);
-    font-size: 11px;
-    margin-left: 10px;
-    color: var(--volt);
-    transition: color .16s;
-  }
-  .node--leaf:hover .ext { color: var(--ink); }
-
-  .node.is-dragging { z-index: 30; box-shadow: 0 0 0 6px rgba(255,232,0,.22); }
-
-  /* v2: open is the default state, so "expanded" is no longer worth a colour.
-     A collapsed hub is the exception — mark that one instead. */
-  .node--hub[aria-expanded="false"] {
-    background: var(--ink);
-    border-color: var(--volt);
-    color: var(--volt);
-  }
-  .node--hub[aria-expanded="false"]:hover { background: var(--volt); color: var(--ink); }
+  #c.dragging { cursor: grabbing; }
 
   /* ============ HUD ============ */
 
@@ -380,10 +273,6 @@
     .ctl { width: 38px; height: 38px; font-size: 14px; }
     .ctl--wide { width: auto; padding: 0 12px; font-size: 10px; }
 
-    .node--root { width: 112px; height: 112px; border-width: 3px; }
-    .node--root img { width: 62px; height: 62px; }
-    .node--hub { font-size: 14px; padding: 12px 15px; }
-    .node--leaf { font-size: 11px; padding: 9px 12px; }
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -396,12 +285,8 @@
 <a class="skip" href="#index-view" id="skipLink">Skip to text index</a>
 
 <!-- ============ THE MAP ============ -->
-<div id="stage" aria-label="Interactive mind map. Drag to pan, scroll to zoom.">
-  <div id="world">
-    <svg id="wires" aria-hidden="true"></svg>
-    <div id="nodes"></div>
-  </div>
-</div>
+<canvas id="c" role="img"
+        aria-label="Interactive mind map of this site. Tap the mark to open it, then tap a node to read about it. A full text version is linked at the top of the page."></canvas>
 
 <!-- ============ HUD ============ -->
 <header class="hud hud--brand">
@@ -416,9 +301,9 @@
 </nav>
 
 <div class="hud hud--hint" aria-hidden="true">
-  <b>Click</b> a node to open it<br>
-  <b>Drag</b> the field to move &middot; <b>Scroll</b> to zoom<br>
-  <span style="opacity:.5">v23</span>
+  <b>Tap the mark</b> to open the map &middot; twice to invert it<br>
+  <b>Click</b> a node to read it &middot; <b>Drag</b> to move &middot; <b>Scroll</b> to zoom<br>
+  <span style="opacity:.5">v24</span>
 </div>
 
 <div class="hud hud--ctl">
@@ -471,661 +356,2074 @@
 </section>
 
 <script>
-(function () {
-  "use strict";
 
-  /* =====================================================
-     1. THE MAP DATA
-     ===================================================== */
+"use strict";
+(function(){
 
-  var DATA = [
-    { id:'root', label:'XAVIER<br>DE BELLE', kind:'root', parent:null },
+/* ==========================================================================
+   1 · MAP DATA
+   A hierarchy of any depth. Nest `children` as deep as you like; clusters are
+   MEANT to be lopsided — nine nodes beside two is correct, and one arm running
+   four deep beside a bare one is what stops the map reading as a diagram.
+   Editing this invalidates the baked layout below, which regrows on next load.
+   ========================================================================== */
+const MAP = [
+  { label:"Work",
+    tag:"Three Lanes", title:"Work",
+    body:["Weddings with the family studio, brands with 333, and buildings on the side. Same instinct every time — find the thing nobody framed properly, then do the work."],
+    facts:[["de Belle Photo","Weddings, the family studio"],["333 Photo","Commercial photo &amp; video"],["Real Estate","Buying, renovating, holding"]],
+    acts:[["All work","work.html",1]],
+    children:[
+      { label:"Real Estate", href:"work.html#real-estate",
+        tag:"Building Something", title:"Real<br>Estate",
+        body:["Buying a duplex, renovating it, and learning the trade the expensive way — by doing it.",
+              "Cameras taught me to see a space before it exists. Property is the same instinct with a longer exposure: find the thing nobody framed properly, do the work, hold it.",
+              "This branch is young and it is meant to grow."],
+        facts:[["Stage","Duplex — acquire &amp; renovate"],["Market","Montreal"],["Direction","Long hold, hands on"],["Status","In progress"]],
+        acts:[["Read more","work.html#real-estate",0]] },
 
-    /* ---- branch: WORK ---- */
-    { id:'work', label:'WORK', kind:'hub', parent:'root', angle:-146, dist:340 },
-    { id:'debelle', label:'DE BELLE PHOTO', kind:'leaf', parent:'work', angle:-212, dist:255,
-      tag:'Wedding Photography',
-      title:'de Belle<br>Photography',
-      body:['The family studio, and the room I grew up in. One of Montreal’s originals — thirty years deep and past three thousand weddings.',
-            'I shoot and I film: documentary in approach, editorial in finish. The job is not to pose a day into something it wasn’t. It’s to be close enough that the real thing lands on camera.'],
-      facts:[['Role','Photographer &amp; Cinematographer'],['Based','Montreal, QC'],['Travel','Destination weddings'],['Since','30+ years as a studio']],
-      acts:[['Visit debellephotography.com','https://debellephotography.com/',1],['Tools I built for it','tools.html#debelle',0]] },
-    { id:'p333', label:'333 PHOTO', kind:'leaf', parent:'work', angle:-176, dist:270,
-      tag:'Commercial Studio',
-      title:'333<br>Photo',
-      body:['The commercial side. Photo, video, design, web and marketing out of one team, for brands that would rather not juggle five vendors.',
-            'No-bull approach: we work as an extension of your team, not as an agency holding you at arm’s length. Fashion, product, lifestyle, travel — whatever the brief actually needs.'],
-      facts:[['Discipline','Commercial photo &amp; video'],['Also','Branding, web, marketing'],['Based','Montreal, QC'],['Handle','@333mtl']],
-      acts:[['Visit 333photo.com','https://333photo.com/',1]] },
-    { id:'realestate', label:'REAL ESTATE', kind:'leaf', parent:'work', angle:-140, dist:250,
-      tag:'Building Something',
-      title:'Real<br>Estate',
-      body:['Buying a duplex, renovating it, and learning the trade the expensive way — by doing it.',
-            'Cameras taught me to see a space before it exists. Property is the same instinct with a longer exposure: find the thing nobody framed properly, do the work, hold it.',
-            'This branch is young and it is meant to grow.'],
-      facts:[['Stage','Duplex — acquire &amp; renovate'],['Market','Montreal'],['Direction','Long hold, hands on'],['Status','In progress']],
-      acts:[['Read more','work.html#real-estate',0]] },
+      { label:"333 Photo", href:"https://333photo.com/", external:true,
+        tag:"Commercial Studio", title:"333<br>Photo",
+        body:["The commercial side. Photo, video, design, web and marketing out of one team, for brands that would rather not juggle five vendors.",
+              "No-bull approach: we work as an extension of your team, not as an agency holding you at arm’s length. Fashion, product, lifestyle, travel — whatever the brief actually needs."],
+        facts:[["Discipline","Commercial photo &amp; video"],["Also","Branding, web, marketing"],["Based","Montreal, QC"],["Handle","@333mtl"]],
+        acts:[["Visit 333photo.com","https://333photo.com/",1]] },
 
-    /* ---- branch: TOOLS ---- */
-    { id:'tools', label:'TOOLS', kind:'hub', parent:'root', angle:-30, dist:345, count:'12' },
-    { id:'t-portfolio', label:'PORTFOLIO MAKERS', kind:'leaf', parent:'tools', angle:-86, dist:270,
-      unit:'Tool',
-      title:'Portfolio<br>Makers',
-      body:['Two for Instagram — settling a grid before it posts, and building a carousel that reads as one picture — then three ways to lay images out and get them off the screen.',
-            'All of them run in the browser, all of them export.'],
-      facts:[['Feed Planner','Grid and carousels, ready to post'],['Carousel Planner','Slides that read as one picture'],['Portfolio Grid','Clean, even grid — export PNG / JPEG / PDF'],['Portfolio Masonry','Every image keeps its own shape'],['FreeCanvas','Drag, resize, place anywhere']],
-      acts:[['See them all','tools.html#portfolio',1]] },
-    { id:'t-debelle', label:'DE BELLE TOOLS', kind:'leaf', parent:'tools', angle:-52, dist:275,
-      unit:'Tool',
-      title:'de Belle<br>Photography<br>Tools',
-      body:['The studio machinery — everything a couple touches between booking the day and taking delivery of it.'],
-      facts:[['Package Builder','Every way to remember your day'],['Video Corrections','Structured edit notes from clients'],['Wedding Schedule','Timeline builder for the day']],
-      acts:[['See them all','tools.html#debelle',1]] },
-    { id:'t-personal', label:'PERSONAL', kind:'leaf', parent:'tools', angle:-18, dist:255,
-      unit:'Tool',
-      title:'Personal',
-      body:['Tools I built for me rather than for a client or a shoot. Small, private, and load-bearing.'],
-      facts:[['Budget Tracker','Planned vs actual, month by month'],['Idea Bank','Capture, score, then actually ship']],
-      acts:[['See them all','tools.html#personal',1]] },
-    { id:'t-events', label:'EVENTS', kind:'leaf', parent:'tools', angle:14, dist:250,
-      unit:'Build',
-      title:'Events',
-      body:['One-off builds for real gatherings. Made for a specific day, a specific crowd, and left standing afterward.'],
-      facts:[['Wedding Activities','Xavier &amp; Maria — guest activity guide'],['Volley &amp; BBQ','RSVP, potluck slots, weekly history']],
-      acts:[['See them all','tools.html#events',1]] },
-    { id:'t-art', label:'ART', kind:'leaf', parent:'tools', angle:44, dist:260,
-      unit:'Piece',
-      title:'Art &amp;<br>Experiments',
-      body:['Generative pieces. No brief, no client, no deliverable — which is exactly the point.',
-            'Open one full screen and leave it running.'],
-      facts:[['Liquid Silver','Flowing metal, generative'],['Organic Loops','Looping organic motion'],['Neural Mind Map','A map grown, not placed']],
-      acts:[['See them all','tools.html#art',1]] },
+      { label:"De Belle Photo", href:"https://debellephotography.com/", external:true,
+        tag:"Wedding Photography", title:"de Belle<br>Photography",
+        body:["The family studio, and the room I grew up in. One of Montreal’s originals — thirty years deep and past three thousand weddings.",
+              "I shoot and I film: documentary in approach, editorial in finish. The job is not to pose a day into something it wasn’t. It’s to be close enough that the real thing lands on camera."],
+        facts:[["Role","Photographer &amp; Cinematographer"],["Based","Montreal, QC"],["Travel","Destination weddings"],["Since","30+ years as a studio"]],
+        acts:[["Visit debellephotography.com","https://debellephotography.com/",1],["Tools I built for it","tools.html#debelle",0]] } ]},
 
-    /* ---- branch: ABOUT ---- */
-    { id:'about', label:'ABOUT', kind:'hub', parent:'root', angle:84, dist:305,
-      tag:'Who',
-      title:'Professional<br>Fun Maker',
-      body:['Photographer and cinematographer out of Montreal. I romanticize life for a living, which is a lighter way of saying I spend a lot of attention on moments other people walk past.',
-            'When I’m not shooting I build things — mostly small browser tools that fix a problem I hit that week and then quietly become permanent. Every one of them is on this site.',
-            'Weddings with de Belle. Brands with 333. Buildings on the side. Same instinct, different exposure.'],
-      facts:[['Base','Montreal, QC'],['Shoots','Weddings, commercial, travel'],['Builds','Browser tools, one-page apps'],['Also','Buying and renovating property']],
-      acts:[['Instagram','https://www.instagram.com/xavierdebelle/',1],['Email me','mailto:xavier@debellephotography.com',0]] },
+  { label:"Tools",
+    tag:"The Workshop", title:"Tools",
+    body:["Everything I’ve built that runs in a browser, grouped by what it actually does for me. None of them need an install."],
+    facts:[["Portfolio Makers","Laying images out, and getting them off the screen"],["de Belle Tools","The studio machinery"],["Personal","Built for me, not a client"],["Events","One-off builds for real gatherings"],["Art","No brief, no client, no deliverable"]],
+    acts:[["All tools","tools.html",1]],
+    children:[
+      { label:"Portfolio Makers", href:"tools.html#portfolio",
+        tag:"Portfolio", title:"Portfolio<br>Makers",
+        body:["Two for Instagram — settling a grid before it posts, and building a carousel that reads as one picture — then three ways to lay images out and get them off the screen.",
+              "All of them run in the browser, all of them export."],
+        facts:[["Feed Planner","Grid and carousels, ready to post"],["Carousel Planner","Slides that read as one picture"],["Portfolio Grid","Clean, even grid — export PNG / JPEG / PDF"],["Portfolio Masonry","Every image keeps its own shape"],["FreeCanvas","Drag, resize, place anywhere"]],
+        acts:[["See them all","tools.html#portfolio",1]] },
 
-    /* ---- branch: CONNECT ---- */
-    { id:'connect', label:'CONNECT', kind:'hub', parent:'root', angle:168, dist:320 },
-    { id:'ig', label:'INSTAGRAM', kind:'leaf', parent:'connect', angle:140, dist:245,
-      href:'https://www.instagram.com/xavierdebelle/', external:true },
-    { id:'mail', label:'EMAIL', kind:'leaf', parent:'connect', angle:200, dist:245,
-      href:'mailto:xavier@debellephotography.com' }
-  ];
+      { label:"De Belle Tools", href:"tools.html#debelle",
+        tag:"Client Ops", title:"de Belle<br>Photography<br>Tools",
+        body:["The studio machinery — everything a couple touches between booking the day and taking delivery of it."],
+        facts:[["Package Builder","Every way to remember your day"],["Video Corrections","Structured edit notes from clients"],["Wedding Schedule","Timeline builder for the day"]],
+        acts:[["See them all","tools.html#debelle",1]] },
 
-  /* =====================================================
-     2. BUILD THE GRAPH
-     ===================================================== */
+      { label:"Personal", href:"tools.html#personal",
+        tag:"Just For Me", title:"Personal",
+        body:["Tools I built for me rather than for a client or a shoot. Small, private, and load-bearing."],
+        facts:[["Budget Tracker","Planned vs actual, month by month"],["Idea Bank","Capture, score, then actually ship"]],
+        acts:[["See them all","tools.html#personal",1]] },
 
-  /* No tools are private as of v5 — every one is published. The filter below
-     stays in place, unused: append `,1` to a fact row to pull that tool from
-     the public site, and every count re-derives itself. */
-  var LOCAL = location.protocol === 'file:' ||
-              /^(localhost|127\.0\.0\.1|\[?::1\]?)$/.test(location.hostname);
+      { label:"Events", href:"tools.html#events",
+        tag:"Gatherings", title:"Events",
+        body:["One-off builds for real gatherings. Made for a specific day, a specific crowd, and left standing afterward."],
+        facts:[["Wedding Activities","Xavier &amp; Maria — guest activity guide"],["Volley &amp; BBQ","RSVP, potluck slots, weekly history"]],
+        acts:[["See them all","tools.html#events",1]] },
 
-  if (!LOCAL) {
-    DATA.forEach(function (d) {
-      if (d.facts) d.facts = d.facts.filter(function (f) { return !f[2]; });
-    });
+      { label:"Art", href:"tools.html#art",
+        tag:"No Brief", title:"Art &amp;<br>Experiments",
+        body:["Generative pieces. No brief, no client, no deliverable — which is exactly the point.",
+              "Open one full screen and leave it running."],
+        facts:[["Liquid Silver","Flowing metal, generative"],["Organic Loops","Looping organic motion"],["Neural Mind Map","A map grown, not placed"]],
+        acts:[["See them all","tools.html#art",1]] } ]},
+
+  { label:"Connect",
+    tag:"Say Hello", title:"Connect",
+    body:["Two ways through. Email gets read; Instagram is where the work actually lives day to day."],
+    facts:[["Email","xavier@debellephotography.com"],["Instagram","@xavierdebelle"]],
+    acts:[["Email me","mailto:xavier@debellephotography.com",1],["Instagram","https://www.instagram.com/xavierdebelle/",0]],
+    children:[
+      { label:"Email", href:"mailto:xavier@debellephotography.com",
+        tag:"Direct", title:"Email",
+        body:["The reliable one. Tell me what the day is, roughly when, and where — that’s enough to start."],
+        facts:[["Address","xavier@debellephotography.com"]],
+        acts:[["Email me","mailto:xavier@debellephotography.com",1]] },
+
+      { label:"Instagram", href:"https://www.instagram.com/xavierdebelle/", external:true,
+        tag:"Day To Day", title:"Instagram",
+        body:["Where the work goes as it happens — weddings, commercial, travel, and whatever I’m building that week."],
+        facts:[["Handle","@xavierdebelle"]],
+        acts:[["Open Instagram","https://www.instagram.com/xavierdebelle/",1]] } ]},
+
+  { label:"About",
+    tag:"Who", title:"Professional<br>Fun Maker",
+    body:["Photographer and cinematographer out of Montreal. I romanticize life for a living, which is a lighter way of saying I spend a lot of attention on moments other people walk past.",
+          "When I’m not shooting I build things — mostly small browser tools that fix a problem I hit that week and then quietly become permanent. Every one of them is on this site.",
+          "Weddings with de Belle. Brands with 333. Buildings on the side. Same instinct, different exposure."],
+    facts:[["Base","Montreal, QC"],["Shoots","Weddings, commercial, travel"],["Builds","Browser tools, one-page apps"],["Also","Buying and renovating property"]],
+    acts:[["Instagram","https://www.instagram.com/xavierdebelle/",1],["Email me","mailto:xavier@debellephotography.com",0]] }
+];
+
+/* ==========================================================================
+   1b · GROWTH TUNING
+   The layout is not placed, it is grown: space colonization, the algorithm
+   used for tree branching and leaf venation. Attraction points are scattered
+   through a blob offset to one side of each anchor; branches step toward the
+   ones within reach, consuming them as they arrive. Labels are then hung on
+   the resulting tips and junctions, deepest hierarchy on the deepest branches.
+   ========================================================================== */
+const GROW = {
+  seed          : 20260907, // change this and the whole map grows differently
+
+  /* reference viewports the two arrangements are grown against -------------- */
+  refPortrait   : [420, 880],
+  refLandscape  : [1320, 780],
+  /* NOTE: portrait rx was 0.66 when the map had five anchors. With four, two
+     of them sit on the portrait's narrow axis and landed underneath the logo
+     mark — untappable on a phone. Widened to clear it. */
+  ring          : { portrait:{ rx:1.06, ry:0.82 }, landscape:{ rx:0.90, ry:0.70 } },
+
+  /* Two scales set everything, so both arrangements grow correctly:
+       S        the layout scale — legibility is measured against this
+       RING     the mean gap between neighbouring anchors — how much room a
+                cluster actually has, which on a wide landscape ring is much
+                more than S suggests.                                        */
+  minNodeSep    : 0.310,    // ×S — labels stay legible; nothing closer than this
+  sepAspect     : [1.55, 0.72],// the separation test is elliptical, because a
+                            // label is wide and short: neighbours need more
+                            // room side by side than stacked.
+  step          : 0.30,     // ×minNodeSep — branch step length
+  killDist      : 0.28,     // ×minNodeSep — attractor consumed at this range
+  influence     : 1.25,     // ×minNodeSep — how far an attractor reaches
+  warpAmp       : 0.30,     // ×minNodeSep — the meander
+  warpFreq      : 1.35,     // cycles across S
+  rigidity      : 0.52,     // how much a branch keeps its previous heading
+  wander        : 0.22,     // random jitter per step, radians
+  maxKids       : 3,        // branchings allowed from one branch node
+  iterCap       : 300,
+
+  /* growth regions — offset from the anchor, never centred on it ----------- */
+  attractors    : [32, 46, 24, 14],      // per cluster; deliberately unequal.
+                            // Indexed BY CLUSTER, so this list is re-ordered
+                            // when the clusters change: Tools is the biggest
+                            // fan and needs the most room, About the least.
+  regionOffset  : 0.58,     // region centre pushed this far along the growth dir
+  regionR       : [0.62, 0.58],// ×RING: along the growth dir, across it. Big
+                            // enough that neighbouring regions graze — the map
+                            // must not read as five tidy territories.
+  regionNoise   : 0.40,     // raggedness of the region edge
+  clumpBias     : 2.6,      // density skew toward the growth direction
+  neighbourPush : 0.25,     // how hard neighbours shove a growth direction away
+  lean          : 0.62,     // ±radians of tangential lean per cluster. Some
+                            // neighbours end up leaning into each other, which
+                            // is where the territories bleed and cross.
+
+  /* hanging the hierarchy on the branches ---------------------------------- */
+  gapMin        : 3,        // a child sits at least this many branch steps out
+  gapMax        : 8,
+  depthTaper    : 0.84,     // particle count / orbit multiplier per level down
+
+  /* bleed ------------------------------------------------------------------ */
+  crossLinks    : 4,        // links between nodes of neighbouring clusters
+  crossDist     : 2.40,     // ×S — ceiling on how far a cross link may reach
+                            // in EITHER arrangement; pairs are then ranked by
+                            // their mean distance across the two.
+  bundleHold    : 0.55,     // fraction of a shared trunk kept before splitting
+  pathSpacing   : 9         // link paths resampled to this arc spacing (px)
+};
+
+/* ==========================================================================
+   2 · COLOUR TOKENS  —  two themes, crossfaded
+   The resting cloud is monochrome in both. Gold stays the single accent: a
+   true photographic inversion would send it blue, so the light theme uses a
+   darker gold of the same hue instead, which still reads against white.
+   ========================================================================== */
+const THEME = {
+  dark : {
+    bg       : [0,0,0],
+    particle : [255,255,255],       // white; the greys come from alpha alone
+    accent   : [243,201,63],        // hsl(46,88%,60%) — warm gold, not orange
+    label    : [236,238,242],
+    labelDim : [176,180,190],
+    hint     : [150,154,164],
+    alphaK   : 1.00                 // particle alpha scale
+  },
+  light: {
+    bg       : [246,246,244],       // near-white; pure #fff is harsh at this density
+    particle : [8,8,10],
+    accent   : [176,124,6],         // the same gold, darkened to hold on white
+    label    : [16,17,20],
+    labelDim : [96,100,108],
+    hint     : [122,126,134],
+    alphaK   : 0.86                 // black on white bites harder — ease it off
   }
+};
 
-  // a category with nothing public left shouldn't appear on the map at all
-  if (!LOCAL) {
-    for (var i = DATA.length - 1; i >= 0; i--) {
-      if (DATA[i].unit && DATA[i].facts && DATA[i].facts.length === 0) DATA.splice(i, 1);
+/* ==========================================================================
+   3 · MOTION + FORM TUNING
+   Every magic number that shapes the piece lives here.
+   ========================================================================== */
+const T = {
+  /* cloud ---------------------------------------------------------------- */
+  countDesktop   : 6000,
+  countMobile    : 2500,
+  cloudRadius    : 560,      // layout units (≈ CSS px at zoom 1)
+  cloudSquash    : [1.16, 0.94, 0.92],   // x,y,z ellipsoid bias
+  filamentShare  : 0.64,     // fraction of particles laid along strands
+  fov            : 1600,     // perspective focal length
+
+  /* rotation + drift ------------------------------------------------------ */
+  yawSpeed       : 0.030,    // radians / second — slow, time-based only
+  tiltBase       : 0.20,
+  tiltSwing      : 0.11,
+  tiltRate       : 0.017,
+  driftAmp       : 13,       // how far a free particle wanders from home
+  driftRate      : [0.035, 0.085],
+
+  /* springs --------------------------------------------------------------- */
+  stiffFree      : [0.055, 0.105],
+  stiffNode      : [0.115, 0.215],
+  dampFree       : 0.86,
+  dampNode       : 0.80,
+
+  /* bloom / release staggering -------------------------------------------- */
+  bloomSpread    : 0.85,     // seconds between centre and rim starting
+  bloomJitter    : 0.30,
+  releaseJitter  : 0.40,
+
+  /* recruitment sizes ----------------------------------------------------- */
+  nAnchor        : 76,       // particles orbiting an anchor node
+  nChild         : 24,
+  linkSpacing    : 9.5,      // one link particle per this much path length
+  orbitAnchor    : 17,       // orbit radius, layout units
+  orbitChild     : 9.5,
+  orbitFlatten   : 0.45,     // squash orbit in z so nodes read as discs
+  linkJitter     : 2.4,
+  linkJitterZ    : 4.0,
+
+  /* breath ---------------------------------------------------------------- */
+  breathPeriod   : 7.0,      // seconds, one full sine cycle
+  breathBright   : 0.26,     // ± brightness swing
+  breathOrbit    : 0.11,     // ± node orbit radius swing
+
+  /* firing ---------------------------------------------------------------- */
+  fireRate       : 1.15,     // base spontaneous firings per second at peak
+  fireTravel     : 0.62,     // seconds for a wave to cross one link
+  fireWidth      : 0.30,     // wave width in path-fraction
+  fireNodeDecay  : 0.85,     // seconds a node stays lit after arrival
+  cascadeChance  : 0.55,     // at breath peak, chance arrival spills onward
+
+  /* negative space -------------------------------------------------------- */
+  carveGrid      : 64,
+  carveAnchor    : [104, 74, 50],  // rx, ry, strength  (covers node + label)
+  carveChild     : [70, 46, 30],
+  carveMax       : 46,
+  carveEase      : 0.040,
+
+  /* camera ---------------------------------------------------------------- */
+  zoomRange      : [0.42, 3.20],
+  panLimit       : 900,
+  tapSlop        : 7,        // px of movement still counted as a tap
+
+  /* theme ----------------------------------------------------------------- */
+  doubleTap      : 0.32,     // seconds — window for a double tap on the mark
+  themeEase      : 0.075,    // crossfade speed between dark and light
+
+  /* first run ------------------------------------------------------------- */
+  autoOpenAfter  : 1.6       // seconds — the map blooms on its own
+};
+
+/* layout: anchors sit on a pentagon; the ellipse changes with orientation
+   so the map genuinely recomposes rather than just shrinking.              */
+const LAYOUT = {
+  portrait : { rx:0.74, ry:0.90, childR:0.48, spread:1.72, sx:0.44, sy:0.44, cx:620, cy:520 },
+  landscape: { rx:0.95, ry:0.80, childR:0.48, spread:1.48, sx:0.44, sy:0.44, cx:640, cy:520 }
+};
+
+/* logo — the four triangles of the mark, from the source SVG (0 0 1571 1584),
+   normalised around the mark's own centre. Drawn as sharp vectors, always.  */
+const LOGO_SRC = [
+  [[184,81],[555,81],[749,693]],
+  [[1015,81],[1386,81],[821,693]],
+  [[184,1503],[563,1503],[762,876]],
+  [[1007,1503],[1386,1503],[808,876]]
+];
+const LOGO = LOGO_SRC.map(function(tri){
+  return tri.map(function(p){ return [(p[0]-785.5)/1584, (p[1]-792)/1584]; });
+});
+
+/* ==========================================================================
+   4 · SMALL UTILITIES  (deterministic noise, sine table, easing)
+   ========================================================================== */
+const TAU = Math.PI*2;
+
+function mulberry32(a){
+  return function(){
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/* sine table — drift and twinkle sample this instead of Math.sin, so the hot
+   loop never calls a transcendental. Phase is in TURNS, not radians.        */
+const SIN_N = 2048, SIN_MASK = SIN_N - 1;
+const SINTAB = new Float32Array(SIN_N);
+for(let i=0;i<SIN_N;i++) SINTAB[i] = Math.sin(i/SIN_N*TAU);
+function sinT(turns){ return SINTAB[(turns*SIN_N)&SIN_MASK]; }
+
+function hashN(i,j,k){
+  let n = (i*1619 + j*31337 + k*6971) | 0;
+  n = (n<<13) ^ n;
+  return 1 - ((Math.imul(n, Math.imul(n,Math.imul(n,15731)) + 789221) + 1376312589) & 0x7fffffff) / 1073741824;
+}
+function smooth(t){ return t*t*(3-2*t); }
+function vnoise(x,y,z){
+  const ix=Math.floor(x), iy=Math.floor(y), iz=Math.floor(z);
+  const fx=smooth(x-ix), fy=smooth(y-iy), fz=smooth(z-iz);
+  let a,b,c,d,e,f,g,h;
+  a=hashN(ix,iy,iz);       b=hashN(ix+1,iy,iz);
+  c=hashN(ix,iy+1,iz);     d=hashN(ix+1,iy+1,iz);
+  e=hashN(ix,iy,iz+1);     f=hashN(ix+1,iy,iz+1);
+  g=hashN(ix,iy+1,iz+1);   h=hashN(ix+1,iy+1,iz+1);
+  const x1=a+(b-a)*fx, x2=c+(d-c)*fx, x3=e+(f-e)*fx, x4=g+(h-g)*fx;
+  const y1=x1+(x2-x1)*fy, y2=x3+(x4-x3)*fy;
+  return y1+(y2-y1)*fz;                        // −1 … 1
+}
+function fbm(x,y,z){
+  let v=0, amp=0.55, fr=1;
+  for(let o=0;o<3;o++){ v += vnoise(x*fr,y*fr,z*fr)*amp; fr*=2.07; amp*=0.5; }
+  return Math.max(0, Math.min(1, v*0.5+0.5));  // 0 … 1
+}
+function clamp(v,a,b){ return v<a?a:(v>b?b:v); }
+
+/* ==========================================================================
+   5 · CANVAS + VIEWPORT
+   One canvas. One context. Everything is drawn in device pixels.
+   ========================================================================== */
+const cv  = document.getElementById("c");
+const ctx = cv.getContext("2d", { alpha:false, desynchronized:true });
+
+let vw=0, vh=0, cw=0, ch=0, dpr=1, uiScale=1, isPortrait=true, isSmall=false;
+
+const rmq = window.matchMedia ? window.matchMedia("(prefers-reduced-motion: reduce)") : null;
+let reduced = rmq ? rmq.matches : false;
+if(rmq && rmq.addEventListener) rmq.addEventListener("change", function(e){ reduced = e.matches; });
+
+/* ==========================================================================
+   6 · PARTICLE STORE  — flat typed arrays, allocated once
+   role 0 = free      : position lives in WORLD space, rotated at draw time
+   role 1 = recruited : position lives in LAYOUT space, drawn unrotated
+   Swapping role converts the position once, so a particle never jumps.
+   ========================================================================== */
+const ROLE_FREE = 0, ROLE_TAKEN = 1;
+let N = 0;
+let hx,hy,hz,       // home (world)
+    px,py,pz,       // current
+    vx,vy,vz,       // velocity
+    ox,oy,oz,       // per-particle offset: orbit vector, or link jitter
+    role, own, upos,// own >=0 → node index ;  own <0 → link index (-1-i)
+    stiff, damp,    // spring constants
+    bri, szb,       // base brightness / base size
+    dphA,dphB,dphC, // drift phases
+    drt,            // drift rate
+    twp,twr,        // twinkle phase / rate
+    t0,             // absolute time this particle starts migrating
+    sxp,syp,ssz,    // computed screen position + size (device px)
+    bkt;            // render bucket
+
+function allocParticles(n){
+  N = n;
+  const F = function(){ return new Float32Array(n); };
+  hx=F(); hy=F(); hz=F();
+  px=F(); py=F(); pz=F();
+  vx=F(); vy=F(); vz=F();
+  ox=F(); oy=F(); oz=F();
+  role = new Uint8Array(n);
+  own  = new Int32Array(n);
+  upos = F(); stiff = F(); damp = F();
+  bri = F(); szb = F();
+  dphA=F(); dphB=F(); dphC=F(); drt=F();
+  twp=F(); twr=F(); t0=F();
+  sxp=F(); syp=F(); ssz=F();
+  bkt = new Int8Array(n);
+}
+
+/* ==========================================================================
+   7 · CLOUD GENERATION
+   Layered: strands laid along smooth 3D curves (the visible filaments and
+   wisps), then dust rejection-sampled against a noise field so the space
+   between strands has real voids instead of even fuzz.
+   ========================================================================== */
+const _sp = [0,0,0];
+function splineAt(cps, t){
+  const n = cps.length, f = t*(n-1);
+  let i = Math.min(n-2, Math.floor(f));
+  if(i<0) i=0;
+  const u = f-i, u2=u*u, u3=u2*u;
+  const p0=cps[Math.max(0,i-1)], p1=cps[i], p2=cps[i+1], p3=cps[Math.min(n-1,i+2)];
+  for(let d=0;d<3;d++){
+    _sp[d] = 0.5*( 2*p1[d]
+                 + (-p0[d]+p2[d])*u
+                 + (2*p0[d]-5*p1[d]+4*p2[d]-p3[d])*u2
+                 + (-p0[d]+3*p1[d]-3*p2[d]+p3[d])*u3 );
+  }
+  return _sp;
+}
+
+function buildCloud(){
+  const rnd = mulberry32(20260907);
+  const g = function(){ return (rnd()+rnd()+rnd()-1.5)*1.15; };   // ~gaussian
+  const R  = T.cloudRadius;
+  const SQ = T.cloudSquash;
+  let i = 0;
+
+  /* ---- strands -------------------------------------------------------- */
+  const nFil   = Math.max(12, Math.round(N/210));
+  const filEnd = Math.floor(N*T.filamentShare);
+  const perFil = Math.floor(filEnd/nFil);
+
+  for(let f=0; f<nFil && i<filEnd; f++){
+    const cps = [];
+    const a0 = rnd()*TAU, e0 = (rnd()-0.5)*1.5;
+    let cxp = Math.cos(a0)*Math.cos(e0), cyp = Math.sin(e0), czp = Math.sin(a0)*Math.cos(e0);
+    let rr  = R*(0.14 + rnd()*0.86);
+    let X = cxp*rr, Y = cyp*rr*0.90, Z = czp*rr;
+    cps.push([X,Y,Z]);
+    let dx=(rnd()-0.5), dy=(rnd()-0.5)*0.6, dz=(rnd()-0.5);
+    for(let k=0;k<5;k++){
+      dx += (rnd()-0.5)*0.95; dy += (rnd()-0.5)*0.80; dz += (rnd()-0.5)*0.95;
+      const L = Math.sqrt(dx*dx+dy*dy+dz*dz) || 1;
+      const st = R*(0.30 + rnd()*0.34);
+      X += dx/L*st; Y += dy/L*st*0.86; Z += dz/L*st;
+      const rl = Math.sqrt(X*X+Y*Y+Z*Z);
+      if(rl > R*1.04){ const s = R*1.04/rl; X*=s; Y*=s; Z*=s; }
+      cps.push([X,Y,Z]);
+    }
+    const thick = R*(0.016 + rnd()*0.040);
+    const wob   = 1.9 + rnd()*2.4, wph = rnd();
+    for(let k=0; k<perFil && i<filEnd; k++, i++){
+      const t = rnd();
+      const p = splineAt(cps, t);
+      const w = thick*(0.32 + 1.55*Math.abs(sinT(t*wob + wph)));
+      const g1=g(), g2=g(), g3=g();
+      hx[i] = (p[0] + g1*w)*SQ[0];
+      hy[i] = (p[1] + g2*w)*SQ[1];
+      hz[i] = (p[2] + g3*w)*SQ[2];
+      const core = Math.exp(-(g1*g1+g2*g2+g3*g3)*0.30);   // tight to the strand = brighter
+      bri[i] = 0.30 + 0.70*core*(0.58 + 0.42*rnd());
+      szb[i] = 0.82 + 0.60*core;
     }
   }
 
-  // category labels ("3 Tools", "1 Build") are derived, never hard-coded
-  var toolCount = 0;
-  DATA.forEach(function (d) {
-    if (!d.unit || !d.facts) return;
-    d.tag = d.facts.length + ' ' + d.unit + (d.facts.length === 1 ? '' : 's');
-    toolCount += d.facts.length;
-  });
-  DATA.forEach(function (d) { if (d.id === 'tools') d.count = String(toolCount); });
-
-  // keep the text-index fallback in step with whatever survived the filter,
-  // so it never offers a category that shipped empty
-  if (!LOCAL) {
-    var liveCats = {};
-    DATA.forEach(function (d) {
-      if (d.unit && d.acts) liveCats[d.acts[0][1]] = true;
-    });
-    document.querySelectorAll('.index__col a[href^="tools.html#"]').forEach(function (a) {
-      if (!liveCats[a.getAttribute('href')]) a.remove();
-    });
+  /* ---- dust ----------------------------------------------------------- */
+  for(; i<N; i++){
+    let X=0,Y=0,Z=0, ok=false;
+    for(let tries=0; tries<16 && !ok; tries++){
+      let u,v,w,rl;
+      do {
+        u=rnd()*2-1; v=rnd()*2-1; w=rnd()*2-1;
+        rl = Math.sqrt(u*u+v*v+w*w);
+      } while(rl>1 || rl<0.0001);
+      const rad = Math.pow(rnd(), 0.44);
+      X = u/rl*rad*R*SQ[0]; Y = v/rl*rad*R*SQ[1]; Z = w/rl*rad*R*SQ[2];
+      const d      = fbm(X*0.0056, Y*0.0056, Z*0.0056);
+      const radial = 1 - Math.pow(rad, 3.2)*0.55;
+      if(rnd() < d*d*radial*2.6) ok = true;   // squared → voids without an empty frame
+    }
+    hx[i]=X; hy[i]=Y; hz[i]=Z;
+    bri[i] = 0.12 + 0.44*rnd();
+    szb[i] = 0.70 + 0.34*rnd();
   }
 
-  var byId = {};
-  var nodes = DATA.map(function (d) {
-    var n = Object.create(null);
-    for (var k in d) n[k] = d[k];
-    n.x = 0; n.y = 0; n.vx = 0; n.vy = 0;
-    n.pinned = false;
-    n.open = true;        // v2: the whole map is revealed on arrival
-    n.visible = true;
-    byId[n.id] = n;
-    return n;
-  });
-
-  // How far branches reach. Narrow screens pull the whole composition in so
-  // the map still fits the viewport instead of sprawling off both edges.
-  var SPREAD = 1;
-  function reach(n) { return (n.dist || 250) * SPREAD; }
-
-  function setSpread() {
-    var w = window.innerWidth;
-    SPREAD = w < 560 ? 0.62 : (w < 820 ? 0.76 : (w < 1200 ? 0.9 : 1));
+  /* ---- shared per-particle character ---------------------------------- */
+  for(let k=0;k<N;k++){
+    px[k]=hx[k]; py[k]=hy[k]; pz[k]=hz[k];
+    role[k]=ROLE_FREE; own[k]=-1; t0[k]=0;
+    stiff[k] = T.stiffFree[0] + rnd()*(T.stiffFree[1]-T.stiffFree[0]);
+    damp[k]  = T.dampFree;
+    dphA[k]=rnd(); dphB[k]=rnd(); dphC[k]=rnd();
+    drt[k]  = T.driftRate[0] + rnd()*(T.driftRate[1]-T.driftRate[0]);
+    twp[k]  = rnd();
+    twr[k]  = 0.06 + rnd()*0.20;
   }
-  setSpread();
+}
 
-  // seed positions from the authored angle/dist so the sim settles predictably
-  nodes.forEach(function (n) {
-    if (!n.parent) return;
-    var p = byId[n.parent];
-    var a = (n.angle || 0) * Math.PI / 180;
-    n.x = p.x + Math.cos(a) * reach(n);
-    n.y = p.y + Math.sin(a) * reach(n);
-  });
+/* the cloud is generated once in fixed units, then stretched per axis to the
+   viewport so it fills the frame instead of spilling most of itself offscreen */
+let cKX = 1, cKY = 1, cKZ = 1;
+function applyCloudScale(kx, ky, kz){
+  const rx = kx/cKX, ry = ky/cKY, rz = kz/cKZ;
+  if(Math.abs(rx-1) < 0.003 && Math.abs(ry-1) < 0.003 && Math.abs(rz-1) < 0.003) return;
+  for(let i=0;i<N;i++){
+    hx[i]*=rx; hy[i]*=ry; hz[i]*=rz;
+    if(role[i]===ROLE_FREE){ px[i]*=rx; py[i]*=ry; pz[i]*=rz; }
+  }
+  cKX=kx; cKY=ky; cKZ=kz;
+}
 
-  var edges = nodes.filter(function (n) { return n.parent; })
-                   .map(function (n) { return { a: byId[n.parent], b: n }; });
 
-  function childrenOf(id) {
-    return nodes.filter(function (n) { return n.parent === id; });
+/* ==========================================================================
+   1c · BAKED LAYOUT
+   The output of the grower, in units of the layout scale S. Regenerate with
+   the grower (see regrow) after changing MAP or the growth constants; it is
+   rebuilt automatically if this no longer matches the hierarchy.
+   ========================================================================== */
+const GROWN_BAKED = {
+cross:[6,12],
+portrait:{
+p:[
+-0.043,-1.767,0.056,-2.013,0.31,-2.282,-0.206,-2.433,1.077,-0.017,1.362,0.17,1.863,0.136,1.769,
+0.389,1.642,-0.11,2.31,0.232,-0.047,1.723,-0.201,1.942,-0.501,2.223,-1.029,0.023],
+q:[
+20,0,0,-0.02,-0.146,-0.027,-0.242,-0.037,-0.332,-0.045,-0.414,-0.046,-0.494,-0.054,-0.569,
+-0.073,-0.641,-0.077,-0.717,-0.065,-0.801,-0.054,-0.895,-0.045,-0.996,-0.052,-1.097,-0.068,
+-1.203,-0.083,-1.314,-0.095,-1.418,-0.098,-1.52,-0.096,-1.62,-0.087,-1.717,-0.043,-1.767,4,
+-0.043,-1.767,-0.027,-1.861,0.012,-1.945,0.056,-2.013,8,-0.043,-1.767,-0.027,-1.861,0.012,
+-1.945,0.056,-2.013,0.128,-2.069,0.201,-2.124,0.258,-2.195,0.31,-2.282,7,-0.043,-1.767,-0.047,
+-1.883,-0.06,-1.998,-0.074,-2.114,-0.13,-2.216,-0.152,-2.33,-0.206,-2.433,13,0,0,0.072,-0.045,
+0.158,-0.032,0.238,-0.019,0.321,-0.01,0.42,-0.007,0.516,-0.012,0.6,-0.017,0.687,-0.022,0.787,
+-0.025,0.89,-0.024,0.994,-0.03,1.077,-0.017,4,1.077,-0.017,1.169,0.053,1.28,0.087,1.362,0.17,8,
+1.077,-0.017,1.193,-0.018,1.308,0.001,1.424,0.007,1.537,0.035,1.653,0.036,1.759,0.084,1.863,
+0.136,8,1.077,-0.017,1.179,0.037,1.289,0.074,1.39,0.132,1.483,0.202,1.567,0.282,1.679,0.316,
+1.769,0.389,6,1.077,-0.017,1.192,-0.029,1.309,-0.024,1.423,-0.044,1.539,-0.057,1.642,-0.11,12,
+1.077,-0.017,1.193,-0.016,1.3,0.03,1.41,0.065,1.527,0.07,1.642,0.079,1.759,0.077,1.875,0.081,
+1.987,0.112,2.097,0.149,2.211,0.172,2.31,0.232,20,0,0,-0.023,0.05,-0.033,0.146,-0.044,0.246,
+-0.053,0.356,-0.065,0.456,-0.073,0.541,-0.073,0.631,-0.075,0.728,-0.075,0.837,-0.075,0.949,
+-0.074,1.049,-0.074,1.142,-0.073,1.232,-0.075,1.319,-0.077,1.413,-0.079,1.502,-0.081,1.579,
+-0.086,1.657,-0.047,1.723,4,-0.047,1.723,-0.083,1.801,-0.136,1.878,-0.201,1.942,9,-0.047,1.723,
+-0.083,1.801,-0.136,1.878,-0.201,1.942,-0.292,1.961,-0.38,1.99,-0.429,2.063,-0.476,2.14,-0.501,
+2.223,12,0,0,-0.111,-0.043,-0.198,-0.031,-0.278,-0.018,-0.361,-0.009,-0.442,0.004,-0.536,0.019,
+-0.64,0.032,-0.734,0.044,-0.824,0.051,-0.908,0.053,-1.029,0.023,26,1.362,0.17,1.334,0.263,1.271,
+0.33,1.197,0.398,1.114,0.476,1.04,0.56,0.973,0.637,0.905,0.71,0.832,0.776,0.76,0.834,0.699,
+0.887,0.647,0.951,0.599,1.031,0.549,1.112,0.497,1.189,0.434,1.274,0.372,1.35,0.303,1.423,0.218,
+1.495,0.137,1.554,0.068,1.61,0.005,1.669,-0.06,1.734,-0.116,1.802,-0.164,1.886,-0.201,1.942]},
+landscape:{
+p:[
+-0.062,-0.682,0.019,-1.022,-0.408,-1.148,-0.343,-0.872,1.546,-0.005,2.071,-0.114,1.692,0.299,
+1.54,0.524,2.173,0.274,2.442,0.068,-0.055,0.698,0.011,1.026,-0.381,1.159,-1.577,-0.021],
+q:[
+8,0,0,-0.027,-0.15,-0.04,-0.252,-0.057,-0.347,-0.07,-0.43,-0.079,-0.511,-0.097,-0.586,-0.062,
+-0.682,5,-0.062,-0.682,-0.086,-0.755,-0.083,-0.844,-0.046,-0.938,0.019,-1.022,6,-0.062,-0.682,
+-0.125,-0.779,-0.198,-0.869,-0.261,-0.967,-0.335,-1.057,-0.408,-1.148,4,-0.062,-0.682,-0.139,
+-0.768,-0.233,-0.837,-0.343,-0.872,18,0,0,0.073,-0.043,0.161,-0.029,0.242,-0.015,0.326,-0.004,
+0.426,0,0.524,-0.004,0.607,-0.008,0.697,-0.012,0.8,-0.013,0.904,-0.011,1.009,-0.016,1.111,
+-0.022,1.208,-0.022,1.297,-0.022,1.385,-0.016,1.477,-0.009,1.546,-0.005,7,1.546,-0.005,1.631,
+0.028,1.719,0.052,1.817,0.047,1.904,-0.001,1.991,-0.055,2.071,-0.114,5,1.546,-0.005,1.631,0.028,
+1.685,0.107,1.719,0.199,1.692,0.299,8,1.546,-0.005,1.631,0.028,1.685,0.107,1.719,0.199,1.692,
+0.299,1.645,0.392,1.619,0.485,1.54,0.524,7,1.546,-0.005,1.658,0.024,1.772,0.048,1.863,0.12,1.96,
+0.185,2.072,0.216,2.173,0.274,9,1.546,-0.005,1.662,0.005,1.769,-0.038,1.886,-0.038,1.999,-0.011,
+2.105,0.036,2.215,0.074,2.329,0.097,2.442,0.068,9,0,0,-0.027,0.046,-0.041,0.138,-0.056,0.233,
+-0.069,0.339,-0.085,0.438,-0.099,0.524,-0.104,0.611,-0.055,0.698,4,-0.055,0.698,-0.025,0.801,
+-0.001,0.919,0.011,1.026,9,-0.055,0.698,-0.025,0.801,-0.001,0.919,0.011,1.026,-0.031,1.106,
+-0.114,1.152,-0.205,1.172,-0.287,1.197,-0.381,1.159,18,0,0,-0.11,-0.046,-0.197,-0.039,-0.277,
+-0.029,-0.358,-0.023,-0.439,-0.013,-0.531,-0.002,-0.634,0.007,-0.729,0.016,-0.817,0.021,-0.901,
+0.024,-0.986,0.018,-1.091,0,-1.207,-0.017,-1.332,-0.034,-1.45,-0.04,-1.542,-0.041,-1.577,-0.021,
+26,2.071,-0.114,2.025,-0.097,1.94,-0.041,1.848,0.008,1.763,0.058,1.682,0.114,1.595,0.17,1.522,
+0.222,1.452,0.273,1.371,0.323,1.283,0.362,1.184,0.403,1.08,0.453,0.986,0.511,0.898,0.568,0.806,
+0.628,0.71,0.68,0.622,0.713,0.55,0.743,0.479,0.772,0.402,0.81,0.322,0.864,0.229,0.917,0.135,
+0.975,0.051,1.034,0.011,1.026]}
+};
+
+/* ==========================================================================
+   7b · THE GROWER  —  space colonization
+   Runs only when the baked layout below does not match the hierarchy, i.e.
+   when a node has been added or the growth constants changed. Never on a
+   normal load: the map must not rearrange itself every time it opens.
+   ========================================================================== */
+
+/* ---- the hierarchy, flattened depth-first. Every baked array is indexed by
+        this order, so the data needs no ids. ---------------------------- */
+function flattenMap(){
+  const out = [{ label:"", cluster:-1, depth:0, parent:-1 }];
+  for(let c=0;c<MAP.length;c++){
+    (function walk(node, parent, depth){
+      const i = out.length;
+      out.push({ label:node.label, cluster:c, depth:depth, parent:parent,
+                 url:node.url || "", external:!!node.external });
+      const kids = node.children || [];
+      for(let k=0;k<kids.length;k++) walk(kids[k], i, depth+1);
+    })(MAP[c], 0, 1);
+  }
+  return out;
+}
+const FLAT = flattenMap();
+const KIDS = FLAT.map(function(){ return []; });
+for(let i=1;i<FLAT.length;i++) KIDS[FLAT[i].parent].push(i);
+const HEIGHT = new Int32Array(FLAT.length);
+for(let i=FLAT.length-1;i>=0;i--){
+  let h = 0;
+  for(let k=0;k<KIDS[i].length;k++) h = Math.max(h, HEIGHT[KIDS[i][k]]+1);
+  HEIGHT[i] = h;
+}
+const CLUSTER_ROOT = [];
+for(let i=1;i<FLAT.length;i++) if(FLAT[i].depth===1) CLUSTER_ROOT[FLAT[i].cluster] = i;
+
+/* ---- the meander: one smooth vector field over the whole plane. Applying it
+        to the SKELETON rather than to each path is what keeps bundled trunks
+        bundled — two paths through the same point get the same displacement. */
+const GL = {};                    // GROW lengths resolved for the current run
+function resolveLengths(S, ring){
+  const sep = GROW.minNodeSep*S;
+  GL.minNodeSep = sep;
+  GL.step       = GROW.step*sep;
+  GL.killDist   = GROW.killDist*sep;
+  GL.influence  = GROW.influence*sep;
+  GL.warpAmp    = GROW.warpAmp*sep;
+  GL.warpFreq   = GROW.warpFreq/S;
+  GL.regionRA   = GROW.regionR[0]*ring;
+  GL.regionRB   = GROW.regionR[1]*ring;
+  GL.ring       = ring;
+}
+function warpPt(x, y, o){
+  const f = GL.warpFreq, a = GL.warpAmp;
+  o[0] = x + (fbm(x*f,        y*f,        0.17)*2-1)*a;
+  o[1] = y + (fbm(x*f + 53.1, y*f - 19.7, 4.83)*2-1)*a;
+}
+
+/* ---- one cluster's branch skeleton --------------------------------------- */
+function growSkeleton(rnd, A, D, nAtt){
+  /* attraction points: a ragged blob pushed off to one side of the anchor,
+     with density skewed toward the growth direction so the fan clumps */
+  const RA = GL.regionRA, RB = GL.regionRB;
+  const cx = A[0] + D[0]*RA*GROW.regionOffset;
+  const cy = A[1] + D[1]*RA*GROW.regionOffset;
+  const qx = -D[1], qy = D[0];
+  const ax=[], ay=[], dead=[];
+  let guard = 0;
+  while(ax.length < nAtt && guard++ < nAtt*140){
+    const th = rnd()*TAU, rr0 = Math.sqrt(rnd());
+    let u = Math.cos(th)*rr0, v = Math.sin(th)*rr0;
+    const rag = 1 + (fbm(u*3.1+A[0]*0.01, v*3.1+A[1]*0.01, 2.7)*2-1)*GROW.regionNoise;
+    u *= rag; v *= rag;
+    const X = cx + D[0]*u*RA + qx*v*RB;
+    const Y = cy + D[1]*u*RA + qy*v*RB;
+    const ex = X-A[0], ey = Y-A[1], el = Math.hypot(ex,ey) || 1;
+    const align = (ex/el*D[0] + ey/el*D[1])*0.5 + 0.5;
+    if(rnd() > Math.pow(align, GROW.clumpBias)) continue;
+    ax.push(X); ay.push(Y); dead.push(0);
   }
 
-  /* =====================================================
-     3. RENDER SHELLS
-     ===================================================== */
+  /* branch tree, seeded at the anchor heading along D */
+  const t = { x:[A[0]], y:[A[1]], par:[-1], dx:[D[0]], dy:[D[1]], nk:[0] };
+  const inf2 = GL.influence*GL.influence, kill2 = GL.killDist*GL.killDist;
 
-  var stage  = document.getElementById('stage');
-  var world  = document.getElementById('world');
-  var wires  = document.getElementById('wires');
-  var layer  = document.getElementById('nodes');
+  for(let it=0; it<GROW.iterCap; it++){
+    const n = t.x.length;
+    const sx = new Float64Array(n), sy = new Float64Array(n), sn = new Int32Array(n);
+    let live = 0;
+    for(let a=0;a<ax.length;a++){
+      if(dead[a]) continue;
+      live++;
+      let best = -1, bd = inf2;
+      for(let b=0;b<n;b++){                       // every branch node competes
+        const ex = ax[a]-t.x[b], ey = ay[a]-t.y[b], d = ex*ex+ey*ey;
+        if(d < bd){ bd = d; best = b; }
+      }
+      if(best >= 0){
+        const ex = ax[a]-t.x[best], ey = ay[a]-t.y[best], el = Math.sqrt(bd) || 1;
+        sx[best] += ex/el; sy[best] += ey/el; sn[best]++;
+      }
+    }
+    if(!live) break;
 
-  var SVGNS = 'http://www.w3.org/2000/svg';
+    let grew = false;
+    for(let b=0;b<n;b++){
+      if(!sn[b] || t.nk[b] >= GROW.maxKids) continue;
+      let ux = sx[b]/sn[b], uy = sy[b]/sn[b];
+      ux = ux*(1-GROW.rigidity) + t.dx[b]*GROW.rigidity;
+      uy = uy*(1-GROW.rigidity) + t.dy[b]*GROW.rigidity;
+      const ang = Math.atan2(uy,ux) + (rnd()-0.5)*2*GROW.wander;
+      const cxx = Math.cos(ang), cyy = Math.sin(ang);
+      t.x.push(t.x[b] + cxx*GL.step); t.y.push(t.y[b] + cyy*GL.step);
+      t.par.push(b); t.dx.push(cxx); t.dy.push(cyy); t.nk.push(0);
+      t.nk[b]++;
+      grew = true;
+    }
+    if(!grew) break;
 
-  edges.forEach(function (e) {
-    var line = document.createElementNS(SVGNS, 'line');
-    line.setAttribute('class', 'wire');
-    wires.appendChild(line);
-    e.el = line;
-  });
+    for(let a=0;a<ax.length;a++){
+      if(dead[a]) continue;
+      for(let b=n;b<t.x.length;b++){
+        const ex = ax[a]-t.x[b], ey = ay[a]-t.y[b];
+        if(ex*ex+ey*ey < kill2){ dead[a] = 1; break; }
+      }
+    }
+  }
 
-  nodes.forEach(function (n) {
-    var el;
-    if (n.href) {
-      el = document.createElement('a');
-      el.href = n.href;
-      if (n.external) { el.target = '_blank'; el.rel = 'noopener'; }
+  /* build child lists, then meander the whole skeleton at once */
+  t.kids = t.x.map(function(){ return []; });
+  for(let b=1;b<t.par.length;b++) t.kids[t.par[b]].push(b);
+  const o = [0,0];
+  for(let b=0;b<t.x.length;b++){ warpPt(t.x[b], t.y[b], o); t.x[b]=o[0]; t.y[b]=o[1]; }
+  return t;
+}
+
+/* ---- helpers over the branch tree ---------------------------------------- */
+function branchSteps(t, from, to){          // steps walking up from `to` to `from`
+  let n = 0, c = to;
+  while(c !== from && c >= 0){ c = t.par[c]; n++; if(n > 400) return 1e9; }
+  return c === from ? n : 1e9;
+}
+function branchDepthBelow(t, b){
+  let best = 0;
+  const stack = [[b,0]];
+  while(stack.length){
+    const it = stack.pop();
+    if(it[1] > best) best = it[1];
+    const ks = t.kids[it[0]];
+    for(let k=0;k<ks.length;k++) stack.push([ks[k], it[1]+1]);
+  }
+  return best;
+}
+function farEnough(x, y, placed, sep){
+  const kx = GROW.sepAspect[0], ky = GROW.sepAspect[1];
+  const s2 = sep*sep;
+  for(let k=0;k<placed.length;k++){
+    const dx = (x-placed[k][0])/kx, dy = (y-placed[k][1])/ky;
+    if(dx*dx+dy*dy < s2) return false;
+  }
+  return true;
+}
+function pushBranch(t, from, x, y, dx, dy){
+  t.x.push(x); t.y.push(y); t.par.push(from); t.dx.push(dx); t.dy.push(dy);
+  t.nk.push(0); t.kids.push([]); t.kids[from].push(t.x.length-1); t.nk[from]++;
+  return t.x.length-1;
+}
+
+/* ---- choose where a child hangs. Slots inside a corridor a sibling already
+        uses score higher, so siblings ride a shared trunk and peel off one at
+        a time — branching, not radiating. -------------------------------- */
+function pickSlot(t, from, need, used, placed, corridors, rnd){
+  let best = -1, bestScore = -1e9;
+  const seen = [[from,0]];
+  const visited = {};
+  while(seen.length){
+    const it = seen.shift();
+    const b = it[0], d = it[1];
+    if(d > GROW.gapMax) continue;
+    if(d >= GROW.gapMin && !used[b]){
+      const below = branchDepthBelow(t, b);
+      if(below >= need*GROW.gapMin*0.6 && farEnough(t.x[b], t.y[b], placed, GL.minNodeSep)){
+        let share = 0;
+        for(let c=0;c<corridors.length;c++) if(corridors[c][b]) share++;
+        const score = below*1.0 + share*GROW.bundleHold*6 + d*0.35 + rnd()*1.6;
+        if(score > bestScore){ bestScore = score; best = b; }
+      }
+    }
+    const ks = t.kids[b];
+    for(let k=0;k<ks.length;k++) if(!visited[ks[k]]){ visited[ks[k]]=1; seen.push([ks[k], d+1]); }
+  }
+  if(best >= 0) return best;
+
+  /* nothing usable — grow a fresh sprig off this branch until one fits */
+  let cur = from;
+  for(let tries=0; tries<26; tries++){
+    const ang = Math.atan2(t.dy[cur], t.dx[cur]) + (rnd()-0.5)*1.0;
+    const nx = t.x[cur] + Math.cos(ang)*GL.step*1.25;
+    const ny = t.y[cur] + Math.sin(ang)*GL.step*1.25;
+    cur = pushBranch(t, cur, nx, ny, Math.cos(ang), Math.sin(ang));
+    if(branchSteps(t, from, cur) >= GROW.gapMin &&
+       farEnough(nx, ny, placed, GL.minNodeSep)) return cur;
+  }
+  return cur;
+}
+
+function corridorOf(t, from, to){           // set of branch nodes on the path
+  const set = {};
+  let c = to, n = 0;
+  while(c !== from && c >= 0 && n++ < 400){ set[c] = 1; c = t.par[c]; }
+  return set;
+}
+
+/* ---- hang the whole hierarchy on one cluster's skeleton ------------------- */
+function hangCluster(t, rootFlat, pos, bidx, placed, rnd){
+  const used = {};
+  used[0] = 1;
+  pos[rootFlat] = [t.x[0], t.y[0]]; bidx[rootFlat] = 0;
+  placed.push(pos[rootFlat]);
+
+  (function walk(flatIdx, branchIdx){
+    const kids = KIDS[flatIdx].slice();
+    kids.sort(function(a,b){ return HEIGHT[b]-HEIGHT[a]; });   // deepest first
+    const corridors = [];
+    for(let k=0;k<kids.length;k++){
+      const slot = pickSlot(t, branchIdx, HEIGHT[kids[k]], used, placed, corridors, rnd);
+      used[slot] = 1;
+      pos[kids[k]]  = [t.x[slot], t.y[slot]];
+      bidx[kids[k]] = slot;
+      placed.push(pos[kids[k]]);
+      corridors.push(corridorOf(t, branchIdx, slot));
+      walk(kids[k], slot);
+    }
+  })(rootFlat, 0);
+}
+
+/* ---- polyline helpers ---------------------------------------------------- */
+function subdivideWarp(ax, ay, bx, by){     // a straight run, bent by the field
+  const len = Math.hypot(bx-ax, by-ay);
+  const n = Math.max(2, Math.round(len/GL.step) + 1);
+  const out = [], o = [0,0];
+  for(let k=0;k<n;k++){
+    const u = k/(n-1);
+    warpPt(ax+(bx-ax)*u, ay+(by-ay)*u, o);
+    out.push(o[0], o[1]);
+  }
+  out[0] = ax; out[1] = ay;                 // pin the ends to their nodes
+  out[out.length-2] = bx; out[out.length-1] = by;
+  return out;
+}
+
+/* ---- grow one arrangement ------------------------------------------------ */
+function growLayout(ref, LCfg, ringCfg, rnd){
+  const Sx = Math.min(ref[0]*LCfg.sx, LCfg.cx);
+  const Sy = Math.min(ref[1]*LCfg.sy, LCfg.cy);
+  const S  = Math.min(Sx, Sy);
+
+  /* anchors on the ring */
+  const anc = [];
+  for(let c=0;c<MAP.length;c++){
+    const a = -Math.PI/2 + c*(TAU/MAP.length);
+    anc.push([Math.cos(a)*ringCfg.rx*Sx, Math.sin(a)*ringCfg.ry*Sy]);
+  }
+  /* how much room a cluster actually has: the mean gap to its ring neighbour */
+  let ring = 0;
+  for(let c=0;c<MAP.length;c++){
+    const d = (c+1)%MAP.length;
+    ring += Math.hypot(anc[c][0]-anc[d][0], anc[c][1]-anc[d][1]);
+  }
+  ring /= MAP.length;
+  resolveLengths(S, ring);
+  /* Growth direction: outward from the centre, nudged off by the neighbours,
+     then given a seeded tangential lean. Where two neighbours happen to lean
+     toward one another their fans meet — the bleed between territories. */
+  const dir = [];
+  for(let c=0;c<MAP.length;c++){
+    let dx = anc[c][0], dy = anc[c][1];
+    const dl = Math.hypot(dx,dy) || 1; dx/=dl; dy/=dl;
+    for(let k=0;k<MAP.length;k++){
+      if(k===c) continue;
+      const ex = anc[c][0]-anc[k][0], ey = anc[c][1]-anc[k][1];
+      const el = Math.hypot(ex,ey) || 1;
+      const w  = GROW.neighbourPush*(ring/el)*(ring/el);
+      dx += ex/el*w; dy += ey/el*w;
+    }
+    const ang = Math.atan2(dy,dx) + (rnd()*2-1)*GROW.lean;
+    dir.push([Math.cos(ang), Math.sin(ang)]);
+  }
+
+  const pos = new Array(FLAT.length), bidx = new Array(FLAT.length);
+  const trees = [], placed = [];
+  pos[0] = [0,0];
+  for(let c=0;c<MAP.length;c++){
+    const t = growSkeleton(rnd, anc[c], dir[c], GROW.attractors[c]);
+    trees.push(t);
+    hangCluster(t, CLUSTER_ROOT[c], pos, bidx, placed, rnd);
+  }
+
+  /* link paths, in flat order: link j joins FLAT[j].parent → j */
+  const paths = [];
+  for(let j=1;j<FLAT.length;j++){
+    const par = FLAT[j].parent;
+    if(par === 0){
+      paths.push(subdivideWarp(0, 0, pos[j][0], pos[j][1]));   // root → anchor
     } else {
-      el = document.createElement('button');
-      el.type = 'button';
+      const t = trees[FLAT[j].cluster];
+      const pts = [];
+      let c = bidx[j];
+      const stop = bidx[par];
+      let guard = 0;
+      while(c !== stop && c >= 0 && guard++ < 400){ pts.unshift(t.x[c], t.y[c]); c = t.par[c]; }
+      pts.unshift(t.x[stop], t.y[stop]);                        // shared trunk head
+      paths.push(pts);
     }
-    el.className = 'node node--' + n.kind;
-
-    if (n.kind === 'root') {
-      el.innerHTML = '<img src="assets/logo.svg" alt="">';
-      el.setAttribute('aria-label', 'Xavier de Belle — recentre the map');
-    } else {
-      el.innerHTML = n.label +
-        (n.count ? '<span class="count">' + n.count + '</span>' : '') +
-        (n.external ? '<span class="ext">&#8599;</span>' : '');
-    }
-
-    if (childrenOf(n.id).length) el.setAttribute('aria-expanded', String(!!n.open));
-
-    layer.appendChild(el);
-    n.el = el;
-    n.w = 0; n.h = 0;
-    bindNode(n);
-  });
-
-  function measure() {
-    nodes.forEach(function (n) {
-      n.w = n.el.offsetWidth;
-      n.h = n.el.offsetHeight;
-    });
   }
 
-  /* =====================================================
-     4. FORCE SIMULATION
-     ===================================================== */
+  return { pos:pos, paths:paths, S:S, ring:ring };
+}
+function r3(v){ return Math.round(v*1000)/1000; }
 
-  var alpha = 1;
+/* normalised distance between two nodes in one grown arrangement */
+function normDist(g, i, j){
+  return Math.hypot(g.pos[i][0]-g.pos[j][0], g.pos[i][1]-g.pos[j][1])/g.S;
+}
+function bake(g, pairs){
+  resolveLengths(g.S, g.ring);
+  const paths = g.paths.slice();
+  for(let k=0;k<pairs.length;k+=2)
+    paths.push(subdivideWarp(g.pos[pairs[k]][0],   g.pos[pairs[k]][1],
+                             g.pos[pairs[k+1]][0], g.pos[pairs[k+1]][1]));
+  const P = [], Q = [];
+  for(let i=1;i<FLAT.length;i++) P.push(r3(g.pos[i][0]/g.S), r3(g.pos[i][1]/g.S));
+  for(let k=0;k<paths.length;k++){
+    const a = paths[k];
+    Q.push(a.length/2);
+    for(let m=0;m<a.length;m++) Q.push(r3(a[m]/g.S));
+  }
+  return { p:P, q:Q };
+}
 
-  function tick() {
-    var live = nodes.filter(function (n) { return n.visible; });
-    var i, j, a, b;
+/* ---- the entry point. Called only when the baked data is stale. ---------- */
+function regrow(){
+  const A = growLayout(GROW.refPortrait,  LAYOUT.portrait,  GROW.ring.portrait,
+                       mulberry32(GROW.seed));
+  const B = growLayout(GROW.refLandscape, LAYOUT.landscape, GROW.ring.landscape,
+                       mulberry32(GROW.seed ^ 0x5bf03));
 
-    // repulsion — keep labels from colliding
-    for (i = 0; i < live.length; i++) {
-      for (j = i + 1; j < live.length; j++) {
-        a = live[i]; b = live[j];
-        var dx = b.x - a.x, dy = b.y - a.y;
-        var d2 = dx * dx + dy * dy;
-        if (d2 < 1) { dx = (Math.random() - .5); dy = (Math.random() - .5); d2 = 1; }
-        var d = Math.sqrt(d2);
-        // radius roughly from box size so wide labels push harder
-        var want = (a.w + b.w) / 2 * 0.62 + 76;
-        if (d < want) {
-          var push = (want - d) / d * 0.34 * alpha;
-          a.vx -= dx * push; a.vy -= dy * push;
-          b.vx += dx * push; b.vy += dy * push;
+  /* A cross link is only worth having where the two clusters grew near each
+     other in BOTH arrangements — otherwise rotating the device leaves a wire
+     stretched across the whole map. */
+  const cand = [];
+  for(let i=1;i<FLAT.length;i++){
+    if(FLAT[i].depth < 2) continue;
+    for(let j=i+1;j<FLAT.length;j++){
+      if(FLAT[j].depth < 2 || FLAT[j].cluster === FLAT[i].cluster) continue;
+      const da = normDist(A,i,j), db = normDist(B,i,j);
+      if(Math.max(da,db) < GROW.crossDist) cand.push([(da+db)*0.5, i, j]);
+    }
+  }
+  cand.sort(function(a,b){ return a[0]-b[0]; });
+  const pairs = [], seen = {};
+  for(let k=0;k<cand.length && pairs.length < GROW.crossLinks*2; k++){
+    const i = cand[k][1], j = cand[k][2];
+    const key = FLAT[i].cluster+"-"+FLAT[j].cluster;
+    if(seen[key] || seen[i] || seen[j]) continue;
+    seen[key] = 1; seen[i] = 1; seen[j] = 1;
+    pairs.push(i, j);
+  }
+  return { cross:pairs, portrait:bake(A, pairs), landscape:bake(B, pairs) };
+}
+
+/* ==========================================================================
+   8 · MAP GEOMETRY  — nodes + links in LAYOUT space (z ≈ 0 plane)
+   Node 0 is the root: it holds no particles, because the logo lives there.
+   ========================================================================== */
+let nodes = [], links = [];
+let nodeX, nodeY, ANC = [];                 // ANC[cluster] = that anchor's index
+let lPts = null, lOff = null, lN = null;    // every link path, one flat buffer
+let mapHalfW = 400, mapHalfH = 400;   // full extent, incl. every node + label
+let ancHalfW = 400, ancHalfH = 400;   // anchors only
+
+/* The baked layout. Regrown automatically when it no longer matches MAP —
+   which is exactly "when a node is added" — and otherwise never touched. */
+let GROWN = GROWN_BAKED;
+
+function layoutStale(){
+  return !GROWN || !GROWN.portrait || !GROWN.landscape ||
+         GROWN.portrait.p.length !== (FLAT.length-1)*2 ||
+         GROWN.landscape.p.length !== (FLAT.length-1)*2;
+}
+
+/* ---- resample a polyline to even arc spacing so `u` is arc-uniform ------- */
+function resamplePath(raw, spacing){
+  const n = raw.length/2;
+  if(n < 2){
+    const x = raw[0]||0, y = raw[1]||0;
+    return { pts:new Float32Array([x,y,x,y]), len:1 };
+  }
+  const cum = new Float64Array(n);
+  for(let k=1;k<n;k++)
+    cum[k] = cum[k-1] + Math.hypot(raw[k*2]-raw[k*2-2], raw[k*2+1]-raw[k*2-1]);
+  const len = cum[n-1] || 1;
+  const m = Math.max(2, Math.min(140, Math.round(len/spacing)+1));
+  const out = new Float32Array(m*2);
+  let seg = 0;
+  for(let k=0;k<m;k++){
+    const d = len*k/(m-1);
+    while(seg < n-2 && cum[seg+1] < d) seg++;
+    const s0 = cum[seg], s1 = cum[seg+1], t = s1 > s0 ? (d-s0)/(s1-s0) : 0;
+    out[k*2]   = raw[seg*2]   + (raw[seg*2+2]-raw[seg*2])*t;
+    out[k*2+1] = raw[seg*2+1] + (raw[seg*2+3]-raw[seg*2+1])*t;
+  }
+  return { pts:out, len:len };
+}
+function pathAt(li, u, o){
+  const m = lN[li], f = u*(m-1);
+  let i = f|0; if(i < 0) i = 0; else if(i > m-2) i = m-2;
+  const t = f-i, b = (lOff[li]+i)*2;
+  o[0] = lPts[b]   + (lPts[b+2]-lPts[b])*t;
+  o[1] = lPts[b+1] + (lPts[b+3]-lPts[b+1])*t;
+}
+function pathTan(li, u, o){
+  const m = lN[li], f = u*(m-1);
+  let i = f|0; if(i < 0) i = 0; else if(i > m-2) i = m-2;
+  const b = (lOff[li]+i)*2;
+  const dx = lPts[b+2]-lPts[b], dy = lPts[b+3]-lPts[b+1];
+  const d = Math.hypot(dx,dy) || 1;
+  o[0] = dx/d; o[1] = dy/d;
+}
+
+let geomBuilt = false;
+function buildStructure(){
+  nodes = [{ x:0, y:0, kind:0, depth:0, label:"", cluster:-1, parent:-1, url:"",
+             external:false, hasKids:true, expanded:true,
+             lox:0, loy:1, labelA:0, arriveAt:0, fireAt:-99, parts:[] }];
+  for(let i=1;i<FLAT.length;i++){
+    const f = FLAT[i];
+    nodes.push({ x:0, y:0, kind: f.depth===1 ? 1 : 2, depth:f.depth, label:f.label,
+                 cluster:f.cluster, parent:f.parent, url:f.url, external:f.external,
+                 hasKids: KIDS[i].length > 0, expanded:!isSmall,
+                 lox:0, loy:1, labelA:0, arriveAt:0, fireAt:-99, parts:[] });
+  }
+  links = [];
+  for(let i=1;i<FLAT.length;i++)
+    links.push({ a:FLAT[i].parent, b:i, kind: FLAT[i].parent===0 ? 0 : 1,
+                 cluster:FLAT[i].cluster, len:1, parts:[] });
+  for(let k=0;k<GROWN.cross.length;k+=2)      // the bleed between territories
+    links.push({ a:GROWN.cross[k], b:GROWN.cross[k+1], kind:2,
+                 cluster:-1, len:1, parts:[] });
+
+  ANC = [];
+  for(let i=1;i<nodes.length;i++) if(nodes[i].kind===1) ANC[nodes[i].cluster] = i;
+
+  nodeX = new Float32Array(nodes.length);
+  nodeY = new Float32Array(nodes.length);
+  lOff  = new Int32Array(links.length);
+  lN    = new Int32Array(links.length);
+  fireAt   = new Float32Array(links.length).fill(-99);
+  fireDone = new Uint8Array(links.length);
+  geomBuilt = true;
+}
+
+function buildGeometry(){
+  const L  = isPortrait ? LAYOUT.portrait : LAYOUT.landscape;
+  const Sx = Math.min(vw*L.sx, L.cx);
+  const Sy = Math.min(vh*L.sy, L.cy);
+  const S  = Math.min(Sx, Sy);
+
+  if(layoutStale()) GROWN = regrow();
+  if(!geomBuilt) buildStructure();
+
+  const G = isPortrait ? GROWN.portrait : GROWN.landscape;
+
+  /* positions come straight out of the baked growth, scaled uniformly */
+  for(let i=1;i<nodes.length;i++){
+    nodes[i].x = G.p[(i-1)*2]*S;
+    nodes[i].y = G.p[(i-1)*2+1]*S;
+  }
+  /* a label radiates away from its parent, at any depth */
+  for(let i=1;i<nodes.length;i++){
+    const q = nodes[i].parent;
+    const dx = nodes[i].x-nodes[q].x, dy = nodes[i].y-nodes[q].y;
+    const d = Math.hypot(dx,dy) || 1;
+    nodes[i].lox = dx/d; nodes[i].loy = dy/d;
+  }
+
+  /* link paths: read baked, scale, resample, pack into one flat buffer */
+  const tmp = [];
+  let r = 0, total = 0;
+  for(let li=0; li<links.length; li++){
+    const cnt = G.q[r++];
+    const raw = new Float64Array(cnt*2);
+    for(let k=0;k<cnt*2;k++) raw[k] = G.q[r++]*S;
+    const res = resamplePath(raw, GROW.pathSpacing*Math.max(0.7, uiScale));
+    tmp.push(res); total += res.pts.length/2;
+  }
+  if(!lPts || lPts.length < total*2) lPts = new Float32Array(total*2 + 512);
+  let o = 0;
+  for(let li=0; li<links.length; li++){
+    lOff[li] = o/2; lN[li] = tmp[li].pts.length/2; links[li].len = tmp[li].len;
+    const a = tmp[li].pts;
+    for(let k=0;k<a.length;k++) lPts[o++] = a[k];
+  }
+
+  syncGeometry();
+
+  mapHalfW = 40; mapHalfH = 40; ancHalfW = 40; ancHalfH = 40;
+  for(let i=1;i<nodes.length;i++){
+    const anc = nodes[i].kind===1;
+    const ex = Math.abs(nodes[i].x) + (anc ? 58 : 76);   // room for the label too
+    const ey = Math.abs(nodes[i].y) + (anc ? 42 : 30);
+    mapHalfW = Math.max(mapHalfW, ex);
+    mapHalfH = Math.max(mapHalfH, ey);
+    if(anc){ ancHalfW = Math.max(ancHalfW, ex); ancHalfH = Math.max(ancHalfH, ey); }
+  }
+}
+
+function syncGeometry(){
+  for(let i=0;i<nodes.length;i++){ nodeX[i]=nodes[i].x; nodeY[i]=nodes[i].y; }
+}
+
+/* an anchor carries its whole subtree, however deep it runs */
+function nodeVisible(i){
+  if(!mapOpen) return false;
+  const n = nodes[i];
+  if(n.kind <= 1) return true;
+  return nodes[ANC[n.cluster]].expanded;
+}
+function linkVisible(i){
+  if(!mapOpen) return false;
+  const l = links[i];
+  if(l.kind === 0) return true;
+  if(l.kind === 2) return nodeVisible(l.a) && nodeVisible(l.b);
+  return nodes[ANC[l.cluster]].expanded;
+}
+
+/* ==========================================================================
+   9 · NEGATIVE SPACE FIELD
+   A precomputed push-vector grid in layout space. Free particles sample it,
+   so the cloud parts around nodes and labels and the holes stay put while
+   the cloud keeps rotating through them.
+   ========================================================================== */
+const CG = T.carveGrid;
+const carveU = new Float32Array(CG*CG);
+const carveV = new Float32Array(CG*CG);
+let cgX0=0, cgY0=0, cgSX=1, cgSY=1;
+let carveAmt = 0;
+
+function buildCarve(){
+  const padX = 130, padY = 110;
+  cgX0 = -mapHalfW-padX; cgY0 = -mapHalfH-padY;
+  const spanX = (mapHalfW+padX)*2, spanY = (mapHalfH+padY)*2;
+  cgSX = (CG-1)/spanX; cgSY = (CG-1)/spanY;
+
+  const vis = [];
+  for(let i=1;i<nodes.length;i++){
+    if(!nodeVisible(i)) continue;
+    const anc = nodes[i].kind===1;
+    const p = anc ? T.carveAnchor : T.carveChild;
+    const k = anc ? 1 : Math.pow(GROW.depthTaper, nodes[i].depth-2);  // deeper = smaller hole
+    vis.push([nodes[i].x, nodes[i].y, p[0]*uiScale*k, p[1]*uiScale*k, p[2]*uiScale*k]);
+  }
+
+  for(let gy=0; gy<CG; gy++){
+    const wy = cgY0 + gy/cgSY;
+    for(let gx=0; gx<CG; gx++){
+      const wx = cgX0 + gx/cgSX;
+      let ax=0, ay=0;
+      for(let k=0;k<vis.length;k++){
+        const n = vis[k];
+        const dx = wx-n[0], dy = wy-n[1];
+        const ex = dx/n[2], ey = dy/n[3];
+        const d2 = ex*ex + ey*ey;
+        if(d2 >= 1) continue;
+        const f = (1-d2)*(1-d2);
+        const d = Math.sqrt(dx*dx+dy*dy) + 0.001;
+        ax += dx/d*f*n[4];
+        ay += dy/d*f*n[4];
+      }
+      const m = Math.sqrt(ax*ax+ay*ay);
+      if(m > T.carveMax*uiScale){ const s = T.carveMax*uiScale/m; ax*=s; ay*=s; }
+      const idx = gy*CG+gx;
+      carveU[idx]=ax; carveV[idx]=ay;
+    }
+  }
+}
+
+/* ==========================================================================
+   10 · FREE-PARTICLE LOOKUP GRID
+   Lets "recruit the nearest available free particle" run in ~O(1) instead of
+   scanning the whole cloud per target. Rebuilt before each batch, never
+   allocated inside the frame loop.
+   ========================================================================== */
+const FG = 40;
+let fgStart, fgCount, fgItems, fgCur;
+let fgX0=0, fgY0=0, fgS=1;
+
+function initFreeGrid(){
+  fgStart = new Int32Array(FG*FG+1);
+  fgCount = new Int32Array(FG*FG);
+  fgCur   = new Int32Array(FG*FG);
+  fgItems = new Int32Array(N);
+}
+function rebuildFreeGrid(){
+  const R = T.cloudRadius*Math.max(cKX,cKY)*1.35;
+  fgX0 = -R; fgY0 = -R; fgS = (FG-1)/(R*2);
+  fgCount.fill(0);
+  const cell = function(x,y){
+    let gx = ((x-fgX0)*fgS)|0, gy = ((y-fgY0)*fgS)|0;
+    if(gx<0)gx=0; else if(gx>=FG)gx=FG-1;
+    if(gy<0)gy=0; else if(gy>=FG)gy=FG-1;
+    return gy*FG+gx;
+  };
+  /* particles are bucketed by their CURRENT layout-space xy */
+  for(let i=0;i<N;i++){
+    if(role[i]!==ROLE_FREE) continue;
+    fgCount[cell(w2lX(i), w2lY(i))]++;
+  }
+  let acc=0;
+  for(let c=0;c<FG*FG;c++){ fgStart[c]=acc; fgCur[c]=acc; acc+=fgCount[c]; }
+  fgStart[FG*FG]=acc;
+  for(let i=0;i<N;i++){
+    if(role[i]!==ROLE_FREE) continue;
+    fgItems[fgCur[cell(w2lX(i), w2lY(i))]++] = i;
+  }
+}
+function takeNearestFree(lx, ly){
+  let gx = ((lx-fgX0)*fgS)|0, gy = ((ly-fgY0)*fgS)|0;
+  if(gx<0)gx=0; else if(gx>=FG)gx=FG-1;
+  if(gy<0)gy=0; else if(gy>=FG)gy=FG-1;
+  let best=-1, bestCell=-1, bestSlot=-1, bestD=Infinity, foundRing=-1;
+  for(let r=0; r<FG; r++){
+    if(foundRing>=0 && r > foundRing+1) break;
+    const x0=gx-r, x1=gx+r, y0=gy-r, y1=gy+r;
+    for(let y=y0; y<=y1; y++){
+      if(y<0||y>=FG) continue;
+      const edgeRow = (y===y0 || y===y1);
+      for(let x=x0; x<=x1; x++){
+        if(x<0||x>=FG) continue;
+        if(!edgeRow && x!==x0 && x!==x1) continue;
+        const c = y*FG+x, s = fgStart[c], n = fgCount[c];
+        for(let k=0;k<n;k++){
+          const p = fgItems[s+k];
+          const dx = w2lX(p)-lx, dy = w2lY(p)-ly;
+          const d  = dx*dx+dy*dy;
+          if(d<bestD){ bestD=d; best=p; bestCell=c; bestSlot=k; }
+        }
+        if(n>0 && foundRing<0) foundRing = r;
+      }
+    }
+  }
+  if(best<0) return -1;
+  const s = fgStart[bestCell], n = fgCount[bestCell];
+  fgItems[s+bestSlot] = fgItems[s+n-1];
+  fgCount[bestCell] = n-1;
+  return best;
+}
+
+/* ==========================================================================
+   11 · ROTATION  (world ⇄ layout)
+   The cloud spins in world space. The map is fixed in layout space. A
+   particle changing role is converted once, so it never jumps or desyncs.
+   ========================================================================== */
+let yaw = 0, tilt = T.tiltBase;
+let cyR = 1, syR = 0, ctR = 1, stR = 0;
+function updateRot(){ cyR=Math.cos(yaw); syR=Math.sin(yaw); ctR=Math.cos(tilt); stR=Math.sin(tilt); }
+updateRot();
+
+function w2lX(i){ return px[i]*cyR + pz[i]*syR; }
+function w2lY(i){ return py[i]*ctR - (-px[i]*syR + pz[i]*cyR)*stR; }
+function w2lZ(i){ return py[i]*stR + (-px[i]*syR + pz[i]*cyR)*ctR; }
+
+function toLayout(i){
+  const X=px[i], Y=py[i], Z=pz[i];
+  const x1 = X*cyR + Z*syR, z1 = -X*syR + Z*cyR;
+  px[i]=x1; py[i]=Y*ctR - z1*stR; pz[i]=Y*stR + z1*ctR;
+  const VX=vx[i], VY=vy[i], VZ=vz[i];
+  const vx1 = VX*cyR + VZ*syR, vz1 = -VX*syR + VZ*cyR;
+  vx[i]=vx1; vy[i]=VY*ctR - vz1*stR; vz[i]=VY*stR + vz1*ctR;
+}
+function toWorld(i){
+  const X=px[i], Y=py[i], Z=pz[i];
+  const y1 = Y*ctR + Z*stR, z1 = -Y*stR + Z*ctR;
+  px[i]=X*cyR - z1*syR; py[i]=y1; pz[i]=X*syR + z1*cyR;
+  const VX=vx[i], VY=vy[i], VZ=vz[i];
+  const vy1 = VY*ctR + VZ*stR, vz1 = -VY*stR + VZ*ctR;
+  vx[i]=VX*cyR - vz1*syR; vy[i]=vy1; vz[i]=VX*syR + vz1*cyR;
+}
+
+/* ==========================================================================
+   12 · RECRUITMENT
+   Nodes: N nearest free particles pulled into a tight flattened orbit — it is
+   the DENSITY that makes a node read as bright, nothing is stroked or filled.
+   Links: a thin chain spaced along the parent→child path, so a connection is
+   a filament of the same cloud.
+   ========================================================================== */
+const rr = mulberry32(778811);
+let mapOpen = false, mapOpenAt = 0;
+let fireAt, fireDone;                       // per-link, sized in buildGeometry
+
+function stagger(x, y, now){
+  const d = Math.sqrt(x*x+y*y);
+  const m = Math.max(1, Math.sqrt(mapHalfW*mapHalfW + mapHalfH*mapHalfH));
+  return now + (d/m)*T.bloomSpread + rr()*T.bloomJitter;
+}
+
+function recruitNode(ni, now){
+  const n = nodes[ni];
+  if(n.parts.length || n.kind===0) return;
+  /* a node's weight falls off down the hierarchy, so a fourth-level twig
+     reads as a twig — layout budgeting, not a change to the particle model */
+  const tap   = n.kind===1 ? 1 : Math.pow(GROW.depthTaper, n.depth-2);
+  const count = Math.round((n.kind===1 ? T.nAnchor : T.nChild*tap) * densityK);
+  const rad   = (n.kind===1 ? T.orbitAnchor : T.orbitChild*Math.pow(tap,0.6)) * uiScale;
+  const base  = stagger(n.x, n.y, now);
+  for(let k=0;k<count;k++){
+    const a = rr()*TAU, e = Math.acos(rr()*2-1);
+    const r = rad*Math.pow(rr(), 0.42);
+    const lx = n.x + Math.sin(e)*Math.cos(a)*r;
+    const ly = n.y + Math.sin(e)*Math.sin(a)*r;
+    const i = takeNearestFree(lx, ly);
+    if(i<0) break;
+    toLayout(i);
+    role[i] = ROLE_TAKEN; own[i] = ni;
+    ox[i] = Math.sin(e)*Math.cos(a)*r;
+    oy[i] = Math.sin(e)*Math.sin(a)*r;
+    oz[i] = Math.cos(e)*r*T.orbitFlatten;
+    stiff[i] = T.stiffNode[0] + rr()*(T.stiffNode[1]-T.stiffNode[0]);
+    damp[i]  = T.dampNode;
+    t0[i]    = base + rr()*0.22;
+    n.parts.push(i);
+  }
+  n.arriveAt = base + 0.75;
+}
+
+const _pp = [0,0], _pt = [0,0];
+function recruitLink(li, now){
+  const l = links[li];
+  if(l.parts.length) return;
+  const A = nodes[l.a], B = nodes[l.b];
+
+  /* particles are spaced along the path, so a long trunk gets more of them
+     than a short twig. Where siblings share a trunk their chains overlap,
+     which is what makes the trunk read heavier than the branches. */
+  const count = clamp(Math.round(l.len/T.linkSpacing*densityK), 4, 44);
+  const inset = Math.min(0.26, (T.orbitChild*1.7*uiScale)/Math.max(1,l.len));
+  const u0 = inset, u1 = 1-inset;
+  const base = stagger((A.x+B.x)*0.5, (A.y+B.y)*0.5, now);
+
+  for(let k=0;k<count;k++){
+    const u = u0 + (u1-u0)*(count>1 ? k/(count-1) : 0.5) + (rr()-0.5)*0.010;
+    pathAt(li, u, _pp); pathTan(li, u, _pt);
+    const j = (rr()-0.5)*2*T.linkJitter*uiScale;
+    const nx = -_pt[1]*j, ny = _pt[0]*j;
+    const i = takeNearestFree(_pp[0]+nx, _pp[1]+ny);
+    if(i<0) break;
+    toLayout(i);
+    role[i] = ROLE_TAKEN; own[i] = -1-li; upos[i] = u;
+    ox[i] = nx; oy[i] = ny; oz[i] = (rr()-0.5)*2*T.linkJitterZ;
+    stiff[i] = T.stiffNode[0] + rr()*(T.stiffNode[1]-T.stiffNode[0]);
+    damp[i]  = T.dampNode;
+    t0[i]    = base + u*0.30 + rr()*0.14;
+    l.parts.push(i);
+  }
+}
+
+function releaseParts(list, now){
+  for(let k=0;k<list.length;k++){
+    const i = list[k];
+    if(role[i]!==ROLE_TAKEN) continue;
+    toWorld(i);
+    role[i] = ROLE_FREE; own[i] = -1;
+    stiff[i] = T.stiffFree[0] + rr()*(T.stiffFree[1]-T.stiffFree[0]);
+    damp[i]  = T.dampFree;
+    t0[i]    = now + rr()*T.releaseJitter;
+  }
+  list.length = 0;
+}
+
+/* ==========================================================================
+   13 · MAP STATE
+   ========================================================================== */
+let selected = -1;
+let lastLogoTap = -99, pendingToggle = 0;
+
+/* One pass brings the recruited set in line with what should be visible.
+   Releases run first so the freed particles are back in the lookup grid
+   before anything tries to recruit them. Cross links fall out of this for
+   free: they appear only when both of their clusters are open. */
+function reconcile(now){
+  for(let i=1;i<nodes.length;i++)
+    if(!nodeVisible(i) && nodes[i].parts.length){
+      releaseParts(nodes[i].parts, now); nodes[i].labelA = 0;
+    }
+  for(let i=0;i<links.length;i++)
+    if(!linkVisible(i) && links[i].parts.length){
+      releaseParts(links[i].parts, now); fireAt[i] = -99;
+    }
+  rebuildFreeGrid();
+  for(let i=1;i<nodes.length;i++) if(nodeVisible(i)) recruitNode(i, now);
+  for(let i=0;i<links.length;i++) if(linkVisible(i)) recruitLink(i, now);
+  buildCarve();
+}
+function openMap(now){
+  if(mapOpen) return;
+  mapOpen = true; mapOpenAt = now;
+  reconcile(now);
+}
+function closeMap(now){
+  if(!mapOpen) return;
+  mapOpen = false; selected = -1;
+  reconcile(now);
+}
+function toggleAnchor(ni, now){
+  nodes[ni].expanded = !nodes[ni].expanded;
+  reconcile(now);
+}
+
+/* ==========================================================================
+   14 · FIRING
+   A firing is a brightness wave running along a link's own particle chain.
+   It reaches the child late, so the travel is visible; at the breath peak it
+   can spill into the neighbouring cluster.
+   ========================================================================== */
+function fireLink(li, when){
+  if(!linkVisible(li)) return;
+  if(when - fireAt[li] < T.fireTravel*1.15) return;
+  fireAt[li] = when; fireDone[li] = 0;
+}
+function fireNode(ni, now){
+  nodes[ni].fireAt = now;
+  for(let i=0;i<links.length;i++)
+    if(links[i].a===ni && linkVisible(i)) fireLink(i, now + 0.05);
+}
+function updateFirings(now, breath, dt){
+  /* spontaneous, clustered near the breath peak */
+  if(!reduced){
+    const p = T.fireRate*dt*(0.10 + breath*breath*breath*1.35);
+    if(Math.random() < p){
+      let tries = 0;
+      do { const li = (Math.random()*links.length)|0;
+           if(linkVisible(li)){ fireLink(li, now); break; }
+      } while(++tries < 12);
+    }
+  }
+  /* arrivals + cascade */
+  for(let i=0;i<links.length;i++){
+    if(fireDone[i] || fireAt[i] < -50) continue;
+    if(now - fireAt[i] >= T.fireTravel){
+      fireDone[i] = 1;
+      const b = links[i].b;
+      nodes[b].fireAt = now;
+      if(!reduced && breath > 0.72 && Math.random() < T.cascadeChance){
+        let spilled = 0;
+        for(let j=0;j<links.length && spilled<3;j++){
+          if(links[j].a===b && linkVisible(j)){ fireLink(j, now + 0.04 + spilled*0.07); spilled++; }
+        }
+      }
+    }
+  }
+}
+
+/* ==========================================================================
+   15 · CAMERA + RENDER BUCKETS
+   Zoom always moves the camera so the point under the cursor / pinch midpoint
+   stays put — never a scale about screen centre.
+   ========================================================================== */
+let camX = 0, camY = 0, zoom = 1, densityK = 1;
+
+const WB = 14, GB = 8;                       // white levels, gold levels
+const STYLES = new Array(WB+GB);
+let bList = null;
+const bCount = new Int32Array(WB+GB);
+
+/* Live palette. Every draw call reads CUR, which is re-derived only while the
+   two themes are crossfading — never per particle. */
+let themeT = 0, themeTarget = 0, themeBuilt = -1;
+const CUR = { bg:"#000000", particle:"255,255,255", accent:"243,201,63",
+              label:"rgba(236,238,242,", labelDim:"rgba(176,180,190,",
+              hint:"rgba(150,154,164," };
+
+function mix3(a,b,t){
+  return ((a[0]+(b[0]-a[0])*t)|0)+","+((a[1]+(b[1]-a[1])*t)|0)+","+((a[2]+(b[2]-a[2])*t)|0);
+}
+function applyTheme(t){
+  const A = THEME.dark, B = THEME.light;
+  CUR.bg       = "rgb("  + mix3(A.bg, B.bg, t) + ")";
+  CUR.particle = mix3(A.particle, B.particle, t);
+  CUR.accent   = mix3(A.accent,   B.accent,   t);
+  CUR.label    = "rgba(" + mix3(A.label,    B.label,    t) + ",";
+  CUR.labelDim = "rgba(" + mix3(A.labelDim, B.labelDim, t) + ",";
+  CUR.hint     = "rgba(" + mix3(A.hint,     B.hint,     t) + ",";
+  const ak = A.alphaK + (B.alphaK-A.alphaK)*t;
+  for(let i=0;i<WB;i++) STYLES[i]    = "rgba("+CUR.particle+","+(((i+0.5)/WB)*0.92*ak).toFixed(4)+")";
+  for(let i=0;i<GB;i++) STYLES[WB+i] = "rgba("+CUR.accent  +","+(((i+0.6)/GB)*0.96).toFixed(4)+")";
+  themeBuilt = t;
+}
+function initBuckets(){
+  bList = new Array(WB+GB);
+  for(let b=0;b<WB+GB;b++) bList[b] = new Int32Array(N);
+}
+
+/* ==========================================================================
+   16 · FRAME
+   One update+draw pass, no allocation inside.
+   ========================================================================== */
+let breath = 0.5, logoPulse = 0;
+
+function frame(now, dt){
+  const dts = clamp(dt*60, 0.35, 2.2);
+
+  /* --- global breath: one slow sine driving brightness and orbit radius --- */
+  breath = reduced ? 0.5 : 0.5 + 0.5*Math.sin(now*TAU/T.breathPeriod);
+  const gBri   = 1 - T.breathBright*0.5 + T.breathBright*breath;
+  const orbitK = 1 - T.breathOrbit*0.5 + T.breathOrbit*breath;
+
+  /* --- rotation is time-based only ------------------------------------- */
+  yaw  += T.yawSpeed*dt;
+  tilt  = T.tiltBase + sinT(now*T.tiltRate)*T.tiltSwing;
+  updateRot();
+
+  updateFirings(now, breath, dt);
+  carveAmt += ((mapOpen?1:0) - carveAmt)*T.carveEase*dts;
+  logoPulse *= Math.pow(0.90, dts);
+
+  /* a single tap on the mark is held back until the double-tap window closes,
+     so the two gestures never fight each other */
+  if(pendingToggle > 0 && now >= pendingToggle){
+    pendingToggle = 0;
+    if(mapOpen) closeMap(now); else openMap(now);
+  }
+
+  /* theme crossfade */
+  if(themeT !== themeTarget){
+    themeT += (themeTarget-themeT)*T.themeEase*dts;
+    if(Math.abs(themeTarget-themeT) < 0.002){
+      themeT = themeTarget;
+      document.documentElement.style.background = CUR.bg;   // only when settled
+    }
+  }
+  if(themeBuilt < 0 || Math.abs(themeT-themeBuilt) > 0.003) applyTheme(themeT);
+
+  const FOV = T.fov, halfW = cw*0.5, halfH = ch*0.5, Zd = zoom*dpr;
+  const drift = T.driftAmp * (reduced ? 0.45 : 1);
+  bCount.fill(0);
+
+  for(let i=0;i<N;i++){
+    let tX, tY, tZ, isFree = (role[i]===ROLE_FREE);
+
+    /* ---- target ------------------------------------------------------- */
+    if(isFree){
+      const dr = drt[i]*now;
+      tX = hx[i] + sinT(dr + dphA[i])*drift;
+      tY = hy[i] + sinT(dr*0.83 + dphB[i])*drift;
+      tZ = hz[i] + sinT(dr*1.19 + dphC[i])*drift;
+    } else {
+      const o = own[i];
+      if(o >= 0){
+        tX = nodeX[o] + ox[i]*orbitK;
+        tY = nodeY[o] + oy[i]*orbitK;
+        tZ = oz[i]*orbitK;
+      } else {
+        const li = -1-o, m = lN[li], f = upos[i]*(m-1);
+        let g = f|0; if(g < 0) g = 0; else if(g > m-2) g = m-2;
+        const w = f-g, b = (lOff[li]+g)*2;
+        tX = lPts[b]   + (lPts[b+2]-lPts[b])*w   + ox[i];
+        tY = lPts[b+1] + (lPts[b+3]-lPts[b+1])*w + oy[i];
+        tZ = oz[i];
+      }
+    }
+
+    /* ---- spring (staggered start, slight per-particle randomness) ------ */
+    if(now >= t0[i]){
+      const k = stiff[i]*dts, d = 1 - (1-damp[i])*dts;
+      let a;
+      a = vx[i] + (tX-px[i])*k; vx[i] = a*d; px[i] += a*dts;
+      a = vy[i] + (tY-py[i])*k; vy[i] = a*d; py[i] += a*dts;
+      a = vz[i] + (tZ-pz[i])*k; vz[i] = a*d; pz[i] += a*dts;
+    } else {                                   /* still waiting its turn: coast */
+      const d = 1 - 0.06*dts;
+      px[i] += vx[i]*dts; py[i] += vy[i]*dts; pz[i] += vz[i]*dts;
+      vx[i]*=d; vy[i]*=d; vz[i]*=d;
+    }
+
+    /* ---- world → layout → screen -------------------------------------- */
+    let X, Y, Z;
+    if(isFree){
+      const x1 = px[i]*cyR + pz[i]*syR, z1 = -px[i]*syR + pz[i]*cyR;
+      X = x1; Y = py[i]*ctR - z1*stR; Z = py[i]*stR + z1*ctR;
+    } else { X = px[i]; Y = py[i]; Z = pz[i]; }
+
+    const s = FOV/(FOV+Z);
+    X *= s; Y *= s;
+
+    /* ---- the cloud parts around nodes and labels ----------------------- */
+    if(isFree && carveAmt > 0.002){
+      const fx = (X-cgX0)*cgSX, fy = (Y-cgY0)*cgSY;
+      if(fx >= 0 && fy >= 0 && fx < CG-1 && fy < CG-1){
+        const ix=fx|0, iy=fy|0, ux=fx-ix, uy=fy-iy;
+        const i00=iy*CG+ix, i10=i00+1, i01=i00+CG, i11=i01+1;
+        X += ((carveU[i00]+(carveU[i10]-carveU[i00])*ux)*(1-uy)
+            + (carveU[i01]+(carveU[i11]-carveU[i01])*ux)*uy)*carveAmt;
+        Y += ((carveV[i00]+(carveV[i10]-carveV[i00])*ux)*(1-uy)
+            + (carveV[i01]+(carveV[i11]-carveV[i01])*ux)*uy)*carveAmt;
+      }
+    }
+
+    const SX = (X-camX)*Zd + halfW;
+    const SY = (Y-camY)*Zd + halfH;
+    if(SX < -6 || SX > cw+6 || SY < -6 || SY > ch+6) continue;
+
+    /* ---- brightness: depth, density, breath, twinkle ------------------- */
+    let lum = bri[i]*(0.30 + 0.78*s)*gBri;
+    lum *= 0.80 + 0.20*sinT(now*twr[i] + twp[i]);
+
+    /* ---- firing / selection: the only gold in the piece ---------------- */
+    let e = 0;
+    if(!isFree){
+      const o = own[i];
+      if(o >= 0){
+        lum *= 1.22;
+        const n = nodes[o];
+        const ag = (now-n.fireAt)/T.fireNodeDecay;
+        if(ag >= 0 && ag < 1){ const w = 1-ag; e = w*w; }
+        if(o === selected) e = Math.max(e, 0.52 + 0.16*breath);
+      } else {
+        lum *= 1.12;
+        const li = -1-o, d = (now-fireAt[li])/T.fireTravel - upos[i];
+        if(d > -0.06 && d < T.fireWidth){
+          const w = d < 0 ? (1 + d/0.06) : (1 - d/T.fireWidth);
+          e = w*w;
         }
       }
     }
 
-    // springs along edges
-    edges.forEach(function (e) {
-      if (!e.a.visible || !e.b.visible) return;
-      var dx = e.b.x - e.a.x, dy = e.b.y - e.a.y;
-      var d = Math.sqrt(dx * dx + dy * dy) || 1;
-      var rest = reach(e.b);
-      var k = (d - rest) / d * 0.06 * alpha;
-      e.a.vx += dx * k; e.a.vy += dy * k;
-      e.b.vx -= dx * k; e.b.vy -= dy * k;
-    });
-
-    // gentle pull back toward each node's authored bearing — keeps the
-    // composition readable instead of letting the sim scramble it
-    live.forEach(function (n) {
-      if (!n.parent || n.pinned) return;
-      var p = byId[n.parent];
-      var want = (n.angle || 0) * Math.PI / 180;
-      var tx = p.x + Math.cos(want) * reach(n);
-      var ty = p.y + Math.sin(want) * reach(n);
-      n.vx += (tx - n.x) * 0.012 * alpha;
-      n.vy += (ty - n.y) * 0.012 * alpha;
-    });
-
-    // integrate
-    live.forEach(function (n) {
-      if (n.kind === 'root') { n.x = 0; n.y = 0; n.vx = 0; n.vy = 0; return; }
-      if (n.pinned) { n.vx = 0; n.vy = 0; return; }
-      n.vx *= 0.82; n.vy *= 0.82;
-      n.x += n.vx; n.y += n.vy;
-    });
-
-    alpha *= 0.994;
-    if (alpha < 0.02) alpha = 0.02;
-  }
-
-  function paint() {
-    nodes.forEach(function (n) {
-      n.el.style.display = n.visible ? '' : 'none';
-      if (!n.visible) return;
-      n.el.style.transform =
-        'translate(' + Math.round(n.x) + 'px,' + Math.round(n.y) + 'px) translate(-50%,-50%)';
-    });
-    edges.forEach(function (e) {
-      var on = e.a.visible && e.b.visible;
-      e.el.style.display = on ? '' : 'none';
-      if (!on) return;
-      e.el.setAttribute('x1', e.a.x); e.el.setAttribute('y1', e.a.y);
-      e.el.setAttribute('x2', e.b.x); e.el.setAttribute('y2', e.b.y);
-    });
-    world.style.transform =
-      'translate(' + view.x + 'px,' + view.y + 'px) scale(' + view.k + ')';
-  }
-
-  var raf;
-  function loop() {
-    tick();
-    paint();
-    raf = requestAnimationFrame(loop);
-  }
-
-  function stir(a) { alpha = Math.max(alpha, a || 0.7); }
-
-  /* =====================================================
-     5. EXPAND / COLLAPSE
-     ===================================================== */
-
-  function setOpen(node, open) {
-    node.open = open;
-    if (node.el.hasAttribute('aria-expanded')) {
-      node.el.setAttribute('aria-expanded', String(open));
-    }
-    childrenOf(node.id).forEach(function (c) {
-      c.visible = open;
-      if (!open) { collapseAll(c); }
-      else {
-        // drop children in near the parent so they fly outward
-        var a = (c.angle || 0) * Math.PI / 180;
-        c.x = node.x + Math.cos(a) * 40;
-        c.y = node.y + Math.sin(a) * 40;
-        c.pinned = false;
-      }
-    });
-    markWires();
-    stir(0.9);
-  }
-
-  function collapseAll(node) {
-    node.open = false;
-    if (node.el.hasAttribute('aria-expanded')) node.el.setAttribute('aria-expanded', 'false');
-    childrenOf(node.id).forEach(function (c) {
-      c.visible = false;
-      collapseAll(c);
-    });
-  }
-
-  function markWires() {
-    edges.forEach(function (e) {
-      e.el.classList.toggle('is-live', e.a.kind === 'root');
-      e.el.classList.toggle('is-hot', !!e.a.open && e.a.kind !== 'root');
-    });
-  }
-
-  /* =====================================================
-     6. NODE INTERACTION (click vs drag, mouse + touch)
-     ===================================================== */
-
-  function bindNode(n) {
-    var el = n.el;
-    var start = null, moved = false;
-
-    el.addEventListener('pointerdown', function (ev) {
-      if (ev.button === 1 || ev.button === 2) return;
-      start = { x: ev.clientX, y: ev.clientY, nx: n.x, ny: n.y };
-      moved = false;
-      el.setPointerCapture(ev.pointerId);
-      el.classList.add('is-dragging');
-      ev.stopPropagation();
-    });
-
-    el.addEventListener('pointermove', function (ev) {
-      if (!start) return;
-      var dx = ev.clientX - start.x, dy = ev.clientY - start.y;
-      if (!moved && Math.hypot(dx, dy) < 5) return;
-      moved = true;
-      n.pinned = true;
-      n.x = start.nx + dx / view.k;
-      n.y = start.ny + dy / view.k;
-      stir(0.5);
-    });
-
-    function release(ev) {
-      if (!start) return;
-      start = null;
-      el.classList.remove('is-dragging');
-      if (el.hasPointerCapture && el.hasPointerCapture(ev.pointerId)) {
-        el.releasePointerCapture(ev.pointerId);
-      }
-      if (moved) { moved = false; return; }
-      activate(n, ev);
+    let sz = szb[i]*(0.62 + 0.80*s);
+    let b;
+    if(e > 0.10){
+      lum = clamp(lum*(0.55 + 0.75*e) + e*0.55, 0, 1);
+      sz *= 1 + 0.85*e;
+      b = WB + clamp((lum*GB)|0, 0, GB-1);
+    } else {
+      lum = clamp(lum, 0, 1);
+      b = clamp((lum*WB)|0, 0, WB-1);
     }
 
-    el.addEventListener('pointerup', release);
-    el.addEventListener('pointercancel', function (ev) {
-      start = null; moved = false;
-      el.classList.remove('is-dragging');
+    sxp[i] = SX; syp[i] = SY; ssz[i] = Math.max(0.8, sz*dpr);
+    bList[b][bCount[b]++] = i;
+  }
+
+  /* ---- draw ----------------------------------------------------------- */
+  ctx.fillStyle = CUR.bg;
+  ctx.fillRect(0,0,cw,ch);
+  for(let b=0; b<WB+GB; b++){
+    const n = bCount[b];
+    if(!n) continue;
+    ctx.fillStyle = STYLES[b];
+    const L = bList[b];
+    for(let k=0;k<n;k++){
+      const i = L[k], z = ssz[i], h = z*0.5;
+      ctx.fillRect(sxp[i]-h, syp[i]-h, z, z);
+    }
+  }
+
+  drawLabels(now, dts);
+  drawLogo();
+}
+
+/* ==========================================================================
+   17 · LABELS  — real text, quiet, fading in only once their particles land
+   ========================================================================== */
+const FONT = '-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Helvetica,Arial,sans-serif';
+
+function drawLabels(now, dts){
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  const Zd = zoom*dpr, halfW = cw*0.5, halfH = ch*0.5;
+  const aSize = (isSmall ? 10.5 : 11.5)*dpr;
+  const cSize = (isSmall ? 9.5  : 10.5)*dpr;
+
+  for(let i=1;i<nodes.length;i++){
+    const n = nodes[i];
+    const vis = nodeVisible(i);
+    const want = (vis && now > n.arriveAt) ? 1 : 0;
+    n.labelA += (want - n.labelA)*0.055*dts;
+    if(n.labelA < 0.01) continue;
+
+    const SX = (n.x-camX)*Zd + halfW;
+    const SY = (n.y-camY)*Zd + halfH;
+    if(SX < -140 || SX > cw+140 || SY < -40 || SY > ch+40) continue;
+
+    const anchor = n.kind === 1;
+    let a = n.labelA * (anchor ? 0.92 : 0.68);
+    const gold = (i === selected) || (now - n.fireAt < T.fireNodeDecay*0.9);
+    if(gold) a = Math.min(1, a + 0.22);
+
+    /* placement: anchors read below the node; a child's label radiates away
+       from its parent, so a fan of siblings never stacks on itself */
+    let tx, ty;
+    if(anchor){
+      ctx.textAlign = "center";
+      tx = SX; ty = SY + 26*dpr;
+    } else if(Math.abs(n.lox) > 0.58){
+      ctx.textAlign = n.lox > 0 ? "left" : "right";
+      tx = SX + (n.lox > 0 ? 13 : -13)*dpr; ty = SY + 0.5*dpr;
+    } else {
+      ctx.textAlign = "center";
+      tx = SX; ty = SY + (n.loy >= 0 ? 18 : -17)*dpr;
+    }
+
+    ctx.font = (anchor ? "600 " : "400 ") + (anchor?aSize:cSize).toFixed(1) + "px " + FONT;
+    if("letterSpacing" in ctx) ctx.letterSpacing = anchor ? (1.2*dpr)+"px" : (0.3*dpr)+"px";
+    ctx.fillStyle = gold
+      ? "rgba("+CUR.accent+","+a.toFixed(3)+")"
+      : (anchor ? CUR.label : CUR.labelDim) + a.toFixed(3) + ")";
+    ctx.fillText(anchor ? n.label.toUpperCase() : n.label, tx, ty);
+
+    /* a hairline tick under a collapsed anchor, so it reads as openable.
+       A leaf anchor has nothing to open, so it never gets one. */
+    if(anchor && n.hasKids && !n.expanded && n.labelA > 0.3){
+      ctx.fillStyle = CUR.labelDim + (n.labelA*0.34).toFixed(3) + ")";
+      ctx.fillRect(SX-5*dpr, SY+35*dpr, 10*dpr, Math.max(1, dpr*0.8));
+    }
+  }
+  if("letterSpacing" in ctx) ctx.letterSpacing = "0px";
+}
+
+/* ==========================================================================
+   18 · LOGO  — sharp vector mark at the heart of the cloud. Never dissolves,
+   never blurs, never scales with zoom. Soft cloud, hard mark.
+   Size is a fixed screen height in CSS px; the tap target follows it.
+   ========================================================================== */
+let logoX = 0, logoY = 0, logoR = 0;
+function drawLogo(){
+  const Zd = zoom*dpr;
+  const size = (isSmall ? 70 : 86)*dpr*(1 + logoPulse*0.10);
+  logoX = (0-camX)*Zd + cw*0.5;
+  logoY = (0-camY)*Zd + ch*0.5;
+  logoR = size*0.62;
+  ctx.fillStyle = "rgba("+CUR.particle+",0.97)";
+  ctx.beginPath();
+  for(let t=0;t<LOGO.length;t++){
+    const tri = LOGO[t];
+    ctx.moveTo(logoX + tri[0][0]*size, logoY + tri[0][1]*size);
+    ctx.lineTo(logoX + tri[1][0]*size, logoY + tri[1][1]*size);
+    ctx.lineTo(logoX + tri[2][0]*size, logoY + tri[2][1]*size);
+    ctx.closePath();
+  }
+  ctx.fill();
+}
+
+/* ==========================================================================
+   19 · HINT
+   ========================================================================== */
+
+/* ==========================================================================
+   20 · RESIZE
+   ========================================================================== */
+let userZoomed = false;
+function fitZoom(){
+  /* With every anchor collapsed (the small-screen default) there is no reason
+     to shrink the map down to an extent nothing is occupying yet — fit closer,
+     and let the fan overrun a little when one is opened. */
+  let open = false;
+  for(let i=1;i<nodes.length;i++) if(nodes[i].kind===1 && nodes[i].expanded){ open = true; break; }
+  const k  = open ? 1 : 0.80;
+  const fw = Math.max(ancHalfW, mapHalfW*k);
+  const fh = Math.max(ancHalfH, mapHalfH*k);
+  zoom = clamp(Math.min((vw*0.5 - 18)/fw, (vh*0.5 - 26)/fh), T.zoomRange[0], 1.25);
+  camX = 0; camY = 0;
+}
+function resize(){
+  const wasPortrait = isPortrait;
+  vw = window.innerWidth; vh = window.innerHeight;
+  dpr = Math.min(2, window.devicePixelRatio || 1);
+  cw = Math.round(vw*dpr); ch = Math.round(vh*dpr);
+  cv.width = cw; cv.height = ch;
+  cv.style.width = vw+"px"; cv.style.height = vh+"px";
+  isPortrait = vh >= vw;
+  isSmall    = Math.min(vw,vh) < 620;
+
+  const L  = isPortrait ? LAYOUT.portrait : LAYOUT.landscape;
+  const S  = Math.min(Math.min(vw*L.sx,L.cx), Math.min(vh*L.sy,L.cy));
+  uiScale  = clamp(S/380, 0.70, 1.15);
+
+  buildGeometry();
+  buildCarve();
+  if(!userZoomed || wasPortrait !== isPortrait) fitZoom();
+  const hwL = (vw*0.5)/zoom, hhL = (vh*0.5)/zoom;
+  const kx = clamp(hwL/T.cloudRadius, 0.35, 2.4);
+  const ky = clamp(hhL/T.cloudRadius, 0.35, 2.4);
+  applyCloudScale(kx, ky, Math.min(kx,ky));
+  clampCam();
+}
+function clampCam(){
+  const lim = T.panLimit;
+  camX = clamp(camX, -lim, lim);
+  camY = clamp(camY, -lim, lim);
+}
+
+/* ==========================================================================
+   21 · INTERACTION  — pointer events only, one code path for mouse and touch
+   ========================================================================== */
+const ptrs = new Map();
+let dragging = false, moved = 0, downX = 0, downY = 0, downT = 0;
+let lastX = 0, lastY = 0;
+let pinchD = 0, pinchZ = 1, pinchUX = 0, pinchUY = 0;
+
+function midOf(){
+  let sx=0, sy=0, n=0;
+  ptrs.forEach(function(p){ sx+=p.x; sy+=p.y; n++; });
+  return [sx/n, sy/n];
+}
+function distOf(){
+  const it = ptrs.values();
+  const a = it.next().value, b = it.next().value;
+  return Math.hypot(a.x-b.x, a.y-b.y);
+}
+function zoomAt(nz, sx, sy){
+  nz = clamp(nz, T.zoomRange[0], T.zoomRange[1]);
+  const ux = (sx - vw*0.5)/zoom + camX;
+  const uy = (sy - vh*0.5)/zoom + camY;
+  zoom = nz;
+  camX = ux - (sx - vw*0.5)/zoom;
+  camY = uy - (sy - vh*0.5)/zoom;
+  userZoomed = true;
+  clampCam();
+}
+
+cv.addEventListener("pointerdown", function(e){
+  try{ cv.setPointerCapture(e.pointerId); }catch(_){}
+  ptrs.set(e.pointerId, {x:e.clientX, y:e.clientY});
+  if(ptrs.size === 1){
+    dragging = true; moved = 0;
+    downX = lastX = e.clientX; downY = lastY = e.clientY;
+    downT = performance.now()/1000;
+    cv.classList.add("dragging");
+  } else if(ptrs.size === 2){
+    dragging = false;
+    cv.classList.remove("dragging");
+    pinchD = distOf() || 1; pinchZ = zoom;
+    const m = midOf();
+    pinchUX = (m[0]-vw*0.5)/zoom + camX;
+    pinchUY = (m[1]-vh*0.5)/zoom + camY;
+  }
+});
+
+cv.addEventListener("pointermove", function(e){
+  const p = ptrs.get(e.pointerId);
+  if(!p) return;
+  p.x = e.clientX; p.y = e.clientY;
+  if(ptrs.size === 1 && dragging){
+    const dx = e.clientX-lastX, dy = e.clientY-lastY;
+    lastX = e.clientX; lastY = e.clientY;
+    moved += Math.abs(dx)+Math.abs(dy);
+    camX -= dx/zoom; camY -= dy/zoom;
+    userZoomed = true;
+    clampCam();
+  } else if(ptrs.size === 2){
+    const d = distOf() || 1;
+    const m = midOf();
+    zoom = clamp(pinchZ*(d/pinchD), T.zoomRange[0], T.zoomRange[1]);
+    camX = pinchUX - (m[0]-vw*0.5)/zoom;
+    camY = pinchUY - (m[1]-vh*0.5)/zoom;
+    userZoomed = true;
+    clampCam();
+  }
+});
+
+function pointerEnd(e){
+  const was = ptrs.size;
+  ptrs.delete(e.pointerId);
+  cv.classList.remove("dragging");
+  if(was === 1 && dragging){
+    if(moved < T.tapSlop && performance.now()/1000 - downT < 0.7)
+      handleTap(downX, downY, clock);   // the loop's clock, not wall time
+  }
+  if(ptrs.size === 1){                       // pinch → drag handoff
+    const it = ptrs.values().next().value;
+    dragging = true; moved = 999;
+    lastX = it.x; lastY = it.y;
+  } else if(ptrs.size === 0){
+    dragging = false;
+  }
+}
+cv.addEventListener("pointerup", pointerEnd);
+cv.addEventListener("pointercancel", pointerEnd);
+
+cv.addEventListener("wheel", function(e){
+  e.preventDefault();
+  const k = Math.exp(-e.deltaY * (e.deltaMode === 1 ? 0.028 : 0.0016));
+  zoomAt(zoom*k, e.clientX, e.clientY);
+}, {passive:false});
+
+function nearestNode(x, y, reach){
+  let best = -1, bestD = reach*reach;
+  for(let i=1;i<nodes.length;i++){
+    if(!nodeVisible(i)) continue;
+    const dx = x - ((nodes[i].x-camX)*zoom + vw*0.5);
+    const dy = y - ((nodes[i].y-camY)*zoom + vh*0.5);
+    const d = dx*dx+dy*dy;
+    if(d < bestD){ bestD = d; best = i; }
+  }
+  return best;
+}
+
+function handleTap(x, y, now){
+  const reach = isSmall ? 34 : 30;
+  const near  = nearestNode(x, y, reach);
+
+  /* the mark: one tap toggles the map, two invert the whole piece. A node
+     sitting closer to the finger than the mark's centre wins, so an anchor
+     that lands near the middle never becomes untappable. */
+  const ldx = x*dpr - logoX, ldy = y*dpr - logoY;
+  const overLogo = ldx*ldx + ldy*ldy < (logoR + 12*dpr)*(logoR + 12*dpr);
+  if(overLogo && near < 0){
+    logoPulse = 1;                                   // feedback is immediate
+    if(now - lastLogoTap < T.doubleTap){
+      lastLogoTap  = -99;
+      pendingToggle = 0;                             // cancel the queued toggle
+      themeTarget   = 1 - themeTarget;
+    } else {
+      lastLogoTap   = now;
+      pendingToggle = now + T.doubleTap;             // fires from the loop
+    }
+    return;
+  }
+  if(!mapOpen){ selected = -1; return; }
+  const best = near;
+  if(best < 0){ selected = -1; return; }
+
+  selected = best;
+  fireNode(best, now);                       // tapping any node fires it
+  if(nodes[best].kind === 1 && nodes[best].hasKids) toggleAnchor(best, now);
+  onNodeTap(best);                           // and the page opens its panel
+}
+
+/* ==========================================================================
+   22 · LOOP
+   ========================================================================== */
+let raf = 0, last = 0, running = false, clock = 0;
+function tick(ts){
+  raf = requestAnimationFrame(tick);
+  const t = ts/1000;
+  let dt = last ? t-last : 1/60;
+  last = t;
+  if(dt > 0.05) dt = 0.05;                   // never let a stall detonate the springs
+  clock += dt;
+  frame(clock, dt);
+  if(!mapOpen && !autoDone && clock > T.autoOpenAfter){ autoDone = true; openMap(clock); }
+}
+let autoDone = false;
+function start(){ if(running) return; running = true; last = 0; raf = requestAnimationFrame(tick); }
+function stop(){ running = false; cancelAnimationFrame(raf); }
+
+document.addEventListener("visibilitychange", function(){
+  if(document.hidden) stop(); else start();
+});
+window.addEventListener("resize", resize);
+window.addEventListener("orientationchange", function(){ setTimeout(resize, 120); });
+
+/* ==========================================================================
+   23 · BOOT
+   ========================================================================== */
+
+/* ==========================================================================
+   24 · PAGE WIRING
+   The map is one canvas; everything else on the page is ordinary DOM. This
+   is the seam between them: node taps open the detail panel, and the HUD
+   buttons drive the same camera the pointer does.
+   ========================================================================== */
+
+/* MAP flattened in the same depth-first order the engine uses, so a node
+   index from the canvas maps straight back to its entry — no ids needed. */
+function flatData(){
+  const out = [null];                       // index 0 is the mark itself
+  for(let c=0;c<MAP.length;c++){
+    (function walk(node){
+      out.push(node);
+      const kids = node.children || [];
+      for(let k=0;k<kids.length;k++) walk(kids[k]);
+    })(MAP[c]);
+  }
+  return out;
+}
+const DATA = flatData();
+
+/* ---- detail panel ------------------------------------------------------- */
+const panel = document.getElementById("panel");
+const scrim = document.getElementById("scrim");
+const pBody = document.getElementById("panelBody");
+const pTag  = document.getElementById("panelTag");
+const pX    = document.getElementById("panelX");
+let lastFocus = null;
+
+function esc(s){
+  return String(s == null ? "" : s);
+}
+
+function openPanel(d){
+  if(!d) return;
+  lastFocus = document.activeElement;
+  pTag.textContent = d.tag || "Node";
+
+  let html = '<h2 id="panelTitle">' + (d.title || d.label) + '</h2>' +
+             '<div class="panel__rule"></div>';
+  (d.body || []).forEach(function(p){ html += '<p>' + p + '</p>'; });
+
+  if(d.facts && d.facts.length){
+    html += '<ul class="panel__facts">';
+    d.facts.forEach(function(f){
+      html += '<li><b>' + f[0] + '</b><span>' + f[1] + '</span></li>';
     });
+    html += '</ul>';
+  }
 
-    // keyboard: the element is a real button/anchor, so Enter/Space fire click
-    el.addEventListener('click', function (ev) {
-      if (ev.detail !== 0) { ev.preventDefault(); return; } // pointer path handled above
-      activate(n, ev);
+  if(d.acts && d.acts.length){
+    html += '<div class="panel__acts">';
+    d.acts.forEach(function(a){
+      const ext = /^https?:/.test(a[1]);
+      html += '<a class="btn' + (a[2] ? " btn--solid" : "") + '" href="' + a[1] + '"' +
+              (ext ? ' target="_blank" rel="noopener"' : "") + '>' + a[0] +
+              (ext ? " &#8599;" : "") + '</a>';
     });
+    html += '</div>';
   }
 
-  function activate(n, ev) {
-    if (n.kind === 'root') { resetView(); return; }
+  pBody.innerHTML = html;
+  panel.classList.add("is-open");
+  panel.setAttribute("aria-hidden", "false");
+  scrim.classList.add("is-on");
+  pX.focus();
+}
 
-    if (n.href) {
-      if (ev) ev.preventDefault();
-      if (n.external) window.open(n.href, '_blank', 'noopener');
-      else window.location.href = n.href;
-      return;
-    }
+function closePanel(){
+  panel.classList.remove("is-open");
+  panel.setAttribute("aria-hidden", "true");
+  scrim.classList.remove("is-on");
+  if(lastFocus && lastFocus.focus) lastFocus.focus();
+  lastFocus = null;
+}
 
-    var kids = childrenOf(n.id).length;
-    if (kids) {
-      setOpen(n, !n.open);
-      if (n.open && n.body) openPanel(n);
-      else if (!n.open) closePanel();
-      else if (n.open && !n.body) { /* pure hub, nothing to read */ }
-      return;
-    }
+/* Called by handleTap once the engine has settled what was hit. Parents still
+   expand and collapse in the map; the panel is what carries their story and
+   the link the text index would have given you. */
+function onNodeTap(i){
+  openPanel(DATA[i]);
+}
 
-    if (n.body) openPanel(n);
+pX.addEventListener("click", closePanel);
+scrim.addEventListener("click", closePanel);
+
+/* ---- camera controls ---------------------------------------------------- */
+function zoomStep(k){
+  zoomAt(zoom*k, vw*0.5, vh*0.5);
+}
+/* Recentre puts the camera back where a fresh load leaves it: dead centre at
+   the default zoom, refit for the current viewport. */
+function home(){
+  camX = 0; camY = 0; zoom = 1;
+  userZoomed = false;
+  clampCam();
+  resize();
+}
+
+document.getElementById("btnIn").addEventListener("click", function(){ zoomStep(1.25); });
+document.getElementById("btnOut").addEventListener("click", function(){ zoomStep(1/1.25); });
+document.getElementById("btnReset").addEventListener("click", home);
+
+/* ---- text index --------------------------------------------------------- */
+const indexView = document.getElementById("index-view");
+function showIndex(on){
+  indexView.classList.toggle("is-on", on);
+  if(on){
+    const first = indexView.querySelector("a");
+    if(first) first.focus();
+  } else {
+    document.getElementById("btnIndex").focus();
   }
+}
+document.getElementById("btnIndex").addEventListener("click", function(){ showIndex(true); });
+document.getElementById("btnIndexClose").addEventListener("click", function(){ showIndex(false); });
+document.getElementById("skipLink").addEventListener("click", function(){ showIndex(true); });
 
-  /* =====================================================
-     7. PAN / ZOOM
-     ===================================================== */
+document.addEventListener("keydown", function(e){
+  if(e.key !== "Escape") return;
+  if(indexView.classList.contains("is-on")){ showIndex(false); return; }
+  if(panel.classList.contains("is-open")) closePanel();
+});
 
-  var view = { x: 0, y: 0, k: 1 };
-  var HOME = { x: 0, y: 0, k: 1 };
 
-  // Run the simulation forward without painting, so we can measure where the
-  // map actually ends up before deciding how to frame it.
-  function settle(steps) {
-    alpha = 1;
-    for (var i = 0; i < (steps || 300); i++) tick();
-    alpha = 0.02;
-  }
-
-  function visibleHeight(el) {
-    if (!el) return 0;
-    if (getComputedStyle(el).display === 'none') return 0;
-    return el.getBoundingClientRect().height;
-  }
-
-  // Frame the whole map inside the space the HUD isn't already using. With
-  // every branch open the composition is far too wide for fixed zoom steps.
-  function fitHome() {
-    measure();
-
-    var vw = window.innerWidth, vh = window.innerHeight, pad = 24;
-
-    // On wide screens the wordmark and the nav sit in opposite corners and a
-    // centred map clears them, so only the short nav strip is reserved. On
-    // narrow screens the wordmark spans the top, so reserve its full height.
-    var top = vw > 900
-      ? visibleHeight(document.querySelector('.hud--top'))
-      : visibleHeight(document.querySelector('.hud--brand'));
-    var bottom = visibleHeight(document.querySelector('.hud--ctl'));
-
-    var sx = pad, sy = top + pad;
-    var sw = Math.max(140, vw - pad * 2);
-    var sh = Math.max(140, vh - top - bottom - pad * 2);
-
-    var minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-    nodes.forEach(function (n) {
-      if (!n.visible) return;
-      if (n.x - n.w / 2 < minX) minX = n.x - n.w / 2;
-      if (n.x + n.w / 2 > maxX) maxX = n.x + n.w / 2;
-      if (n.y - n.h / 2 < minY) minY = n.y - n.h / 2;
-      if (n.y + n.h / 2 > maxY) maxY = n.y + n.h / 2;
-    });
-    if (!isFinite(minX)) { HOME = { x: 0, y: 0, k: 1 }; return; }
-
-    var k = Math.min(sw / (maxX - minX), sh / (maxY - minY));
-    k = Math.max(0.42, Math.min(1.1, k));
-
-    var cx = (minX + maxX) / 2, cy = (minY + maxY) / 2;
-    HOME = {
-      x: (sx + sw / 2) - vw / 2 - cx * k,
-      y: (sy + sh / 2) - vh / 2 - cy * k,
-      k: k
-    };
-  }
-
-  function resetView() {
-    nodes.forEach(function (n) { n.pinned = false; });
-    settle();
-    fitHome();
-    view.x = HOME.x; view.y = HOME.y; view.k = HOME.k;
-    stir(0.2);
-  }
-
-  var pan = null;
-  stage.addEventListener('pointerdown', function (ev) {
-    if (ev.target.closest('.node')) return;
-    pan = { x: ev.clientX, y: ev.clientY, vx: view.x, vy: view.y };
-    stage.classList.add('is-panning');
-    stage.setPointerCapture(ev.pointerId);
-  });
-  stage.addEventListener('pointermove', function (ev) {
-    if (!pan) return;
-    view.x = pan.vx + (ev.clientX - pan.x);
-    view.y = pan.vy + (ev.clientY - pan.y);
-  });
-  ['pointerup', 'pointercancel'].forEach(function (t) {
-    stage.addEventListener(t, function () { pan = null; stage.classList.remove('is-panning'); });
-  });
-
-  function zoomAt(cx, cy, factor) {
-    var k2 = Math.max(0.35, Math.min(2.2, view.k * factor));
-    var ox = window.innerWidth / 2, oy = window.innerHeight / 2;
-    // keep the point under the cursor fixed
-    var wx = (cx - ox - view.x) / view.k;
-    var wy = (cy - oy - view.y) / view.k;
-    view.k = k2;
-    view.x = cx - ox - wx * k2;
-    view.y = cy - oy - wy * k2;
-  }
-
-  stage.addEventListener('wheel', function (ev) {
-    ev.preventDefault();
-    zoomAt(ev.clientX, ev.clientY, ev.deltaY < 0 ? 1.12 : 1 / 1.12);
-  }, { passive: false });
-
-  // pinch
-  var pinch = null;
-  stage.addEventListener('touchstart', function (ev) {
-    if (ev.touches.length === 2) {
-      pinch = dist2(ev.touches);
-      pan = null;
-    }
-  }, { passive: true });
-  stage.addEventListener('touchmove', function (ev) {
-    if (ev.touches.length === 2 && pinch) {
-      ev.preventDefault();
-      var d = dist2(ev.touches);
-      var mx = (ev.touches[0].clientX + ev.touches[1].clientX) / 2;
-      var my = (ev.touches[0].clientY + ev.touches[1].clientY) / 2;
-      zoomAt(mx, my, d / pinch);
-      pinch = d;
-    }
-  }, { passive: false });
-  stage.addEventListener('touchend', function () { pinch = null; });
-
-  function dist2(t) {
-    return Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
-  }
-
-  document.getElementById('btnIn').onclick = function () {
-    zoomAt(window.innerWidth / 2, window.innerHeight / 2, 1.2);
-  };
-  document.getElementById('btnOut').onclick = function () {
-    zoomAt(window.innerWidth / 2, window.innerHeight / 2, 1 / 1.2);
-  };
-  document.getElementById('btnReset').onclick = resetView;
-
-  /* =====================================================
-     8. PANEL
-     ===================================================== */
-
-  var panel = document.getElementById('panel');
-  var scrim = document.getElementById('scrim');
-  var pBody = document.getElementById('panelBody');
-  var pTag  = document.getElementById('panelTag');
-  var lastFocus = null;
-
-  function openPanel(n) {
-    lastFocus = document.activeElement;
-    pTag.textContent = n.tag || 'Node';
-
-    var html = '<h2 id="panelTitle">' + (n.title || n.label) + '</h2><div class="panel__rule"></div>';
-    (n.body || []).forEach(function (p) { html += '<p>' + p + '</p>'; });
-
-    if (n.facts && n.facts.length) {
-      html += '<ul class="panel__facts">';
-      n.facts.forEach(function (f) { html += '<li><b>' + f[0] + '</b><span>' + f[1] + '</span></li>'; });
-      html += '</ul>';
-    }
-
-    if (n.acts && n.acts.length) {
-      html += '<div class="panel__acts">';
-      n.acts.forEach(function (a, i) {
-        var ext = /^https?:/.test(a[1]);
-        html += '<a class="btn' + (a[2] ? ' btn--solid' : '') + '" href="' + a[1] + '"' +
-                (ext ? ' target="_blank" rel="noopener"' : '') + '>' + a[0] +
-                (ext ? ' &#8599;' : '') + '</a>';
-      });
-      html += '</div>';
-    }
-
-    pBody.innerHTML = html;
-    panel.classList.add('is-open');
-    panel.setAttribute('aria-hidden', 'false');
-    scrim.classList.add('is-on');
-    document.getElementById('panelX').focus();
-  }
-
-  function closePanel() {
-    panel.classList.remove('is-open');
-    panel.setAttribute('aria-hidden', 'true');
-    scrim.classList.remove('is-on');
-    if (lastFocus && lastFocus.focus) lastFocus.focus();
-    lastFocus = null;
-  }
-
-  document.getElementById('panelX').onclick = closePanel;
-  scrim.onclick = closePanel;
-
-  /* =====================================================
-     9. INDEX VIEW
-     ===================================================== */
-
-  var indexView = document.getElementById('index-view');
-  function showIndex(on) {
-    indexView.classList.toggle('is-on', on);
-    if (on) indexView.querySelector('a').focus();
-  }
-  document.getElementById('btnIndex').onclick = function () { showIndex(true); };
-  document.getElementById('btnIndexClose').onclick = function () { showIndex(false); };
-  document.getElementById('skipLink').onclick = function () { showIndex(true); };
-
-  document.addEventListener('keydown', function (ev) {
-    if (ev.key !== 'Escape') return;
-    if (indexView.classList.contains('is-on')) { showIndex(false); return; }
-    if (panel.classList.contains('is-open')) closePanel();
-  });
-
-  /* =====================================================
-     10. GO
-     ===================================================== */
-
-  var reframe;
-  window.addEventListener('resize', function () {
-    clearTimeout(reframe);
-    reframe = setTimeout(function () {
-      setSpread();
-      settle(160);
-      fitHome();
-      view.x = HOME.x; view.y = HOME.y; view.k = HOME.k;
-      stir(0.2);
-    }, 120);
-  });
-
-  measure();
-  setSpread();
-  resetView();
-  markWires();
-  loop();
-
+(function boot(){
+  vw = window.innerWidth; vh = window.innerHeight;
+  isSmall = Math.min(vw,vh) < 620;
+  densityK = isSmall ? 0.78 : 1;
+  allocParticles(isSmall ? T.countMobile : T.countDesktop);
+  buildCloud();
+  initFreeGrid();
+  initBuckets();
+  applyTheme(0);
+  resize();
+  start();
+})();
 
 })();
 </script>
