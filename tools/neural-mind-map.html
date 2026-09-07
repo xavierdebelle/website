@@ -20,15 +20,105 @@
 
 /* ==========================================================================
    1 · MAP DATA
-   Plain data. Edit labels / add children here; everything downstream adapts.
+   A hierarchy of any depth. Nest `children` as deep as you like; clusters are
+   MEANT to be lopsided — nine nodes beside two is correct, and one arm running
+   four deep beside a bare one is what stops the map reading as a diagram.
+   Editing this invalidates the baked layout below, which regrows on next load.
    ========================================================================== */
 const MAP = [
-  { label:"Work",     children:["Photography","Commercial","Direction","Post","Clients"] },
-  { label:"Personal", children:["Reading","Training","Cooking","Music"] },
-  { label:"Family",   children:["Sundays","Travel","Archive","Recipes","Letters"] },
-  { label:"Dreams",   children:["Own Studio","Patagonia","A Book","Slow Year","Cabin","Workshop"] },
-  { label:"About",    children:["Story","Process","Contact","Now"] }
+  { label:"Work", children:[
+      { label:"Photography", children:[
+          { label:"Weddings", children:[ { label:"de Belle" } ] },
+          { label:"Editorial" } ]},
+      { label:"Commercial", children:[ { label:"333 Photo" } ] },
+      { label:"Direction" },
+      { label:"Post", children:[ { label:"Colour" } ] },
+      { label:"Clients" } ]},
+
+  { label:"Personal", children:[
+      { label:"Reading" },
+      { label:"Training", children:[ { label:"Running" } ] },
+      { label:"Music" } ]},
+
+  { label:"Family", children:[
+      { label:"Sundays" },
+      { label:"Travel", children:[ { label:"Patagonia" } ] },
+      { label:"Archive", children:[ { label:"Letters" }, { label:"Recipes" } ] } ]},
+
+  { label:"Dreams", children:[
+      { label:"Own Studio", children:[
+          { label:"The Space", children:[ { label:"Darkroom" } ] } ]},
+      { label:"A Book" },
+      { label:"Slow Year" },
+      { label:"Cabin" },
+      { label:"Workshop" } ]},
+
+  { label:"About", children:[
+      { label:"Story" },
+      { label:"Contact" } ]}
 ];
+
+/* ==========================================================================
+   1b · GROWTH TUNING
+   The layout is not placed, it is grown: space colonization, the algorithm
+   used for tree branching and leaf venation. Attraction points are scattered
+   through a blob offset to one side of each anchor; branches step toward the
+   ones within reach, consuming them as they arrive. Labels are then hung on
+   the resulting tips and junctions, deepest hierarchy on the deepest branches.
+   ========================================================================== */
+const GROW = {
+  seed          : 20260907, // change this and the whole map grows differently
+
+  /* reference viewports the two arrangements are grown against -------------- */
+  refPortrait   : [420, 880],
+  refLandscape  : [1320, 780],
+  ring          : { portrait:{ rx:0.66, ry:0.82 }, landscape:{ rx:0.90, ry:0.70 } },
+
+  /* Two scales set everything, so both arrangements grow correctly:
+       S        the layout scale — legibility is measured against this
+       RING     the mean gap between neighbouring anchors — how much room a
+                cluster actually has, which on a wide landscape ring is much
+                more than S suggests.                                        */
+  minNodeSep    : 0.310,    // ×S — labels stay legible; nothing closer than this
+  sepAspect     : [1.55, 0.72],// the separation test is elliptical, because a
+                            // label is wide and short: neighbours need more
+                            // room side by side than stacked.
+  step          : 0.30,     // ×minNodeSep — branch step length
+  killDist      : 0.28,     // ×minNodeSep — attractor consumed at this range
+  influence     : 1.25,     // ×minNodeSep — how far an attractor reaches
+  warpAmp       : 0.30,     // ×minNodeSep — the meander
+  warpFreq      : 1.35,     // cycles across S
+  rigidity      : 0.52,     // how much a branch keeps its previous heading
+  wander        : 0.22,     // random jitter per step, radians
+  maxKids       : 3,        // branchings allowed from one branch node
+  iterCap       : 300,
+
+  /* growth regions — offset from the anchor, never centred on it ----------- */
+  attractors    : [54, 24, 32, 46, 14],  // per cluster; deliberately unequal
+  regionOffset  : 0.58,     // region centre pushed this far along the growth dir
+  regionR       : [0.62, 0.58],// ×RING: along the growth dir, across it. Big
+                            // enough that neighbouring regions graze — the map
+                            // must not read as five tidy territories.
+  regionNoise   : 0.40,     // raggedness of the region edge
+  clumpBias     : 2.6,      // density skew toward the growth direction
+  neighbourPush : 0.25,     // how hard neighbours shove a growth direction away
+  lean          : 0.62,     // ±radians of tangential lean per cluster. Some
+                            // neighbours end up leaning into each other, which
+                            // is where the territories bleed and cross.
+
+  /* hanging the hierarchy on the branches ---------------------------------- */
+  gapMin        : 3,        // a child sits at least this many branch steps out
+  gapMax        : 8,
+  depthTaper    : 0.84,     // particle count / orbit multiplier per level down
+
+  /* bleed ------------------------------------------------------------------ */
+  crossLinks    : 4,        // links between nodes of neighbouring clusters
+  crossDist     : 2.40,     // ×S — ceiling on how far a cross link may reach
+                            // in EITHER arrangement; pairs are then ranked by
+                            // their mean distance across the two.
+  bundleHold    : 0.55,     // fraction of a shared trunk kept before splitting
+  pathSpacing   : 9         // link paths resampled to this arc spacing (px)
+};
 
 /* ==========================================================================
    2 · COLOUR TOKENS  —  two themes, crossfaded
@@ -92,8 +182,7 @@ const T = {
   /* recruitment sizes ----------------------------------------------------- */
   nAnchor        : 76,       // particles orbiting an anchor node
   nChild         : 24,
-  nLinkRoot      : 26,       // particles strung along a root→anchor link
-  nLinkChild     : 15,
+  linkSpacing    : 9.5,      // one link particle per this much path length
   orbitAnchor    : 17,       // orbit radius, layout units
   orbitChild     : 9.5,
   orbitFlatten   : 0.45,     // squash orbit in z so nodes read as discs
@@ -362,72 +451,626 @@ function applyCloudScale(kx, ky, kz){
   cKX=kx; cKY=ky; cKZ=kz;
 }
 
+
+/* ==========================================================================
+   1c · BAKED LAYOUT
+   The output of the grower, in units of the layout scale S. Regenerate with
+   the grower (see regrow) after changing MAP or the growth constants; it is
+   rebuilt automatically if this no longer matches the hierarchy.
+   ========================================================================== */
+const GROWN_BAKED = {
+cross:[29,34,7,33,14,21,19,25],
+portrait:{
+p:[
+-0.043,-1.767,-0.019,-2.022,0.03,-2.276,0.04,-2.529,0.56,-2.465,-0.511,-1.928,-1.019,-1.794,
+-0.463,-1.607,-0.433,-2.174,-0.701,-2.39,-0.242,-2.769,0.603,-0.545,0.994,-0.781,1.039,-0.391,
+1.538,-0.537,1.599,-0.295,0.407,1.439,0.29,1.902,0.615,1.701,0.917,1.941,0.821,1.222,1.225,
+1.378,1.172,0.944,-0.402,1.385,-0.461,1.685,-0.425,1.937,-0.284,2.179,-0.946,1.765,-0.915,1.992,
+-0.076,2.464,-0.57,2.361,-0.633,-0.52,-0.737,-0.278,-0.683,-0.028],
+q:[
+20,0,0,-0.02,-0.146,-0.027,-0.242,-0.037,-0.332,-0.045,-0.414,-0.046,-0.494,-0.054,-0.569,
+-0.073,-0.641,-0.077,-0.717,-0.065,-0.801,-0.054,-0.895,-0.045,-0.996,-0.052,-1.097,-0.068,
+-1.203,-0.083,-1.314,-0.095,-1.418,-0.098,-1.52,-0.096,-1.62,-0.087,-1.717,-0.043,-1.767,4,
+-0.043,-1.767,-0.038,-1.86,-0.03,-1.944,-0.019,-2.022,4,-0.019,-2.022,0.001,-2.106,0.007,-2.194,
+0.03,-2.276,4,0.03,-2.276,0.013,-2.362,0.003,-2.448,0.04,-2.529,8,-0.019,-2.022,0.028,-2.129,
+0.053,-2.242,0.122,-2.335,0.218,-2.401,0.334,-2.414,0.447,-2.44,0.56,-2.465,8,-0.043,-1.767,
+-0.038,-1.86,-0.11,-1.901,-0.195,-1.931,-0.277,-1.917,-0.354,-1.875,-0.438,-1.891,-0.511,-1.928,
+6,-0.511,-1.928,-0.615,-1.98,-0.732,-1.982,-0.836,-1.931,-0.94,-1.879,-1.019,-1.794,9,-0.043,
+-1.767,-0.038,-1.86,-0.11,-1.901,-0.195,-1.931,-0.277,-1.917,-0.354,-1.875,-0.419,-1.801,-0.467,
+-1.709,-0.463,-1.607,6,-0.043,-1.767,-0.08,-1.877,-0.165,-1.957,-0.242,-2.043,-0.344,-2.1,
+-0.433,-2.174,4,-0.433,-2.174,-0.53,-2.238,-0.602,-2.329,-0.701,-2.39,10,-0.043,-1.767,-0.095,
+-1.87,-0.13,-1.981,-0.177,-2.088,-0.202,-2.201,-0.254,-2.306,-0.257,-2.422,-0.258,-2.538,-0.241,
+-2.653,-0.242,-2.769,10,0,0,0.048,-0.114,0.104,-0.173,0.163,-0.22,0.23,-0.267,0.302,-0.32,0.366,
+-0.378,0.428,-0.435,0.499,-0.493,0.603,-0.545,5,0.603,-0.545,0.716,-0.574,0.816,-0.632,0.9,
+-0.713,0.994,-0.781,6,0.603,-0.545,0.699,-0.535,0.785,-0.508,0.876,-0.475,0.97,-0.446,1.039,
+-0.391,7,1.039,-0.391,1.135,-0.35,1.244,-0.348,1.335,-0.368,1.425,-0.4,1.499,-0.452,1.538,
+-0.537,10,0.603,-0.545,0.716,-0.516,0.811,-0.45,0.927,-0.437,1.042,-0.426,1.155,-0.397,1.257,
+-0.341,1.371,-0.321,1.487,-0.329,1.599,-0.295,17,0,0,0.005,0.051,0.02,0.148,0.038,0.248,0.06,
+0.357,0.086,0.454,0.116,0.537,0.146,0.628,0.173,0.734,0.191,0.837,0.224,0.926,0.262,1.018,0.295,
+1.109,0.328,1.203,0.36,1.303,0.398,1.397,0.407,1.439,7,0.407,1.439,0.459,1.515,0.497,1.585,
+0.476,1.674,0.408,1.765,0.36,1.852,0.29,1.902,5,0.407,1.439,0.459,1.515,0.497,1.585,0.543,1.652,
+0.615,1.701,5,0.615,1.701,0.69,1.743,0.773,1.794,0.855,1.862,0.917,1.941,6,0.407,1.439,0.504,
+1.44,0.594,1.386,0.675,1.327,0.734,1.255,0.821,1.222,7,0.821,1.222,0.897,1.182,0.976,1.155,
+1.064,1.154,1.134,1.219,1.188,1.299,1.225,1.378,5,0.821,1.222,0.929,1.18,1.034,1.129,1.116,
+1.046,1.172,0.944,17,0,0,-0.045,0.044,-0.076,0.135,-0.107,0.23,-0.136,0.335,-0.171,0.438,-0.205,
+0.532,-0.224,0.627,-0.242,0.717,-0.273,0.808,-0.306,0.896,-0.331,0.981,-0.351,1.069,-0.377,
+1.146,-0.397,1.223,-0.404,1.301,-0.402,1.385,4,-0.402,1.385,-0.433,1.475,-0.44,1.585,-0.461,
+1.685,4,-0.461,1.685,-0.493,1.771,-0.471,1.859,-0.425,1.937,4,-0.425,1.937,-0.376,2.015,-0.33,
+2.101,-0.284,2.179,7,-0.402,1.385,-0.446,1.493,-0.532,1.57,-0.62,1.647,-0.724,1.698,-0.838,
+1.723,-0.946,1.765,8,-0.402,1.385,-0.433,1.497,-0.51,1.585,-0.568,1.685,-0.665,1.749,-0.748,
+1.831,-0.832,1.911,-0.915,1.992,11,-0.402,1.385,-0.381,1.499,-0.399,1.614,-0.4,1.73,-0.357,
+1.838,-0.304,1.942,-0.248,2.043,-0.171,2.131,-0.12,2.235,-0.104,2.351,-0.076,2.464,10,-0.402,
+1.385,-0.482,1.47,-0.517,1.581,-0.564,1.687,-0.623,1.787,-0.631,1.903,-0.61,2.017,-0.613,2.134,
+-0.601,2.249,-0.57,2.361,10,0,0,-0.087,-0.102,-0.147,-0.16,-0.209,-0.219,-0.279,-0.268,-0.345,
+-0.315,-0.413,-0.358,-0.487,-0.399,-0.563,-0.446,-0.633,-0.52,4,-0.633,-0.52,-0.717,-0.474,
+-0.742,-0.379,-0.737,-0.278,7,-0.633,-0.52,-0.717,-0.474,-0.742,-0.379,-0.737,-0.278,-0.708,
+-0.196,-0.675,-0.12,-0.683,-0.028,23,-0.915,1.992,-0.926,1.893,-0.925,1.797,-0.919,1.701,-0.899,
+1.606,-0.88,1.505,-0.87,1.404,-0.864,1.31,-0.857,1.216,-0.857,1.124,-0.86,1.033,-0.849,0.934,
+-0.829,0.849,-0.814,0.777,-0.802,0.69,-0.788,0.594,-0.772,0.511,-0.758,0.432,-0.74,0.346,-0.715,
+0.257,-0.694,0.171,-0.681,0.085,-0.683,-0.028,18,-1.019,-1.794,-0.989,-1.7,-0.968,-1.602,-0.951,
+-1.518,-0.937,-1.433,-0.923,-1.342,-0.909,-1.265,-0.892,-1.192,-0.878,-1.105,-0.863,-1.015,
+-0.841,-0.927,-0.833,-0.836,-0.83,-0.743,-0.811,-0.647,-0.787,-0.539,-0.767,-0.434,-0.744,
+-0.336,-0.737,-0.278,19,1.039,-0.391,1,-0.312,1.004,-0.232,1.002,-0.143,0.997,-0.048,0.983,
+0.052,0.965,0.151,0.946,0.25,0.924,0.345,0.91,0.443,0.899,0.546,0.884,0.645,0.87,0.73,0.854,
+0.804,0.84,0.871,0.837,0.943,0.838,1.033,0.839,1.128,0.821,1.222,13,0.615,1.701,0.541,1.723,
+0.431,1.737,0.321,1.739,0.223,1.729,0.126,1.713,0.032,1.701,-0.059,1.701,-0.144,1.713,-0.223,
+1.725,-0.3,1.729,-0.384,1.722,-0.461,1.685]},
+landscape:{
+p:[
+-0.062,-0.682,-0.064,-1.045,-0.238,-1.293,-0.347,-1.518,0.296,-1.309,-0.535,-0.747,-0.975,
+-0.922,-0.707,-1.736,-1.205,-1.185,-1.278,-1.517,-0.296,-1.891,1.465,-0.237,1.953,-0.311,1.739,
+-0.039,1.765,0.238,2.359,-0.435,0.873,0.616,1.476,0.733,1.092,0.87,1.089,1.122,1.554,1.197,
+1.954,1.42,2.196,1.643,-0.926,0.551,-0.922,0.809,-0.985,1.068,-1.018,1.366,-1.433,0.896,-1.409,
+0.405,-1.462,1.275,-0.647,1.58,-1.504,-0.233,-2.029,-0.206,-2.066,0.06],
+q:[
+8,0,0,-0.027,-0.15,-0.04,-0.252,-0.057,-0.347,-0.07,-0.43,-0.079,-0.511,-0.097,-0.586,-0.062,
+-0.682,5,-0.062,-0.682,-0.062,-0.759,-0.062,-0.848,-0.055,-0.947,-0.064,-1.045,4,-0.064,-1.045,
+-0.1,-1.141,-0.167,-1.225,-0.238,-1.293,4,-0.238,-1.293,-0.297,-1.35,-0.328,-1.424,-0.347,
+-1.518,6,-0.064,-1.045,-0.043,-1.144,0.013,-1.227,0.101,-1.266,0.203,-1.259,0.296,-1.309,8,
+-0.062,-0.682,-0.062,-0.759,-0.134,-0.811,-0.22,-0.824,-0.296,-0.824,-0.376,-0.81,-0.449,-0.772,
+-0.535,-0.747,7,-0.535,-0.747,-0.632,-0.715,-0.728,-0.7,-0.823,-0.693,-0.904,-0.747,-0.958,
+-0.824,-0.975,-0.922,12,-0.062,-0.682,-0.112,-0.786,-0.204,-0.858,-0.287,-0.939,-0.369,-1.021,
+-0.413,-1.129,-0.497,-1.209,-0.559,-1.307,-0.621,-1.406,-0.656,-1.516,-0.654,-1.633,-0.707,
+-1.736,12,-0.062,-0.682,-0.161,-0.741,-0.253,-0.813,-0.348,-0.88,-0.459,-0.914,-0.559,-0.973,
+-0.673,-0.996,-0.789,-1.01,-0.899,-1.047,-1.015,-1.052,-1.115,-1.111,-1.205,-1.185,4,-1.205,
+-1.185,-1.26,-1.287,-1.284,-1.401,-1.278,-1.517,12,-0.062,-0.682,-0.085,-0.796,-0.126,-0.904,
+-0.146,-1.019,-0.212,-1.114,-0.274,-1.213,-0.289,-1.328,-0.337,-1.434,-0.34,-1.55,-0.331,-1.666,
+-0.289,-1.775,-0.296,-1.891,17,0,0,0.074,-0.06,0.161,-0.063,0.243,-0.065,0.329,-0.068,0.426,
+-0.078,0.52,-0.103,0.61,-0.122,0.702,-0.136,0.796,-0.151,0.896,-0.167,1.002,-0.184,1.101,-0.195,
+1.196,-0.211,1.292,-0.226,1.386,-0.24,1.465,-0.237,7,1.465,-0.237,1.557,-0.216,1.648,-0.206,
+1.739,-0.194,1.834,-0.181,1.917,-0.229,1.953,-0.311,5,1.465,-0.237,1.557,-0.216,1.648,-0.206,
+1.705,-0.128,1.739,-0.039,4,1.739,-0.039,1.753,0.051,1.758,0.143,1.765,0.238,9,1.465,-0.237,
+1.58,-0.252,1.693,-0.277,1.809,-0.272,1.923,-0.299,2.024,-0.356,2.131,-0.401,2.243,-0.432,2.359,
+-0.435,12,0,0,0.059,0.019,0.125,0.089,0.199,0.156,0.283,0.219,0.357,0.284,0.437,0.35,0.524,
+0.409,0.605,0.475,0.68,0.551,0.76,0.62,0.873,0.616,7,0.873,0.616,0.948,0.705,1.044,0.771,1.149,
+0.82,1.266,0.817,1.38,0.8,1.476,0.733,5,0.873,0.616,0.948,0.673,1.027,0.726,1.071,0.796,1.092,
+0.87,4,1.092,0.87,1.104,0.948,1.094,1.028,1.089,1.122,9,0.873,0.616,0.954,0.7,1.061,0.745,1.171,
+0.782,1.275,0.834,1.363,0.911,1.433,1.003,1.475,1.111,1.554,1.197,5,1.554,1.197,1.663,1.238,
+1.75,1.315,1.86,1.352,1.954,1.42,8,1.554,1.197,1.66,1.245,1.775,1.256,1.876,1.315,1.976,1.374,
+2.043,1.469,2.118,1.557,2.196,1.643,13,0,0,-0.095,0,-0.167,0.055,-0.24,0.114,-0.321,0.163,
+-0.401,0.208,-0.476,0.261,-0.551,0.316,-0.635,0.363,-0.717,0.412,-0.795,0.457,-0.875,0.492,
+-0.926,0.551,4,-0.926,0.551,-0.933,0.639,-0.931,0.724,-0.922,0.809,4,-0.922,0.809,-0.938,0.892,
+-0.975,0.974,-0.985,1.068,4,-0.985,1.068,-0.993,1.169,-1,1.273,-1.018,1.366,8,-0.926,0.551,
+-1.005,0.603,-1.08,0.644,-1.151,0.687,-1.222,0.741,-1.289,0.805,-1.354,0.862,-1.433,0.896,7,
+-0.926,0.551,-1.005,0.603,-1.093,0.586,-1.163,0.524,-1.223,0.455,-1.312,0.419,-1.409,0.405,9,
+-0.926,0.551,-0.95,0.665,-0.987,0.775,-1.038,0.879,-1.115,0.967,-1.203,1.043,-1.294,1.115,
+-1.375,1.198,-1.462,1.275,11,-0.926,0.551,-1.004,0.638,-1.033,0.75,-1.016,0.865,-0.947,0.959,
+-0.91,1.069,-0.847,1.166,-0.778,1.26,-0.726,1.364,-0.67,1.466,-0.647,1.58,17,0,0,-0.111,-0.059,
+-0.198,-0.066,-0.279,-0.072,-0.363,-0.077,-0.449,-0.078,-0.546,-0.083,-0.647,-0.087,-0.74,
+-0.092,-0.826,-0.097,-0.918,-0.104,-1.018,-0.126,-1.124,-0.155,-1.238,-0.184,-1.357,-0.212,
+-1.465,-0.232,-1.504,-0.233,8,-1.504,-0.233,-1.585,-0.258,-1.663,-0.256,-1.741,-0.242,-1.819,
+-0.206,-1.894,-0.154,-1.971,-0.143,-2.029,-0.206,9,-1.504,-0.233,-1.585,-0.258,-1.663,-0.256,
+-1.741,-0.242,-1.819,-0.206,-1.894,-0.154,-1.961,-0.092,-2.017,-0.02,-2.066,0.06,9,-1.409,0.405,
+-1.536,0.333,-1.62,0.292,-1.692,0.253,-1.767,0.208,-1.832,0.17,-1.892,0.144,-1.961,0.123,-2.066,
+0.06,15,-0.975,-0.922,-1.051,-0.908,-1.142,-0.849,-1.22,-0.782,-1.288,-0.716,-1.363,-0.659,
+-1.443,-0.6,-1.522,-0.554,-1.593,-0.516,-1.666,-0.472,-1.727,-0.421,-1.788,-0.366,-1.859,-0.312,
+-1.935,-0.254,-2.029,-0.206,14,1.739,-0.039,1.744,0.049,1.741,0.145,1.729,0.248,1.714,0.353,
+1.698,0.457,1.678,0.548,1.659,0.64,1.646,0.735,1.638,0.824,1.624,0.907,1.598,0.997,1.577,1.09,
+1.554,1.197,23,1.092,0.87,0.982,0.87,0.883,0.87,0.783,0.872,0.685,0.873,0.598,0.877,0.519,0.874,
+0.433,0.866,0.341,0.866,0.238,0.873,0.126,0.872,0.031,0.868,-0.059,0.863,-0.15,0.861,-0.241,
+0.861,-0.335,0.858,-0.427,0.851,-0.513,0.833,-0.598,0.814,-0.683,0.797,-0.774,0.791,-0.87,0.786,
+-0.922,0.809]}
+};
+
+/* ==========================================================================
+   7b · THE GROWER  —  space colonization
+   Runs only when the baked layout below does not match the hierarchy, i.e.
+   when a node has been added or the growth constants changed. Never on a
+   normal load: the map must not rearrange itself every time it opens.
+   ========================================================================== */
+
+/* ---- the hierarchy, flattened depth-first. Every baked array is indexed by
+        this order, so the data needs no ids. ---------------------------- */
+function flattenMap(){
+  const out = [{ label:"", cluster:-1, depth:0, parent:-1 }];
+  for(let c=0;c<MAP.length;c++){
+    (function walk(node, parent, depth){
+      const i = out.length;
+      out.push({ label:node.label, cluster:c, depth:depth, parent:parent });
+      const kids = node.children || [];
+      for(let k=0;k<kids.length;k++) walk(kids[k], i, depth+1);
+    })(MAP[c], 0, 1);
+  }
+  return out;
+}
+const FLAT = flattenMap();
+const KIDS = FLAT.map(function(){ return []; });
+for(let i=1;i<FLAT.length;i++) KIDS[FLAT[i].parent].push(i);
+const HEIGHT = new Int32Array(FLAT.length);
+for(let i=FLAT.length-1;i>=0;i--){
+  let h = 0;
+  for(let k=0;k<KIDS[i].length;k++) h = Math.max(h, HEIGHT[KIDS[i][k]]+1);
+  HEIGHT[i] = h;
+}
+const CLUSTER_ROOT = [];
+for(let i=1;i<FLAT.length;i++) if(FLAT[i].depth===1) CLUSTER_ROOT[FLAT[i].cluster] = i;
+
+/* ---- the meander: one smooth vector field over the whole plane. Applying it
+        to the SKELETON rather than to each path is what keeps bundled trunks
+        bundled — two paths through the same point get the same displacement. */
+const GL = {};                    // GROW lengths resolved for the current run
+function resolveLengths(S, ring){
+  const sep = GROW.minNodeSep*S;
+  GL.minNodeSep = sep;
+  GL.step       = GROW.step*sep;
+  GL.killDist   = GROW.killDist*sep;
+  GL.influence  = GROW.influence*sep;
+  GL.warpAmp    = GROW.warpAmp*sep;
+  GL.warpFreq   = GROW.warpFreq/S;
+  GL.regionRA   = GROW.regionR[0]*ring;
+  GL.regionRB   = GROW.regionR[1]*ring;
+  GL.ring       = ring;
+}
+function warpPt(x, y, o){
+  const f = GL.warpFreq, a = GL.warpAmp;
+  o[0] = x + (fbm(x*f,        y*f,        0.17)*2-1)*a;
+  o[1] = y + (fbm(x*f + 53.1, y*f - 19.7, 4.83)*2-1)*a;
+}
+
+/* ---- one cluster's branch skeleton --------------------------------------- */
+function growSkeleton(rnd, A, D, nAtt){
+  /* attraction points: a ragged blob pushed off to one side of the anchor,
+     with density skewed toward the growth direction so the fan clumps */
+  const RA = GL.regionRA, RB = GL.regionRB;
+  const cx = A[0] + D[0]*RA*GROW.regionOffset;
+  const cy = A[1] + D[1]*RA*GROW.regionOffset;
+  const qx = -D[1], qy = D[0];
+  const ax=[], ay=[], dead=[];
+  let guard = 0;
+  while(ax.length < nAtt && guard++ < nAtt*140){
+    const th = rnd()*TAU, rr0 = Math.sqrt(rnd());
+    let u = Math.cos(th)*rr0, v = Math.sin(th)*rr0;
+    const rag = 1 + (fbm(u*3.1+A[0]*0.01, v*3.1+A[1]*0.01, 2.7)*2-1)*GROW.regionNoise;
+    u *= rag; v *= rag;
+    const X = cx + D[0]*u*RA + qx*v*RB;
+    const Y = cy + D[1]*u*RA + qy*v*RB;
+    const ex = X-A[0], ey = Y-A[1], el = Math.hypot(ex,ey) || 1;
+    const align = (ex/el*D[0] + ey/el*D[1])*0.5 + 0.5;
+    if(rnd() > Math.pow(align, GROW.clumpBias)) continue;
+    ax.push(X); ay.push(Y); dead.push(0);
+  }
+
+  /* branch tree, seeded at the anchor heading along D */
+  const t = { x:[A[0]], y:[A[1]], par:[-1], dx:[D[0]], dy:[D[1]], nk:[0] };
+  const inf2 = GL.influence*GL.influence, kill2 = GL.killDist*GL.killDist;
+
+  for(let it=0; it<GROW.iterCap; it++){
+    const n = t.x.length;
+    const sx = new Float64Array(n), sy = new Float64Array(n), sn = new Int32Array(n);
+    let live = 0;
+    for(let a=0;a<ax.length;a++){
+      if(dead[a]) continue;
+      live++;
+      let best = -1, bd = inf2;
+      for(let b=0;b<n;b++){                       // every branch node competes
+        const ex = ax[a]-t.x[b], ey = ay[a]-t.y[b], d = ex*ex+ey*ey;
+        if(d < bd){ bd = d; best = b; }
+      }
+      if(best >= 0){
+        const ex = ax[a]-t.x[best], ey = ay[a]-t.y[best], el = Math.sqrt(bd) || 1;
+        sx[best] += ex/el; sy[best] += ey/el; sn[best]++;
+      }
+    }
+    if(!live) break;
+
+    let grew = false;
+    for(let b=0;b<n;b++){
+      if(!sn[b] || t.nk[b] >= GROW.maxKids) continue;
+      let ux = sx[b]/sn[b], uy = sy[b]/sn[b];
+      ux = ux*(1-GROW.rigidity) + t.dx[b]*GROW.rigidity;
+      uy = uy*(1-GROW.rigidity) + t.dy[b]*GROW.rigidity;
+      const ang = Math.atan2(uy,ux) + (rnd()-0.5)*2*GROW.wander;
+      const cxx = Math.cos(ang), cyy = Math.sin(ang);
+      t.x.push(t.x[b] + cxx*GL.step); t.y.push(t.y[b] + cyy*GL.step);
+      t.par.push(b); t.dx.push(cxx); t.dy.push(cyy); t.nk.push(0);
+      t.nk[b]++;
+      grew = true;
+    }
+    if(!grew) break;
+
+    for(let a=0;a<ax.length;a++){
+      if(dead[a]) continue;
+      for(let b=n;b<t.x.length;b++){
+        const ex = ax[a]-t.x[b], ey = ay[a]-t.y[b];
+        if(ex*ex+ey*ey < kill2){ dead[a] = 1; break; }
+      }
+    }
+  }
+
+  /* build child lists, then meander the whole skeleton at once */
+  t.kids = t.x.map(function(){ return []; });
+  for(let b=1;b<t.par.length;b++) t.kids[t.par[b]].push(b);
+  const o = [0,0];
+  for(let b=0;b<t.x.length;b++){ warpPt(t.x[b], t.y[b], o); t.x[b]=o[0]; t.y[b]=o[1]; }
+  return t;
+}
+
+/* ---- helpers over the branch tree ---------------------------------------- */
+function branchSteps(t, from, to){          // steps walking up from `to` to `from`
+  let n = 0, c = to;
+  while(c !== from && c >= 0){ c = t.par[c]; n++; if(n > 400) return 1e9; }
+  return c === from ? n : 1e9;
+}
+function branchDepthBelow(t, b){
+  let best = 0;
+  const stack = [[b,0]];
+  while(stack.length){
+    const it = stack.pop();
+    if(it[1] > best) best = it[1];
+    const ks = t.kids[it[0]];
+    for(let k=0;k<ks.length;k++) stack.push([ks[k], it[1]+1]);
+  }
+  return best;
+}
+function farEnough(x, y, placed, sep){
+  const kx = GROW.sepAspect[0], ky = GROW.sepAspect[1];
+  const s2 = sep*sep;
+  for(let k=0;k<placed.length;k++){
+    const dx = (x-placed[k][0])/kx, dy = (y-placed[k][1])/ky;
+    if(dx*dx+dy*dy < s2) return false;
+  }
+  return true;
+}
+function pushBranch(t, from, x, y, dx, dy){
+  t.x.push(x); t.y.push(y); t.par.push(from); t.dx.push(dx); t.dy.push(dy);
+  t.nk.push(0); t.kids.push([]); t.kids[from].push(t.x.length-1); t.nk[from]++;
+  return t.x.length-1;
+}
+
+/* ---- choose where a child hangs. Slots inside a corridor a sibling already
+        uses score higher, so siblings ride a shared trunk and peel off one at
+        a time — branching, not radiating. -------------------------------- */
+function pickSlot(t, from, need, used, placed, corridors, rnd){
+  let best = -1, bestScore = -1e9;
+  const seen = [[from,0]];
+  const visited = {};
+  while(seen.length){
+    const it = seen.shift();
+    const b = it[0], d = it[1];
+    if(d > GROW.gapMax) continue;
+    if(d >= GROW.gapMin && !used[b]){
+      const below = branchDepthBelow(t, b);
+      if(below >= need*GROW.gapMin*0.6 && farEnough(t.x[b], t.y[b], placed, GL.minNodeSep)){
+        let share = 0;
+        for(let c=0;c<corridors.length;c++) if(corridors[c][b]) share++;
+        const score = below*1.0 + share*GROW.bundleHold*6 + d*0.35 + rnd()*1.6;
+        if(score > bestScore){ bestScore = score; best = b; }
+      }
+    }
+    const ks = t.kids[b];
+    for(let k=0;k<ks.length;k++) if(!visited[ks[k]]){ visited[ks[k]]=1; seen.push([ks[k], d+1]); }
+  }
+  if(best >= 0) return best;
+
+  /* nothing usable — grow a fresh sprig off this branch until one fits */
+  let cur = from;
+  for(let tries=0; tries<26; tries++){
+    const ang = Math.atan2(t.dy[cur], t.dx[cur]) + (rnd()-0.5)*1.0;
+    const nx = t.x[cur] + Math.cos(ang)*GL.step*1.25;
+    const ny = t.y[cur] + Math.sin(ang)*GL.step*1.25;
+    cur = pushBranch(t, cur, nx, ny, Math.cos(ang), Math.sin(ang));
+    if(branchSteps(t, from, cur) >= GROW.gapMin &&
+       farEnough(nx, ny, placed, GL.minNodeSep)) return cur;
+  }
+  return cur;
+}
+
+function corridorOf(t, from, to){           // set of branch nodes on the path
+  const set = {};
+  let c = to, n = 0;
+  while(c !== from && c >= 0 && n++ < 400){ set[c] = 1; c = t.par[c]; }
+  return set;
+}
+
+/* ---- hang the whole hierarchy on one cluster's skeleton ------------------- */
+function hangCluster(t, rootFlat, pos, bidx, placed, rnd){
+  const used = {};
+  used[0] = 1;
+  pos[rootFlat] = [t.x[0], t.y[0]]; bidx[rootFlat] = 0;
+  placed.push(pos[rootFlat]);
+
+  (function walk(flatIdx, branchIdx){
+    const kids = KIDS[flatIdx].slice();
+    kids.sort(function(a,b){ return HEIGHT[b]-HEIGHT[a]; });   // deepest first
+    const corridors = [];
+    for(let k=0;k<kids.length;k++){
+      const slot = pickSlot(t, branchIdx, HEIGHT[kids[k]], used, placed, corridors, rnd);
+      used[slot] = 1;
+      pos[kids[k]]  = [t.x[slot], t.y[slot]];
+      bidx[kids[k]] = slot;
+      placed.push(pos[kids[k]]);
+      corridors.push(corridorOf(t, branchIdx, slot));
+      walk(kids[k], slot);
+    }
+  })(rootFlat, 0);
+}
+
+/* ---- polyline helpers ---------------------------------------------------- */
+function subdivideWarp(ax, ay, bx, by){     // a straight run, bent by the field
+  const len = Math.hypot(bx-ax, by-ay);
+  const n = Math.max(2, Math.round(len/GL.step) + 1);
+  const out = [], o = [0,0];
+  for(let k=0;k<n;k++){
+    const u = k/(n-1);
+    warpPt(ax+(bx-ax)*u, ay+(by-ay)*u, o);
+    out.push(o[0], o[1]);
+  }
+  out[0] = ax; out[1] = ay;                 // pin the ends to their nodes
+  out[out.length-2] = bx; out[out.length-1] = by;
+  return out;
+}
+
+/* ---- grow one arrangement ------------------------------------------------ */
+function growLayout(ref, LCfg, ringCfg, rnd){
+  const Sx = Math.min(ref[0]*LCfg.sx, LCfg.cx);
+  const Sy = Math.min(ref[1]*LCfg.sy, LCfg.cy);
+  const S  = Math.min(Sx, Sy);
+
+  /* anchors on the ring */
+  const anc = [];
+  for(let c=0;c<MAP.length;c++){
+    const a = -Math.PI/2 + c*(TAU/MAP.length);
+    anc.push([Math.cos(a)*ringCfg.rx*Sx, Math.sin(a)*ringCfg.ry*Sy]);
+  }
+  /* how much room a cluster actually has: the mean gap to its ring neighbour */
+  let ring = 0;
+  for(let c=0;c<MAP.length;c++){
+    const d = (c+1)%MAP.length;
+    ring += Math.hypot(anc[c][0]-anc[d][0], anc[c][1]-anc[d][1]);
+  }
+  ring /= MAP.length;
+  resolveLengths(S, ring);
+  /* Growth direction: outward from the centre, nudged off by the neighbours,
+     then given a seeded tangential lean. Where two neighbours happen to lean
+     toward one another their fans meet — the bleed between territories. */
+  const dir = [];
+  for(let c=0;c<MAP.length;c++){
+    let dx = anc[c][0], dy = anc[c][1];
+    const dl = Math.hypot(dx,dy) || 1; dx/=dl; dy/=dl;
+    for(let k=0;k<MAP.length;k++){
+      if(k===c) continue;
+      const ex = anc[c][0]-anc[k][0], ey = anc[c][1]-anc[k][1];
+      const el = Math.hypot(ex,ey) || 1;
+      const w  = GROW.neighbourPush*(ring/el)*(ring/el);
+      dx += ex/el*w; dy += ey/el*w;
+    }
+    const ang = Math.atan2(dy,dx) + (rnd()*2-1)*GROW.lean;
+    dir.push([Math.cos(ang), Math.sin(ang)]);
+  }
+
+  const pos = new Array(FLAT.length), bidx = new Array(FLAT.length);
+  const trees = [], placed = [];
+  pos[0] = [0,0];
+  for(let c=0;c<MAP.length;c++){
+    const t = growSkeleton(rnd, anc[c], dir[c], GROW.attractors[c]);
+    trees.push(t);
+    hangCluster(t, CLUSTER_ROOT[c], pos, bidx, placed, rnd);
+  }
+
+  /* link paths, in flat order: link j joins FLAT[j].parent → j */
+  const paths = [];
+  for(let j=1;j<FLAT.length;j++){
+    const par = FLAT[j].parent;
+    if(par === 0){
+      paths.push(subdivideWarp(0, 0, pos[j][0], pos[j][1]));   // root → anchor
+    } else {
+      const t = trees[FLAT[j].cluster];
+      const pts = [];
+      let c = bidx[j];
+      const stop = bidx[par];
+      let guard = 0;
+      while(c !== stop && c >= 0 && guard++ < 400){ pts.unshift(t.x[c], t.y[c]); c = t.par[c]; }
+      pts.unshift(t.x[stop], t.y[stop]);                        // shared trunk head
+      paths.push(pts);
+    }
+  }
+
+  return { pos:pos, paths:paths, S:S, ring:ring };
+}
+function r3(v){ return Math.round(v*1000)/1000; }
+
+/* normalised distance between two nodes in one grown arrangement */
+function normDist(g, i, j){
+  return Math.hypot(g.pos[i][0]-g.pos[j][0], g.pos[i][1]-g.pos[j][1])/g.S;
+}
+function bake(g, pairs){
+  resolveLengths(g.S, g.ring);
+  const paths = g.paths.slice();
+  for(let k=0;k<pairs.length;k+=2)
+    paths.push(subdivideWarp(g.pos[pairs[k]][0],   g.pos[pairs[k]][1],
+                             g.pos[pairs[k+1]][0], g.pos[pairs[k+1]][1]));
+  const P = [], Q = [];
+  for(let i=1;i<FLAT.length;i++) P.push(r3(g.pos[i][0]/g.S), r3(g.pos[i][1]/g.S));
+  for(let k=0;k<paths.length;k++){
+    const a = paths[k];
+    Q.push(a.length/2);
+    for(let m=0;m<a.length;m++) Q.push(r3(a[m]/g.S));
+  }
+  return { p:P, q:Q };
+}
+
+/* ---- the entry point. Called only when the baked data is stale. ---------- */
+function regrow(){
+  const A = growLayout(GROW.refPortrait,  LAYOUT.portrait,  GROW.ring.portrait,
+                       mulberry32(GROW.seed));
+  const B = growLayout(GROW.refLandscape, LAYOUT.landscape, GROW.ring.landscape,
+                       mulberry32(GROW.seed ^ 0x5bf03));
+
+  /* A cross link is only worth having where the two clusters grew near each
+     other in BOTH arrangements — otherwise rotating the device leaves a wire
+     stretched across the whole map. */
+  const cand = [];
+  for(let i=1;i<FLAT.length;i++){
+    if(FLAT[i].depth < 2) continue;
+    for(let j=i+1;j<FLAT.length;j++){
+      if(FLAT[j].depth < 2 || FLAT[j].cluster === FLAT[i].cluster) continue;
+      const da = normDist(A,i,j), db = normDist(B,i,j);
+      if(Math.max(da,db) < GROW.crossDist) cand.push([(da+db)*0.5, i, j]);
+    }
+  }
+  cand.sort(function(a,b){ return a[0]-b[0]; });
+  const pairs = [], seen = {};
+  for(let k=0;k<cand.length && pairs.length < GROW.crossLinks*2; k++){
+    const i = cand[k][1], j = cand[k][2];
+    const key = FLAT[i].cluster+"-"+FLAT[j].cluster;
+    if(seen[key] || seen[i] || seen[j]) continue;
+    seen[key] = 1; seen[i] = 1; seen[j] = 1;
+    pairs.push(i, j);
+  }
+  return { cross:pairs, portrait:bake(A, pairs), landscape:bake(B, pairs) };
+}
+
 /* ==========================================================================
    8 · MAP GEOMETRY  — nodes + links in LAYOUT space (z ≈ 0 plane)
    Node 0 is the root: it holds no particles, because the logo lives there.
    ========================================================================== */
 let nodes = [], links = [];
-let nodeX, nodeY, linkAX, linkAY, linkBX, linkBY;   // hot-loop mirrors
-let mapHalfW = 400, mapHalfH = 400;   // full extent, incl. every child + label
+let nodeX, nodeY, ANC = [];                 // ANC[cluster] = that anchor's index
+let lPts = null, lOff = null, lN = null;    // every link path, one flat buffer
+let mapHalfW = 400, mapHalfH = 400;   // full extent, incl. every node + label
 let ancHalfW = 400, ancHalfH = 400;   // anchors only
 
+/* The baked layout. Regrown automatically when it no longer matches MAP —
+   which is exactly "when a node is added" — and otherwise never touched. */
+let GROWN = GROWN_BAKED;
+
+function layoutStale(){
+  return !GROWN || !GROWN.portrait || !GROWN.landscape ||
+         GROWN.portrait.p.length !== (FLAT.length-1)*2 ||
+         GROWN.landscape.p.length !== (FLAT.length-1)*2;
+}
+
+/* ---- resample a polyline to even arc spacing so `u` is arc-uniform ------- */
+function resamplePath(raw, spacing){
+  const n = raw.length/2;
+  if(n < 2){
+    const x = raw[0]||0, y = raw[1]||0;
+    return { pts:new Float32Array([x,y,x,y]), len:1 };
+  }
+  const cum = new Float64Array(n);
+  for(let k=1;k<n;k++)
+    cum[k] = cum[k-1] + Math.hypot(raw[k*2]-raw[k*2-2], raw[k*2+1]-raw[k*2-1]);
+  const len = cum[n-1] || 1;
+  const m = Math.max(2, Math.min(140, Math.round(len/spacing)+1));
+  const out = new Float32Array(m*2);
+  let seg = 0;
+  for(let k=0;k<m;k++){
+    const d = len*k/(m-1);
+    while(seg < n-2 && cum[seg+1] < d) seg++;
+    const s0 = cum[seg], s1 = cum[seg+1], t = s1 > s0 ? (d-s0)/(s1-s0) : 0;
+    out[k*2]   = raw[seg*2]   + (raw[seg*2+2]-raw[seg*2])*t;
+    out[k*2+1] = raw[seg*2+1] + (raw[seg*2+3]-raw[seg*2+1])*t;
+  }
+  return { pts:out, len:len };
+}
+function pathAt(li, u, o){
+  const m = lN[li], f = u*(m-1);
+  let i = f|0; if(i < 0) i = 0; else if(i > m-2) i = m-2;
+  const t = f-i, b = (lOff[li]+i)*2;
+  o[0] = lPts[b]   + (lPts[b+2]-lPts[b])*t;
+  o[1] = lPts[b+1] + (lPts[b+3]-lPts[b+1])*t;
+}
+function pathTan(li, u, o){
+  const m = lN[li], f = u*(m-1);
+  let i = f|0; if(i < 0) i = 0; else if(i > m-2) i = m-2;
+  const b = (lOff[li]+i)*2;
+  const dx = lPts[b+2]-lPts[b], dy = lPts[b+3]-lPts[b+1];
+  const d = Math.hypot(dx,dy) || 1;
+  o[0] = dx/d; o[1] = dy/d;
+}
+
 let geomBuilt = false;
+function buildStructure(){
+  nodes = [{ x:0, y:0, kind:0, depth:0, label:"", cluster:-1, parent:-1,
+             expanded:true, lox:0, loy:1, labelA:0, arriveAt:0, fireAt:-99, parts:[] }];
+  for(let i=1;i<FLAT.length;i++){
+    const f = FLAT[i];
+    nodes.push({ x:0, y:0, kind: f.depth===1 ? 1 : 2, depth:f.depth, label:f.label,
+                 cluster:f.cluster, parent:f.parent, expanded:!isSmall,
+                 lox:0, loy:1, labelA:0, arriveAt:0, fireAt:-99, parts:[] });
+  }
+  links = [];
+  for(let i=1;i<FLAT.length;i++)
+    links.push({ a:FLAT[i].parent, b:i, kind: FLAT[i].parent===0 ? 0 : 1,
+                 cluster:FLAT[i].cluster, len:1, parts:[] });
+  for(let k=0;k<GROWN.cross.length;k+=2)      // the bleed between territories
+    links.push({ a:GROWN.cross[k], b:GROWN.cross[k+1], kind:2,
+                 cluster:-1, len:1, parts:[] });
+
+  ANC = [];
+  for(let i=1;i<nodes.length;i++) if(nodes[i].kind===1) ANC[nodes[i].cluster] = i;
+
+  nodeX = new Float32Array(nodes.length);
+  nodeY = new Float32Array(nodes.length);
+  lOff  = new Int32Array(links.length);
+  lN    = new Int32Array(links.length);
+  fireAt   = new Float32Array(links.length).fill(-99);
+  fireDone = new Uint8Array(links.length);
+  geomBuilt = true;
+}
+
 function buildGeometry(){
   const L  = isPortrait ? LAYOUT.portrait : LAYOUT.landscape;
   const Sx = Math.min(vw*L.sx, L.cx);
   const Sy = Math.min(vh*L.sy, L.cy);
   const S  = Math.min(Sx, Sy);
 
-  /* ---- structure: built once, never replaced (nodes own live particles) -- */
-  if(!geomBuilt){
-    nodes = [{ x:0, y:0, kind:0, label:"", anchor:-1, expanded:true,
-               labelA:0, arriveAt:0, fireAt:-99, parts:[] }];
-    links = [];
-    for(let a=0; a<MAP.length; a++){
-      const ai = nodes.length;
-      nodes.push({ x:0, y:0, kind:1, label:MAP[a].label, anchor:a, expanded:!isSmall,
-                   labelA:0, arriveAt:0, fireAt:-99, parts:[] });
-      links.push({ a:0, b:ai, kind:0, anchor:a, parts:[] });
-      const kids = MAP[a].children;
-      for(let k=0;k<kids.length;k++){
-        const ki = nodes.length;
-        nodes.push({ x:0, y:0, kind:2, label:kids[k], anchor:a, expanded:true,
-                     lox:0, loy:1, labelA:0, arriveAt:0, fireAt:-99, parts:[] });
-        links.push({ a:ai, b:ki, kind:1, anchor:a, parts:[] });
-      }
-    }
-    nodeX  = new Float32Array(nodes.length); nodeY  = new Float32Array(nodes.length);
-    linkAX = new Float32Array(links.length); linkAY = new Float32Array(links.length);
-    linkBX = new Float32Array(links.length); linkBY = new Float32Array(links.length);
-    fireAt   = new Float32Array(links.length).fill(-99);
-    fireDone = new Uint8Array(links.length);
-    geomBuilt = true;
+  if(layoutStale()) GROWN = regrow();
+  if(!geomBuilt) buildStructure();
+
+  const G = isPortrait ? GROWN.portrait : GROWN.landscape;
+
+  /* positions come straight out of the baked growth, scaled uniformly */
+  for(let i=1;i<nodes.length;i++){
+    nodes[i].x = G.p[(i-1)*2]*S;
+    nodes[i].y = G.p[(i-1)*2+1]*S;
+  }
+  /* a label radiates away from its parent, at any depth */
+  for(let i=1;i<nodes.length;i++){
+    const q = nodes[i].parent;
+    const dx = nodes[i].x-nodes[q].x, dy = nodes[i].y-nodes[q].y;
+    const d = Math.hypot(dx,dy) || 1;
+    nodes[i].lox = dx/d; nodes[i].loy = dy/d;
   }
 
-  /* ---- positions: a pentagon whose ellipse and child fan change with the
-          orientation, so rotating the device recomposes the map ----------- */
-  let ni = 1;
-  for(let a=0; a<MAP.length; a++){
-    const ang = -Math.PI/2 + a*(TAU/MAP.length);
-    const ax  = Math.cos(ang)*L.rx*Sx;
-    const ay  = Math.sin(ang)*L.ry*Sy;
-    nodes[ni].x = ax; nodes[ni].y = ay; ni++;
-
-    const kids = MAP[a].children, n = kids.length;
-    const out  = Math.atan2(ay, ax);
-    const cr   = L.childR*S;
-    const span = L.spread * (n>1 ? 1 : 0);
-    for(let k=0;k<n;k++){
-      const t  = n>1 ? (k/(n-1) - 0.5) : 0;
-      const ca = out + t*span;
-      const rd = cr * (1 + (k%2 ? 0.21 : -0.09));   // two rings, so labels clear
-      nodes[ni].x = ax + Math.cos(ca)*rd;
-      nodes[ni].y = ay + Math.sin(ca)*rd;
-      nodes[ni].lox = Math.cos(ca);                 // label radiates outward
-      nodes[ni].loy = Math.sin(ca);
-      ni++;
-    }
+  /* link paths: read baked, scale, resample, pack into one flat buffer */
+  const tmp = [];
+  let r = 0, total = 0;
+  for(let li=0; li<links.length; li++){
+    const cnt = G.q[r++];
+    const raw = new Float64Array(cnt*2);
+    for(let k=0;k<cnt*2;k++) raw[k] = G.q[r++]*S;
+    const res = resamplePath(raw, GROW.pathSpacing*Math.max(0.7, uiScale));
+    tmp.push(res); total += res.pts.length/2;
   }
+  if(!lPts || lPts.length < total*2) lPts = new Float32Array(total*2 + 512);
+  let o = 0;
+  for(let li=0; li<links.length; li++){
+    lOff[li] = o/2; lN[li] = tmp[li].pts.length/2; links[li].len = tmp[li].len;
+    const a = tmp[li].pts;
+    for(let k=0;k<a.length;k++) lPts[o++] = a[k];
+  }
+
   syncGeometry();
 
   mapHalfW = 40; mapHalfH = 40; ancHalfW = 40; ancHalfH = 40;
@@ -443,27 +1086,21 @@ function buildGeometry(){
 
 function syncGeometry(){
   for(let i=0;i<nodes.length;i++){ nodeX[i]=nodes[i].x; nodeY[i]=nodes[i].y; }
-  for(let i=0;i<links.length;i++){
-    const l = links[i];
-    linkAX[i]=nodes[l.a].x; linkAY[i]=nodes[l.a].y;
-    linkBX[i]=nodes[l.b].x; linkBY[i]=nodes[l.b].y;
-  }
 }
 
+/* an anchor carries its whole subtree, however deep it runs */
 function nodeVisible(i){
-  const n = nodes[i];
   if(!mapOpen) return false;
-  if(n.kind<=1) return true;
-  return nodes[anchorNodeIndex(n.anchor)].expanded;
-}
-function anchorNodeIndex(a){
-  for(let i=1;i<nodes.length;i++) if(nodes[i].kind===1 && nodes[i].anchor===a) return i;
-  return 1;
+  const n = nodes[i];
+  if(n.kind <= 1) return true;
+  return nodes[ANC[n.cluster]].expanded;
 }
 function linkVisible(i){
-  const l = links[i];
   if(!mapOpen) return false;
-  return l.kind===0 ? true : nodes[l.a].expanded;
+  const l = links[i];
+  if(l.kind === 0) return true;
+  if(l.kind === 2) return nodeVisible(l.a) && nodeVisible(l.b);
+  return nodes[ANC[l.cluster]].expanded;
 }
 
 /* ==========================================================================
@@ -486,10 +1123,11 @@ function buildCarve(){
 
   const vis = [];
   for(let i=1;i<nodes.length;i++){
-    if(!mapOpen) break;
-    if(nodes[i].kind===2 && !nodes[anchorNodeIndex(nodes[i].anchor)].expanded) continue;
-    const p = nodes[i].kind===1 ? T.carveAnchor : T.carveChild;
-    vis.push([nodes[i].x, nodes[i].y, p[0]*uiScale, p[1]*uiScale, p[2]*uiScale]);
+    if(!nodeVisible(i)) continue;
+    const anc = nodes[i].kind===1;
+    const p = anc ? T.carveAnchor : T.carveChild;
+    const k = anc ? 1 : Math.pow(GROW.depthTaper, nodes[i].depth-2);  // deeper = smaller hole
+    vis.push([nodes[i].x, nodes[i].y, p[0]*uiScale*k, p[1]*uiScale*k, p[2]*uiScale*k]);
   }
 
   for(let gy=0; gy<CG; gy++){
@@ -638,8 +1276,11 @@ function stagger(x, y, now){
 function recruitNode(ni, now){
   const n = nodes[ni];
   if(n.parts.length || n.kind===0) return;
-  const count = Math.round((n.kind===1 ? T.nAnchor : T.nChild) * densityK);
-  const rad   = (n.kind===1 ? T.orbitAnchor : T.orbitChild) * uiScale;
+  /* a node's weight falls off down the hierarchy, so a fourth-level twig
+     reads as a twig — layout budgeting, not a change to the particle model */
+  const tap   = n.kind===1 ? 1 : Math.pow(GROW.depthTaper, n.depth-2);
+  const count = Math.round((n.kind===1 ? T.nAnchor : T.nChild*tap) * densityK);
+  const rad   = (n.kind===1 ? T.orbitAnchor : T.orbitChild*Math.pow(tap,0.6)) * uiScale;
   const base  = stagger(n.x, n.y, now);
   for(let k=0;k<count;k++){
     const a = rr()*TAU, e = Math.acos(rr()*2-1);
@@ -661,25 +1302,30 @@ function recruitNode(ni, now){
   n.arriveAt = base + 0.75;
 }
 
+const _pp = [0,0], _pt = [0,0];
 function recruitLink(li, now){
   const l = links[li];
   if(l.parts.length) return;
   const A = nodes[l.a], B = nodes[l.b];
-  const count = Math.round((l.kind===0 ? T.nLinkRoot : T.nLinkChild) * densityK);
-  const dx = B.x-A.x, dy = B.y-A.y;
-  const len = Math.sqrt(dx*dx+dy*dy) || 1;
-  const nx = -dy/len, ny = dx/len;
-  const u0 = l.kind===0 ? 0.16 : 0.13, u1 = l.kind===0 ? 0.88 : 0.87;
+
+  /* particles are spaced along the path, so a long trunk gets more of them
+     than a short twig. Where siblings share a trunk their chains overlap,
+     which is what makes the trunk read heavier than the branches. */
+  const count = clamp(Math.round(l.len/T.linkSpacing*densityK), 4, 44);
+  const inset = Math.min(0.26, (T.orbitChild*1.7*uiScale)/Math.max(1,l.len));
+  const u0 = inset, u1 = 1-inset;
   const base = stagger((A.x+B.x)*0.5, (A.y+B.y)*0.5, now);
+
   for(let k=0;k<count;k++){
-    const u = u0 + (u1-u0)*(count>1 ? k/(count-1) : 0.5) + (rr()-0.5)*0.012;
+    const u = u0 + (u1-u0)*(count>1 ? k/(count-1) : 0.5) + (rr()-0.5)*0.010;
+    pathAt(li, u, _pp); pathTan(li, u, _pt);
     const j = (rr()-0.5)*2*T.linkJitter*uiScale;
-    const lx = A.x + dx*u + nx*j, ly = A.y + dy*u + ny*j;
-    const i = takeNearestFree(lx, ly);
+    const nx = -_pt[1]*j, ny = _pt[0]*j;
+    const i = takeNearestFree(_pp[0]+nx, _pp[1]+ny);
     if(i<0) break;
     toLayout(i);
     role[i] = ROLE_TAKEN; own[i] = -1-li; upos[i] = u;
-    ox[i] = nx*j; oy[i] = ny*j; oz[i] = (rr()-0.5)*2*T.linkJitterZ;
+    ox[i] = nx; oy[i] = ny; oz[i] = (rr()-0.5)*2*T.linkJitterZ;
     stiff[i] = T.stiffNode[0] + rr()*(T.stiffNode[1]-T.stiffNode[0]);
     damp[i]  = T.dampNode;
     t0[i]    = base + u*0.30 + rr()*0.14;
@@ -706,39 +1352,37 @@ function releaseParts(list, now){
 let selected = -1;
 let lastLogoTap = -99, pendingToggle = 0;
 
+/* One pass brings the recruited set in line with what should be visible.
+   Releases run first so the freed particles are back in the lookup grid
+   before anything tries to recruit them. Cross links fall out of this for
+   free: they appear only when both of their clusters are open. */
+function reconcile(now){
+  for(let i=1;i<nodes.length;i++)
+    if(!nodeVisible(i) && nodes[i].parts.length){
+      releaseParts(nodes[i].parts, now); nodes[i].labelA = 0;
+    }
+  for(let i=0;i<links.length;i++)
+    if(!linkVisible(i) && links[i].parts.length){
+      releaseParts(links[i].parts, now); fireAt[i] = -99;
+    }
+  rebuildFreeGrid();
+  for(let i=1;i<nodes.length;i++) if(nodeVisible(i)) recruitNode(i, now);
+  for(let i=0;i<links.length;i++) if(linkVisible(i)) recruitLink(i, now);
+  buildCarve();
+}
 function openMap(now){
   if(mapOpen) return;
   mapOpen = true; mapOpenAt = now;
-  rebuildFreeGrid();
-  for(let i=1;i<nodes.length;i++){ if(nodeVisible(i)) recruitNode(i, now); }
-  for(let i=0;i<links.length;i++){ if(linkVisible(i)) recruitLink(i, now); }
-  buildCarve();
+  reconcile(now);
 }
 function closeMap(now){
   if(!mapOpen) return;
   mapOpen = false; selected = -1;
-  for(let i=0;i<nodes.length;i++){ releaseParts(nodes[i].parts, now); nodes[i].labelA = 0; }
-  for(let i=0;i<links.length;i++){ releaseParts(links[i].parts, now); fireAt[i] = -99; }
-  buildCarve();
+  reconcile(now);
 }
 function toggleAnchor(ni, now){
-  const n = nodes[ni];
-  n.expanded = !n.expanded;
-  if(n.expanded){
-    rebuildFreeGrid();
-    for(let i=1;i<nodes.length;i++)
-      if(nodes[i].kind===2 && nodes[i].anchor===n.anchor) recruitNode(i, now);
-    for(let i=0;i<links.length;i++)
-      if(links[i].kind===1 && links[i].a===ni) recruitLink(i, now);
-  } else {
-    for(let i=1;i<nodes.length;i++)
-      if(nodes[i].kind===2 && nodes[i].anchor===n.anchor){
-        releaseParts(nodes[i].parts, now); nodes[i].labelA = 0;
-      }
-    for(let i=0;i<links.length;i++)
-      if(links[i].kind===1 && links[i].a===ni){ releaseParts(links[i].parts, now); fireAt[i]=-99; }
-  }
-  buildCarve();
+  nodes[ni].expanded = !nodes[ni].expanded;
+  reconcile(now);
 }
 
 /* ==========================================================================
@@ -885,9 +1529,11 @@ function frame(now, dt){
         tY = nodeY[o] + oy[i]*orbitK;
         tZ = oz[i]*orbitK;
       } else {
-        const li = -1-o, u = upos[i];
-        tX = linkAX[li] + (linkBX[li]-linkAX[li])*u + ox[i];
-        tY = linkAY[li] + (linkBY[li]-linkAY[li])*u + oy[i];
+        const li = -1-o, m = lN[li], f = upos[i]*(m-1);
+        let g = f|0; if(g < 0) g = 0; else if(g > m-2) g = m-2;
+        const w = f-g, b = (lOff[li]+g)*2;
+        tX = lPts[b]   + (lPts[b+2]-lPts[b])*w   + ox[i];
+        tY = lPts[b+1] + (lPts[b+3]-lPts[b+1])*w + oy[i];
         tZ = oz[i];
       }
     }

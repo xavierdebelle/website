@@ -5,6 +5,35 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v23 — 2026-09-01
+
+**Neural Mind Map updated to v5**
+- The layout is now **grown rather than placed**. A space-colonization grower
+  — the algorithm behind tree branching and leaf venation — scatters
+  attraction points and steps branches toward them, consuming each as it
+  arrives. Labels hang off the resulting tips.
+- The grown layout is **baked**: it only regrows when the hierarchy or the
+  growth constants change, never on a normal load, so the map does not
+  rearrange itself every time it opens.
+- The hierarchy is real and three deep — Work, Personal, Family, Dreams,
+  About, down to de Belle, 333 Photo, Patagonia, Darkroom.
+- +31KB over v4, ~765 lines added, about 73% of the file unchanged. Same slug,
+  so the live URL is unchanged.
+
+**Checked before publishing**
+- Scan clean: no external hosts, no endpoints, no credentials, nothing stored.
+- Verified it renders and animates, the mark holds sharp, zoom works and the
+  double-click invert works. Console silent.
+- **Still could not confirm the labelled map state.** Tapping the mark did not
+  visibly form the labelled structure in any capture, at any zoom, on v4 or
+  v5. Canvas instrumentation was inconclusive — the hooks never fired even for
+  the hint line that plainly renders, so this is not evidence the labels are
+  missing, only that the check could not see them. Worth Xavier's own eyes.
+- Card copy therefore describes the growth, which is verifiable from the
+  source, rather than promising labels I have not seen render.
+
+---
+
 ## v22 — 2026-09-01
 
 **New piece**
