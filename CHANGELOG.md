@@ -5,6 +5,32 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v32 — 2026-09-11
+
+**What's new** · Fixed · [tools.html]
+### The Filter Bar,<br>Actually Scrollable
+The row of filters on the tools page was wider than the screen it sat on, so
+its last few buttons were cut off with no way to reach them. It scrolls
+properly now, all the way to the end.
+
+**The chip track overflowed its own container**
+- The rail's base rule carries `flex-wrap: wrap`. Turning it into a column for
+  phones meant a *wrapping column*, which lays its items out in columns sized
+  to their content rather than stretching them to the container. The chip
+  track came out 575px wide inside a 390px rail, overflowed, and was then
+  clipped by `body { overflow-x: hidden }` — so the tail was both invisible
+  and unreachable.
+- `flex-wrap: nowrap` on the mobile rail fixes it: the track is now 358px
+  inside a 390px bar and scrolls its full range.
+- Added momentum scrolling for iOS and a little run-off on the right, so the
+  last chip clears the edge instead of sitting flush against it and reading as
+  the end of the list.
+- Checked at 360, 390 and 900 wide: the track fits its rail, reaches its end,
+  and the page never scrolls sideways. Above the breakpoint the rail is still
+  a row with the chips wrapping and search on the right.
+
+---
+
 ## v31 — 2026-09-11
 
 **What's new** · Fixed · [tools.html]

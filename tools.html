@@ -6,7 +6,7 @@
 <title>TOOLS — XAVIER DE BELLE</title>
 <meta name="description" content="Every browser tool Xavier de Belle has built — portfolio makers, de Belle Photography tools, personal tools, event builds and generative art.">
 <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
-<link rel="stylesheet" href="assets/style.css?v=31">
+<link rel="stylesheet" href="assets/style.css?v=32">
 <style>
   /* ---------- masthead ---------- */
 
@@ -245,6 +245,10 @@
        and a full-width search is about half that, and nothing is clipped. */
     .rail {
       flex-direction: column;
+      /* the base rule wraps, and a wrapping *column* lays its items out in
+         columns sized to their content — which made the chip track wider
+         than the rail itself, so its tail was clipped and unreachable */
+      flex-wrap: nowrap;
       align-items: stretch;
       gap: 8px;
       padding: 10px var(--gut);
@@ -253,10 +257,14 @@
     .rail__chips {
       flex-wrap: nowrap;
       overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
       overscroll-behavior-x: contain;
       scrollbar-width: none;
       -ms-overflow-style: none;
       padding-bottom: 1px;
+      /* a little run-off so the last chip clears the edge instead of sitting
+         flush against it, which reads as "there is nothing more" */
+      padding-right: 6px;
     }
     .rail__chips::-webkit-scrollbar { display: none; }
     .chip { flex: none; }
@@ -518,7 +526,7 @@
       <a href="mailto:xavier@debellephotography.com">Email</a>
     </div>
   </div>
-  <p class="foot__sig">&copy; <span id="yr"></span> Xavier de Belle &middot; v31</p>
+  <p class="foot__sig">&copy; <span id="yr"></span> Xavier de Belle &middot; v32</p>
 </footer>
 
 <script>
