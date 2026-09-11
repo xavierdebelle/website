@@ -5,6 +5,42 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v27 — 2026-09-11
+
+**New tool — Project Phases (Personal, 16th build)**
+
+A project breaks into phases, a phase into steps, and every step has time logged
+against it. Two halves that stay in sync because one derives from the other:
+
+- **The plan.** Phases hold steps; a step has a status (to do → in progress → done)
+  and an optional estimate. Phases reorder and collapse, and the collapsed state
+  sticks — the demo plan is 13 phases and 78 steps, which is a 5,300px scroll open
+  and fits one screen closed.
+- **The time log.** A flat list of entries, each pinned to one step, and the only
+  place time is stored. Every total on the board and in the report is summed back
+  out of it on each render, never written alongside it — so editing or deleting an
+  entry moves every total that depended on it, and deleting a step or a phase takes
+  its entries with it instead of leaving orphans nothing will ever show.
+
+Time goes in two ways. A **timer** runs in the header and survives a reload, because
+it stores the start timestamp rather than a counter; starting a second step closes
+the first, so nothing is ever double-counted. Or **log it by hand** against any step
+— durations are read loosely, so `1h 30m`, `90`, `1:30` and `1.5h` all mean the same.
+
+Three views: the board, the time log (filter by phase, step and date; export CSV),
+and a report of logged against estimated time per phase *and* per step, plus a
+fortnight of daily totals. Export and import move the whole store as JSON.
+
+**One bug worth recording.** Storage is a single `localStorage` key. A write made
+moments before the page goes away can still be sitting in the browser's pending
+commit batch when the document is torn down: a reload straight after saving lost the
+write 2 times in 25. The store is now re-committed as the page hides — 0 in 25 after.
+
+Built and tested in the `claude-code` repo, where it carries 73 of its own checks
+driving the real UI in Chromium.
+
+---
+
 ## v26 — 2026-09-10
 
 **Budget Tracker v10 — reads properly on a phone**

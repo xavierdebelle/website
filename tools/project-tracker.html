@@ -1,0 +1,1373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Project Phases &amp; Time Log</title>
+<style>
+:root{
+  --bg:#f6f7f9; --card:#ffffff; --ink:#12161c; --muted:#6b7583; --line:#e3e7ec;
+  --accent:#4f46e5; --accent-soft:#eef0ff; --run:#0f9d58; --run-soft:#e7f6ee;
+  --warn:#b45309; --warn-soft:#fdf1dc; --danger:#c0392b; --shadow:0 1px 2px rgba(16,24,40,.06),0 1px 3px rgba(16,24,40,.08);
+  --radius:10px;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0e1116; --card:#161b22; --ink:#e8ecf1; --muted:#93a0b0; --line:#262d36;
+    --accent:#8b87ff; --accent-soft:#22243a; --run:#3ecf8e; --run-soft:#12291f;
+    --warn:#f0b054; --warn-soft:#2b2314; --danger:#f2796b; --shadow:none;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--ink); font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3{margin:0;font-weight:600;letter-spacing:-.01em}
+button{font:inherit;color:inherit;cursor:pointer}
+input,select,textarea{font:inherit;color:inherit}
+.muted{color:var(--muted)}
+.nowrap{white-space:nowrap}
+
+/* ---------- shell ---------- */
+#app{max-width:1120px;margin:0 auto;padding:20px 20px 80px}
+.topbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.brand{display:flex;align-items:baseline;gap:10px;margin-right:auto}
+.brand h1{font-size:19px}
+.brand .sub{font-size:12px;color:var(--muted)}
+.field{display:flex;align-items:center;gap:6px}
+select,input[type=text],input[type=date],input[type=number],textarea{
+  background:var(--card);border:1px solid var(--line);border-radius:8px;padding:7px 9px;min-width:0;
+}
+select:focus,input:focus,textarea:focus{outline:2px solid var(--accent-soft);border-color:var(--accent)}
+.btn{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:7px 12px;box-shadow:var(--shadow)}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.primary:hover{filter:brightness(1.07)}
+.btn.ghost{background:transparent;box-shadow:none}
+.btn.danger{color:var(--danger)}
+.icon{
+  display:inline-flex;align-items:center;justify-content:center;
+  background:transparent;border:1px solid transparent;border-radius:7px;
+  padding:5px;color:var(--muted);line-height:0;
+}
+.icon:hover{background:var(--accent-soft);color:var(--ink)}
+.icon.del:hover{background:transparent;color:var(--danger)}
+.icon:disabled{opacity:.3;cursor:default}
+.icon:disabled:hover{background:transparent;color:var(--muted)}
+.icon svg{display:block}
+
+/* ---------- running bar ---------- */
+#running-bar{
+  display:none;align-items:center;gap:12px;flex-wrap:wrap;
+  background:var(--run-soft);border:1px solid var(--run);border-radius:var(--radius);
+  padding:10px 14px;margin-bottom:14px;
+}
+#running-bar.on{display:flex}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--run);animation:pulse 1.6s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+#running-what{font-weight:600}
+#running-elapsed{font-variant-numeric:tabular-nums;font-size:20px;font-weight:600;margin-left:auto}
+
+/* ---------- tabs ---------- */
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:16px}
+.tab{background:transparent;border:0;border-bottom:2px solid transparent;padding:9px 14px;color:var(--muted);font-weight:500}
+.tab.on{color:var(--ink);border-bottom-color:var(--accent)}
+.panel{display:none}
+.panel.on{display:block}
+
+/* ---------- board ---------- */
+.phase{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:14px;overflow:hidden}
+.phase-head{display:flex;align-items:center;gap:14px;padding:12px 14px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.phase-head h2{font-size:16px}
+.phase-title{display:flex;align-items:center;gap:9px;min-width:0}
+.phase-toggle{
+  display:flex;align-items:center;gap:9px;min-width:0;text-align:left;
+  background:transparent;border:0;padding:0;color:inherit;
+}
+.phase-toggle .chev{display:flex;color:var(--muted);transition:transform .15s}
+.phase:not(.collapsed) .phase-toggle .chev{transform:rotate(90deg)}
+.phase-toggle:hover h2{color:var(--accent)}
+.phase.collapsed .steps,.phase.collapsed .add-step{display:none}
+.pill{font-size:11px;font-weight:600;letter-spacing:.02em;text-transform:uppercase;color:var(--muted);background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:2px 8px}
+.phase-meta{display:flex;align-items:center;gap:10px;margin-left:auto}
+.phase-time{font-variant-numeric:tabular-nums;font-weight:600}
+.bar{width:120px;height:6px;border-radius:999px;background:var(--line);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent);border-radius:999px}
+.bar.over i{background:var(--warn)}
+.phase-actions{display:flex;gap:2px}
+
+.steps{list-style:none;margin:0;padding:0}
+.step{display:flex;align-items:center;gap:10px;padding:9px 14px;border-bottom:1px solid var(--line)}
+.step:last-child{border-bottom:0}
+.step.running{background:var(--run-soft)}
+/* Real step names run long — wrap them rather than hiding the end. */
+.step-name{flex:1;min-width:0}
+.step.done .step-name{color:var(--muted);text-decoration:line-through}
+.step-time{font-variant-numeric:tabular-nums;font-weight:600;min-width:64px;text-align:right}
+.step-est{font-variant-numeric:tabular-nums;min-width:58px;font-size:13px}
+.step-est.over{color:var(--warn);font-weight:600}
+.chip{border:1px solid var(--line);background:var(--bg);border-radius:999px;padding:2px 10px;font-size:12px;font-weight:600;min-width:62px}
+.chip.doing{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+.chip.done{background:var(--run-soft);border-color:var(--run);color:var(--run)}
+.step-actions{display:flex;gap:2px}
+.tb-label{margin-left:5px}
+.timer-btn{border:1px solid var(--line);background:var(--card);border-radius:7px;padding:3px 10px;font-size:13px;font-weight:600;white-space:nowrap}
+.timer-btn:hover{border-color:var(--run);color:var(--run)}
+.timer-btn.on{background:var(--run);border-color:var(--run);color:#fff}
+.add-step{width:100%;text-align:left;background:transparent;border:0;border-top:1px dashed var(--line);padding:9px 14px;color:var(--muted)}
+.add-step:hover{color:var(--accent);background:var(--accent-soft)}
+.empty{background:var(--card);border:1px dashed var(--line);border-radius:var(--radius);padding:28px;text-align:center;color:var(--muted)}
+
+/* ---------- tables ---------- */
+table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow)}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);font-weight:600;background:var(--bg)}
+tbody tr:last-child td{border-bottom:0}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+tfoot td{font-weight:700;background:var(--bg);border-top:2px solid var(--line)}
+.filters{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:12px}
+.filters label{display:block;font-size:12px;color:var(--muted);margin-bottom:3px}
+.filters select{max-width:220px}
+.table-wrap{overflow-x:auto}
+
+/* ---------- report ---------- */
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow)}
+.stat .k{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em}
+.stat .v{font-size:24px;font-weight:650;font-variant-numeric:tabular-nums;margin-top:4px}
+.section-title{margin:22px 0 10px;font-size:13px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+.daily{display:flex;align-items:flex-end;gap:6px;height:110px;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:12px;box-shadow:var(--shadow)}
+.daily .day{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:5px;height:100%}
+.daily .day i{display:block;width:100%;background:var(--accent);border-radius:4px 4px 0 0;min-height:2px}
+.daily .day.zero i{background:var(--line)}
+.daily .day span{font-size:10px;color:var(--muted);white-space:nowrap}
+
+/* ---------- modal ---------- */
+#modal-overlay{display:none;position:fixed;inset:0;background:rgba(10,14,20,.5);z-index:50;padding:20px;overflow:auto}
+#modal-overlay.open{display:flex;align-items:flex-start;justify-content:center}
+#modal{background:var(--card);border:1px solid var(--line);border-radius:12px;width:100%;max-width:440px;margin-top:8vh;padding:18px}
+#modal h3{font-size:16px;margin-bottom:12px}
+.row{margin-bottom:12px}
+.row label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px}
+.row input,.row textarea,.row select{width:100%}
+.hint{font-size:12px;color:var(--muted);margin-top:4px}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+#modal-error{color:var(--danger);font-size:13px;margin-top:8px;display:none}
+#modal-error.on{display:block}
+
+/* ---------- phone ---------- */
+@media (max-width:900px){
+  #app{padding:14px 12px 70px}
+  .brand{width:100%;margin-right:0}
+  .brand .sub{display:none}
+  .topbar{gap:8px}
+  .topbar .field{flex:1 0 100%}
+  .topbar select{width:100%}
+  .cards{grid-template-columns:repeat(2,1fr)}
+  .phase-head{gap:8px}
+  .phase-meta{width:100%;margin-left:0}
+  .phase-actions{margin-left:auto}
+  .bar{flex:1;width:auto}
+  /* The step name gets a line of its own; everything else shares the line below it. */
+  .step{flex-wrap:wrap;gap:8px 6px;padding:11px 12px}
+  .step-name{flex:1 0 100%;order:-1;white-space:normal}
+  .step-est{min-width:auto;font-size:12px}
+  .step-time{min-width:auto}
+  .tb-label{display:none}
+  .timer-btn{padding:4px 10px}
+  .step-actions{margin-left:auto}
+  .chip{min-width:auto;padding:2px 8px}
+  #running-elapsed{margin-left:0}
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <div class="topbar">
+    <div class="brand">
+      <h1>Project Phases</h1>
+      <span class="sub">phases, steps and a time log for every one of them</span>
+    </div>
+    <div class="field">
+      <select id="project-select" aria-label="Project"></select>
+    </div>
+    <button class="btn" id="btn-add-project">New project</button>
+    <button class="btn ghost icon" id="btn-rename-project" title="Rename project"></button>
+    <button class="btn ghost icon del" id="btn-delete-project" title="Delete project"></button>
+    <button class="btn" id="btn-export">Export</button>
+    <button class="btn" id="btn-import">Import</button>
+  </div>
+
+  <div id="running-bar">
+    <span class="dot"></span>
+    <span id="running-what"></span>
+    <span id="running-elapsed">0:00</span>
+    <button class="btn" id="running-stop">Stop</button>
+  </div>
+
+  <div class="tabs">
+    <button class="tab on" id="tab-board">Board</button>
+    <button class="tab" id="tab-log">Time log</button>
+    <button class="tab" id="tab-report">Report</button>
+  </div>
+
+  <section class="panel on" id="panel-board">
+    <div id="board"></div>
+    <div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap">
+      <button class="btn" id="btn-add-phase">+ Add phase</button>
+      <button class="btn ghost" id="btn-collapse-all">Collapse all</button>
+    </div>
+  </section>
+
+  <section class="panel" id="panel-log">
+    <div class="filters">
+      <div>
+        <label for="f-phase">Phase</label>
+        <select id="f-phase"></select>
+      </div>
+      <div>
+        <label for="f-step">Step</label>
+        <select id="f-step"></select>
+      </div>
+      <div>
+        <label for="f-from">From</label>
+        <input type="date" id="f-from">
+      </div>
+      <div>
+        <label for="f-to">To</label>
+        <input type="date" id="f-to">
+      </div>
+      <button class="btn ghost" id="f-clear">Clear</button>
+      <button class="btn" id="btn-log-add" style="margin-left:auto">+ Log time</button>
+      <button class="btn" id="btn-log-csv">Export CSV</button>
+    </div>
+    <div class="table-wrap">
+      <table id="log-table">
+        <thead><tr>
+          <th>Date</th><th>Phase</th><th>Step</th><th class="num">Duration</th><th>Note</th><th></th>
+        </tr></thead>
+        <tbody id="log-body"></tbody>
+        <tfoot><tr><td colspan="3">Total</td><td class="num" id="log-total">0m</td><td colspan="2"></td></tr></tfoot>
+      </table>
+    </div>
+  </section>
+
+  <section class="panel" id="panel-report">
+    <div class="cards">
+      <div class="stat"><div class="k">Logged</div><div class="v" id="stat-logged">0m</div></div>
+      <div class="stat"><div class="k">Estimated</div><div class="v" id="stat-est">0m</div></div>
+      <div class="stat"><div class="k">Steps done</div><div class="v" id="stat-steps">0/0</div></div>
+      <div class="stat"><div class="k">Entries</div><div class="v" id="stat-entries">0</div></div>
+    </div>
+    <h3 class="section-title">Time by phase</h3>
+    <div class="table-wrap">
+      <table id="report-table">
+        <thead><tr>
+          <th>Phase / step</th><th class="num">Logged</th><th class="num">Estimate</th><th class="num">Δ</th><th style="width:160px">Share</th>
+        </tr></thead>
+        <tbody id="report-body"></tbody>
+      </table>
+    </div>
+    <h3 class="section-title">Last 14 days</h3>
+    <div class="daily" id="daily"></div>
+  </section>
+</div>
+
+<div id="modal-overlay">
+  <form id="modal" autocomplete="off">
+    <h3 id="modal-title"></h3>
+    <div id="modal-body"></div>
+    <div id="modal-error"></div>
+    <div class="modal-actions">
+      <button type="button" class="btn ghost" id="modal-cancel">Cancel</button>
+      <button type="submit" class="btn primary save-btn" id="modal-save">Save</button>
+    </div>
+  </form>
+</div>
+
+<script>
+(function () {
+'use strict';
+
+/* ============================================================
+   Storage
+   ------------------------------------------------------------
+   Everything lives in one localStorage key. `log` is the single
+   source of truth for time: a step's, a phase's and a project's
+   totals are always summed from it, never stored alongside it.
+   ============================================================ */
+var KEY = 'ptt.v1';
+var state = null;
+
+function uid(p) { return (p || 'x') + '-' + Math.random().toString(36).slice(2, 9); }
+
+function blankState() {
+  return { version: 1, projects: [], log: [], currentId: null };
+}
+
+// A plan is [phase name, [step names]] — turned into a real project on demand.
+function planToProject(name, plan) {
+  return {
+    id: uid('p'),
+    name: name,
+    createdAt: Date.now(),
+    phases: plan.map(function (n) {
+      return {
+        id: uid('ph'),
+        name: n[0],
+        steps: n[1].map(function (s) {
+          return { id: uid('st'), name: s, status: 'todo', estimate: 0 };
+        })
+      };
+    })
+  };
+}
+
+// The generic skeleton behind "New project".
+var STARTER_PLAN = [
+  ['Discovery', ['Kick-off call', 'Requirements', 'Scope & quote']],
+  ['Design', ['Wireframes', 'Visual design', 'Client review']],
+  ['Build', ['Setup', 'Implementation', 'QA pass']],
+  ['Launch', ['Deploy', 'Handover']]
+];
+function starterProject() { return planToProject('My project', STARTER_PLAN); }
+
+// What the app opens with on a fresh browser. Sprint 1 is one sprint in the plan
+// it came from, but its five workstreams run as phases here so the board stays
+// readable and each one totals its own time.
+var DEMO_PLAN = [
+  ['Sprint 1 · CRM account setup', [
+    'Create the sub-account for Cours à Bois in CRM',
+    'Connect domain and set up subdomain for landing pages',
+    "Connect Max's business email",
+    'Set up user seats for Max and his sales personnel',
+    'Connect LinkedIn, Google, and Meta accounts to the CRM where supported'
+  ]],
+  ['Sprint 1 · Pipeline and attribution', [
+    'Build the sales pipeline stages (New Lead, Contacted, Qualified, Meeting Booked, Proposal Sent, Closed Won, Closed Lost)',
+    'Create custom field: "How did you hear about us?" with Google, Referral, LinkedIn, Facebook, Instagram, Email, Existing Client, Other',
+    'Create custom fields for project type, municipality/organization, and estimated budget',
+    'Set the field as required on every inbound form',
+    'Define the UTM naming convention (source, medium, campaign, content) and document it so nothing gets logged inconsistently',
+    'Configure automatic UTM capture into contact records'
+  ]],
+  ['Sprint 1 · Landing page and form', [
+    'Write and build the LinkedIn campaign landing page (offer, proof, single CTA)',
+    'Build the inbound lead form with the attribution field',
+    'Set up the thank you page as the conversion trigger URL',
+    'Build the instant lead notification automation to Max and sales',
+    'Build the auto-reply email to the lead',
+    'Test the full path end to end with a dummy submission'
+  ]],
+  ['Sprint 1 · Tracking', [
+    'Install the LinkedIn Insight Tag on the site and landing pages',
+    'Create the LinkedIn conversion action tied to the thank you page',
+    'Install GA4 and Google Tag Manager',
+    'Set up the GA4 conversion event for form submit',
+    'Verify tag firing on both the site and the CRM landing page'
+  ]],
+  ['Sprint 1 · LinkedIn campaign build', [
+    'Define the audience (municipal managers, city planners, parks and rec directors, developers, school board facilities)',
+    'Build 2 to 3 saved audiences for testing',
+    'Set the budget, bid strategy, and campaign objective with Max',
+    'Produce ad creative: project showcase, before/after, and one founder video if the footage exists',
+    'Write 3 ad copy variants for testing',
+    'Decide LinkedIn Lead Gen Form vs landing page traffic (test both if budget allows)',
+    'Launch and confirm first impressions and first click land correctly in the CRM'
+  ]],
+  ['Phase 1 · Foundation and Measurement', [
+    'Document current baseline numbers (traffic, leads, close rate, average contract value)',
+    'Trace the funnel backward from closed contracts to establish how many leads each stage needs',
+    'Add the attribution question to every existing form on the website',
+    'Set up dedicated landing pages per channel',
+    "Import Max's existing contacts and tag by source and relationship type",
+    'Build the KPI dashboard: website visitors, leads, cost per lead, lead source, opportunities, close rate',
+    'Set the monthly reporting cadence with Max'
+  ]],
+  ['Phase 2 · Positioning Lock', [
+    'Get Max\'s written sign-off on "Cours à Bois powered by Ultimatek"',
+    'Audit every place both names appear (website, LinkedIn, email signatures, proposals, truck and site signage, invoices)',
+    'Write the one-page messaging document (what each line does, boilerplate, elevator pitch)',
+    'Roll the positioning through the website and LinkedIn company page',
+    'Update email signatures and proposal templates'
+  ]],
+  ['Phase 3 · Email and Relationship Marketing', [
+    'Build and segment the email list in the CRM (partners, past clients, prospects, municipal)',
+    'Design the newsletter template',
+    'Build the content calendar for the first 3 issues',
+    'Send issue 1',
+    'Build the partner network list (architects, engineers, municipal contacts, developers, contractors, landscape architects)',
+    'Set up the quarterly partner touchpoint automation',
+    'Define the referral incentive structure where appropriate'
+  ]],
+  ['Phase 4 · Cold Outreach', [
+    'Build segmented prospect lists by province and by municipal / commercial / school',
+    'Source and verify contact data',
+    'Write the 5-step sequence (email 1, email 2, follow-up, case study, phone call)',
+    'Build the sequence in the CRM with reply detection and pipeline triggers',
+    'Set up sending domain warm-up and deliverability (SPF, DKIM, DMARC)',
+    "Train Max's sales personnel on the workflow and handoff",
+    'Launch pilot batch and review reply rate before scaling'
+  ]],
+  ['Phase 5 · Google Paid Search', [
+    'Keyword research on high-intent terms',
+    'Build the account structure and campaigns',
+    'Write ad copy and extensions',
+    'Build or adapt the search landing page',
+    'Set up conversion tracking and Google Ads to CRM connection',
+    'Launch and set the weekly search-term review'
+  ]],
+  ['Phase 6 · SEO and AI Search', [
+    'Run the SEO audit (rankings, volume, competitors, technical, local)',
+    'Keyword and content gap mapping',
+    'Fix priority technical issues',
+    'Set up and optimize Google Business Profile',
+    'Build the content pillar plan around the target terms',
+    'Publish the first 2 cornerstone pages'
+  ]],
+  ['Phase 7 · Content Engine', [
+    'Establish the drone and site capture workflow with the field crew',
+    'Build the content production and approval workflow',
+    'Produce the first founder video series',
+    'Write case study 1 (problem, solution, outcome)',
+    'Build the education content series (budget planning, safety, materials, design)',
+    'Set the weekly cadence: 1 post per week plus stories from active sites'
+  ]],
+  ['Phase 8 · Scale', [
+    'Launch Meta retargeting off the LinkedIn and site audiences',
+    'Build LinkedIn lead magnets (guides, reports, consultation offers)',
+    'Push offline conversions (closed-won) back into LinkedIn and Google for optimization',
+    'Run the 90-day review: cost per lead by channel, close rate by source',
+    'Reallocate budget to the winners'
+  ]]
+];
+function demoProject() { return planToProject('Cours à Bois — Growth Engine', DEMO_PLAN); }
+
+function load() {
+  var raw = null;
+  try { raw = localStorage.getItem(KEY); } catch (e) { raw = null; }
+  if (raw) {
+    try { state = normalise(JSON.parse(raw)); } catch (e) { state = null; }
+  }
+  if (!state) {
+    state = blankState();
+    var p = demoProject();
+    state.projects.push(p);
+    state.currentId = p.id;
+    save();
+  }
+  if (!currentProject() && state.projects.length) state.currentId = state.projects[0].id;
+}
+
+// Tolerate hand-edited or older files: fill in whatever is missing rather than throwing.
+function normalise(s) {
+  if (!s || typeof s !== 'object') return null;
+  var out = blankState();
+  out.currentId = s.currentId || null;
+  out.projects = (s.projects || []).map(function (p) {
+    return {
+      id: p.id || uid('p'),
+      name: String(p.name == null ? 'Untitled' : p.name),
+      createdAt: p.createdAt || Date.now(),
+      phases: (p.phases || []).map(function (ph) {
+        return {
+          id: ph.id || uid('ph'),
+          name: String(ph.name == null ? 'Phase' : ph.name),
+          collapsed: !!ph.collapsed,
+          steps: (ph.steps || []).map(function (st) {
+            return {
+              id: st.id || uid('st'),
+              name: String(st.name == null ? 'Step' : st.name),
+              status: st.status === 'doing' || st.status === 'done' ? st.status : 'todo',
+              estimate: Number(st.estimate) || 0
+            };
+          })
+        };
+      })
+    };
+  });
+  out.log = (s.log || []).filter(function (e) { return e && e.stepId && e.start; }).map(function (e) {
+    return {
+      id: e.id || uid('e'),
+      projectId: e.projectId || null,
+      phaseId: e.phaseId || null,
+      stepId: e.stepId,
+      start: Number(e.start),
+      end: e.end == null ? null : Number(e.end),
+      note: String(e.note || ''),
+      source: e.source === 'timer' ? 'timer' : 'manual'
+    };
+  });
+  return out;
+}
+
+function save() {
+  try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { /* private mode: keep going in memory */ }
+}
+
+// A write made moments before the page goes away can still be sitting in the
+// browser's pending batch when the document is torn down. Writing again as the
+// page hides gets it committed.
+window.addEventListener('pagehide', save);
+document.addEventListener('visibilitychange', function () {
+  if (document.visibilityState === 'hidden') save();
+});
+
+/* ============================================================
+   Lookups and derived time
+   ============================================================ */
+function currentProject() {
+  for (var i = 0; i < state.projects.length; i++) {
+    if (state.projects[i].id === state.currentId) return state.projects[i];
+  }
+  return null;
+}
+function findPhase(id) {
+  var p = currentProject(); if (!p) return null;
+  for (var i = 0; i < p.phases.length; i++) if (p.phases[i].id === id) return p.phases[i];
+  return null;
+}
+function findStep(id) {
+  var p = currentProject(); if (!p) return null;
+  for (var i = 0; i < p.phases.length; i++) {
+    for (var j = 0; j < p.phases[i].steps.length; j++) {
+      if (p.phases[i].steps[j].id === id) return p.phases[i].steps[j];
+    }
+  }
+  return null;
+}
+function phaseOfStep(id) {
+  var p = currentProject(); if (!p) return null;
+  for (var i = 0; i < p.phases.length; i++) {
+    for (var j = 0; j < p.phases[i].steps.length; j++) {
+      if (p.phases[i].steps[j].id === id) return p.phases[i];
+    }
+  }
+  return null;
+}
+
+function entrySeconds(e, now) {
+  var end = e.end == null ? (now || Date.now()) : e.end;
+  return Math.max(0, Math.round((end - e.start) / 1000));
+}
+function entriesOfStep(stepId) {
+  return state.log.filter(function (e) { return e.stepId === stepId; });
+}
+function secondsOfStep(stepId, now) {
+  return entriesOfStep(stepId).reduce(function (s, e) { return s + entrySeconds(e, now); }, 0);
+}
+function secondsOfPhase(phase, now) {
+  return phase.steps.reduce(function (s, st) { return s + secondsOfStep(st.id, now); }, 0);
+}
+function secondsOfProject(project, now) {
+  return project.phases.reduce(function (s, ph) { return s + secondsOfPhase(ph, now); }, 0);
+}
+function estimateOfPhase(phase) {
+  return phase.steps.reduce(function (s, st) { return s + (st.estimate || 0); }, 0);
+}
+
+// One timer at a time: the open entry is the one with no end.
+function runningEntry() {
+  for (var i = 0; i < state.log.length; i++) if (state.log[i].end == null) return state.log[i];
+  return null;
+}
+
+/* ============================================================
+   Formatting
+   ============================================================ */
+function fmtHM(sec) {
+  sec = Math.max(0, Math.round(sec || 0));
+  if (sec === 0) return '0m';
+  var h = Math.floor(sec / 3600), m = Math.round((sec % 3600) / 60);
+  if (m === 60) { h += 1; m = 0; }
+  if (h && m) return h + 'h ' + m + 'm';
+  if (h) return h + 'h';
+  if (m) return m + 'm';
+  return '<1m';
+}
+function fmtClock(sec) {
+  sec = Math.max(0, Math.round(sec || 0));
+  var h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = sec % 60;
+  var mm = String(m).padStart(2, '0'), ss = String(s).padStart(2, '0');
+  return h ? h + ':' + mm + ':' + ss : m + ':' + ss;
+}
+function fmtHours(sec) { return (Math.round((sec / 3600) * 100) / 100).toFixed(2); }
+
+function pad(n) { return String(n).padStart(2, '0'); }
+function dateKey(ms) { var d = new Date(ms); return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+function fmtDate(ms) {
+  var d = new Date(ms);
+  return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+}
+function fmtTime(ms) { var d = new Date(ms); return pad(d.getHours()) + ':' + pad(d.getMinutes()); }
+
+// "1h30", "1h 30m", "90", "1.5h", "1:30" → seconds. Bare numbers are minutes.
+function parseDuration(raw) {
+  var s = String(raw == null ? '' : raw).trim().toLowerCase();
+  if (!s) return null;
+  if (/^\d+:\d{1,2}$/.test(s)) {
+    var parts = s.split(':');
+    return Number(parts[0]) * 3600 + Number(parts[1]) * 60;
+  }
+  var re = /(\d+(?:[.,]\d+)?)\s*(h|hr|hrs|hour|hours|m|min|mins|minute|minutes)?/g;
+  var total = 0, matched = false, m;
+  while ((m = re.exec(s))) {
+    if (!m[0].trim()) { if (re.lastIndex >= s.length) break; re.lastIndex++; continue; }
+    var v = parseFloat(m[1].replace(',', '.'));
+    if (isNaN(v)) continue;
+    var unit = m[2] || 'm';
+    total += unit.charAt(0) === 'h' ? v * 3600 : v * 60;
+    matched = true;
+  }
+  return matched ? Math.round(total) : null;
+}
+
+// Inline icons — emoji glyphs render differently on every platform, these don't.
+function svgIcon(d) {
+  return '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false">' +
+    '<path d="' + d + '" fill="none" stroke="currentColor" stroke-width="1.4" ' +
+    'stroke-linecap="round" stroke-linejoin="round"/></svg>';
+}
+var ICO = {
+  pencil: svgIcon('M11.9 1.9l2.2 2.2-8.4 8.4-2.9.7.7-2.9 8.4-8.4z'),
+  plus: svgIcon('M8 3.2v9.6M3.2 8h9.6'),
+  trash: svgIcon('M2.9 4.3h10.2M6.3 4.3V2.9h3.4v1.4M4.5 4.3l.6 8.3h5.8l.6-8.3'),
+  up: svgIcon('M8 12.8V3.6M4.4 7.2L8 3.6l3.6 3.6'),
+  down: svgIcon('M8 3.2v9.2M4.4 8.8L8 12.4l3.6-3.6'),
+  chev: svgIcon('M6.2 3.4L10.8 8l-4.6 4.6')
+};
+
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+function $(id) { return document.getElementById(id); }
+
+/* ============================================================
+   Modal
+   ============================================================ */
+var modalSave = null;
+function openModal(title, bodyHTML, onSave, focusId) {
+  $('modal-title').textContent = title;
+  $('modal-body').innerHTML = bodyHTML;
+  $('modal-error').classList.remove('on');
+  $('modal-error').textContent = '';
+  modalSave = onSave;
+  $('modal-overlay').classList.add('open');
+  var f = focusId && $(focusId);
+  if (f) { f.focus(); if (f.select) f.select(); }
+}
+function closeModal() {
+  $('modal-overlay').classList.remove('open');
+  modalSave = null;
+  $('modal-body').innerHTML = '';
+}
+function modalError(msg) {
+  var el = $('modal-error');
+  el.textContent = msg;
+  el.classList.add('on');
+}
+$('modal').addEventListener('submit', function (ev) {
+  ev.preventDefault();
+  if (modalSave && modalSave() !== false) { closeModal(); render(); }
+});
+$('modal-cancel').addEventListener('click', closeModal);
+$('modal-overlay').addEventListener('mousedown', function (ev) {
+  if (ev.target === $('modal-overlay')) closeModal();
+});
+document.addEventListener('keydown', function (ev) {
+  if (ev.key === 'Escape' && $('modal-overlay').classList.contains('open')) closeModal();
+});
+
+function confirmModal(title, message, onYes) {
+  openModal(title, '<p style="margin:0 0 4px">' + esc(message) + '</p>', function () {
+    onYes();
+    save();
+    return true;
+  });
+  $('modal-save').textContent = 'Delete';
+  $('modal-save').classList.add('danger');
+}
+function resetSaveBtn() {
+  $('modal-save').textContent = 'Save';
+  $('modal-save').classList.remove('danger');
+}
+
+/* ============================================================
+   Timer
+   ============================================================ */
+function startTimer(stepId) {
+  var open = runningEntry();
+  if (open) {
+    open.end = Date.now();
+    if (open.stepId === stepId) { save(); render(); return; }   // second click stops it
+  }
+  var ph = phaseOfStep(stepId);
+  var st = findStep(stepId);
+  if (!st) return;
+  state.log.push({
+    id: uid('e'),
+    projectId: state.currentId,
+    phaseId: ph ? ph.id : null,
+    stepId: stepId,
+    start: Date.now(),
+    end: null,
+    note: '',
+    source: 'timer'
+  });
+  if (st.status === 'todo') st.status = 'doing';
+  save();
+  render();
+}
+function stopTimer() {
+  var open = runningEntry();
+  if (!open) return;
+  open.end = Date.now();
+  save();
+  render();
+}
+
+/* ============================================================
+   Render
+   ============================================================ */
+var activeTab = 'board';
+
+function render() {
+  renderProjects();
+  renderRunning();
+  renderBoard();
+  renderLogFilters();
+  renderLog();
+  renderReport();
+}
+
+function renderProjects() {
+  var sel = $('project-select');
+  sel.innerHTML = state.projects.map(function (p) {
+    return '<option value="' + esc(p.id) + '"' + (p.id === state.currentId ? ' selected' : '') + '>' + esc(p.name) + '</option>';
+  }).join('');
+}
+
+function renderRunning() {
+  var open = runningEntry();
+  var bar = $('running-bar');
+  if (!open) { bar.classList.remove('on'); document.title = 'Project Phases & Time Log'; return; }
+  var st = findStep(open.stepId), ph = phaseOfStep(open.stepId);
+  bar.classList.add('on');
+  $('running-what').textContent = (ph ? ph.name + ' · ' : '') + (st ? st.name : 'step');
+  tick();
+}
+
+function statusLabel(s) { return s === 'done' ? 'Done' : s === 'doing' ? 'In progress' : 'To do'; }
+
+function renderBoard() {
+  var p = currentProject();
+  var anyOpen = p && p.phases.some(function (ph) { return !ph.collapsed; });
+  $('btn-collapse-all').textContent = anyOpen ? 'Collapse all' : 'Expand all';
+  $('btn-collapse-all').style.display = p && p.phases.length ? '' : 'none';
+  var board = $('board');
+  if (!p) { board.innerHTML = '<div class="empty">No project yet. Create one to get started.</div>'; return; }
+  if (!p.phases.length) {
+    board.innerHTML = '<div class="empty">No phases yet — add the first phase of <strong>' + esc(p.name) + '</strong>.</div>';
+    return;
+  }
+  var open = runningEntry();
+  var now = Date.now();
+
+  board.innerHTML = p.phases.map(function (ph, pi) {
+    var logged = secondsOfPhase(ph, now);
+    var est = estimateOfPhase(ph);
+    var done = ph.steps.filter(function (s) { return s.status === 'done'; }).length;
+    var pct = est > 0 ? Math.min(100, Math.round(logged / est * 100)) : (ph.steps.length ? Math.round(done / ph.steps.length * 100) : 0);
+    var over = est > 0 && logged > est;
+
+    var steps = ph.steps.map(function (st) {
+      var sSec = secondsOfStep(st.id, now);
+      var isRunning = !!(open && open.stepId === st.id);
+      var stepOver = st.estimate > 0 && sSec > st.estimate;
+      return '' +
+        '<li class="step ' + st.status + (isRunning ? ' running' : '') + '" data-step="' + esc(st.id) + '">' +
+          '<button type="button" class="chip ' + st.status + '" data-act="cycle" title="Change status">' + statusLabel(st.status) + '</button>' +
+          '<span class="step-name">' + esc(st.name) + '</span>' +
+          '<span class="step-time"' + (isRunning ? ' id="live-step-time"' : '') + '>' + fmtHM(sSec) + '</span>' +
+          '<span class="step-est muted' + (stepOver ? ' over' : '') + '">' + (st.estimate ? '/ ' + fmtHM(st.estimate) : '&nbsp;') + '</span>' +
+          '<button type="button" class="timer-btn' + (isRunning ? ' on' : '') + '" data-act="timer" title="' + (isRunning ? 'Stop timer' : 'Start timer') + '">' +
+            (isRunning ? '■' : '▶') + '<span class="tb-label">' + (isRunning ? 'Stop' : 'Start') + '</span></button>' +
+          '<span class="step-actions">' +
+            '<button type="button" class="icon" data-act="manual" title="Log time by hand">' + ICO.plus + '</button>' +
+            '<button type="button" class="icon" data-act="edit-step" title="Edit step">' + ICO.pencil + '</button>' +
+            '<button type="button" class="icon del" data-act="del-step" title="Delete step">' + ICO.trash + '</button>' +
+          '</span>' +
+        '</li>';
+    }).join('');
+
+    return '' +
+      '<section class="phase' + (ph.collapsed ? ' collapsed' : '') + '" data-phase="' + esc(ph.id) + '">' +
+        '<header class="phase-head">' +
+          '<div class="phase-title">' +
+            '<button type="button" class="phase-toggle" data-act="toggle-phase" ' +
+              'aria-expanded="' + (ph.collapsed ? 'false' : 'true') + '" ' +
+              'title="' + (ph.collapsed ? 'Expand' : 'Collapse') + ' this phase">' +
+              '<span class="chev">' + ICO.chev + '</span><h2>' + esc(ph.name) + '</h2></button>' +
+            '<span class="pill">' + done + '/' + ph.steps.length + ' steps</span></div>' +
+          '<div class="phase-meta">' +
+            '<span class="phase-time">' + fmtHM(logged) + '</span>' +
+            '<span class="muted nowrap">' + (est ? 'of ' + fmtHM(est) : 'no estimate') + '</span>' +
+            '<div class="bar' + (over ? ' over' : '') + '"><i style="width:' + pct + '%"></i></div>' +
+          '</div>' +
+          '<div class="phase-actions">' +
+            '<button type="button" class="icon" data-act="phase-up" title="Move up"' + (pi === 0 ? ' disabled' : '') + '>' + ICO.up + '</button>' +
+            '<button type="button" class="icon" data-act="phase-down" title="Move down"' + (pi === p.phases.length - 1 ? ' disabled' : '') + '>' + ICO.down + '</button>' +
+            '<button type="button" class="icon" data-act="edit-phase" title="Rename phase">' + ICO.pencil + '</button>' +
+            '<button type="button" class="icon del" data-act="del-phase" title="Delete phase">' + ICO.trash + '</button>' +
+          '</div>' +
+        '</header>' +
+        '<ul class="steps">' + steps + '</ul>' +
+        '<button type="button" class="add-step" data-act="add-step">+ Add step to ' + esc(ph.name) + '</button>' +
+      '</section>';
+  }).join('');
+}
+
+/* ---------- log ---------- */
+var filters = { phaseId: '', stepId: '', from: '', to: '' };
+
+function renderLogFilters() {
+  var p = currentProject();
+  var fp = $('f-phase'), fs = $('f-step');
+  var phases = p ? p.phases : [];
+  fp.innerHTML = '<option value="">All phases</option>' + phases.map(function (ph) {
+    return '<option value="' + esc(ph.id) + '"' + (filters.phaseId === ph.id ? ' selected' : '') + '>' + esc(ph.name) + '</option>';
+  }).join('');
+
+  var stepSource = filters.phaseId ? phases.filter(function (ph) { return ph.id === filters.phaseId; }) : phases;
+  var opts = '';
+  stepSource.forEach(function (ph) {
+    ph.steps.forEach(function (st) {
+      opts += '<option value="' + esc(st.id) + '"' + (filters.stepId === st.id ? ' selected' : '') + '>' + esc(ph.name) + ' · ' + esc(st.name) + '</option>';
+    });
+  });
+  fs.innerHTML = '<option value="">All steps</option>' + opts;
+  if (filters.stepId && !findStep(filters.stepId)) filters.stepId = '';
+  $('f-from').value = filters.from;
+  $('f-to').value = filters.to;
+}
+
+function visibleEntries() {
+  var p = currentProject();
+  if (!p) return [];
+  var now = Date.now();
+  return state.log.filter(function (e) {
+    if (!findStep(e.stepId)) return false;                       // belongs to another project
+    if (filters.stepId && e.stepId !== filters.stepId) return false;
+    if (filters.phaseId) {
+      var ph = phaseOfStep(e.stepId);
+      if (!ph || ph.id !== filters.phaseId) return false;
+    }
+    var key = dateKey(e.start);
+    if (filters.from && key < filters.from) return false;
+    if (filters.to && key > filters.to) return false;
+    return true;
+  }).sort(function (a, b) { return b.start - a.start; }).map(function (e) {
+    return { e: e, sec: entrySeconds(e, now) };
+  });
+}
+
+function renderLog() {
+  var rows = visibleEntries();
+  var body = $('log-body');
+  if (!rows.length) {
+    body.innerHTML = '<tr><td colspan="6" class="muted" style="padding:22px;text-align:center">No time logged yet for this filter.</td></tr>';
+    $('log-total').textContent = '0m';
+    return;
+  }
+  body.innerHTML = rows.map(function (r) {
+    var e = r.e;
+    var ph = phaseOfStep(e.stepId), st = findStep(e.stepId);
+    var running = e.end == null;
+    return '' +
+      '<tr class="log-row" data-entry="' + esc(e.id) + '">' +
+        '<td class="nowrap">' + fmtDate(e.start) + '<br><span class="muted" style="font-size:12px">' +
+          fmtTime(e.start) + '–' + (running ? 'now' : fmtTime(e.end)) + '</span></td>' +
+        '<td>' + esc(ph ? ph.name : '—') + '</td>' +
+        '<td>' + esc(st ? st.name : '—') + '</td>' +
+        '<td class="num">' + fmtHM(r.sec) + (running ? ' <span class="muted">(running)</span>' : '') + '</td>' +
+        '<td>' + esc(e.note) + '</td>' +
+        '<td class="num">' +
+          '<button type="button" class="icon" data-act="edit-entry" title="Edit entry">' + ICO.pencil + '</button>' +
+          '<button type="button" class="icon del" data-act="del-entry" title="Delete entry">' + ICO.trash + '</button>' +
+        '</td>' +
+      '</tr>';
+  }).join('');
+  $('log-total').textContent = fmtHM(rows.reduce(function (s, r) { return s + r.sec; }, 0));
+}
+
+/* ---------- report ---------- */
+function renderReport() {
+  var p = currentProject();
+  var body = $('report-body');
+  if (!p) { body.innerHTML = ''; return; }
+  var now = Date.now();
+  var total = secondsOfProject(p, now);
+  var estTotal = p.phases.reduce(function (s, ph) { return s + estimateOfPhase(ph); }, 0);
+  var allSteps = p.phases.reduce(function (a, ph) { return a.concat(ph.steps); }, []);
+  var doneSteps = allSteps.filter(function (s) { return s.status === 'done'; }).length;
+  var entries = state.log.filter(function (e) { return !!findStep(e.stepId); });
+
+  $('stat-logged').textContent = fmtHM(total);
+  $('stat-est').textContent = fmtHM(estTotal);
+  $('stat-steps').textContent = doneSteps + '/' + allSteps.length;
+  $('stat-entries').textContent = String(entries.length);
+
+  var html = '';
+  p.phases.forEach(function (ph) {
+    var logged = secondsOfPhase(ph, now), est = estimateOfPhase(ph);
+    var share = total > 0 ? Math.round(logged / total * 100) : 0;
+    html += '<tr>' +
+      '<td><strong>' + esc(ph.name) + '</strong></td>' +
+      '<td class="num"><strong>' + fmtHM(logged) + '</strong></td>' +
+      '<td class="num">' + (est ? fmtHM(est) : '—') + '</td>' +
+      '<td class="num">' + deltaCell(logged, est) + '</td>' +
+      '<td><div class="bar"><i style="width:' + share + '%"></i></div></td>' +
+      '</tr>';
+    ph.steps.forEach(function (st) {
+      var s = secondsOfStep(st.id, now);
+      var sShare = total > 0 ? Math.round(s / total * 100) : 0;
+      html += '<tr>' +
+        '<td style="padding-left:26px" class="muted">' + esc(st.name) + '</td>' +
+        '<td class="num">' + fmtHM(s) + '</td>' +
+        '<td class="num muted">' + (st.estimate ? fmtHM(st.estimate) : '—') + '</td>' +
+        '<td class="num">' + deltaCell(s, st.estimate) + '</td>' +
+        '<td><div class="bar"><i style="width:' + sShare + '%"></i></div></td>' +
+        '</tr>';
+    });
+  });
+  body.innerHTML = html;
+
+  // last 14 days
+  var buckets = {};
+  entries.forEach(function (e) {
+    var k = dateKey(e.start);
+    buckets[k] = (buckets[k] || 0) + entrySeconds(e, now);
+  });
+  var days = [], max = 0;
+  for (var i = 13; i >= 0; i--) {
+    var d = new Date();
+    d.setHours(12, 0, 0, 0);
+    d.setDate(d.getDate() - i);
+    var k = dateKey(d.getTime());
+    var sec = buckets[k] || 0;
+    if (sec > max) max = sec;
+    days.push({ d: d, sec: sec });
+  }
+  $('daily').innerHTML = days.map(function (x) {
+    var h = max > 0 ? Math.round(x.sec / max * 100) : 0;
+    return '<div class="day' + (x.sec ? '' : ' zero') + '" title="' + fmtHM(x.sec) + '">' +
+      '<i style="height:' + h + '%"></i><span>' + x.d.getDate() + '</span></div>';
+  }).join('');
+}
+
+function deltaCell(logged, est) {
+  if (!est) return '<span class="muted">—</span>';
+  var d = logged - est;
+  if (d === 0) return '<span class="muted">on est</span>';
+  if (d > 0) return '<span style="color:var(--warn)">+' + fmtHM(d) + '</span>';
+  return '<span class="muted">−' + fmtHM(-d) + '</span>';
+}
+
+/* ============================================================
+   Live tick — updates text only, so nothing loses focus
+   ============================================================ */
+function tick() {
+  var open = runningEntry();
+  if (!open) return;
+  var sec = entrySeconds(open, Date.now());
+  var el = $('running-elapsed');
+  if (el) el.textContent = fmtClock(sec);
+  var live = $('live-step-time');
+  if (live) live.textContent = fmtHM(secondsOfStep(open.stepId, Date.now()));
+  document.title = fmtClock(sec) + ' · Project Phases';
+}
+setInterval(tick, 1000);
+
+/* ============================================================
+   Board interactions
+   ============================================================ */
+$('board').addEventListener('click', function (ev) {
+  var btn = ev.target.closest('[data-act]');
+  if (!btn) return;
+  var act = btn.getAttribute('data-act');
+  var stepEl = btn.closest('.step');
+  var phaseEl = btn.closest('.phase');
+  var stepId = stepEl && stepEl.getAttribute('data-step');
+  var phaseId = phaseEl && phaseEl.getAttribute('data-phase');
+  resetSaveBtn();
+
+  if (act === 'timer') return startTimer(stepId);
+
+  if (act === 'toggle-phase') {
+    var tph = findPhase(phaseId);
+    if (!tph) return;
+    tph.collapsed = !tph.collapsed;
+    save(); render();
+    return;
+  }
+
+  if (act === 'cycle') {
+    var st = findStep(stepId);
+    if (!st) return;
+    st.status = st.status === 'todo' ? 'doing' : st.status === 'doing' ? 'done' : 'todo';
+    var open = runningEntry();
+    if (st.status === 'done' && open && open.stepId === stepId) stopTimer();
+    save(); render();
+    return;
+  }
+
+  if (act === 'manual') return openTimeEntry(null, stepId);
+  if (act === 'edit-step') return editStep(stepId);
+  if (act === 'del-step') {
+    var s = findStep(stepId);
+    var n = entriesOfStep(stepId).length;
+    return confirmModal('Delete step', 'Delete “' + (s ? s.name : 'step') + '”' +
+      (n ? ' and its ' + n + ' time ' + (n === 1 ? 'entry' : 'entries') : '') + '?', function () {
+      var ph = phaseOfStep(stepId);
+      if (ph) ph.steps = ph.steps.filter(function (x) { return x.id !== stepId; });
+      state.log = state.log.filter(function (e) { return e.stepId !== stepId; });
+    });
+  }
+  if (act === 'add-step') return editStep(null, phaseId);
+  if (act === 'edit-phase') return editPhase(phaseId);
+  if (act === 'del-phase') {
+    var ph2 = findPhase(phaseId);
+    if (!ph2) return;
+    var count = ph2.steps.reduce(function (s, st2) { return s + entriesOfStep(st2.id).length; }, 0);
+    return confirmModal('Delete phase', 'Delete “' + ph2.name + '”, its ' + ph2.steps.length + ' steps' +
+      (count ? ' and ' + count + ' time ' + (count === 1 ? 'entry' : 'entries') : '') + '?', function () {
+      var p = currentProject();
+      var ids = ph2.steps.map(function (s) { return s.id; });
+      p.phases = p.phases.filter(function (x) { return x.id !== phaseId; });
+      state.log = state.log.filter(function (e) { return ids.indexOf(e.stepId) === -1; });
+    });
+  }
+  if (act === 'phase-up' || act === 'phase-down') {
+    var pr = currentProject();
+    var i = pr.phases.findIndex(function (x) { return x.id === phaseId; });
+    var j = act === 'phase-up' ? i - 1 : i + 1;
+    if (i < 0 || j < 0 || j >= pr.phases.length) return;
+    var tmp = pr.phases[i]; pr.phases[i] = pr.phases[j]; pr.phases[j] = tmp;
+    save(); render();
+  }
+});
+
+function editPhase(phaseId) {
+  var ph = phaseId ? findPhase(phaseId) : null;
+  openModal(ph ? 'Rename phase' : 'New phase',
+    '<div class="row"><label for="ph-name">Phase name</label>' +
+    '<input type="text" id="ph-name" value="' + esc(ph ? ph.name : '') + '" placeholder="Discovery"></div>',
+    function () {
+      var name = $('ph-name').value.trim();
+      if (!name) { modalError('Give the phase a name.'); return false; }
+      if (ph) ph.name = name;
+      else currentProject().phases.push({ id: uid('ph'), name: name, steps: [] });
+      save();
+      return true;
+    }, 'ph-name');
+}
+
+function editStep(stepId, phaseId) {
+  var st = stepId ? findStep(stepId) : null;
+  var ph = st ? phaseOfStep(stepId) : findPhase(phaseId);
+  if (!ph) return;
+  openModal(st ? 'Edit step' : 'New step in ' + ph.name,
+    '<div class="row"><label for="st-name">Step name</label>' +
+      '<input type="text" id="st-name" value="' + esc(st ? st.name : '') + '" placeholder="Wireframes"></div>' +
+    '<div class="row"><label for="st-est">Estimate</label>' +
+      '<input type="text" id="st-est" value="' + (st && st.estimate ? esc(fmtHM(st.estimate)) : '') + '" placeholder="2h 30m">' +
+      '<div class="hint">Optional. “2h”, “90m”, “1:30” or a plain number of minutes.</div></div>' +
+    '<div class="row"><label for="st-status">Status</label><select id="st-status">' +
+      ['todo', 'doing', 'done'].map(function (v) {
+        return '<option value="' + v + '"' + (st && st.status === v ? ' selected' : '') + '>' + statusLabel(v) + '</option>';
+      }).join('') + '</select></div>',
+    function () {
+      var name = $('st-name').value.trim();
+      if (!name) { modalError('Give the step a name.'); return false; }
+      var raw = $('st-est').value.trim();
+      var est = 0;
+      if (raw) {
+        est = parseDuration(raw);
+        if (est === null) { modalError('Could not read that estimate — try “2h 30m”.'); return false; }
+      }
+      var status = $('st-status').value;
+      if (st) { st.name = name; st.estimate = est; st.status = status; }
+      else ph.steps.push({ id: uid('st'), name: name, status: status, estimate: est });
+      save();
+      return true;
+    }, 'st-name');
+}
+
+/* ============================================================
+   Time entries
+   ============================================================ */
+function stepOptions(selectedId) {
+  var p = currentProject();
+  if (!p) return '';
+  var out = '';
+  p.phases.forEach(function (ph) {
+    ph.steps.forEach(function (st) {
+      out += '<option value="' + esc(st.id) + '"' + (st.id === selectedId ? ' selected' : '') + '>' +
+        esc(ph.name) + ' · ' + esc(st.name) + '</option>';
+    });
+  });
+  return out;
+}
+
+function openTimeEntry(entryId, stepId) {
+  var entry = entryId ? state.log.filter(function (e) { return e.id === entryId; })[0] : null;
+  if (entry) stepId = entry.stepId;
+  var opts = stepOptions(stepId);
+  if (!opts) { openModal('Log time', '<p class="muted" style="margin:0">Add a phase and a step first.</p>', function () { return true; }); return; }
+  var sec = entry ? entrySeconds(entry, Date.now()) : 0;
+
+  openModal(entry ? 'Edit time entry' : 'Log time',
+    '<div class="row"><label for="te-step">Step</label><select id="te-step">' + opts + '</select></div>' +
+    '<div class="row"><label for="te-date">Date</label>' +
+      '<input type="date" id="te-date" value="' + dateKey(entry ? entry.start : Date.now()) + '"></div>' +
+    '<div class="row"><label for="te-dur">Time spent</label>' +
+      '<input type="text" id="te-dur" value="' + (sec ? esc(fmtHM(sec)) : '') + '" placeholder="1h 30m">' +
+      '<div class="hint">“1h 30m”, “90”, “1:30”. A bare number counts as minutes.</div></div>' +
+    '<div class="row"><label for="te-note">Note</label>' +
+      '<textarea id="te-note" rows="2" placeholder="What got done">' + esc(entry ? entry.note : '') + '</textarea></div>',
+    function () {
+      var secs = parseDuration($('te-dur').value);
+      if (secs === null || secs <= 0) { modalError('Enter how long it took — “1h 30m”.'); return false; }
+      var dv = $('te-date').value;
+      var parts = (dv || dateKey(Date.now())).split('-');
+      var start = entry && dateKey(entry.start) === dv
+        ? entry.start
+        : new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]), 9, 0, 0, 0).getTime();
+      var target = $('te-step').value;
+      var ph = phaseOfStep(target);
+      if (entry) {
+        entry.stepId = target;
+        entry.phaseId = ph ? ph.id : null;
+        entry.start = start;
+        entry.end = start + secs * 1000;
+        entry.note = $('te-note').value.trim();
+      } else {
+        state.log.push({
+          id: uid('e'), projectId: state.currentId, phaseId: ph ? ph.id : null, stepId: target,
+          start: start, end: start + secs * 1000, note: $('te-note').value.trim(), source: 'manual'
+        });
+        var st = findStep(target);
+        if (st && st.status === 'todo') st.status = 'doing';
+      }
+      save();
+      return true;
+    }, 'te-dur');
+}
+
+$('log-body').addEventListener('click', function (ev) {
+  var btn = ev.target.closest('[data-act]');
+  if (!btn) return;
+  var id = btn.closest('.log-row').getAttribute('data-entry');
+  resetSaveBtn();
+  if (btn.getAttribute('data-act') === 'edit-entry') return openTimeEntry(id);
+  confirmModal('Delete entry', 'Delete this time entry?', function () {
+    state.log = state.log.filter(function (e) { return e.id !== id; });
+  });
+});
+
+$('btn-log-add').addEventListener('click', function () { resetSaveBtn(); openTimeEntry(null, null); });
+
+['f-phase', 'f-step', 'f-from', 'f-to'].forEach(function (id) {
+  $(id).addEventListener('change', function () {
+    filters.phaseId = $('f-phase').value;
+    filters.stepId = $('f-step').value;
+    filters.from = $('f-from').value;
+    filters.to = $('f-to').value;
+    if (id === 'f-phase') filters.stepId = '';
+    renderLogFilters();
+    renderLog();
+  });
+});
+$('f-clear').addEventListener('click', function () {
+  filters = { phaseId: '', stepId: '', from: '', to: '' };
+  renderLogFilters();
+  renderLog();
+});
+
+/* ============================================================
+   Tabs
+   ============================================================ */
+[['tab-board', 'panel-board', 'board'], ['tab-log', 'panel-log', 'log'], ['tab-report', 'panel-report', 'report']]
+  .forEach(function (t) {
+    $(t[0]).addEventListener('click', function () {
+      activeTab = t[2];
+      ['tab-board', 'tab-log', 'tab-report'].forEach(function (x) { $(x).classList.remove('on'); });
+      ['panel-board', 'panel-log', 'panel-report'].forEach(function (x) { $(x).classList.remove('on'); });
+      $(t[0]).classList.add('on');
+      $(t[1]).classList.add('on');
+      render();
+    });
+  });
+
+/* ============================================================
+   Projects, import / export
+   ============================================================ */
+$('project-select').addEventListener('change', function () {
+  state.currentId = this.value;
+  filters = { phaseId: '', stepId: '', from: '', to: '' };
+  save();
+  render();
+});
+
+$('btn-add-project').addEventListener('click', function () {
+  resetSaveBtn();
+  openModal('New project',
+    '<div class="row"><label for="pr-name">Project name</label>' +
+      '<input type="text" id="pr-name" placeholder="Client website"></div>' +
+    '<div class="row"><label><input type="checkbox" id="pr-template" checked style="width:auto;margin-right:6px">' +
+      'Start with the four standard phases</label></div>',
+    function () {
+      var name = $('pr-name').value.trim();
+      if (!name) { modalError('Give the project a name.'); return false; }
+      var p = $('pr-template').checked ? starterProject() : { id: uid('p'), name: name, createdAt: Date.now(), phases: [] };
+      p.name = name;
+      state.projects.push(p);
+      state.currentId = p.id;
+      filters = { phaseId: '', stepId: '', from: '', to: '' };
+      save();
+      return true;
+    }, 'pr-name');
+});
+
+$('btn-rename-project').addEventListener('click', function () {
+  var p = currentProject();
+  if (!p) return;
+  resetSaveBtn();
+  openModal('Rename project',
+    '<div class="row"><label for="pr-rename">Project name</label>' +
+      '<input type="text" id="pr-rename" value="' + esc(p.name) + '"></div>',
+    function () {
+      var name = $('pr-rename').value.trim();
+      if (!name) { modalError('Give the project a name.'); return false; }
+      p.name = name;
+      save();
+      return true;
+    }, 'pr-rename');
+});
+
+$('btn-delete-project').addEventListener('click', function () {
+  var p = currentProject();
+  if (!p) return;
+  resetSaveBtn();
+  var ids = p.phases.reduce(function (a, ph) { return a.concat(ph.steps.map(function (s) { return s.id; })); }, []);
+  confirmModal('Delete project', 'Delete “' + p.name + '” with everything logged against it?', function () {
+    state.projects = state.projects.filter(function (x) { return x.id !== p.id; });
+    state.log = state.log.filter(function (e) { return ids.indexOf(e.stepId) === -1; });
+    state.currentId = state.projects.length ? state.projects[0].id : null;
+    filters = { phaseId: '', stepId: '', from: '', to: '' };
+  });
+});
+
+function download(name, mime, text) {
+  var blob = new Blob([text], { type: mime });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url; a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+}
+
+function csvCell(v) {
+  var s = String(v == null ? '' : v);
+  return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+}
+
+function logCSV() {
+  var p = currentProject();
+  var rows = [['Project', 'Phase', 'Step', 'Date', 'Start', 'End', 'Hours', 'Duration', 'Source', 'Note']];
+  visibleEntries().forEach(function (r) {
+    var e = r.e, ph = phaseOfStep(e.stepId), st = findStep(e.stepId);
+    rows.push([
+      p ? p.name : '', ph ? ph.name : '', st ? st.name : '',
+      dateKey(e.start), fmtTime(e.start), e.end == null ? '' : fmtTime(e.end),
+      fmtHours(r.sec), fmtHM(r.sec), e.source, e.note
+    ]);
+  });
+  return rows.map(function (r) { return r.map(csvCell).join(','); }).join('\n');
+}
+window.__logCSV = logCSV;   // used by the tests
+
+$('btn-log-csv').addEventListener('click', function () {
+  var p = currentProject();
+  download('timelog-' + (p ? p.name.replace(/[^\w-]+/g, '-').toLowerCase() : 'project') + '-' + dateKey(Date.now()) + '.csv',
+    'text/csv;charset=utf-8', logCSV());
+});
+
+$('btn-export').addEventListener('click', function () {
+  download('project-phases-' + dateKey(Date.now()) + '.json', 'application/json', JSON.stringify(state, null, 2));
+});
+
+$('btn-import').addEventListener('click', function () {
+  resetSaveBtn();
+  openModal('Import',
+    '<div class="row"><label for="imp-json">Paste a previously exported JSON file</label>' +
+      '<textarea id="imp-json" rows="8" placeholder="{ &quot;version&quot;: 1, … }"></textarea>' +
+      '<div class="hint">This replaces everything currently stored in this browser.</div></div>',
+    function () {
+      var next;
+      try { next = normalise(JSON.parse($('imp-json').value)); }
+      catch (e) { modalError('That is not valid JSON.'); return false; }
+      if (!next || !next.projects.length) { modalError('No projects found in that file.'); return false; }
+      state = next;
+      if (!currentProject()) state.currentId = state.projects[0].id;
+      filters = { phaseId: '', stepId: '', from: '', to: '' };
+      save();
+      return true;
+    }, 'imp-json');
+});
+
+$('btn-add-phase').addEventListener('click', function () {
+  if (!currentProject()) return;
+  resetSaveBtn();
+  editPhase(null);
+});
+// One button both ways: collapse everything, or open it all back up.
+$('btn-collapse-all').addEventListener('click', function () {
+  var pr = currentProject();
+  if (!pr || !pr.phases.length) return;
+  var collapse = pr.phases.some(function (ph) { return !ph.collapsed; });
+  pr.phases.forEach(function (ph) { ph.collapsed = collapse; });
+  save();
+  render();
+});
+
+$('running-stop').addEventListener('click', stopTimer);
+
+/* ============================================================
+   Boot
+   ============================================================ */
+$('btn-rename-project').innerHTML = ICO.pencil;
+$('btn-delete-project').innerHTML = ICO.trash;
+
+load();
+render();
+
+// Test/debug hooks — the same shape the tests drive.
+window.__app = {
+  state: function () { return state; },
+  seconds: function (stepId) { return secondsOfStep(stepId, Date.now()); },
+  parseDuration: parseDuration,
+  fmtHM: fmtHM,
+  render: render
+};
+})();
+</script>
+</body>
+</html>
