@@ -5,6 +5,52 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v30 — 2026-09-11
+
+**What's new** · The map · [index.html]
+### The Map<br>Grew Two Branches
+About opened up into Who am I?, the changelog and what this website even is.
+A new Personal branch joined it — Food for Thought, Digital Archives, Self
+Improvement — and Connect gained a way to submit a tool.
+
+Most of those pages don't exist yet, so they say so plainly rather than
+leading nowhere.
+
+**Map rebuilt on the v8 engine**
+- Two new clusters and one new leaf: About became a parent (Who am I?,
+  Changelog, What is this website?), Personal joined as a fifth cluster (Food
+  for Thought, Digital Archives, Self Improvement), and Connect gained Submit
+  a Tool. Twenty-two nodes, up from fourteen.
+- Taken wholesale rather than porting the branches into the old engine: the
+  grown layout is baked per hierarchy and the engine only regrows when the
+  node **count** changes, so the old bake would have been stale and the map
+  would have regrown on every load. Both baked arrays now match 22 nodes.
+- Labels and nesting are exactly as v8 ships them, so the bake stays valid;
+  only destinations were added.
+- The engine's own bottom hint line came back with v8 and was removed again,
+  with its state — it duplicates the page's instruction line and sits on top
+  of the controls.
+
+**Where the new branches lead**
+- `Changelog` goes to the What's New page, which already existed.
+- The other six have no page yet, so they point at a new `soon.html`, named by
+  fragment: one page, a real URL each, swapped for a proper page later by
+  changing a single href.
+- Each states what is planned rather than showing a generic holding message,
+  and two carry a useful interim action — Who am I? points at the work page,
+  Submit a Tool offers email until the form exists.
+
+**Checked before publishing**
+- Scan clean. All seventeen destinations resolve; anchors and `soon.html`
+  fragments verified against their targets. Console silent on every page.
+
+**Note**
+- There are now two nodes labelled "Personal": the tools category, and the new
+  cluster. They lead to different places and the map handles it, but the
+  repetition is visible.
+
+---
+
 ## v29 — 2026-09-11
 
 **What's new** · The map

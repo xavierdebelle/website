@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>COMING SOON — XAVIER DE BELLE</title>
+<meta name="description" content="Something that isn't here yet.">
+<meta name="robots" content="noindex">
+<link rel="icon" href="assets/logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/style.css">
+<style>
+  html, body { height: 100%; }
+  body { display: flex; flex-direction: column; }
+
+  .soon {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: clamp(40px, 9vw, 120px) var(--gut);
+  }
+
+  .soon h1 {
+    font-size: clamp(52px, 14vw, 190px);
+    margin: 16px 0 0;
+  }
+  .soon h1 em { font-style: normal; -webkit-text-stroke: 2px var(--paper); color: transparent; }
+
+  .soon__what {
+    font-size: clamp(20px, 3.4vw, 40px);
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: -0.03em;
+    line-height: 1;
+    color: var(--volt);
+    margin: clamp(26px, 4vw, 44px) 0 0;
+  }
+
+  .soon p.blurb {
+    font-size: clamp(15px, 1.9vw, 20px);
+    line-height: 1.6;
+    max-width: 48ch;
+    margin: 22px 0 0;
+  }
+
+  .soon .acts { display: flex; flex-wrap: wrap; gap: 12px; margin-top: clamp(30px, 5vw, 48px); }
+</style>
+</head>
+<body>
+
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <a class="topbar__mark" href="index.html">
+    <img src="assets/logo.svg" alt="">
+    Xavier de Belle
+  </a>
+  <nav class="topbar__nav" aria-label="Main">
+    <a href="index.html">Map</a>
+    <a href="work.html">Work</a>
+    <a href="tools.html">Tools</a>
+    <a href="changelog.html">What&rsquo;s New</a>
+    <a href="https://www.instagram.com/xavierdebelle/" target="_blank" rel="noopener">Instagram &#8599;</a>
+  </nav>
+</header>
+
+<main class="soon" id="main">
+  <p class="kicker" id="kicker">Not here yet</p>
+  <h1 class="display">Coming<br><em>Soon</em></h1>
+  <p class="soon__what" id="what"></p>
+  <p class="blurb" id="blurb">
+    This branch of the map exists before the page does &mdash; which is roughly how
+    everything here gets built. It&rsquo;ll fill in.
+  </p>
+  <div class="acts" id="acts">
+    <a class="btn btn--solid" href="index.html">Back to the map</a>
+    <a class="btn" href="changelog.html">What&rsquo;s new &rarr;</a>
+  </div>
+</main>
+
+<footer class="foot">
+  <div>
+    <p class="kicker" style="margin-bottom:14px">Xavier de Belle &mdash; Montreal</p>
+    <div class="foot__links">
+      <a href="index.html">The Map</a>
+      <a href="work.html">Work</a>
+      <a href="tools.html">Tools</a>
+      <a href="changelog.html">What&rsquo;s New</a>
+      <a href="https://www.instagram.com/xavierdebelle/" target="_blank" rel="noopener">Instagram &#8599;</a>
+      <a href="mailto:xavier@debellephotography.com">Email</a>
+    </div>
+  </div>
+  <p class="foot__sig">&copy; <span id="yr"></span> Xavier de Belle &middot; v30</p>
+</footer>
+
+<script>
+(function () {
+  "use strict";
+  document.getElementById('yr').textContent = new Date().getFullYear();
+
+  /* One page serves every branch that has no home yet. The fragment names
+     which one, so each gets its own URL and can be swapped for a real page
+     later by changing a single href in the map. Without JavaScript the
+     generic copy above still stands on its own. */
+  var PLANNED = {
+    'who-am-i': {
+      what: 'Who Am I?',
+      blurb: 'The longer version — how a kid who grew up inside a wedding studio ' +
+             'ended up shooting, filming, building browser tools and buying a duplex. ' +
+             'For now, the work page covers the three lanes.',
+      acts: [['Read the work page', 'work.html', 1]]
+    },
+    'what-is-this': {
+      what: 'What Is This Website?',
+      blurb: 'Why this site exists, how it is built, and why the front door is a ' +
+             'mind map rather than a menu. Short answer: everything I make ended up ' +
+             'scattered, and I wanted one place to find it again.',
+      acts: [['See the tools', 'tools.html', 1]]
+    },
+    'submit-a-tool': {
+      what: 'Submit a Tool',
+      blurb: 'A way to send me something you have built, so it can live here too. ' +
+             'The form is not up yet — until it is, email works perfectly well.',
+      acts: [['Email me instead', 'mailto:xavier@debellephotography.com?subject=Submitting%20a%20tool', 1]]
+    },
+    'food-for-thought': {
+      what: 'Food for Thought',
+      blurb: 'Things worth chewing on — what I am reading, watching and arguing with.'
+    },
+    'digital-archives': {
+      what: 'Digital Archives',
+      blurb: 'The keeping place. Old work, old notes, and whatever else deserves ' +
+             'to outlast the drive it currently lives on.'
+    },
+    'self-improvement': {
+      what: 'Self Improvement',
+      blurb: 'Training, reading, habits — the unglamorous half, tracked honestly.'
+    }
+  };
+
+  var key = (location.hash || '').replace('#', '').toLowerCase();
+  var d = PLANNED[key];
+  if (!d) return;
+
+  document.getElementById('what').textContent = d.what;
+  document.getElementById('kicker').textContent = 'Planned — ' + d.what;
+  document.title = d.what.toUpperCase() + ' — COMING SOON — XAVIER DE BELLE';
+  if (d.blurb) document.getElementById('blurb').textContent = d.blurb;
+
+  if (d.acts) {
+    var acts = document.getElementById('acts');
+    d.acts.forEach(function (a) {
+      var el = document.createElement('a');
+      el.className = 'btn' + (a[2] ? ' btn--solid' : '');
+      el.href = a[1];
+      el.textContent = a[0];
+      acts.insertBefore(el, acts.firstChild);
+    });
+    // the map link stays, but it is no longer the primary action
+    var first = acts.querySelector('a.btn--solid ~ a.btn--solid');
+    if (first) first.className = 'btn';
+  }
+})();
+</script>
+
+</body>
+</html>
