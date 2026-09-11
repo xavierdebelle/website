@@ -2,9 +2,11 @@
 <html>
 <head>
 <meta charset="UTF-8">
+<title>Budget Tracker</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap');
 
+  html{color-scheme:dark}
   *{box-sizing:border-box;margin:0;padding:0}
   :root{
     --bg:#0d1117;--surface:#161b22;--surface2:#1c2330;--surface3:#21283a;
@@ -16,16 +18,17 @@
     --violet:#7c6dfa;--violet-dim:#1e1a42;
     --green:#69f0ae;--green-dim:#0d2e1e;--green-text:#8fffc8;
     --yellow:#ffd740;--yellow-dim:#2e2400;
+    --amber:#ffb74d;--amber-dim:#332200;
     --red:#ff5252;--red-dim:#2e0f0f;
     --text:#e6edf3;--text2:#8b949e;--text3:#4d5566;
     --radius:10px;--radius-sm:6px;
   }
   body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;font-size:14px;min-height:100vh;padding:0}
 
-  .app{max-width:1400px;margin:0 auto;padding:20px 16px}
+  .app{max-width:1400px;margin:0 auto;padding:20px 16px 40px}
 
   /* HEADER */
-  .header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:20px}
+  .header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:16px}
   .header h1{font-size:22px;font-weight:800;letter-spacing:-0.5px}
   .header .subtitle{font-size:11px;color:var(--text3);margin-top:3px;letter-spacing:.2px}
   .header-right{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding-top:2px}
@@ -34,18 +37,37 @@
   .month-nav button,.io-btn{background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:var(--radius-sm);padding:6px 10px;cursor:pointer;font-family:inherit;font-size:13px;transition:.15s}
   .month-nav button:hover,.io-btn:hover{border-color:var(--border2);background:var(--surface3)}
   .io-btn{font-weight:600;letter-spacing:.3px}
-  .io-group{display:flex;align-items:center;gap:6px}
+  .io-group{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
   .goals-btn{border-color:#1e5a7a;background:var(--blue-dim);color:var(--blue-text)}
   .goals-btn:hover{background:#1e4a63;border-color:var(--blue)}
+  .tpl-btn{border-color:#5a3a80;background:var(--purple-dim);color:var(--purple-text)}
+  .tpl-btn:hover{background:#3a2a66;border-color:var(--purple)}
+  .copy-btn{border-color:#5a4800;background:var(--yellow-dim);color:var(--yellow)}
+  .copy-btn:hover{background:#3d3000;border-color:var(--yellow)}
   .month-label{font-weight:700;font-size:15px;min-width:110px;text-align:center}
   .save-status{font-family:'DM Mono',monospace;font-size:11px;color:var(--text3);text-align:right}
   .save-status.warn{color:var(--yellow)}
   .prop-status{font-family:'DM Mono',monospace;font-size:11px;color:var(--blue-text);text-align:right;opacity:0;transition:opacity .25s;min-height:14px}
   .prop-status.show{opacity:1}
 
+  /* HERO — remaining per month, independent of rollover */
+  .hero{display:grid;grid-template-columns:minmax(240px,1fr) 2fr;gap:18px;align-items:center;
+        background:linear-gradient(135deg,var(--surface2),var(--surface));
+        border:1px solid var(--border2);border-radius:var(--radius);padding:16px 20px;margin-bottom:16px}
+  .hero-label{font-size:10px;font-weight:700;letter-spacing:1.6px;text-transform:uppercase;color:var(--text3);margin-bottom:4px}
+  .hero-val{font-family:'DM Mono',monospace;font-size:38px;font-weight:500;line-height:1.05;letter-spacing:-1px}
+  .hero-val.pos{color:var(--green-text)} .hero-val.neg{color:var(--red)}
+  .hero-sub{font-size:11px;color:var(--text3);margin-top:5px}
+  .hero-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px}
+  .hero-stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:9px 11px}
+  .hero-stat span{display:block;font-size:9px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--text3);margin-bottom:4px}
+  .hero-stat b{font-family:'DM Mono',monospace;font-size:15px;font-weight:500;color:var(--text)}
+  .hero-stat b.in{color:#b3acff} .hero-stat b.out{color:var(--pink-text)}
+  .hero-stat b.plan{color:var(--blue)} .hero-stat b.pos{color:var(--green-text)} .hero-stat b.neg{color:var(--red)}
+
   /* SUMMARY BAR */
-  .summary-bar{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:20px}
-  .sum-card{border-radius:var(--radius);padding:14px 16px;position:relative;overflow:hidden;cursor:default}
+  .summary-bar{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:16px}
+  .sum-card{border-radius:var(--radius);padding:12px 14px;position:relative;overflow:hidden;cursor:default}
   .sum-card::before{content:'';position:absolute;inset:0;opacity:.08;background:white}
   .sum-card .sum-label{font-size:10px;font-weight:700;letter-spacing:1.5px;opacity:.75;margin-bottom:6px;text-transform:uppercase}
   .sum-card .sum-val{font-family:'DM Mono',monospace;font-size:18px;font-weight:500;white-space:nowrap}
@@ -55,25 +77,36 @@
   .sum-card.bills{background:var(--pink-dim);border:1px solid #7a2a50;color:var(--pink-text)}
   .sum-card.savings{background:var(--teal-dim);border:1px solid #1a5a55;color:var(--teal-text)}
   .sum-card.debt{background:#1e1a1a;border:1px solid #5a2a2a;color:#ff8f8f}
+  .sum-card.assets{background:var(--amber-dim);border:1px solid #6b4a12;color:var(--amber)}
 
   /* MAIN GRID */
-  .main-grid{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;margin-bottom:12px}
+  .main-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(400px,1fr));gap:12px;margin-bottom:12px}
   .section-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
-  .section-header{padding:12px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border)}
+  .section-header{padding:12px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);gap:8px}
   .section-header .sec-title{font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase}
-  .section-header .add-btn{width:22px;height:22px;border-radius:50%;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;line-height:1;transition:.15s;font-family:inherit}
+  .section-header .sec-sub{font-size:10px;color:var(--text3);margin-left:6px;font-family:'DM Mono',monospace}
+  .section-header .add-btn{width:22px;height:22px;border-radius:50%;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;line-height:1;transition:.15s;font-family:inherit;flex:none}
   .section-header .add-btn:hover{background:var(--surface3);color:var(--text);border-color:var(--blue)}
 
-  .col-headers{display:grid;grid-template-columns:1fr 80px 80px 52px;gap:0;padding:6px 14px;border-bottom:1px solid var(--border)}
-  .col-headers span{font-size:10px;font-weight:600;letter-spacing:.8px;color:var(--text3);text-transform:uppercase}
-  .col-headers span:not(:first-child){text-align:right}
-  .col-headers span:last-child{text-align:center}
+  .GRID{display:grid;grid-template-columns:16px minmax(0,1fr) 40px 64px 64px 34px}
+  .col-headers{padding:6px 14px;border-bottom:1px solid var(--border)}
+  .col-headers span{font-size:9px;font-weight:600;letter-spacing:.8px;color:var(--text3);text-transform:uppercase}
+  .col-headers span.r{text-align:right}
+  .col-headers span.c{text-align:center}
 
-  .row-item{display:grid;grid-template-columns:1fr 80px 80px 52px;gap:0;padding:5px 14px;border-bottom:1px solid var(--border);align-items:center;transition:.1s}
+  .row-item{padding:5px 14px;border-bottom:1px solid var(--border);align-items:center;transition:background .1s;row-gap:0}
   .row-item:hover{background:var(--surface2)}
   .row-item:last-child{border-bottom:none}
+  .row-item.dragging{opacity:.4}
+  .row-item.drop-before{box-shadow:inset 0 2px 0 0 var(--blue)}
+  .row-item.drop-after{box-shadow:inset 0 -2px 0 0 var(--blue)}
 
-  .row-item input[type=text]{background:transparent;border:none;color:var(--text);font-family:'Syne',sans-serif;font-size:13px;width:100%;outline:none;padding:2px 0}
+  .drag-handle{cursor:grab;color:var(--text3);font-size:12px;line-height:1;user-select:none;opacity:0;transition:.1s;text-align:left}
+  .row-item:hover .drag-handle{opacity:.7}
+  .drag-handle:active{cursor:grabbing}
+
+  .name-cell{display:flex;align-items:center;gap:4px;min-width:0;overflow:hidden}
+  .row-item input[type=text]{background:transparent;border:none;color:var(--text);font-family:'Syne',sans-serif;font-size:13px;width:100%;outline:none;padding:2px 0;min-width:0}
   .row-item input[type=text]:focus{color:var(--blue);border-bottom:1px solid var(--blue)}
   .row-item input[type=number]{background:transparent;border:none;font-family:'DM Mono',monospace;font-size:13px;width:100%;outline:none;padding:2px 4px;text-align:right;-moz-appearance:textfield}
   .row-item input[type=number]::-webkit-outer-spin-button,
@@ -81,33 +114,51 @@
   .row-item .planned-in{color:var(--blue)}
   .row-item .actual-in{color:var(--text)}
   .row-item .actual-in:focus{color:var(--green)}
-  .row-item .pct-badge{font-family:'DM Mono',monospace;font-size:11px;font-weight:500;text-align:center;padding:2px 5px;border-radius:4px;width:44px;display:inline-block}
+  .freq-sel{background:var(--surface3);border:1px solid var(--border);color:var(--text2);font-family:'DM Mono',monospace;font-size:10px;border-radius:4px;padding:2px 2px;cursor:pointer;outline:none;width:38px;text-align:center;margin:0 2px}
+  .freq-sel:hover{border-color:var(--border2);color:var(--text)}
+  .freq-sel.nonmonthly{background:var(--amber-dim);border-color:#6b4a12;color:var(--amber)}
+  .freq-sel:focus{border-color:var(--blue)}
+  .row-item .pct-badge{font-family:'DM Mono',monospace;font-size:10px;font-weight:500;text-align:center;padding:2px 3px;border-radius:4px;width:32px;display:inline-block}
+  .pct-cell{text-align:center}
   .pct-over{background:var(--red-dim);color:var(--red)}
   .pct-on{background:var(--green-dim);color:var(--green)}
   .pct-under{background:var(--yellow-dim);color:var(--yellow)}
   .pct-empty{color:var(--text3);font-size:11px}
-  .del-btn{opacity:0;background:none;border:none;color:var(--red);cursor:pointer;font-size:14px;padding:0 2px;transition:.1s;font-family:inherit}
+  .del-btn{opacity:0;background:none;border:none;color:var(--red);cursor:pointer;font-size:14px;padding:0 2px;transition:.1s;font-family:inherit;flex:none}
   .row-item:hover .del-btn{opacity:.6}
   .del-btn:hover{opacity:1 !important}
+  .row-sub{grid-column:2/-1;font-family:'DM Mono',monospace;font-size:10px;color:var(--amber);opacity:.75;padding-bottom:2px}
 
-  .total-row{display:grid;grid-template-columns:1fr 80px 80px 52px;padding:8px 14px;background:var(--surface2);border-top:1px solid var(--border2)}
-  .total-row .tot-label{font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.5px;text-transform:uppercase}
+  .total-row{padding:8px 14px;background:var(--surface2);border-top:1px solid var(--border2)}
+  .total-row .tot-label{grid-column:1/3;font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.5px;text-transform:uppercase}
   .total-row .tot-val{font-family:'DM Mono',monospace;font-size:13px;font-weight:500;text-align:right}
-  .total-row .tot-pct{font-family:'DM Mono',monospace;font-size:11px;text-align:center;color:var(--text2)}
+  .total-row .tot-pct{font-family:'DM Mono',monospace;font-size:10px;text-align:center;color:var(--text2)}
+  .empty-hint{padding:14px;font-size:11px;color:var(--text3);text-align:center;line-height:1.5}
+
+  /* ASSETS CARD */
+  .AGRID{display:grid;grid-template-columns:16px minmax(0,1fr) 86px 72px}
+  .asset-card{border-color:#6b4a12}
+  .asset-row .bal-in{color:var(--amber)}
+  .delta-cell{font-family:'DM Mono',monospace;font-size:11px;text-align:right;color:var(--text3)}
+  .delta-cell.pos{color:var(--green)} .delta-cell.neg{color:var(--red)}
+  .asset-total{background:var(--amber-dim);border-top:1px solid #6b4a12}
+  .asset-total .tot-label{color:var(--amber)}
+  .asset-total .tot-val{color:var(--amber)}
 
   /* BOTTOM ROW: overview + rollover */
   .bottom-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(max-width:900px){.bottom-grid{grid-template-columns:1fr}.hero{grid-template-columns:1fr}}
 
   .overview-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
   .ov-header{padding:12px 14px;border-bottom:1px solid var(--border);font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--blue)}
   .ov-row{display:grid;grid-template-columns:1fr 90px 90px 80px;padding:7px 14px;border-bottom:1px solid var(--border);align-items:center}
   .ov-row:last-child{border-bottom:none}
   .ov-row.ov-remaining{background:var(--teal-dim);border-top:1px solid var(--border2)}
+  .ov-row.ov-flow{background:var(--surface2);border-top:1px solid var(--border2)}
   .ov-label{font-size:13px;color:var(--text2)}
   .ov-label.minus{color:var(--text3)}
   .ov-val{font-family:'DM Mono',monospace;font-size:13px;text-align:right}
   .ov-planned{color:var(--blue)}
-  .ov-actual{color:var(--text)}
   .ov-diff{font-family:'DM Mono',monospace;font-size:12px;text-align:right}
   .ov-diff.pos{color:var(--green)}
   .ov-diff.neg{color:var(--red)}
@@ -116,33 +167,57 @@
   .ov-headers span:not(:first-child){text-align:right}
   .ov-rem-label{color:var(--teal-text);font-weight:700;font-size:13px}
   .ov-rem-val{color:var(--teal-text);font-weight:700;font-size:14px}
+  .ov-flow-label{color:var(--text);font-weight:700;font-size:13px}
+  .ov-flow-val{font-weight:700;font-size:13px}
 
-  /* ROLLOVER CARD */
-  .rollover-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
-  .rv-header{padding:12px 14px;border-bottom:1px solid var(--border);font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--blue)}
-  .rv-body{padding:16px 14px;display:flex;flex-direction:column;gap:14px}
+  /* ROLLOVER CARD (reworked) */
+  .rollover-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;display:flex;flex-direction:column}
+  .rv-header{padding:12px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .rv-header .rv-title{font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--blue)}
+  .seg{display:flex;border:1px solid var(--border2);border-radius:var(--radius-sm);overflow:hidden}
+  .seg button{background:transparent;border:none;color:var(--text2);font-family:inherit;font-size:11px;font-weight:600;padding:4px 10px;cursor:pointer;transition:.15s;letter-spacing:.3px}
+  .seg button:hover{background:var(--surface3);color:var(--text)}
+  .seg button.on{background:var(--blue-dim);color:var(--blue-text)}
+  .rv-body{padding:14px;display:flex;flex-direction:column;gap:12px;flex:1}
+  .rv-source{font-size:11px;color:var(--text3);line-height:1.5}
+  .rv-source b{color:var(--text2);font-weight:600}
+  .rv-pair{display:grid;grid-template-columns:1fr 1fr;gap:10px}
   .rv-field{display:flex;flex-direction:column;gap:6px}
   .rv-field label{font-size:10px;font-weight:700;letter-spacing:1px;color:var(--text3);text-transform:uppercase}
-  .rv-input{background:var(--yellow-dim);border:1px solid #5a4800;border-radius:var(--radius-sm);padding:10px 12px;font-family:'DM Mono',monospace;font-size:16px;font-weight:500;color:var(--yellow);width:100%;outline:none;-moz-appearance:textfield}
+  .rv-input{background:var(--yellow-dim);border:1px solid #5a4800;border-radius:var(--radius-sm);padding:9px 11px;font-family:'DM Mono',monospace;font-size:16px;font-weight:500;color:var(--yellow);width:100%;outline:none;-moz-appearance:textfield}
   .rv-input::-webkit-outer-spin-button,.rv-input::-webkit-inner-spin-button{-webkit-appearance:none}
   .rv-input:focus{border-color:var(--yellow);box-shadow:0 0 0 2px rgba(255,215,64,.15)}
-  .rv-hint{font-size:11px;color:var(--text3);margin-top:4px}
-  .rv-remaining-big{margin-top:8px;padding:14px;background:var(--teal-dim);border-radius:var(--radius-sm);border:1px solid #1a5a55}
-  .rv-remaining-big .rv-rem-label{font-size:10px;letter-spacing:1px;color:var(--teal);text-transform:uppercase;font-weight:700;margin-bottom:6px}
-  .rv-remaining-big .rv-rem-val{font-family:'DM Mono',monospace;font-size:24px;font-weight:500;color:var(--teal-text)}
+  .rv-readout{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:9px 11px;font-family:'DM Mono',monospace;font-size:16px;font-weight:500;color:var(--blue-text)}
+  .rv-chain{border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden}
+  .rv-chain-row{display:grid;grid-template-columns:1fr 90px 90px;padding:8px 11px;border-bottom:1px solid var(--border);align-items:center;font-size:12px;color:var(--text2)}
+  .rv-chain-row:last-child{border-bottom:none}
+  .rv-chain-row span.v{font-family:'DM Mono',monospace;text-align:right;font-size:13px}
+  .rv-chain-row.head{background:var(--surface2);color:var(--text3);font-size:9px;letter-spacing:1px;text-transform:uppercase}
+  .rv-chain-row.head span.v{font-family:inherit;font-size:9px}
+  .rv-chain-row.close{background:var(--teal-dim);color:var(--teal-text);font-weight:700}
+  .rv-chain-row.close span.v{color:var(--teal-text);font-weight:700;font-size:14px}
+  .rv-next{font-size:11px;color:var(--text3);line-height:1.5;padding-top:2px}
+  .rv-next b{color:var(--teal-text);font-family:'DM Mono',monospace}
 
   .income-color{color:#b3acff} .expenses-color{color:var(--purple-text)} .bills-color{color:var(--pink-text)} .savings-color{color:var(--teal-text)} .debt-color{color:#ff8f8f}
 
-  /* GOALS MODAL */
+  /* MODALS */
   .modal-overlay{position:fixed;inset:0;background:rgba(3,6,10,.65);display:none;align-items:center;justify-content:center;z-index:100;padding:20px}
   .modal-overlay.show{display:flex}
   .modal-panel{background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);max-width:560px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 24px 70px rgba(0,0,0,.55)}
-  .modal-header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border)}
+  .modal-panel.wide{max-width:820px}
+  .modal-header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--surface);z-index:2}
   .modal-header-text .modal-title{font-size:15px;font-weight:800;letter-spacing:-.3px}
   .modal-header-text .modal-subtitle{font-size:11px;color:var(--text3);margin-top:2px}
   .modal-close{background:transparent;border:none;color:var(--text2);font-size:20px;cursor:pointer;line-height:1;padding:2px 8px;border-radius:var(--radius-sm);transition:.15s}
   .modal-close:hover{background:var(--surface3);color:var(--text)}
   .modal-body{padding:18px;display:flex;flex-direction:column;gap:14px}
+  .modal-footer{display:flex;justify-content:flex-end;gap:8px;padding:14px 18px;border-top:1px solid var(--border);position:sticky;bottom:0;background:var(--surface)}
+  .btn{background:var(--surface2);border:1px solid var(--border2);color:var(--text);border-radius:var(--radius-sm);padding:8px 14px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:600;transition:.15s}
+  .btn:hover{background:var(--surface3)}
+  .btn.primary{background:var(--blue-dim);border-color:#1e5a7a;color:var(--blue-text)}
+  .btn.primary:hover{background:#1e4a63;border-color:var(--blue)}
+  .btn.danger{color:var(--red);border-color:#5a2a2a}
   .goal-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden}
   .goal-card-header{padding:10px 14px;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--blue-text);border-bottom:1px solid var(--border)}
   .goal-card-body{padding:14px;display:flex;flex-direction:column;gap:12px}
@@ -155,6 +230,38 @@
   .goal-result.warn{background:var(--red-dim);border-color:#5a2a2a;color:var(--red)}
   .goal-input{width:100%}
   input.rv-input[type=date]{color-scheme:dark;font-size:14px}
+  .check{display:flex;align-items:flex-start;gap:8px;font-size:12px;color:var(--text2);cursor:pointer;line-height:1.4}
+  .check input{margin-top:2px;accent-color:var(--blue);cursor:pointer}
+  .field-label{font-size:10px;font-weight:700;letter-spacing:1px;color:var(--text3);text-transform:uppercase;margin-bottom:8px}
+  .month-picker{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:6px;max-height:200px;overflow-y:auto;padding:10px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm)}
+  .month-picker .check{font-family:'DM Mono',monospace;font-size:12px}
+  .picker-actions{display:flex;gap:8px;margin-top:8px}
+  .mini-btn{background:transparent;border:1px solid var(--border);color:var(--text3);border-radius:4px;padding:3px 8px;font-family:inherit;font-size:11px;cursor:pointer;transition:.15s}
+  .mini-btn:hover{color:var(--text);border-color:var(--border2)}
+  .ahead-row{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2);margin-top:10px;flex-wrap:wrap}
+  .ahead-row input[type=number]{width:60px;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:4px 6px;font-family:'DM Mono',monospace;font-size:12px;outline:none}
+  .ahead-row input[type=number]:focus{border-color:var(--blue)}
+
+  /* TEMPLATES */
+  .tpl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+  .tpl-item{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;cursor:pointer;transition:.15s;position:relative}
+  .tpl-item:hover{border-color:var(--border2);background:var(--surface3)}
+  .tpl-item.sel{border-color:var(--purple);background:var(--purple-dim)}
+  .tpl-item .tpl-name{font-size:13px;font-weight:700;margin-bottom:4px}
+  .tpl-item .tpl-desc{font-size:11px;color:var(--text3);line-height:1.4}
+  .tpl-item .tpl-meta{font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);margin-top:8px}
+  .tpl-item .tpl-del{position:absolute;top:6px;right:6px;background:none;border:none;color:var(--red);opacity:0;cursor:pointer;font-size:14px;font-family:inherit}
+  .tpl-item:hover .tpl-del{opacity:.6}
+  .tpl-item .tpl-del:hover{opacity:1}
+  .tpl-preview{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;max-height:260px;overflow-y:auto}
+  .tpl-sec{margin-bottom:10px}
+  .tpl-sec:last-child{margin-bottom:0}
+  .tpl-sec-title{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:5px}
+  .tpl-line{display:grid;grid-template-columns:1fr 46px 80px;gap:6px;font-size:12px;color:var(--text2);padding:2px 0}
+  .tpl-line span:nth-child(2){font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);text-align:center}
+  .tpl-line span:last-child{font-family:'DM Mono',monospace;text-align:right;color:var(--text)}
+  .tpl-badge{display:inline-block;font-family:'DM Mono',monospace;font-size:9px;padding:1px 5px;border-radius:3px;background:var(--surface3);color:var(--text3);margin-left:6px;vertical-align:middle}
+  .divider{height:1px;background:var(--border);margin:2px 0}
 </style>
 </head>
 <body>
@@ -171,6 +278,8 @@
       </div>
       <div class="io-group">
         <button class="io-btn goals-btn" onclick="openGoals()" title="Plan a savings goal">Goals</button>
+        <button class="io-btn tpl-btn" onclick="openTemplates()" title="Start from a ready-made budget">Templates</button>
+        <button class="io-btn copy-btn" onclick="openCopy()" title="Copy this month into other months">Copy month</button>
         <button class="io-btn" onclick="exportData()" title="Download every month as a .json file">Export</button>
         <button class="io-btn" onclick="document.getElementById('import-file').click()" title="Load a previously exported .json file">Import</button>
         <input type="file" id="import-file" accept="application/json,.json" style="display:none" onchange="importData(this)">
@@ -183,6 +292,21 @@
     </div>
   </div>
 
+  <!-- Correction 3: remaining per month, its own box, independent of rollover -->
+  <div class="hero">
+    <div class="hero-main">
+      <div class="hero-label">Remaining per month</div>
+      <div class="hero-val" id="hero-val">$0</div>
+      <div class="hero-sub" id="hero-sub">Income minus everything going out — this month only, rollover not included.</div>
+    </div>
+    <div class="hero-stats">
+      <div class="hero-stat"><span>Income / mo</span><b class="in" id="hero-in">$0</b></div>
+      <div class="hero-stat"><span>Out / mo</span><b class="out" id="hero-out">$0</b></div>
+      <div class="hero-stat"><span>Planned remaining</span><b class="plan" id="hero-plan">$0</b></div>
+      <div class="hero-stat"><span>Before savings</span><b id="hero-presav">$0</b></div>
+    </div>
+  </div>
+
   <div class="summary-bar">
     <div class="sum-card rollover"><div class="sum-label">Rollover</div><div class="sum-val" id="sum-rollover">$0</div></div>
     <div class="sum-card income"><div class="sum-label">Income</div><div class="sum-val" id="sum-income">$0</div></div>
@@ -190,44 +314,43 @@
     <div class="sum-card bills"><div class="sum-label">Bills</div><div class="sum-val" id="sum-bills">$0</div></div>
     <div class="sum-card savings"><div class="sum-label">Savings</div><div class="sum-val" id="sum-savings">$0</div></div>
     <div class="sum-card debt"><div class="sum-label">Debt</div><div class="sum-val" id="sum-debt">$0</div></div>
+    <div class="sum-card assets"><div class="sum-label">Assets</div><div class="sum-val" id="sum-assets">$0</div></div>
   </div>
 
   <div class="main-grid" id="main-grid"></div>
 
   <div class="bottom-grid">
     <div class="overview-card">
-      <div class="ov-header">Overview</div>
+      <div class="ov-header">Overview <span style="color:var(--text3);font-weight:400;letter-spacing:0;text-transform:none">— monthly equivalent</span></div>
       <div class="ov-headers"><span></span><span>Planned</span><span>Actual</span><span>Diff</span></div>
       <div id="overview-rows"></div>
     </div>
     <div class="rollover-card">
-      <div class="rv-header">Rollover</div>
+      <div class="rv-header">
+        <span class="rv-title">Rollover</span>
+        <div class="seg">
+          <button id="rv-auto-btn" onclick="setRvAuto(true)" title="Carry last month's closing balance forward automatically">Auto</button>
+          <button id="rv-manual-btn" onclick="setRvAuto(false)" title="Type the opening balance yourself">Manual</button>
+        </div>
+      </div>
       <div class="rv-body">
-        <div class="rv-field">
-          <label>Planned rollover</label>
-          <input class="rv-input" type="number" id="rv-planned" step="1" oninput="onRollover()">
-        </div>
-        <div class="rv-field">
-          <label>Actual rollover</label>
-          <input class="rv-input" type="number" id="rv-actual" step="1" oninput="onRollover()">
-          <div class="rv-hint">Money carried forward from last month — stays specific to this month</div>
-        </div>
-        <div class="rv-remaining-big">
-          <div class="rv-rem-label">Remaining (actual)</div>
-          <div class="rv-rem-val" id="big-remaining">$0</div>
-        </div>
+        <div class="rv-source" id="rv-source"></div>
+        <div id="rv-inputs"></div>
+        <div class="rv-chain" id="rv-chain"></div>
+        <div class="rv-next" id="rv-next"></div>
       </div>
     </div>
   </div>
 
-  <div class="modal-overlay" id="goals-overlay" onmousedown="closeGoalsOnOverlay(event)">
+  <!-- GOALS -->
+  <div class="modal-overlay" id="goals-overlay" onmousedown="closeOnOverlay(event,'goals-overlay')">
     <div class="modal-panel" onmousedown="event.stopPropagation()">
       <div class="modal-header">
         <div class="modal-header-text">
           <div class="modal-title">Goal Calculator</div>
           <div class="modal-subtitle">Plan a savings target off your tracked actuals</div>
         </div>
-        <button class="modal-close" onclick="closeGoals()" title="Close">&#215;</button>
+        <button class="modal-close" onclick="closeModal('goals-overlay')" title="Close">&#215;</button>
       </div>
       <div class="modal-body">
         <div class="goal-card">
@@ -237,6 +360,11 @@
               <label>Target amount</label>
               <input class="rv-input goal-input" type="number" id="goal-time-target" placeholder="e.g. 10000" step="1" oninput="calcTimeToGoal()">
             </div>
+            <div class="rv-field">
+              <label>Put away per month</label>
+              <input class="rv-input goal-input" type="number" id="goal-time-contrib" placeholder="leave blank to use your average" step="1" oninput="calcTimeToGoal()">
+            </div>
+            <label class="check"><input type="checkbox" id="goal-use-assets" onchange="calcTimeToGoal()"><span id="goal-use-assets-label">Count what I already have saved</span></label>
             <div class="goal-hint" id="goal-time-hint"></div>
             <div class="goal-result" id="goal-time-result">Enter a target amount above.</div>
           </div>
@@ -260,11 +388,92 @@
       </div>
     </div>
   </div>
+
+  <!-- COPY MONTH -->
+  <div class="modal-overlay" id="copy-overlay" onmousedown="closeOnOverlay(event,'copy-overlay')">
+    <div class="modal-panel" onmousedown="event.stopPropagation()">
+      <div class="modal-header">
+        <div class="modal-header-text">
+          <div class="modal-title">Copy month</div>
+          <div class="modal-subtitle" id="copy-subtitle"></div>
+        </div>
+        <button class="modal-close" onclick="closeModal('copy-overlay')" title="Close">&#215;</button>
+      </div>
+      <div class="modal-body">
+        <div>
+          <div class="field-label">What to copy</div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <label class="check"><input type="radio" name="copy-mode" value="all" checked><span><b>Everything</b> — rows, frequencies, planned and actual amounts.</span></label>
+            <label class="check"><input type="radio" name="copy-mode" value="planned"><span><b>Plan only</b> — rows, frequencies and planned amounts; actuals left blank to fill in.</span></label>
+            <label class="check"><input type="radio" name="copy-mode" value="structure"><span><b>Rows only</b> — names and frequencies, all amounts blank.</span></label>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div>
+          <div class="field-label">Copy into</div>
+          <div class="month-picker" id="copy-months"></div>
+          <div class="picker-actions">
+            <button class="mini-btn" onclick="copyPickAll(true)">Select all</button>
+            <button class="mini-btn" onclick="copyPickAll(false)">Clear</button>
+            <button class="mini-btn" onclick="copyPickLater()">All later months</button>
+          </div>
+          <div class="ahead-row">
+            <span>Also create and fill the next</span>
+            <input type="number" id="copy-ahead" min="0" max="60" step="1" value="0">
+            <span>month(s) after this one</span>
+          </div>
+        </div>
+        <div class="goal-hint">Rollover isn't copied — each month carries its own opening balance.</div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal('copy-overlay')">Cancel</button>
+        <button class="btn primary" onclick="applyCopy()">Copy</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TEMPLATES -->
+  <div class="modal-overlay" id="tpl-overlay" onmousedown="closeOnOverlay(event,'tpl-overlay')">
+    <div class="modal-panel wide" onmousedown="event.stopPropagation()">
+      <div class="modal-header">
+        <div class="modal-header-text">
+          <div class="modal-title">Budget templates</div>
+          <div class="modal-subtitle">Ready-made starting points — share them as .json with friends and family</div>
+        </div>
+        <button class="modal-close" onclick="closeModal('tpl-overlay')" title="Close">&#215;</button>
+      </div>
+      <div class="modal-body">
+        <div class="tpl-grid" id="tpl-grid"></div>
+        <div class="divider"></div>
+        <div>
+          <div class="field-label">Preview</div>
+          <div class="tpl-preview" id="tpl-preview">Pick a template above to see what it adds.</div>
+        </div>
+        <div>
+          <div class="field-label">How to apply</div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <label class="check"><input type="radio" name="tpl-mode" value="merge" checked><span><b>Add missing rows</b> — keeps what you already have.</span></label>
+            <label class="check"><input type="radio" name="tpl-mode" value="replace"><span><b>Replace everything</b> — wipes this month's rows and starts from the template.</span></label>
+            <label class="check"><input type="checkbox" id="tpl-later" checked><span>Apply to later months too (matches how the rest of the app works)</span></label>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="exportTemplate()" title="Save this month's rows as a shareable template file">Save this month as template</button>
+        <button class="btn" onclick="document.getElementById('tpl-file').click()">Import template</button>
+        <input type="file" id="tpl-file" accept="application/json,.json" style="display:none" onchange="importTemplate(this)">
+        <button class="btn primary" onclick="applyTemplate()">Apply template</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-const STORAGE_KEY = 'debelle.budget-tracker.v2';
+const MONTHS_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const STORAGE_KEY = 'debelle.budget-tracker.v3';
+const LEGACY_KEY  = 'debelle.budget-tracker.v2';
+const TPL_KEY     = 'debelle.budget-tracker.templates.v1';
 
 const SECTION_META = [
   {key:'income',   label:'Income',   color:'#b3acff'},
@@ -274,79 +483,113 @@ const SECTION_META = [
   {key:'debt',     label:'Debt',     color:'#ff8f8f'},
 ];
 
+/* Correction 6: per-line frequency, normalised to a monthly figure everywhere. */
+const FREQ = {
+  daily:    {label:'Daily',     short:'D',  per:365/12},
+  weekly:   {label:'Weekly',    short:'W',  per:52/12},
+  biweekly: {label:'Bi-weekly', short:'2W', per:26/12},
+  monthly:  {label:'Monthly',   short:'M',  per:1},
+  yearly:   {label:'Yearly',    short:'Y',  per:1/12},
+};
+const FREQ_KEYS = Object.keys(FREQ);
+function freqOf(r){ return (r && FREQ[r.freq]) ? r.freq : 'monthly'; }
+function perMonth(r,field){ return num(r&&r[field]) * FREQ[freqOf(r)].per; }
+
 function defaultMonth(){
   return {
-    rvPlanned:5635,
-    rvActual:5035,
+    rvPlanned:5635, rvActual:5035, rvAuto:false,
     sections:{
       income:[
-        {name:'His paycheck', planned:9200, actual:9200},
-        {name:'My paycheck',  planned:7200, actual:7200},
+        {name:'His paycheck', planned:9200, actual:9200, freq:'monthly'},
+        {name:'My paycheck',  planned:7200, actual:7200, freq:'monthly'},
       ],
       expenses:[
-        {name:'Groceries',   planned:1100, actual:1100},
-        {name:'Restaurants', planned:560,  actual:560},
-        {name:'His gym',     planned:210,  actual:210},
-        {name:'My gym',      planned:210,  actual:210},
+        {name:'Groceries',   planned:1100, actual:1100, freq:'monthly'},
+        {name:'Restaurants', planned:560,  actual:560,  freq:'monthly'},
+        {name:'His gym',     planned:210,  actual:210,  freq:'monthly'},
+        {name:'My gym',      planned:210,  actual:210,  freq:'monthly'},
       ],
       bills:[
-        {name:'Rent',           planned:3400, actual:3400},
-        {name:'Utilities',      planned:310,  actual:310},
-        {name:'Internet',       planned:90,   actual:90},
-        {name:'His phone',      planned:60,   actual:80},
-        {name:'My phone',       planned:60,   actual:80},
-        {name:'Netflix',        planned:30,   actual:30},
-        {name:'Tactical snacks',planned:40,   actual:40},
-        {name:'Wedding fund',   planned:1600, actual:1800},
+        {name:'Rent',           planned:3400, actual:3400, freq:'monthly'},
+        {name:'Utilities',      planned:310,  actual:310,  freq:'monthly'},
+        {name:'Internet',       planned:90,   actual:90,   freq:'monthly'},
+        {name:'His phone',      planned:60,   actual:80,   freq:'monthly'},
+        {name:'My phone',       planned:60,   actual:80,   freq:'monthly'},
+        {name:'Netflix',        planned:30,   actual:30,   freq:'monthly'},
+        {name:'Tactical snacks',planned:40,   actual:40,   freq:'monthly'},
+        {name:'Wedding fund',   planned:1600, actual:1800, freq:'monthly'},
       ],
       savings:[
-        {name:'Investments',  planned:4200, actual:4200},
-        {name:'Retirement',   planned:2800, actual:2800},
-        {name:'Wedding fund', planned:1600, actual:1800},
-        {name:'Truck access.',planned:440,  actual:440},
+        {name:'Investments',  planned:4200, actual:4200, freq:'monthly'},
+        {name:'Retirement',   planned:2800, actual:2800, freq:'monthly'},
+        {name:'Wedding fund', planned:1600, actual:1800, freq:'monthly'},
+        {name:'Truck access.',planned:440,  actual:440,  freq:'monthly'},
       ],
       debt:[],
-    }
+    },
+    /* Correction 1: assets — money already saved, tracked as balances. */
+    assets:[
+      {name:'Chequing',  balance:0},
+      {name:'Savings',   balance:0},
+      {name:'Investments',balance:0},
+    ]
   };
 }
 
 let state = null;   // {current:'YYYY-MM', months:{...}}
 let SECTIONS = [];  // live view of the current month: [{key,label,color,rows}]
+let customTemplates = [];
 
 /* ---------- helpers ---------- */
 function num(v){const n=+v;return isFinite(n)?n:0;}
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function keyOf(year,month){return year+'-'+String(month+1).padStart(2,'0');}
 function parseKey(k){const p=k.split('-');return {year:+p[0],month:+p[1]-1};}
+function labelOf(k){const {year,month}=parseKey(k);return MONTHS[month]+' '+year;}
+function shortLabelOf(k){const {year,month}=parseKey(k);return MONTHS_SHORT[month]+' '+year;}
+function addMonths(k,n){const {year,month}=parseKey(k);const d=new Date(year,month+n,1);return keyOf(d.getFullYear(),d.getMonth());}
 
 function fmt(n){
   if(n==null||isNaN(n))return'—';
-  return '$'+Math.round(n).toLocaleString('en-CA');
+  const r=Math.round(n);
+  return (r<0?'-$':'$')+Math.abs(r).toLocaleString('en-CA');
 }
+function fmtSigned(n){ const r=Math.round(n); return (r>0?'+':'')+fmt(r); }
 
 function pctBadge(planned, actual){
   if(!planned||planned===0) return '<span class="pct-empty">—</span>';
   const p = actual/planned;
   const cls = p>1.05?'pct-over':p>=0.98?'pct-on':'pct-under';
-  return `<span class="pct-badge ${cls}">${Math.round(p*100)}%</span>`;
+  return '<span class="pct-badge '+cls+'">'+Math.round(p*100)+'%</span>';
 }
 
 /* ---------- storage ---------- */
+function normalizeRow(r){
+  return {
+    name:String((r&&r.name)||''),
+    planned:num(r&&r.planned),
+    actual:num(r&&r.actual),
+    freq:(r&&FREQ[r.freq])?r.freq:'monthly'
+  };
+}
 function normalize(data){
   if(!data||typeof data!=='object'||!data.months||typeof data.months!=='object') return null;
   const out={current:null,months:{}};
   Object.keys(data.months).forEach(k=>{
     if(!/^\d{4}-\d{2}$/.test(k)) return;
     const src=data.months[k]||{};
-    const m={rvPlanned:num(src.rvPlanned),rvActual:num(src.rvActual),sections:{}};
+    const m={
+      rvPlanned:num(src.rvPlanned),
+      rvActual:num(src.rvActual),
+      rvAuto:!!src.rvAuto,          // files written before v9 have no flag → manual, numbers preserved
+      sections:{},
+      assets:[]
+    };
     SECTION_META.forEach(meta=>{
       const rows=(src.sections&&Array.isArray(src.sections[meta.key]))?src.sections[meta.key]:[];
-      m.sections[meta.key]=rows.map(r=>({
-        name:String((r&&r.name)||''),
-        planned:num(r&&r.planned),
-        actual:num(r&&r.actual)
-      }));
+      m.sections[meta.key]=rows.map(normalizeRow);
     });
+    m.assets=Array.isArray(src.assets)?src.assets.map(a=>({name:String((a&&a.name)||''),balance:num(a&&a.balance)})):[];
     out.months[k]=m;
   });
   const keys=Object.keys(out.months).sort();
@@ -360,11 +603,26 @@ function loadState(){
   try{
     const raw=localStorage.getItem(STORAGE_KEY);
     if(raw) stored=normalize(JSON.parse(raw));
+    if(!stored){
+      const legacy=localStorage.getItem(LEGACY_KEY);
+      if(legacy) stored=normalize(JSON.parse(legacy));
+    }
   }catch(e){ stored=null; }
   if(stored) return stored;
   const now=new Date();
   const k=keyOf(now.getFullYear(),now.getMonth());
   return {current:k,months:{[k]:defaultMonth()}};
+}
+
+function loadTemplates(){
+  try{
+    const raw=localStorage.getItem(TPL_KEY);
+    const arr=raw?JSON.parse(raw):[];
+    return Array.isArray(arr)?arr.map(normalizeTemplate).filter(Boolean):[];
+  }catch(e){ return []; }
+}
+function saveTemplates(){
+  try{ localStorage.setItem(TPL_KEY,JSON.stringify(customTemplates)); }catch(e){}
 }
 
 let saveTimer=null;
@@ -400,19 +658,50 @@ function propStatus(count,verb){
 
 /* ---------- months ---------- */
 function month(){ return state.months[state.current]; }
+function sortedKeys(){ return Object.keys(state.months).sort(); }
+function prevKeyOf(k){ const ks=sortedKeys().filter(x=>x<k); return ks.length?ks[ks.length-1]:null; }
+function nextKeyOf(k){ const ks=sortedKeys().filter(x=>x>k); return ks.length?ks[0]:null; }
 
-function remaining(m,field){
-  const rv = field==='planned'?m.rvPlanned:m.rvActual;
-  const t = k => m.sections[k].reduce((a,r)=>a+num(r[field]),0);
-  return num(rv)+t('income')-t('expenses')-t('bills')-t('savings')-t('debt');
+function sectionSum(m,key,field){ return (m.sections[key]||[]).reduce((a,r)=>a+perMonth(r,field),0); }
+function assetsTotal(m){ return (m.assets||[]).reduce((a,r)=>a+num(r.balance),0); }
+
+/* Correction 3: net flow for the month, with no rollover in it. */
+function netFlow(m,field){
+  return sectionSum(m,'income',field)
+       - sectionSum(m,'expenses',field)
+       - sectionSum(m,'bills',field)
+       - sectionSum(m,'savings',field)
+       - sectionSum(m,'debt',field);
 }
 
-function laterKeys(){
-  return Object.keys(state.months).filter(k=>k>state.current).sort();
+/* Correction 2: rollover is a carry-forward chain, not a number you retype.
+   Auto months take last month's closing balance; manual months keep their own. */
+let rvMemo={};
+function clearRvMemo(){ rvMemo={}; }
+function rolloverFor(key,field,depth){
+  depth=depth||0;
+  const ck=key+'|'+field;
+  if(rvMemo[ck]!==undefined) return rvMemo[ck];
+  const m=state.months[key];
+  if(!m) return 0;
+  let v;
+  if(!m.rvAuto){
+    v = field==='planned'?num(m.rvPlanned):num(m.rvActual);
+  }else{
+    const p=prevKeyOf(key);
+    v = (!p || depth>600) ? 0 : closingFor(p,field,depth+1);
+  }
+  rvMemo[ck]=v;
+  return v;
 }
-function earlierKeys(target){
-  return Object.keys(state.months).filter(k=>k<target).sort();
+function closingFor(key,field,depth){
+  const m=state.months[key];
+  if(!m) return 0;
+  return rolloverFor(key,field,depth)+netFlow(m,field);
 }
+
+function laterKeys(){ return Object.keys(state.months).filter(k=>k>state.current).sort(); }
+function earlierKeys(target){ return Object.keys(state.months).filter(k=>k<target).sort(); }
 
 /* Apply fn to every stored month AFTER the current one. Returns how many. */
 function propagate(fn){
@@ -430,25 +719,40 @@ function matchRow(m,secKey,ri,name){
   if(name){ const byName=rows.filter(r=>r.name===name); if(byName.length===1) return byName[0]; }
   return null;
 }
+function matchAsset(m,ri,name){
+  const rows=m.assets||[];
+  const at=rows[ri];
+  if(at && at.name===name) return at;
+  if(name){ const byName=rows.filter(r=>r.name===name); if(byName.length===1) return byName[0]; }
+  return null;
+}
+
+function blankMonth(){
+  const m={rvPlanned:0,rvActual:0,rvAuto:true,sections:{},assets:[]};
+  SECTION_META.forEach(meta=>{ m.sections[meta.key]=[]; });
+  return m;
+}
 
 function seedMonth(target){
   const earlier=earlierKeys(target);
   if(earlier.length){
     const src=state.months[earlier[earlier.length-1]];
-    const m={rvPlanned:remaining(src,'planned'),rvActual:remaining(src,'actual'),sections:{}};
+    const m={rvPlanned:0,rvActual:0,rvAuto:true,sections:{},assets:[]};
     SECTION_META.forEach(meta=>{
-      m.sections[meta.key]=src.sections[meta.key].map(r=>({name:r.name,planned:num(r.planned),actual:num(r.actual)}));
+      m.sections[meta.key]=src.sections[meta.key].map(r=>({name:r.name,planned:num(r.planned),actual:num(r.actual),freq:freqOf(r)}));
     });
+    m.assets=(src.assets||[]).map(a=>({name:a.name,balance:num(a.balance)}));
     return m;
   }
   const later=Object.keys(state.months).filter(k=>k>target).sort();
   if(later.length){
     // back-filling a month before everything we have: take the row list, leave the money blank
     const src=state.months[later[0]];
-    const m={rvPlanned:0,rvActual:0,sections:{}};
+    const m={rvPlanned:0,rvActual:0,rvAuto:false,sections:{},assets:[]};
     SECTION_META.forEach(meta=>{
-      m.sections[meta.key]=src.sections[meta.key].map(r=>({name:r.name,planned:num(r.planned),actual:0}));
+      m.sections[meta.key]=src.sections[meta.key].map(r=>({name:r.name,planned:num(r.planned),actual:0,freq:freqOf(r)}));
     });
+    m.assets=(src.assets||[]).map(a=>({name:a.name,balance:0}));
     return m;
   }
   return defaultMonth();
@@ -474,69 +778,162 @@ function nextMonth(){
 function bind(){
   const m=month();
   SECTIONS=SECTION_META.map(meta=>({key:meta.key,label:meta.label,color:meta.color,rows:m.sections[meta.key]}));
-  document.getElementById('rv-planned').value=m.rvPlanned||'';
-  document.getElementById('rv-actual').value=m.rvActual||'';
-  const {year,month:mo}=parseKey(state.current);
-  document.getElementById('month-label').textContent=MONTHS[mo]+' '+year;
+  document.getElementById('month-label').textContent=labelOf(state.current);
 }
 
 /* ---------- rendering ---------- */
+function freqSelect(zone,ri,cur){
+  let out='<select class="freq-sel'+(cur!=='monthly'?' nonmonthly':'')+'" title="How often this happens" onchange="setField('+zone+','+ri+',\'freq\',this.value)">';
+  FREQ_KEYS.forEach(k=>{
+    out+='<option value="'+k+'"'+(k===cur?' selected':'')+'>'+FREQ[k].short+'</option>';
+  });
+  return out+'</select>';
+}
+
 function buildSections(){
   const grid = document.getElementById('main-grid');
   grid.innerHTML='';
   SECTIONS.forEach((sec,si)=>{
     const card = document.createElement('div');
     card.className='section-card';
-    card.innerHTML=`
-      <div class="section-header">
-        <span class="sec-title" style="color:${sec.color}">${sec.label}</span>
-        <button class="add-btn" onclick="addRow(${si})" title="Add row (also added to later months)">+</button>
-      </div>
-      <div class="col-headers">
-        <span>Name</span><span>Planned</span><span>Actual</span><span>%</span>
-      </div>
-      <div id="rows-${si}"></div>
-      <div class="total-row" id="total-${si}"></div>
-    `;
+    card.innerHTML=
+      '<div class="section-header">'+
+        '<span class="sec-title" style="color:'+sec.color+'">'+sec.label+'</span>'+
+        '<button class="add-btn" onclick="addRow('+si+')" title="Add row (also added to later months)">+</button>'+
+      '</div>'+
+      '<div class="col-headers GRID">'+
+        '<span></span><span>Name</span><span class="c">Freq</span><span class="r">Planned</span><span class="r">Actual</span><span class="c">%</span>'+
+      '</div>'+
+      '<div id="rows-'+si+'"></div>'+
+      '<div class="total-row GRID" id="total-'+si+'"></div>';
     grid.appendChild(card);
     renderRows(si);
   });
+
+  // Correction 1: assets card
+  const acard=document.createElement('div');
+  acard.className='section-card asset-card';
+  acard.innerHTML=
+    '<div class="section-header">'+
+      '<span class="sec-title" style="color:var(--amber)">Assets <span class="sec-sub">saved money</span></span>'+
+      '<button class="add-btn" onclick="addAsset()" title="Add an account (also added to later months)">+</button>'+
+    '</div>'+
+    '<div class="col-headers AGRID">'+
+      '<span></span><span>Account</span><span class="r">Balance</span><span class="r">vs last mo</span>'+
+    '</div>'+
+    '<div id="rows-assets"></div>'+
+    '<div class="total-row asset-total AGRID" id="total-assets"></div>';
+  document.getElementById('main-grid').appendChild(acard);
+  renderAssets();
 }
 
 function renderRows(si){
   const sec = SECTIONS[si];
   const container = document.getElementById('rows-'+si);
   container.innerHTML='';
+  if(!sec.rows.length){
+    const e=document.createElement('div');
+    e.className='empty-hint';
+    e.textContent='Nothing here yet — hit + to add a line, or load a template.';
+    container.appendChild(e);
+  }
   sec.rows.forEach((row,ri)=>{
+    const f=freqOf(row);
     const div = document.createElement('div');
-    div.className='row-item';
-    div.innerHTML=`
-      <div style="display:flex;align-items:center;gap:4px">
-        <input type="text" class="name-in" value="${esc(row.name)}" placeholder="Item name" oninput="setField(${si},${ri},'name',this.value)">
-        <button class="del-btn" onclick="delRow(${si},${ri})" title="Delete row (also removed from later months)">&#215;</button>
-      </div>
-      <input type="number" class="planned-in" value="${row.planned||''}" placeholder="0" step="1" oninput="setField(${si},${ri},'planned',+this.value||0)">
-      <input type="number" class="actual-in" value="${row.actual||''}" placeholder="0" step="1" oninput="setField(${si},${ri},'actual',+this.value||0)">
-      <div class="pct-cell">${pctBadge(row.planned,row.actual)}</div>
-    `;
+    div.className='row-item GRID';
+    div.setAttribute('data-zone',si);
+    div.setAttribute('data-ri',ri);
+    div.innerHTML=
+      '<span class="drag-handle" title="Drag to reorder" onmousedown="handleDown(this)">&#10303;</span>'+
+      '<div class="name-cell">'+
+        '<input type="text" class="name-in" title="'+esc(row.name)+'" value="'+esc(row.name)+'" placeholder="Item name" '+
+          'oninput="setField('+si+','+ri+',\'name\',this.value)" onkeydown="rowKey(event,'+si+','+ri+')">'+
+        '<button class="del-btn" onclick="delRow('+si+','+ri+')" title="Delete row (also removed from later months)">&#215;</button>'+
+      '</div>'+
+      freqSelect(si,ri,f)+
+      '<input type="number" class="planned-in" value="'+(row.planned||'')+'" placeholder="0" step="1" oninput="setField('+si+','+ri+',\'planned\',+this.value||0)">'+
+      '<input type="number" class="actual-in" value="'+(row.actual||'')+'" placeholder="0" step="1" oninput="setField('+si+','+ri+',\'actual\',+this.value||0)">'+
+      '<div class="pct-cell">'+pctBadge(row.planned,row.actual)+'</div>'+
+      (f==='monthly'?'':'<div class="row-sub">'+monthlyNote(row)+'</div>');
+    wireDrag(div,si,ri);
     container.appendChild(div);
   });
   renderTotal(si);
 }
 
+function monthlyNote(row){
+  return '≈ '+fmt(perMonth(row,'planned'))+' / mo planned · '+fmt(perMonth(row,'actual'))+' / mo actual';
+}
+
 function renderTotal(si){
   const sec = SECTIONS[si];
-  const tp = sec.rows.reduce((a,r)=>a+num(r.planned),0);
-  const ta = sec.rows.reduce((a,r)=>a+num(r.actual),0);
+  const tp = sec.rows.reduce((a,r)=>a+perMonth(r,'planned'),0);
+  const ta = sec.rows.reduce((a,r)=>a+perMonth(r,'actual'),0);
   const pct = tp>0?Math.round(ta/tp*100)+'%':'—';
   const el = document.getElementById('total-'+si);
   const col = sec.color;
-  el.innerHTML=`
-    <span class="tot-label" style="color:${col}">Total</span>
-    <span class="tot-val" style="color:${col}">${fmt(tp)}</span>
-    <span class="tot-val">${fmt(ta)}</span>
-    <span class="tot-pct">${pct}</span>
-  `;
+  el.innerHTML=
+    '<span class="tot-label" style="color:'+col+'">Total / mo</span>'+
+    '<span></span>'+
+    '<span class="tot-val" style="color:'+col+'">'+fmt(tp)+'</span>'+
+    '<span class="tot-val">'+fmt(ta)+'</span>'+
+    '<span class="tot-pct">'+pct+'</span>';
+}
+
+function renderAssets(){
+  const m=month();
+  const container=document.getElementById('rows-assets');
+  container.innerHTML='';
+  if(!m.assets.length){
+    const e=document.createElement('div');
+    e.className='empty-hint';
+    e.textContent='Track what you have already put away — chequing, savings, TFSA, investments.';
+    container.appendChild(e);
+  }
+  m.assets.forEach((a,ri)=>{
+    const div=document.createElement('div');
+    div.className='row-item asset-row AGRID';
+    div.setAttribute('data-zone','assets');
+    div.setAttribute('data-ri',ri);
+    div.innerHTML=
+      '<span class="drag-handle" title="Drag to reorder" onmousedown="handleDown(this)">&#10303;</span>'+
+      '<div class="name-cell">'+
+        '<input type="text" class="name-in" title="'+esc(a.name)+'" value="'+esc(a.name)+'" placeholder="Account name" '+
+          'oninput="setAssetField('+ri+',\'name\',this.value)" onkeydown="rowKey(event,\'assets\','+ri+')">'+
+        '<button class="del-btn" onclick="delAsset('+ri+')" title="Delete account (also removed from later months)">&#215;</button>'+
+      '</div>'+
+      '<input type="number" class="bal-in" value="'+(a.balance||'')+'" placeholder="0" step="1" oninput="setAssetField('+ri+',\'balance\',+this.value||0)">'+
+      '<div class="delta-cell"></div>';
+    wireDrag(div,'assets',ri);
+    container.appendChild(div);
+  });
+  updateAssets();
+}
+
+function updateAssets(){
+  const m=month();
+  const prev=prevKeyOf(state.current);
+  const pm=prev?state.months[prev]:null;
+  const cells=document.querySelectorAll('#rows-assets .delta-cell');
+  m.assets.forEach((a,ri)=>{
+    const cell=cells[ri];
+    if(!cell) return;
+    if(!pm){ cell.textContent='—'; cell.className='delta-cell'; return; }
+    const before=matchAsset(pm,ri,a.name);
+    if(!before){ cell.textContent='new'; cell.className='delta-cell'; return; }
+    const d=num(a.balance)-num(before.balance);
+    cell.textContent=d===0?'—':fmtSigned(d);
+    cell.className='delta-cell'+(d>0?' pos':d<0?' neg':'');
+  });
+  const tot=assetsTotal(m);
+  const prevTot=pm?assetsTotal(pm):null;
+  const d=prevTot==null?null:tot-prevTot;
+  document.getElementById('total-assets').innerHTML=
+    '<span class="tot-label">Total saved</span>'+
+    '<span></span>'+
+    '<span class="tot-val">'+fmt(tot)+'</span>'+
+    '<span class="delta-cell'+(d==null?'':d>0?' pos':d<0?' neg':'')+'">'+(d==null?'—':d===0?'—':fmtSigned(d))+'</span>';
+  document.getElementById('sum-assets').textContent=fmt(tot);
 }
 
 /* ---------- edits (propagate forward) ---------- */
@@ -555,16 +952,34 @@ function setField(si,ri,field,value){
   }
   propStatus(touched,'updated');
 
-  if(field==='name') save(); else recalc();
+  if(field==='name'){ save(); return; }
+  if(field==='freq'){ renderRows(si); }
+  recalc();
+}
+
+function setAssetField(ri,field,value){
+  const m=month();
+  const a=m.assets[ri];
+  if(!a) return;
+  const oldName=a.name;
+  a[field]=value;
+  const touched=propagate(mm=>{
+    const t=matchAsset(mm,ri,field==='name'?oldName:a.name);
+    if(t) t[field]=value;
+  });
+  propStatus(touched,'updated');
+  if(field==='name'){ save(); return; }
+  updateAssets();
+  save();
 }
 
 function addRow(si){
   const sec=SECTIONS[si];
-  sec.rows.push({name:'',planned:0,actual:0});
+  sec.rows.push({name:'',planned:0,actual:0,freq:'monthly'});
   const ri=sec.rows.length-1;
   const touched=propagate(m=>{
     const rows=m.sections[sec.key];
-    rows.splice(Math.min(ri,rows.length),0,{name:'',planned:0,actual:0});
+    rows.splice(Math.min(ri,rows.length),0,{name:'',planned:0,actual:0,freq:'monthly'});
   });
   propStatus(touched,'added');
   renderRows(si);
@@ -591,8 +1006,134 @@ function delRow(si,ri){
   recalc();
 }
 
-function sectionTotal(si, field){
-  return SECTIONS[si].rows.reduce((a,r)=>a+num(r[field]),0);
+function addAsset(){
+  const m=month();
+  m.assets.push({name:'',balance:0});
+  const ri=m.assets.length-1;
+  const touched=propagate(mm=>{
+    mm.assets=mm.assets||[];
+    mm.assets.splice(Math.min(ri,mm.assets.length),0,{name:'',balance:0});
+  });
+  propStatus(touched,'added');
+  renderAssets();
+  save();
+  const inputs=document.querySelectorAll('#rows-assets .name-in');
+  if(inputs.length) inputs[inputs.length-1].focus();
+}
+
+function delAsset(ri){
+  const m=month();
+  const gone=m.assets[ri];
+  if(!gone) return;
+  let touched=0;
+  propagate(mm=>{
+    const t=matchAsset(mm,ri,gone.name);
+    if(t){ mm.assets.splice(mm.assets.indexOf(t),1); touched++; }
+  });
+  m.assets.splice(ri,1);
+  propStatus(touched,'removed');
+  renderAssets();
+  save();
+}
+
+/* ---------- Correction 5: drag to reorder ---------- */
+let dragCtx=null;
+
+function handleDown(el){
+  const row=el.closest('.row-item');
+  if(row) row.draggable=true;
+}
+document.addEventListener('mouseup',()=>{
+  if(dragCtx) return;
+  document.querySelectorAll('.row-item[draggable="true"]').forEach(r=>{ r.draggable=false; });
+});
+function clearDropMarks(){
+  document.querySelectorAll('.drop-before,.drop-after').forEach(x=>x.classList.remove('drop-before','drop-after'));
+}
+function wireDrag(div,zone,ri){
+  div.addEventListener('dragstart',e=>{
+    dragCtx={zone:String(zone),ri:ri};
+    try{ e.dataTransfer.effectAllowed='move'; e.dataTransfer.setData('text/plain',String(zone)+':'+ri); }catch(_){}
+    div.classList.add('dragging');
+  });
+  div.addEventListener('dragend',()=>{
+    div.classList.remove('dragging');
+    div.draggable=false;
+    dragCtx=null;
+    clearDropMarks();
+  });
+  div.addEventListener('dragover',e=>{
+    if(!dragCtx||dragCtx.zone!==String(zone)) return;
+    e.preventDefault();
+    const r=div.getBoundingClientRect();
+    const after=(e.clientY-r.top)>r.height/2;
+    clearDropMarks();
+    div.classList.add(after?'drop-after':'drop-before');
+  });
+  div.addEventListener('dragleave',()=>{ div.classList.remove('drop-before','drop-after'); });
+  div.addEventListener('drop',e=>{
+    if(!dragCtx||dragCtx.zone!==String(zone)) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const r=div.getBoundingClientRect();
+    const after=(e.clientY-r.top)>r.height/2;
+    let to=ri+(after?1:0);
+    const from=dragCtx.ri;
+    if(from<to) to--;
+    clearDropMarks();
+    moveRow(zone,from,to);
+  });
+}
+
+function moveRow(zone,from,to){
+  zone=String(zone);
+  const isAssets = zone==='assets';
+  const list = isAssets ? month().assets : SECTIONS[+zone].rows;
+  if(from===to||from<0||from>=list.length||to<0||to>=list.length) return;
+  const moved=list.splice(from,1)[0];
+  list.splice(to,0,moved);
+
+  let touched=0;
+  propagate(m=>{
+    const rows = isAssets ? (m.assets||[]) : (m.sections[SECTIONS[+zone].key]||[]);
+    const t = isAssets ? matchAsset(m,from,moved.name) : matchRow(m,SECTIONS[+zone].key,from,moved.name);
+    if(!t) return;
+    const i=rows.indexOf(t);
+    if(i<0) return;
+    rows.splice(i,1);
+    rows.splice(Math.min(to,rows.length),0,t);
+    touched++;
+  });
+  propStatus(touched,'reordered');
+
+  if(isAssets){ renderAssets(); save(); }
+  else { renderRows(+zone); recalc(); }
+}
+
+/* keyboard reorder: alt + up/down from the name field */
+function rowKey(e,zone,ri){
+  if(!e.altKey||(e.key!=='ArrowUp'&&e.key!=='ArrowDown')) return;
+  e.preventDefault();
+  const to=ri+(e.key==='ArrowUp'?-1:1);
+  moveRow(zone,ri,to);
+  const sel = zone==='assets' ? '#rows-assets .name-in' : '#rows-'+zone+' .name-in';
+  const inputs=document.querySelectorAll(sel);
+  if(inputs[to]) inputs[to].focus();
+}
+
+/* ---------- Correction 2: rollover UI ---------- */
+function setRvAuto(auto){
+  const m=month();
+  if(auto===m.rvAuto) return;
+  if(!auto){
+    // moving to manual: freeze whatever auto was producing so nothing jumps
+    clearRvMemo();
+    m.rvPlanned=Math.round(rolloverFor(state.current,'planned'));
+    m.rvActual =Math.round(rolloverFor(state.current,'actual'));
+  }
+  m.rvAuto=auto;
+  buildRollover();
+  recalc();
 }
 
 function onRollover(){
@@ -602,22 +1143,99 @@ function onRollover(){
   recalc();
 }
 
+function buildRollover(){
+  const m=month();
+  const prev=prevKeyOf(state.current);
+  document.getElementById('rv-auto-btn').className   = m.rvAuto?'on':'';
+  document.getElementById('rv-manual-btn').className = m.rvAuto?'':'on';
+
+  const src=document.getElementById('rv-source');
+  if(m.rvAuto){
+    src.innerHTML = prev
+      ? 'Carried in automatically from <b>'+labelOf(prev)+'</b> — its closing balance. Change anything back there and this follows.'
+      : 'Nothing tracked before <b>'+labelOf(state.current)+'</b>, so the opening balance is zero. Switch to Manual to type what you actually started with.';
+  }else{
+    src.innerHTML = 'Manual opening balance — typed by you, ignored by the carry-forward chain.'+
+      (prev?' <b>'+labelOf(prev)+'</b> closed at '+fmt(closingFor(prev,'actual'))+'.':'');
+  }
+
+  const box=document.getElementById('rv-inputs');
+  if(m.rvAuto){
+    box.innerHTML=
+      '<div class="rv-pair">'+
+        '<div class="rv-field"><label>Planned rollover</label><div class="rv-readout" id="rv-ro-planned">$0</div></div>'+
+        '<div class="rv-field"><label>Actual rollover</label><div class="rv-readout" id="rv-ro-actual">$0</div></div>'+
+      '</div>';
+  }else{
+    box.innerHTML=
+      '<div class="rv-pair">'+
+        '<div class="rv-field"><label>Planned rollover</label>'+
+          '<input class="rv-input" type="number" id="rv-planned" step="1" value="'+(m.rvPlanned||'')+'" oninput="onRollover()"></div>'+
+        '<div class="rv-field"><label>Actual rollover</label>'+
+          '<input class="rv-input" type="number" id="rv-actual" step="1" value="'+(m.rvActual||'')+'" oninput="onRollover()"></div>'+
+      '</div>';
+  }
+}
+
+function updateRollover(openP,openA,flowP,flowA,closeP,closeA){
+  const m=month();
+  if(m.rvAuto){
+    const p=document.getElementById('rv-ro-planned'), a=document.getElementById('rv-ro-actual');
+    if(p) p.textContent=fmt(openP);
+    if(a) a.textContent=fmt(openA);
+  }
+  document.getElementById('rv-chain').innerHTML=
+    '<div class="rv-chain-row head"><span>Chain</span><span class="v">Planned</span><span class="v">Actual</span></div>'+
+    '<div class="rv-chain-row"><span>Opening balance</span><span class="v">'+fmt(openP)+'</span><span class="v">'+fmt(openA)+'</span></div>'+
+    '<div class="rv-chain-row"><span>+ Remaining this month</span><span class="v">'+fmtSigned(flowP)+'</span><span class="v">'+fmtSigned(flowA)+'</span></div>'+
+    '<div class="rv-chain-row close"><span>Closing balance</span><span class="v">'+fmt(closeP)+'</span><span class="v">'+fmt(closeA)+'</span></div>';
+
+  const nxt=nextKeyOf(state.current);
+  const nm=nxt?state.months[nxt]:null;
+  const el=document.getElementById('rv-next');
+  if(nm&&nm.rvAuto)      el.innerHTML='<b>'+fmt(closeA)+'</b> carries into '+labelOf(nxt)+' automatically.';
+  else if(nm)            el.innerHTML=labelOf(nxt)+' is set to Manual, so it will <b>not</b> pick this up — open it and switch to Auto if you want the chain unbroken.';
+  else                   el.innerHTML='<b>'+fmt(closeA)+'</b> will carry into next month when you open it.';
+}
+
+/* ---------- recalc ---------- */
 function renderAll(){
   buildSections();
+  buildRollover();
   recalc();
 }
 
 function recalc(){
+  clearRvMemo();
   const m=month();
-  const rvP = m.rvPlanned, rvA = m.rvActual;
 
-  const incP = sectionTotal(0,'planned'), incA = sectionTotal(0,'actual');
-  const expP = sectionTotal(1,'planned'), expA = sectionTotal(1,'actual');
-  const bilP = sectionTotal(2,'planned'), bilA = sectionTotal(2,'actual');
-  const savP = sectionTotal(3,'planned'), savA = sectionTotal(3,'actual');
-  const debP = sectionTotal(4,'planned'), debA = sectionTotal(4,'actual');
+  const incP=sectionSum(m,'income','planned'),   incA=sectionSum(m,'income','actual');
+  const expP=sectionSum(m,'expenses','planned'), expA=sectionSum(m,'expenses','actual');
+  const bilP=sectionSum(m,'bills','planned'),    bilA=sectionSum(m,'bills','actual');
+  const savP=sectionSum(m,'savings','planned'),  savA=sectionSum(m,'savings','actual');
+  const debP=sectionSum(m,'debt','planned'),     debA=sectionSum(m,'debt','actual');
 
-  // Summary bar (shows actuals)
+  const rvP=rolloverFor(state.current,'planned'), rvA=rolloverFor(state.current,'actual');
+
+  const outP=expP+bilP+savP+debP, outA=expA+bilA+savA+debA;
+  const flowP=incP-outP,          flowA=incA-outA;          // remaining per month, no rollover
+  const preSavA=incA-expA-bilA-debA;                         // what is available before savings
+  const closeP=rvP+flowP,         closeA=rvA+flowA;
+
+  // Hero
+  const hv=document.getElementById('hero-val');
+  hv.textContent=fmt(flowA);
+  hv.className='hero-val '+(flowA>=0?'pos':'neg');
+  document.getElementById('hero-in').textContent=fmt(incA);
+  document.getElementById('hero-out').textContent=fmt(outA);
+  document.getElementById('hero-plan').textContent=fmt(flowP);
+  const ps=document.getElementById('hero-presav');
+  ps.textContent=fmt(preSavA);
+  ps.className=preSavA>=0?'pos':'neg';
+  document.getElementById('hero-sub').textContent=
+    'Income minus everything going out — this month only, rollover not included. Before savings = what is left if you skipped the savings lines.';
+
+  // Summary bar (actuals)
   document.getElementById('sum-rollover').textContent=fmt(rvA);
   document.getElementById('sum-income').textContent=fmt(incA);
   document.getElementById('sum-expenses').textContent=fmt(expA);
@@ -625,93 +1243,377 @@ function recalc(){
   document.getElementById('sum-savings').textContent=fmt(savA);
   document.getElementById('sum-debt').textContent=fmt(debA);
 
-  // Update pct badges
-  SECTIONS.forEach((_,si)=>{
-    const container = document.getElementById('rows-'+si);
+  // Row badges + section totals
+  SECTIONS.forEach((sec,si)=>{
+    const container=document.getElementById('rows-'+si);
     if(!container) return;
-    const pctCells = container.querySelectorAll('.pct-cell');
-    SECTIONS[si].rows.forEach((row,ri)=>{
-      if(pctCells[ri]) pctCells[ri].innerHTML = pctBadge(row.planned,row.actual);
+    const pctCells=container.querySelectorAll('.pct-cell');
+    const subs=container.querySelectorAll('.row-sub');
+    let s=0;
+    sec.rows.forEach((row,ri)=>{
+      if(pctCells[ri]) pctCells[ri].innerHTML=pctBadge(row.planned,row.actual);
+      if(freqOf(row)!=='monthly'&&subs[s]){ subs[s].textContent=monthlyNote(row); s++; }
     });
     renderTotal(si);
   });
+  updateAssets();
 
   // Overview
-  const remP = rvP+incP-expP-bilP-savP-debP;
-  const remA = rvA+incA-expA-bilA-savA-debA;
-
-  const ovRows = [
-    {label:'Rollover',   planned:rvP, actual:rvA,   style:''},
-    {label:'+ Income',   planned:incP,actual:incA,  style:''},
-    {label:'− Expenses', planned:expP,actual:expA,  style:'minus'},
-    {label:'− Bills',    planned:bilP,actual:bilA,  style:'minus'},
-    {label:'− Savings',  planned:savP,actual:savA,  style:'minus'},
-    {label:'− Debt',     planned:debP,actual:debA,  style:'minus'},
+  const ovRows=[
+    {label:'Rollover',   planned:rvP, actual:rvA,  style:''},
+    {label:'+ Income',   planned:incP,actual:incA, style:''},
+    {label:'− Expenses', planned:expP,actual:expA, style:'minus'},
+    {label:'− Bills',    planned:bilP,actual:bilA, style:'minus'},
+    {label:'− Savings',  planned:savP,actual:savA, style:'minus'},
+    {label:'− Debt',     planned:debP,actual:debA, style:'minus'},
   ];
-
-  const ovContainer = document.getElementById('overview-rows');
+  const ovContainer=document.getElementById('overview-rows');
   ovContainer.innerHTML='';
   ovRows.forEach(r=>{
-    const diff = r.actual - r.planned;
-    const diffCls = diff>=0?'pos':'neg';
-    const div = document.createElement('div');
+    const diff=r.actual-r.planned;
+    const div=document.createElement('div');
     div.className='ov-row';
-    div.innerHTML=`
-      <span class="ov-label ${r.style}">${r.label}</span>
-      <span class="ov-val ov-planned">${fmt(r.planned)}</span>
-      <span class="ov-val">${fmt(r.actual)}</span>
-      <span class="ov-diff ${diffCls}">${diff>=0?'+':''}${fmt(diff)}</span>
-    `;
+    div.innerHTML=
+      '<span class="ov-label '+r.style+'">'+r.label+'</span>'+
+      '<span class="ov-val ov-planned">'+fmt(r.planned)+'</span>'+
+      '<span class="ov-val">'+fmt(r.actual)+'</span>'+
+      '<span class="ov-diff '+(diff>=0?'pos':'neg')+'">'+fmtSigned(diff)+'</span>';
     ovContainer.appendChild(div);
   });
 
-  // Remaining row
-  const remDiv = document.createElement('div');
+  const flowDiv=document.createElement('div');
+  flowDiv.className='ov-row ov-flow';
+  const flowDiff=flowA-flowP;
+  flowDiv.innerHTML=
+    '<span class="ov-flow-label">Remaining per month</span>'+
+    '<span class="ov-val ov-flow-val ov-planned">'+fmt(flowP)+'</span>'+
+    '<span class="ov-val ov-flow-val">'+fmt(flowA)+'</span>'+
+    '<span class="ov-diff '+(flowDiff>=0?'pos':'neg')+'">'+fmtSigned(flowDiff)+'</span>';
+  ovContainer.appendChild(flowDiv);
+
+  const remDiv=document.createElement('div');
   remDiv.className='ov-row ov-remaining';
-  const remDiff = remA - remP;
-  remDiv.innerHTML=`
-    <span class="ov-rem-label">Remaining</span>
-    <span class="ov-val ov-rem-val">${fmt(remP)}</span>
-    <span class="ov-val ov-rem-val">${fmt(remA)}</span>
-    <span class="ov-diff ${remDiff>=0?'pos':'neg'}">${remDiff>=0?'+':''}${fmt(remDiff)}</span>
-  `;
+  const remDiff=closeA-closeP;
+  remDiv.innerHTML=
+    '<span class="ov-rem-label">Closing (with rollover)</span>'+
+    '<span class="ov-val ov-rem-val">'+fmt(closeP)+'</span>'+
+    '<span class="ov-val ov-rem-val">'+fmt(closeA)+'</span>'+
+    '<span class="ov-diff '+(remDiff>=0?'pos':'neg')+'">'+fmtSigned(remDiff)+'</span>';
   ovContainer.appendChild(remDiv);
 
-  document.getElementById('big-remaining').textContent = fmt(remA);
-
+  updateRollover(rvP,rvA,flowP,flowA,closeP,closeA);
   save();
 }
 
-/* ---------- export / import ---------- */
-function exportData(){
-  const payload={
-    app:'budget-tracker',
-    version:2,
-    exported:new Date().toISOString(),
-    current:state.current,
-    months:state.months
+/* ---------- Correction 4: copy a month into other months ---------- */
+function openCopy(){
+  document.getElementById('copy-subtitle').textContent='Push '+labelOf(state.current)+' into other months';
+  const box=document.getElementById('copy-months');
+  const keys=sortedKeys().filter(k=>k!==state.current);
+  box.innerHTML = keys.length
+    ? keys.map(k=>'<label class="check"><input type="checkbox" class="copy-target" value="'+k+'"><span>'+shortLabelOf(k)+(k>state.current?' →':' ←')+'</span></label>').join('')
+    : '<div class="goal-hint">No other months yet — use the "next N months" box below to create some.</div>';
+  document.getElementById('copy-ahead').value=0;
+  showModal('copy-overlay');
+}
+function copyPickAll(on){
+  document.querySelectorAll('.copy-target').forEach(c=>{c.checked=on;});
+}
+function copyPickLater(){
+  document.querySelectorAll('.copy-target').forEach(c=>{c.checked=c.value>state.current;});
+}
+function cloneMonthInto(target,mode){
+  const src=month();
+  if(!state.months[target]) state.months[target]=blankMonth();
+  const m=state.months[target];
+  SECTION_META.forEach(meta=>{
+    m.sections[meta.key]=src.sections[meta.key].map(r=>({
+      name:r.name,
+      freq:freqOf(r),
+      planned: mode==='structure'?0:num(r.planned),
+      actual:  mode==='all'?num(r.actual):0
+    }));
+  });
+  m.assets=(src.assets||[]).map(a=>({name:a.name,balance:mode==='structure'?0:num(a.balance)}));
+}
+function applyCopy(){
+  const mode=document.querySelector('input[name="copy-mode"]:checked').value;
+  const targets={};
+  document.querySelectorAll('.copy-target').forEach(c=>{ if(c.checked) targets[c.value]=1; });
+  const ahead=Math.max(0,Math.min(60,+document.getElementById('copy-ahead').value||0));
+  for(let i=1;i<=ahead;i++) targets[addMonths(state.current,i)]=1;
+  const keys=Object.keys(targets);
+  if(!keys.length){ alert('Pick at least one month to copy into.'); return; }
+  const created=keys.filter(k=>!state.months[k]).length;
+  const msg='Copy '+labelOf(state.current)+' into '+keys.length+' month'+(keys.length===1?'':'s')+
+            (created?' ('+created+' will be created)':'')+'?\n\nRows in those months are replaced.';
+  if(!confirm(msg)) return;
+  keys.forEach(k=>cloneMonthInto(k,mode));
+  closeModal('copy-overlay');
+  bind();
+  renderAll();
+  saveNow();
+  status('Copied into '+keys.length+' month'+(keys.length===1?'':'s'));
+  propStatus(keys.length,'copied');
+}
+
+/* ---------- Correction 7: templates ---------- */
+const TEMPLATES=[
+  {id:'student',name:'Student',desc:'Part-time income, shared rent, thin margins.',
+   sections:{
+     income:[{name:'Part-time job',planned:600,freq:'biweekly'},{name:'Student aid',planned:4000,freq:'yearly'},{name:'Family help',planned:200,freq:'monthly'}],
+     expenses:[{name:'Groceries',planned:80,freq:'weekly'},{name:'Coffee / snacks',planned:5,freq:'daily'},{name:'Eating out',planned:40,freq:'weekly'},{name:'Transit pass',planned:60,freq:'monthly'},{name:'Going out',planned:100,freq:'monthly'}],
+     bills:[{name:'Rent (shared)',planned:650,freq:'monthly'},{name:'Internet (split)',planned:25,freq:'monthly'},{name:'Phone',planned:40,freq:'monthly'},{name:'Streaming',planned:16,freq:'monthly'},{name:'Books & supplies',planned:400,freq:'yearly'}],
+     savings:[{name:'Emergency fund',planned:50,freq:'monthly'}],
+     debt:[{name:'Credit card',planned:50,freq:'monthly'},{name:'Student loan',planned:0,freq:'monthly'}]},
+   assets:['Chequing','Savings','TFSA']},
+
+  {id:'first-place',name:'First apartment',desc:'One income, living alone, building a cushion.',
+   sections:{
+     income:[{name:'Paycheck',planned:1750,freq:'biweekly'},{name:'Side work',planned:200,freq:'monthly'}],
+     expenses:[{name:'Groceries',planned:130,freq:'weekly'},{name:'Restaurants',planned:250,freq:'monthly'},{name:'Coffee',planned:4,freq:'daily'},{name:'Gas / transit',planned:180,freq:'monthly'},{name:'Gym',planned:55,freq:'monthly'},{name:'Clothes & personal',planned:120,freq:'monthly'}],
+     bills:[{name:'Rent',planned:1450,freq:'monthly'},{name:'Hydro',planned:70,freq:'monthly'},{name:'Internet',planned:80,freq:'monthly'},{name:'Phone',planned:55,freq:'monthly'},{name:'Tenant insurance',planned:240,freq:'yearly'},{name:'Subscriptions',planned:35,freq:'monthly'}],
+     savings:[{name:'Emergency fund',planned:300,freq:'monthly'},{name:'Retirement',planned:200,freq:'monthly'},{name:'Travel fund',planned:100,freq:'monthly'}],
+     debt:[{name:'Credit card',planned:150,freq:'monthly'},{name:'Student loan',planned:280,freq:'monthly'}]},
+   assets:['Chequing','Emergency fund','TFSA','RRSP']},
+
+  {id:'couple',name:'Couple, no kids',desc:'Two incomes, one household, joint goals.',
+   sections:{
+     income:[{name:'Paycheck 1',planned:2200,freq:'biweekly'},{name:'Paycheck 2',planned:1900,freq:'biweekly'},{name:'Bonus',planned:4000,freq:'yearly'}],
+     expenses:[{name:'Groceries',planned:220,freq:'weekly'},{name:'Restaurants',planned:400,freq:'monthly'},{name:'Date nights',planned:150,freq:'monthly'},{name:'Gas',planned:260,freq:'monthly'},{name:'Gyms',planned:110,freq:'monthly'},{name:'Household & pets',planned:150,freq:'monthly'},{name:'Gifts',planned:1200,freq:'yearly'}],
+     bills:[{name:'Rent / mortgage',planned:2200,freq:'monthly'},{name:'Utilities',planned:180,freq:'monthly'},{name:'Internet',planned:90,freq:'monthly'},{name:'Phones (2)',planned:120,freq:'monthly'},{name:'Car insurance',planned:1800,freq:'yearly'},{name:'Home insurance',planned:900,freq:'yearly'},{name:'Subscriptions',planned:60,freq:'monthly'}],
+     savings:[{name:'Joint savings',planned:800,freq:'monthly'},{name:'Retirement',planned:600,freq:'monthly'},{name:'Trip fund',planned:300,freq:'monthly'}],
+     debt:[{name:'Car loan',planned:420,freq:'monthly'},{name:'Credit card',planned:200,freq:'monthly'}]},
+   assets:['Joint chequing','Joint savings','TFSA 1','TFSA 2','RRSP','Investments']},
+
+  {id:'family',name:'Family with kids',desc:'Two incomes, childcare, the whole circus.',
+   sections:{
+     income:[{name:'Paycheck 1',planned:2600,freq:'biweekly'},{name:'Paycheck 2',planned:2100,freq:'biweekly'},{name:'Child benefit',planned:560,freq:'monthly'}],
+     expenses:[{name:'Groceries',planned:320,freq:'weekly'},{name:'Restaurants / takeout',planned:300,freq:'monthly'},{name:'Kids activities',planned:250,freq:'monthly'},{name:'Kids clothes',planned:150,freq:'monthly'},{name:'Gas',planned:340,freq:'monthly'},{name:'Household',planned:200,freq:'monthly'},{name:'Birthdays & holidays',planned:2000,freq:'yearly'}],
+     bills:[{name:'Mortgage',planned:2600,freq:'monthly'},{name:'Property tax',planned:4200,freq:'yearly'},{name:'Utilities',planned:260,freq:'monthly'},{name:'Internet',planned:90,freq:'monthly'},{name:'Phones',planned:150,freq:'monthly'},{name:'Daycare / after-school',planned:900,freq:'monthly'},{name:'Car insurance',planned:2200,freq:'yearly'},{name:'Home insurance',planned:1400,freq:'yearly'},{name:'Life insurance',planned:70,freq:'monthly'}],
+     savings:[{name:'Emergency fund',planned:400,freq:'monthly'},{name:'Kids education',planned:300,freq:'monthly'},{name:'Retirement',planned:700,freq:'monthly'},{name:'Home repairs',planned:200,freq:'monthly'}],
+     debt:[{name:'Car loan',planned:520,freq:'monthly'},{name:'Line of credit',planned:250,freq:'monthly'}]},
+   assets:['Joint chequing','Emergency fund','RESP','TFSA','RRSP','Home equity']},
+
+  {id:'freelance',name:'Freelancer',desc:'Lumpy income, taxes to set aside, business costs.',
+   sections:{
+     income:[{name:'Client work',planned:5000,freq:'monthly'},{name:'Retainer',planned:1500,freq:'monthly'},{name:'Passive / royalties',planned:200,freq:'monthly'}],
+     expenses:[{name:'Groceries',planned:140,freq:'weekly'},{name:'Restaurants',planned:250,freq:'monthly'},{name:'Gas / travel',planned:200,freq:'monthly'},{name:'Gear & software',planned:180,freq:'monthly'},{name:'Courses',planned:600,freq:'yearly'}],
+     bills:[{name:'Rent / studio',planned:1600,freq:'monthly'},{name:'Utilities',planned:110,freq:'monthly'},{name:'Internet',planned:90,freq:'monthly'},{name:'Phone',planned:60,freq:'monthly'},{name:'Accountant',planned:1200,freq:'yearly'},{name:'Business insurance',planned:600,freq:'yearly'},{name:'Subscriptions',planned:120,freq:'monthly'}],
+     savings:[{name:'Tax set-aside (30%)',planned:1800,freq:'monthly'},{name:'Emergency fund (6 mo)',planned:600,freq:'monthly'},{name:'Retirement',planned:500,freq:'monthly'},{name:'Gear replacement',planned:200,freq:'monthly'}],
+     debt:[{name:'Line of credit',planned:300,freq:'monthly'},{name:'Credit card',planned:200,freq:'monthly'}]},
+   assets:['Business chequing','Tax account','Personal chequing','Emergency fund','TFSA','RRSP']},
+
+  {id:'retired',name:'Retired',desc:'Fixed income, health costs, time to spend.',
+   sections:{
+     income:[{name:'Pension',planned:2400,freq:'monthly'},{name:'Government benefits',planned:1300,freq:'monthly'},{name:'Investment income',planned:800,freq:'monthly'}],
+     expenses:[{name:'Groceries',planned:150,freq:'weekly'},{name:'Restaurants',planned:200,freq:'monthly'},{name:'Hobbies',planned:150,freq:'monthly'},{name:'Gas',planned:150,freq:'monthly'},{name:'Gifts / grandkids',planned:1500,freq:'yearly'}],
+     bills:[{name:'Housing',planned:1400,freq:'monthly'},{name:'Property tax',planned:3600,freq:'yearly'},{name:'Utilities',planned:200,freq:'monthly'},{name:'Internet & phone',planned:130,freq:'monthly'},{name:'Insurance',planned:1800,freq:'yearly'},{name:'Medication & dental',planned:180,freq:'monthly'}],
+     savings:[{name:'Travel fund',planned:400,freq:'monthly'},{name:'Home maintenance',planned:200,freq:'monthly'}],
+     debt:[]},
+   assets:['Chequing','Savings','TFSA','RRIF','Investments']},
+];
+
+let selectedTemplate=null;
+
+function normalizeTemplate(t){
+  if(!t||typeof t!=='object') return null;
+  const out={
+    id:String(t.id||('custom-'+Math.random().toString(36).slice(2,8))),
+    name:String(t.name||'Untitled template'),
+    desc:String(t.desc||t.description||'Imported template'),
+    custom:true,
+    sections:{},
+    assets:Array.isArray(t.assets)?t.assets.map(a=>typeof a==='string'?a:String((a&&a.name)||'')).filter(Boolean):[]
   };
+  const src=t.sections||{};
+  let any=false;
+  SECTION_META.forEach(meta=>{
+    const rows=Array.isArray(src[meta.key])?src[meta.key]:[];
+    out.sections[meta.key]=rows.map(r=>({
+      name:String((r&&r.name)||''),
+      planned:num(r&&r.planned),
+      freq:(r&&FREQ[r.freq])?r.freq:'monthly'
+    })).filter(r=>r.name);
+    if(out.sections[meta.key].length) any=true;
+  });
+  if(!any&&!out.assets.length) return null;
+  return out;
+}
+
+function allTemplates(){ return TEMPLATES.concat(customTemplates); }
+function tplCount(t){ return SECTION_META.reduce((a,meta)=>a+(t.sections[meta.key]||[]).length,0); }
+function tplMonthlyTotal(t){
+  const inc=(t.sections.income||[]).reduce((a,r)=>a+num(r.planned)*FREQ[r.freq||'monthly'].per,0);
+  const out=['expenses','bills','savings','debt'].reduce((a,k)=>a+(t.sections[k]||[]).reduce((s,r)=>s+num(r.planned)*FREQ[r.freq||'monthly'].per,0),0);
+  return inc-out;
+}
+
+function openTemplates(){
+  renderTemplateGrid();
+  showModal('tpl-overlay');
+}
+function renderTemplateGrid(){
+  const grid=document.getElementById('tpl-grid');
+  grid.innerHTML=allTemplates().map((t,i)=>
+    '<div class="tpl-item'+(selectedTemplate===t.id?' sel':'')+'" onclick="selectTemplate(\''+esc(t.id)+'\')">'+
+      (t.custom?'<button class="tpl-del" onclick="event.stopPropagation();deleteTemplate(\''+esc(t.id)+'\')" title="Remove this saved template">&#215;</button>':'')+
+      '<div class="tpl-name">'+esc(t.name)+(t.custom?'<span class="tpl-badge">saved</span>':'')+'</div>'+
+      '<div class="tpl-desc">'+esc(t.desc)+'</div>'+
+      '<div class="tpl-meta">'+tplCount(t)+' lines · '+fmt(tplMonthlyTotal(t))+' / mo left over</div>'+
+    '</div>').join('');
+}
+function selectTemplate(id){
+  selectedTemplate=id;
+  renderTemplateGrid();
+  const t=allTemplates().find(x=>x.id===id);
+  const box=document.getElementById('tpl-preview');
+  if(!t){ box.textContent='Pick a template above to see what it adds.'; return; }
+  let html='';
+  SECTION_META.forEach(meta=>{
+    const rows=t.sections[meta.key]||[];
+    if(!rows.length) return;
+    html+='<div class="tpl-sec"><div class="tpl-sec-title" style="color:'+meta.color+'">'+meta.label+'</div>'+
+      rows.map(r=>'<div class="tpl-line"><span>'+esc(r.name)+'</span><span>'+FREQ[r.freq||'monthly'].short+'</span><span>'+fmt(r.planned)+'</span></div>').join('')+
+      '</div>';
+  });
+  if(t.assets&&t.assets.length){
+    html+='<div class="tpl-sec"><div class="tpl-sec-title" style="color:var(--amber)">Assets</div>'+
+      t.assets.map(a=>'<div class="tpl-line"><span>'+esc(a)+'</span><span></span><span>—</span></div>').join('')+'</div>';
+  }
+  box.innerHTML=html||'This template is empty.';
+}
+function deleteTemplate(id){
+  const t=customTemplates.find(x=>x.id===id);
+  if(!t) return;
+  if(!confirm('Remove the saved template "'+t.name+'"?')) return;
+  customTemplates=customTemplates.filter(x=>x.id!==id);
+  if(selectedTemplate===id) selectedTemplate=null;
+  saveTemplates();
+  renderTemplateGrid();
+  selectTemplate(selectedTemplate);
+}
+
+function applyTemplate(){
+  const t=allTemplates().find(x=>x.id===selectedTemplate);
+  if(!t){ alert('Pick a template first.'); return; }
+  const mode=document.querySelector('input[name="tpl-mode"]:checked').value;
+  const later=document.getElementById('tpl-later').checked;
+  const targets=[state.current].concat(later?laterKeys():[]);
+  const what=mode==='replace'?'Replace the rows in':'Add the missing rows to';
+  if(!confirm(what+' '+targets.length+' month'+(targets.length===1?'':'s')+' using "'+t.name+'"?')) return;
+
+  targets.forEach(k=>{
+    const m=state.months[k];
+    SECTION_META.forEach(meta=>{
+      const tplRows=(t.sections[meta.key]||[]).map(r=>({name:r.name,planned:num(r.planned),actual:0,freq:r.freq||'monthly'}));
+      if(mode==='replace'){
+        m.sections[meta.key]=tplRows.map(r=>({name:r.name,planned:r.planned,actual:0,freq:r.freq}));
+      }else{
+        const have={};
+        m.sections[meta.key].forEach(r=>{ have[r.name.trim().toLowerCase()]=1; });
+        tplRows.forEach(r=>{
+          if(!have[r.name.trim().toLowerCase()]) m.sections[meta.key].push(r);
+        });
+      }
+    });
+    const tplAssets=(t.assets||[]).map(n=>({name:n,balance:0}));
+    if(mode==='replace') m.assets=tplAssets;
+    else{
+      const have={};
+      (m.assets||[]).forEach(a=>{ have[a.name.trim().toLowerCase()]=1; });
+      tplAssets.forEach(a=>{ if(!have[a.name.trim().toLowerCase()]) m.assets.push(a); });
+    }
+  });
+
+  closeModal('tpl-overlay');
+  bind();
+  renderAll();
+  saveNow();
+  status('Applied "'+t.name+'"');
+  propStatus(targets.length-1,'templated');
+}
+
+function exportTemplate(){
+  const name=prompt('Name this template (friends and family will see it):','My budget');
+  if(name===null) return;
+  const m=month();
+  const payload={
+    app:'budget-tracker', kind:'template', version:1,
+    name:name||'My budget',
+    desc:'Shared from '+labelOf(state.current),
+    exported:new Date().toISOString(),
+    sections:{}, assets:(m.assets||[]).map(a=>a.name).filter(Boolean)
+  };
+  SECTION_META.forEach(meta=>{
+    payload.sections[meta.key]=m.sections[meta.key]
+      .filter(r=>r.name.trim())
+      .map(r=>({name:r.name,planned:num(r.planned),freq:freqOf(r)}));
+  });
+  downloadJSON(payload,'budget-template-'+(payload.name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'shared')+'.json');
+  status('Template saved to your downloads');
+}
+
+function importTemplate(input){
+  const file=input.files&&input.files[0];
+  if(!file) return;
+  const reader=new FileReader();
+  reader.onload=function(){
+    let t=null;
+    try{ t=normalizeTemplate(JSON.parse(reader.result)); }catch(e){ t=null; }
+    if(!t){ alert('That file could not be read as a budget template.'); input.value=''; return; }
+    if(!t.name||t.name==='Untitled template') t.name=file.name.replace(/\.json$/i,'');
+    customTemplates=customTemplates.filter(x=>x.id!==t.id);
+    customTemplates.push(t);
+    saveTemplates();
+    selectedTemplate=t.id;
+    renderTemplateGrid();
+    selectTemplate(t.id);
+    status('Template "'+t.name+'" added');
+    input.value='';
+  };
+  reader.onerror=function(){ alert('Could not read that file.'); input.value=''; };
+  reader.readAsText(file);
+}
+
+/* ---------- export / import ---------- */
+function downloadJSON(payload,filename){
   const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');
-  a.href=url;
-  a.download='budget-tracker-'+new Date().toISOString().slice(0,10)+'.json';
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
+  a.href=url; a.download=filename;
+  document.body.appendChild(a); a.click(); a.remove();
   setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+function exportData(){
+  downloadJSON({
+    app:'budget-tracker', version:3,
+    exported:new Date().toISOString(),
+    current:state.current, months:state.months
+  },'budget-tracker-'+new Date().toISOString().slice(0,10)+'.json');
   const n=Object.keys(state.months).length;
   status('Exported '+n+' month'+(n===1?'':'s'));
 }
-
 function importData(input){
   const file=input.files&&input.files[0];
   if(!file) return;
   const reader=new FileReader();
   reader.onload=function(){
-    let parsed=null;
-    try{ parsed=normalize(JSON.parse(reader.result)); }catch(e){ parsed=null; }
+    let raw=null,parsed=null;
+    try{ raw=JSON.parse(reader.result); parsed=normalize(raw); }catch(e){ parsed=null; }
     if(!parsed){
+      // a template file dropped on the wrong button still does something useful
+      let t=null;
+      try{ t=normalizeTemplate(raw); }catch(e){ t=null; }
+      if(t){
+        customTemplates=customTemplates.filter(x=>x.id!==t.id);
+        customTemplates.push(t); saveTemplates();
+        selectedTemplate=t.id;
+        openTemplates(); selectTemplate(t.id);
+        status('That was a template — added to your list');
+        input.value='';
+        return;
+      }
       alert('That file could not be read as a budget export.');
       input.value='';
       return;
@@ -732,15 +1634,16 @@ function importData(input){
 }
 
 /* ---------- goal calculator ---------- */
-function avgMonthlySurplus(){
+function avgSavingCapacity(){
   const keys=Object.keys(state.months);
   if(!keys.length) return 0;
   let sum=0;
   keys.forEach(k=>{
     const m=state.months[k];
-    const incA=m.sections.income.reduce((a,r)=>a+num(r.actual),0);
-    const expA=m.sections.expenses.reduce((a,r)=>a+num(r.actual),0);
-    sum+=incA-expA;
+    sum += sectionSum(m,'income','actual')
+         - sectionSum(m,'expenses','actual')
+         - sectionSum(m,'bills','actual')
+         - sectionSum(m,'debt','actual');
   });
   return sum/keys.length;
 }
@@ -756,10 +1659,16 @@ function describeMonths(n){
 
 function calcTimeToGoal(){
   const target=+document.getElementById('goal-time-target').value||0;
-  const surplus=avgMonthlySurplus();
+  const typed=+document.getElementById('goal-time-contrib').value||0;
+  const avg=avgSavingCapacity();
+  const contrib=typed>0?typed:avg;
   const n=Object.keys(state.months).length;
-  document.getElementById('goal-time-hint').textContent=
-    'Based on your average monthly surplus of '+fmt(surplus)+' (actual income − actual expenses) across '+n+' tracked month'+(n===1?'':'s')+'.';
+  const have=assetsTotal(month());
+  const useAssets=document.getElementById('goal-use-assets').checked;
+  document.getElementById('goal-use-assets-label').textContent='Count what I already have saved ('+fmt(have)+')';
+  document.getElementById('goal-time-hint').textContent = typed>0
+    ? 'Using the '+fmt(typed)+' a month you just typed. Your tracked average is '+fmt(avg)+' a month left after expenses, bills and debt payments.'
+    : 'Using '+fmt(avg)+' a month left after expenses, bills and debt payments, averaged across '+n+' tracked month'+(n===1?'':'s')+'. Type your own figure above to override it.';
 
   const resEl=document.getElementById('goal-time-result');
   if(target<=0){
@@ -767,15 +1676,26 @@ function calcTimeToGoal(){
     resEl.textContent='Enter a target amount above.';
     return;
   }
-  if(surplus<=0){
-    resEl.className='goal-result warn';
-    resEl.textContent="Your average monthly surplus is "+fmt(surplus)+" — at this pace you won't reach this goal. Increase income or cut expenses to make progress.";
+  const need=target-(useAssets?have:0);
+  if(need<=0){
+    resEl.className='goal-result';
+    resEl.innerHTML='You are already there — '+fmt(have)+' saved against a '+fmt(target)+' target.';
     return;
   }
-  const months=Math.ceil(target/surplus);
+  if(contrib<=0){
+    resEl.className='goal-result warn';
+    resEl.textContent = typed>0
+      ? 'Put away more than zero a month and this will tell you how long it takes.'
+      : 'You are averaging '+fmt(avg)+' a month — at this pace the goal never arrives. Type an amount above, or cut an expense first.';
+    return;
+  }
+  const months=Math.ceil(need/contrib);
   const {label,dateLabel}=describeMonths(months);
-  resEl.className='goal-result';
-  resEl.innerHTML=`<strong>${label}</strong> to reach ${fmt(target)} — around <strong>${dateLabel}</strong>.`;
+  const tight = typed>0 && avg>0 && typed>avg;
+  resEl.className='goal-result'+(tight?' warn':'');
+  resEl.innerHTML='<strong>'+label+'</strong> at '+fmt(contrib)+' a month to put away '+fmt(need)+
+    (useAssets&&have>0?' more':'')+' — around <strong>'+dateLabel+'</strong>.'+
+    (tight?' Heads up: that is more than the '+fmt(avg)+' a month you actually have spare.':'');
 }
 
 function calcContribution(){
@@ -798,28 +1718,35 @@ function calcContribution(){
   if(targetDate.getDate()<now.getDate()) months-=1;
   months=Math.max(1,months);
   const monthly=target/months;
-  resEl.className='goal-result';
-  resEl.innerHTML=`Set aside <strong>${fmt(monthly)}</strong> per month for <strong>${months} month${months===1?'':'s'}</strong> to reach ${fmt(target)} by ${targetDate.toLocaleDateString('en-CA',{year:'numeric',month:'long',day:'numeric'})}.`;
+  const cap=avgSavingCapacity();
+  const tight = cap>0 && monthly>cap;
+  resEl.className='goal-result'+(tight?' warn':'');
+  resEl.innerHTML='Set aside <strong>'+fmt(monthly)+'</strong> per month for <strong>'+months+' month'+(months===1?'':'s')+
+    '</strong> to reach '+fmt(target)+' by '+targetDate.toLocaleDateString('en-CA',{year:'numeric',month:'long',day:'numeric'})+'.'+
+    (tight?' That is more than the '+fmt(cap)+' a month you currently have spare.':'');
 }
 
+/* ---------- modals ---------- */
+function showModal(id){ document.getElementById(id).classList.add('show'); }
+function closeModal(id){ document.getElementById(id).classList.remove('show'); }
+function closeOnOverlay(e,id){ if(e.target.id===id) closeModal(id); }
 function openGoals(){
-  document.getElementById('goals-overlay').classList.add('show');
+  showModal('goals-overlay');
   calcTimeToGoal();
   calcContribution();
   document.getElementById('goal-time-target').focus();
 }
-function closeGoals(){
-  document.getElementById('goals-overlay').classList.remove('show');
-}
-function closeGoalsOnOverlay(e){
-  if(e.target.id==='goals-overlay') closeGoals();
-}
 document.addEventListener('keydown',e=>{
-  if(e.key==='Escape' && document.getElementById('goals-overlay').classList.contains('show')) closeGoals();
+  if(e.key!=='Escape') return;
+  ['goals-overlay','copy-overlay','tpl-overlay'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el.classList.contains('show')) el.classList.remove('show');
+  });
 });
 
 /* ---------- boot ---------- */
 state=loadState();
+customTemplates=loadTemplates();
 bind();
 renderAll();
 saveNow();

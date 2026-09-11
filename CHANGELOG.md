@@ -5,6 +5,50 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v25 — 2026-09-10
+
+**Budget Tracker v9 — assets, frequencies, templates**
+- **Assets.** A sixth card tracks money already saved as account balances,
+  with a change-since-last-month figure per account and for the total. Balances
+  carry forward like every other row: set it once, it holds until changed.
+- **Rollover reworked.** It is a carry-forward chain now, not a number you
+  retype. Auto takes last month's closing balance, so a correction in March
+  ripples through every later month; Manual freezes whatever Auto was showing
+  so nothing jumps. A chain readout underneath shows opening, remaining, closing,
+  and warns when the next month is set to Manual and will not pick it up.
+- **Remaining per month** has its own box at the top — income minus everything
+  out, rollover deliberately left out of it, with a "before savings" figure beside it.
+- **Copy month.** Push a month into any others: everything, plan only, or rows
+  only. Can create and fill the next N months in one go.
+- **Drag to reorder** rows within a section, or `Alt + arrow` from the keyboard.
+  The new order propagates forward.
+- **A frequency per line** — daily, weekly, bi-weekly, monthly, yearly. Amounts
+  are entered as they actually happen and every total runs on the monthly equivalent.
+- **Templates.** Six built in (Student, First apartment, Couple, Family, Freelancer,
+  Retired), applied as "add missing rows" or "replace everything". A month can be
+  saved out as a `.json` template and imported by someone else — the point being
+  friends and family start from something rather than a blank page.
+- Goal calculator takes an explicit monthly contribution, counts what is already
+  saved, and says when a target needs more per month than there actually is spare.
+
+**Scan.** The sample figures baked into a first-run month (the $9,200 / $7,200
+paychecks, $3,400 rent) are unchanged from the version already live — public
+since the tracker first shipped, and Xavier's call as before. No backends, no
+credentials.
+
+**Storage.** The key moved from `debelle.budget-tracker.v2` to `.v3`. v9 reads
+v3 first and falls back to v2, so existing saved months load on first open and
+are rewritten under the new key. Old exports import cleanly: rows without a
+frequency become Monthly, and old rollovers land as Manual so no figure shifts.
+
+**Verified.** Frequency maths, the auto-rollover chain across three months,
+drag reorder propagating forward, copy-month in all three modes, template apply
+and `.json` round-trip, and the v2 migration — all exercised in the browser with
+a clean console. Name fields measured at 1440, 1280, 1100 and 900 px: every
+built-in and template name fits without clipping.
+
+---
+
 ## v24 — 2026-09-01
 
 **The homepage map is now the particle point cloud**
