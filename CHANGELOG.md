@@ -5,6 +5,33 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v36 — 2026-09-11
+
+**Sync moved from Firestore to the Realtime Database**
+- Better fit for the shape: the tool's state *is* a JSON tree, which is what
+  RTDB stores natively. Firestore would nest it in a document with a 1 MiB
+  ceiling, and none of what Firestore is actually good at — querying,
+  indexing, compound filters — is used here. The tool fetches one blob from a
+  known path.
+- The deciding factor: RTDB has a REST endpoint, so its rules can be *proved*
+  with a single unauthenticated `curl` returning 401. Firestore has no
+  equivalently trivial check. After the volleyball database, being able to
+  verify the lock rather than trust it is worth more than the feature gap.
+- Swap was contained to the storage calls — `getDatabase`/`ref`/`get`/`set`
+  replacing `getFirestore`/`doc`/`getDoc`/`setDoc`. Reconcile, watermarks,
+  debouncing and the conflict UI are untouched. `databaseURL` is now what
+  switches the whole thing on.
+
+**A quirk worth knowing**
+- RTDB does not store empty arrays or objects, so `phases: []` reads back as
+  absent rather than empty. Verified `normalise()` survives a simulated
+  round-trip: top-level `log`, a project with no phases, and a phase with
+  emptied steps all come back as arrays, with counts and the current project
+  preserved. This is the kind of thing that silently breaks a `.push()` three
+  weeks later.
+
+---
+
 ## v35 — 2026-09-11
 
 **Project Phases: cloud sync, built but dormant**

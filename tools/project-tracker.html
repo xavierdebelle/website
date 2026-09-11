@@ -1728,11 +1728,13 @@ $('running-stop').addEventListener('click', stopTimer);
    ============================================================ */
 
 /* Public Firebase identifiers. These are NOT secrets — they are meant to
-   ship in client code, and the security rules are what actually protect
-   the data. Paste the config from the Firebase console here. */
+   ship in client code, and the database rules are what actually protect the
+   data. Paste the config from the Firebase console here.
+   databaseURL is the one the Realtime Database needs. */
 var FIREBASE = {
   apiKey:            '',
   authDomain:        '',
+  databaseURL:       '',
   projectId:         '',
   appId:             ''
 };
@@ -1742,7 +1744,7 @@ var DOC = 'project-phases';          // users/{uid}/tools/project-phases
 var META_KEY = KEY + '.meta';        // watermarks live beside the data, not in it
 
 var cloud = {
-  on: !!FIREBASE.projectId,
+  on: !!FIREBASE.databaseURL,
   status: 'signedout',               // signedout | working | synced | conflict | error
   uid: null,
   at: 0,                             // when we last completed a sync
@@ -1786,13 +1788,13 @@ function loadSDK() {
   return Promise.all([
     import(SDK + 'firebase-app.js'),
     import(SDK + 'firebase-auth.js'),
-    import(SDK + 'firebase-firestore.js')
+    import(SDK + 'firebase-database.js')
   ]).then(function (mods) {
     var app = mods[0], auth = mods[1], db = mods[2];
     var application = app.initializeApp(FIREBASE);
     cloud.fb = {
       auth: auth.getAuth(application),
-      db: db.getFirestore(application),
+      db: db.getDatabase(application),
       a: auth,
       f: db
     };
@@ -1802,7 +1804,7 @@ function loadSDK() {
 
 function docRef() {
   var f = cloud.fb.f;
-  return f.doc(cloud.fb.db, 'users', cloud.uid, 'tools', DOC);
+  return f.ref(cloud.fb.db, 'users/' + cloud.uid + '/tools/' + DOC);
 }
 
 /* ---- the three way decision ----------------------------------------
@@ -1836,7 +1838,7 @@ function pushNow() {
   if (!cloud.uid) return Promise.resolve();
   var stamp = Date.now();
   var f = cloud.fb.f;
-  return f.setDoc(docRef(), {
+  return f.set(docRef(), {
     data: JSON.parse(JSON.stringify(state)),
     updatedAt: stamp,
     device: deviceName()
@@ -1848,8 +1850,8 @@ function pushNow() {
 
 function pullNow() {
   var f = cloud.fb.f;
-  return f.getDoc(docRef()).then(function (snap) {
-    return snap.exists() ? snap.data() : null;
+  return f.get(docRef()).then(function (snap) {
+    return snap.exists() ? snap.val() : null;
   });
 }
 
@@ -2023,7 +2025,10 @@ window.__app = {
     meta: meta,
     setMeta: setMeta,
     cloud: function () { return cloud; },
-    deviceName: deviceName
+    deviceName: deviceName,
+    // Realtime Database drops empty arrays and objects, so anything coming
+    // back off the wire must survive normalise(). Testable from here.
+    normalise: normalise
   }
 };
 })();
