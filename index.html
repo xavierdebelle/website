@@ -106,116 +106,6 @@
   }
   .hud--top a:hover { background: var(--volt); border-color: var(--volt); color: var(--ink); }
 
-  /* ============ READOUT ============ */
-  /* A card laid on the field, not a drawer over it. It appears where it is,
-     with no slide and no scrim, so the cloud stays visible and still takes
-     a drag or a zoom while you read. */
-
-  .readout {
-    position: fixed;
-    z-index: 60;
-    right: var(--gut);
-    top: 50%;
-    transform: translateY(-50%);
-    width: min(400px, 36vw);
-    max-height: min(72vh, 660px);
-    background: var(--paper);
-    color: var(--ink);
-    border: var(--edge) solid var(--volt);
-    display: none;
-    flex-direction: column;
-    overflow: hidden;
-  }
-  .readout.is-open { display: flex; animation: readoutIn .14s ease-out; }
-  @keyframes readoutIn { from { opacity: 0 } to { opacity: 1 } }
-
-  .readout__bar {
-    flex: none;
-    background: var(--ink);
-    color: var(--paper);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 11px 12px 11px 18px;
-    gap: 14px;
-  }
-  .readout__tag {
-    font-family: var(--mono);
-    font-size: 10px;
-    letter-spacing: .24em;
-    text-transform: uppercase;
-    color: var(--volt);
-  }
-  .readout__x {
-    width: 30px; height: 30px;
-    flex: none;
-    background: transparent;
-    border: 2px solid var(--paper);
-    color: var(--paper);
-    font-size: 15px;
-    font-weight: 900;
-    cursor: pointer;
-    line-height: 1;
-  }
-  .readout__x:hover { background: var(--volt); border-color: var(--volt); color: var(--ink); }
-
-  .readout__body {
-    padding: 22px 20px 26px;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-  }
-
-  .readout__body h2 {
-    font-weight: 900;
-    text-transform: uppercase;
-    letter-spacing: -0.04em;
-    line-height: .9;
-    font-size: clamp(24px, 2.8vw, 34px);
-    margin: 0 0 14px;
-  }
-
-  .readout__rule { height: var(--edge); background: var(--ink); margin: 0 0 16px; }
-
-  .readout__body p {
-    font-size: 14px;
-    line-height: 1.58;
-    margin: 0 0 14px;
-  }
-
-  .readout__facts {
-    list-style: none;
-    padding: 0;
-    margin: 18px 0;
-    border-top: 2px solid var(--ink);
-  }
-  .readout__facts li {
-    display: flex;
-    gap: 14px;
-    padding: 9px 0;
-    border-bottom: 2px solid #e2e2e2;
-    font-size: 12.5px;
-    line-height: 1.45;
-  }
-  .readout__facts b {
-    font-family: var(--mono);
-    font-size: 9px;
-    letter-spacing: .16em;
-    text-transform: uppercase;
-    color: #666;
-    min-width: 78px;
-    flex: none;
-    padding-top: 2px;
-  }
-
-  .readout__acts { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 20px; }
-  .readout__acts .btn {
-    border-color: var(--ink); color: var(--ink);
-    padding: 11px 15px; font-size: 11px; letter-spacing: .1em;
-  }
-  .readout__acts .btn:hover { background: var(--ink); border-color: var(--ink); color: var(--paper); }
-  .readout__acts .btn--solid { background: var(--volt); border-color: var(--volt); color: var(--ink); }
-  .readout__acts .btn--solid:hover { background: var(--ink); color: var(--paper); }
-
   /* ============ INDEX (fallback / list view) ============ */
 
   .index {
@@ -270,13 +160,6 @@
       justify-content: center;
       padding: 0 12px 16px;
     }
-    .readout {
-      left: var(--gut); right: var(--gut);
-      top: auto; bottom: 74px;
-      transform: none;
-      width: auto;
-      max-height: 54vh;
-    }
 
     .ctl { width: 38px; height: 38px; font-size: 14px; }
     .ctl--wide { width: auto; padding: 0 12px; font-size: 10px; }
@@ -284,7 +167,6 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .readout.is-open { animation: none; }
   }
 </style>
 </head>
@@ -294,7 +176,7 @@
 
 <!-- ============ THE MAP ============ -->
 <canvas id="c" role="img"
-        aria-label="Interactive mind map of this site. Tap the mark to open it, then tap a node to read about it. A full text version is linked at the top of the page."></canvas>
+        aria-label="Interactive mind map of this site. Tap the mark to open it, then tap a node to open it. A full text version is linked at the top of the page."></canvas>
 
 <!-- ============ HUD ============ -->
 <header class="hud hud--brand">
@@ -311,8 +193,8 @@
 
 <div class="hud hud--hint" aria-hidden="true">
   <b>Tap the mark</b> to open the map &middot; twice to invert it<br>
-  <b>Click</b> a node to read it &middot; <b>Drag</b> to move &middot; <b>Scroll</b> to zoom<br>
-  <span style="opacity:.5">v28</span>
+  <b>Click</b> a node to open it &middot; <b>Drag</b> to move &middot; <b>Scroll</b> to zoom<br>
+  <span style="opacity:.5">v29</span>
 </div>
 
 <div class="hud hud--ctl">
@@ -322,14 +204,6 @@
   <button class="ctl ctl--wide" id="btnReset" type="button">Recentre</button>
 </div>
 
-<!-- ============ READOUT ============ -->
-<aside class="readout" id="readout" role="dialog" aria-labelledby="readoutTitle" aria-hidden="true">
-  <div class="readout__bar">
-    <span class="readout__tag" id="readoutTag">Node</span>
-    <button class="readout__x" id="readoutX" type="button" aria-label="Close">&times;</button>
-  </div>
-  <div class="readout__body" id="readoutBody"></div>
-</aside>
 
 <!-- ============ TEXT INDEX (accessible fallback) ============ -->
 <section class="index" id="index-view" aria-label="Text index of the whole site">
@@ -380,97 +254,25 @@
    Editing this invalidates the baked layout below, which regrows on next load.
    ========================================================================== */
 const MAP = [
-  { label:"Work",
-    tag:"Three Lanes", title:"Work",
-    body:["Weddings with the family studio, brands with 333, and buildings on the side. Same instinct every time — find the thing nobody framed properly, then do the work."],
-    facts:[["de Belle Photo","Weddings, the family studio"],["333 Photo","Commercial photo &amp; video"],["Real Estate","Buying, renovating, holding"]],
-    acts:[["All work","work.html",1]],
-    children:[
-      { label:"Real Estate", href:"work.html#real-estate",
-        tag:"Building Something", title:"Real<br>Estate",
-        body:["Buying a duplex, renovating it, and learning the trade the expensive way — by doing it.",
-              "Cameras taught me to see a space before it exists. Property is the same instinct with a longer exposure: find the thing nobody framed properly, do the work, hold it.",
-              "This branch is young and it is meant to grow."],
-        facts:[["Stage","Duplex — acquire &amp; renovate"],["Market","Montreal"],["Direction","Long hold, hands on"],["Status","In progress"]],
-        acts:[["Read more","work.html#real-estate",0]] },
+  { label:"Work", children:[
+      { label:"Real Estate",    href:"work.html#real-estate" },
+      { label:"333 Photo",      href:"https://333photo.com/", external:true },
+      { label:"De Belle Photo", href:"https://debellephotography.com/", external:true } ]},
 
-      { label:"333 Photo", href:"https://333photo.com/", external:true,
-        tag:"Commercial Studio", title:"333<br>Photo",
-        body:["The commercial side. Photo, video, design, web and marketing out of one team, for brands that would rather not juggle five vendors.",
-              "No-bull approach: we work as an extension of your team, not as an agency holding you at arm’s length. Fashion, product, lifestyle, travel — whatever the brief actually needs."],
-        facts:[["Discipline","Commercial photo &amp; video"],["Also","Branding, web, marketing"],["Based","Montreal, QC"],["Handle","@333mtl"]],
-        acts:[["Visit 333photo.com","https://333photo.com/",1]] },
+  { label:"Tools", children:[
+      { label:"Portfolio Makers", href:"tools.html#portfolio" },
+      { label:"De Belle Tools",   href:"tools.html#debelle" },
+      { label:"Personal",         href:"tools.html#personal" },
+      { label:"Events",           href:"tools.html#events" },
+      { label:"Art",              href:"tools.html#art" } ]},
 
-      { label:"De Belle Photo", href:"https://debellephotography.com/", external:true,
-        tag:"Wedding Photography", title:"de Belle<br>Photography",
-        body:["The family studio, and the room I grew up in. One of Montreal’s originals — thirty years deep and past three thousand weddings.",
-              "I shoot and I film: documentary in approach, editorial in finish. The job is not to pose a day into something it wasn’t. It’s to be close enough that the real thing lands on camera."],
-        facts:[["Role","Photographer &amp; Cinematographer"],["Based","Montreal, QC"],["Travel","Destination weddings"],["Since","30+ years as a studio"]],
-        acts:[["Visit debellephotography.com","https://debellephotography.com/",1],["Tools I built for it","tools.html#debelle",0]] } ]},
+  { label:"Connect", children:[
+      { label:"Email",     href:"mailto:xavier@debellephotography.com" },
+      { label:"Instagram", href:"https://www.instagram.com/xavierdebelle/", external:true } ]},
 
-  { label:"Tools",
-    tag:"The Workshop", title:"Tools",
-    body:["Everything I’ve built that runs in a browser, grouped by what it actually does for me. None of them need an install."],
-    facts:[["Portfolio Makers","Laying images out, and getting them off the screen"],["de Belle Tools","The studio machinery"],["Personal","Built for me, not a client"],["Events","One-off builds for real gatherings"],["Art","No brief, no client, no deliverable"]],
-    acts:[["All tools","tools.html",1]],
-    children:[
-      { label:"Portfolio Makers", href:"tools.html#portfolio",
-        tag:"Portfolio", title:"Portfolio<br>Makers",
-        body:["Two for Instagram — settling a grid before it posts, and building a carousel that reads as one picture — then three ways to lay images out and get them off the screen.",
-              "All of them run in the browser, all of them export."],
-        facts:[["Feed Planner","Grid and carousels, ready to post"],["Carousel Planner","Slides that read as one picture"],["Portfolio Grid","Clean, even grid — export PNG / JPEG / PDF"],["Portfolio Masonry","Every image keeps its own shape"],["FreeCanvas","Drag, resize, place anywhere"]],
-        acts:[["See them all","tools.html#portfolio",1]] },
-
-      { label:"De Belle Tools", href:"tools.html#debelle",
-        tag:"Client Ops", title:"de Belle<br>Photography<br>Tools",
-        body:["The studio machinery — everything a couple touches between booking the day and taking delivery of it."],
-        facts:[["Package Builder","Every way to remember your day"],["Video Corrections","Structured edit notes from clients"],["Wedding Schedule","Timeline builder for the day"]],
-        acts:[["See them all","tools.html#debelle",1]] },
-
-      { label:"Personal", href:"tools.html#personal",
-        tag:"Just For Me", title:"Personal",
-        body:["Tools I built for me rather than for a client or a shoot. Small, private, and load-bearing."],
-        facts:[["Budget Tracker","Planned vs actual, and what you have saved"],["Idea Bank","Capture, score, then actually ship"],["Project Phases","Phases, steps, and where the hours went"]],
-        acts:[["See them all","tools.html#personal",1]] },
-
-      { label:"Events", href:"tools.html#events",
-        tag:"Gatherings", title:"Events",
-        body:["One-off builds for real gatherings. Made for a specific day, a specific crowd, and left standing afterward."],
-        facts:[["Wedding Activities","Xavier &amp; Maria — guest activity guide"],["Volley &amp; BBQ","RSVP, potluck slots, weekly history"]],
-        acts:[["See them all","tools.html#events",1]] },
-
-      { label:"Art", href:"tools.html#art",
-        tag:"No Brief", title:"Art &amp;<br>Experiments",
-        body:["Generative pieces. No brief, no client, no deliverable — which is exactly the point.",
-              "Open one full screen and leave it running."],
-        facts:[["Liquid Silver","Flowing metal, generative"],["Organic Loops","Looping organic motion"],["Neural Mind Map","A map grown, not placed"]],
-        acts:[["See them all","tools.html#art",1]] } ]},
-
-  { label:"Connect",
-    tag:"Say Hello", title:"Connect",
-    body:["Two ways through. Email gets read; Instagram is where the work actually lives day to day."],
-    facts:[["Email","xavier@debellephotography.com"],["Instagram","@xavierdebelle"]],
-    acts:[["Email me","mailto:xavier@debellephotography.com",1],["Instagram","https://www.instagram.com/xavierdebelle/",0]],
-    children:[
-      { label:"Email", href:"mailto:xavier@debellephotography.com",
-        tag:"Direct", title:"Email",
-        body:["The reliable one. Tell me what the day is, roughly when, and where — that’s enough to start."],
-        facts:[["Address","xavier@debellephotography.com"]],
-        acts:[["Email me","mailto:xavier@debellephotography.com",1]] },
-
-      { label:"Instagram", href:"https://www.instagram.com/xavierdebelle/", external:true,
-        tag:"Day To Day", title:"Instagram",
-        body:["Where the work goes as it happens — weddings, commercial, travel, and whatever I’m building that week."],
-        facts:[["Handle","@xavierdebelle"]],
-        acts:[["Open Instagram","https://www.instagram.com/xavierdebelle/",1]] } ]},
-
-  { label:"About",
-    tag:"Who", title:"Professional<br>Fun Maker",
-    body:["Photographer and cinematographer out of Montreal. I romanticize life for a living, which is a lighter way of saying I spend a lot of attention on moments other people walk past.",
-          "When I’m not shooting I build things — mostly small browser tools that fix a problem I hit that week and then quietly become permanent. Every one of them is on this site.",
-          "Weddings with de Belle. Brands with 333. Buildings on the side. Same instinct, different exposure."],
-    facts:[["Base","Montreal, QC"],["Shoots","Weddings, commercial, travel"],["Builds","Browser tools, one-page apps"],["Also","Buying and renovating property"]],
-    acts:[["Instagram","https://www.instagram.com/xavierdebelle/",1],["Email me","mailto:xavier@debellephotography.com",0]] }
+  /* a leaf anchor: no children. The work page opens on the three lanes, which
+     is the closest thing this site has to an about page.                    */
+  { label:"About", href:"work.html" }
 ];
 
 /* ==========================================================================
@@ -1743,7 +1545,7 @@ function openMap(now){
 }
 function closeMap(now){
   if(!mapOpen) return;
-  mapOpen = false; selected = -1; onNodeClear();
+  mapOpen = false; selected = -1;
   reconcile(now);
 }
 function toggleAnchor(ni, now){
@@ -2260,14 +2062,14 @@ function handleTap(x, y, now){
     }
     return;
   }
-  if(!mapOpen){ selected = -1; onNodeClear(); return; }
+  if(!mapOpen){ selected = -1; return; }
   const best = near;
-  if(best < 0){ selected = -1; onNodeClear(); return; }
+  if(best < 0){ selected = -1; return; }
 
   selected = best;
   fireNode(best, now);                       // tapping any node fires it
   if(nodes[best].kind === 1 && nodes[best].hasKids) toggleAnchor(best, now);
-  onNodeTap(best);                           // and the page opens its panel
+  onNodeTap(best);                           // and the page follows its link
 }
 
 /* ==========================================================================
@@ -2301,7 +2103,7 @@ window.addEventListener("orientationchange", function(){ setTimeout(resize, 120)
 /* ==========================================================================
    24 · PAGE WIRING
    The map is one canvas; everything else on the page is ordinary DOM. This
-   is the seam between them: node taps open the detail panel, and the HUD
+   is the seam between them: node taps follow their link, and the HUD
    buttons drive the same camera the pointer does.
    ========================================================================== */
 
@@ -2320,69 +2122,28 @@ function flatData(){
 }
 const DATA = flatData();
 
-/* ---- readout ------------------------------------------------------------
-   Opens where it is, with no slide and no scrim, so the map behind it stays
-   readable and still responds to a drag. Selecting another node swaps the
-   contents; clearing the selection closes it.                              */
-const readout = document.getElementById("readout");
-const rBody   = document.getElementById("readoutBody");
-const rTag    = document.getElementById("readoutTag");
-const rX      = document.getElementById("readoutX");
-let lastFocus = null;
+/* ---- node destinations --------------------------------------------------
+   The map no longer explains itself. A node goes where its entry in the text
+   index goes, in a new tab, so the map is never navigated away from. Parent
+   nodes are structure: they expand and collapse rather than lead anywhere. */
+function goTo(d){
+  if(!d || !d.href) return;
 
-function openReadout(d){
-  if(!d) return;
-  if(!readout.classList.contains("is-open")) lastFocus = document.activeElement;
-  rTag.textContent = d.tag || "Node";
+  /* mail is the one case a new tab does not help — most browsers hand the
+     address to a mail client and leave an empty tab behind. */
+  if(/^mailto:/i.test(d.href)){ window.location.href = d.href; return; }
 
-  let html = '<h2 id="readoutTitle">' + (d.title || d.label) + '</h2>' +
-             '<div class="readout__rule"></div>';
-  (d.body || []).forEach(function(x){ html += '<p>' + x + '</p>'; });
-
-  if(d.facts && d.facts.length){
-    html += '<ul class="readout__facts">';
-    d.facts.forEach(function(f){
-      html += '<li><b>' + f[0] + '</b><span>' + f[1] + '</span></li>';
-    });
-    html += '</ul>';
-  }
-
-  if(d.acts && d.acts.length){
-    html += '<div class="readout__acts">';
-    d.acts.forEach(function(a){
-      const ext = /^https?:/.test(a[1]);
-      html += '<a class="btn' + (a[2] ? " btn--solid" : "") + '" href="' + a[1] + '"' +
-              (ext ? ' target="_blank" rel="noopener"' : "") + '>' + a[0] +
-              (ext ? " &#8599;" : "") + '</a>';
-    });
-    html += '</div>';
-  }
-
-  rBody.innerHTML = html;
-  rBody.scrollTop = 0;
-  readout.classList.add("is-open");
-  readout.setAttribute("aria-hidden", "false");
+  const a = document.createElement("a");
+  a.href = d.href;
+  a.target = "_blank";
+  a.rel = "noopener";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
 }
 
-function closeReadout(returnFocus){
-  if(!readout.classList.contains("is-open")) return;
-  readout.classList.remove("is-open");
-  readout.setAttribute("aria-hidden", "true");
-  if(returnFocus && lastFocus && lastFocus.focus) lastFocus.focus();
-  lastFocus = null;
-}
-
-rX.addEventListener("click", function(){ closeReadout(true); });
-
-/* Called by handleTap once the engine settles what was hit. Parent nodes still
-   expand and collapse in the map; the readout carries their story either way. */
 function onNodeTap(i){
-  openReadout(DATA[i]);
-}
-
-/* The engine clears its selection on empty space, and when the map closes. */
-function onNodeClear(){
-  closeReadout(false);
+  goTo(DATA[i]);
 }
 
 /* ---- camera controls ---------------------------------------------------- */
@@ -2419,8 +2180,7 @@ document.getElementById("skipLink").addEventListener("click", function(){ showIn
 
 document.addEventListener("keydown", function(e){
   if(e.key !== "Escape") return;
-  if(indexView.classList.contains("is-on")){ showIndex(false); return; }
-  closeReadout(true);
+  if(indexView.classList.contains("is-on")) showIndex(false);
 });
 
 

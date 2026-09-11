@@ -5,7 +5,51 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v29 — 2026-09-11
+
+**What's new** · The map
+### Click A Node,<br>Go There
+The map no longer explains itself. Clicking a node takes you straight to the
+thing it names, in a new tab, so the map stays where it is behind you. The
+text index still lists everything in plain form for anyone who wants it.
+
+**The map navigates instead of describing**
+- The readout card is gone: its markup, styles and wiring, plus the node copy
+  that fed it. Node data is now label, destination and structure only.
+- Leaves open their destination in a new tab with `rel="noopener"`. Email is
+  the exception — a new tab for `mailto:` strands an empty one in most
+  browsers, so it goes direct.
+- Parents (Work, Tools, Connect) are structure: they still expand and collapse
+  rather than lead anywhere.
+- **About** had no destination once the panel went, since the site has no
+  about page. It points at `work.html`, which opens on the three lanes.
+
+**The What's New page builds itself**
+- `changelog.html` is now generated from this file by
+  `scripts/update_changelog.py`, so the two cannot drift.
+- Only what an entry explicitly marks with a `**What's new**` block is
+  published. A release with nothing worth announcing never reaches the page,
+  and the build-log voice and the "Outstanding" sections never leak.
+- Backfilled that block into the thirteen releases worth announcing.
+- Added to the skill as a workflow step and to its pre-push gate via
+  `--check`. The skill's map instructions were rewritten too: adding a tool to
+  an existing category now needs no map edit at all.
+
+**Checked before publishing**
+- All eleven leaf destinations match their text-index entry. Console silent,
+  every page 200, readout fully removed with no dead selectors or comments.
+
+---
+
 ## v28 — 2026-09-11
+
+**What's new** · The site
+### This Page,<br>And A Quieter Map
+This page. Everything that changes on the site now gets written up here in
+plain language, newest first.
+
+The map also stopped explaining itself — clicking a node used to slide a panel
+over it. Now it just takes you where you were going.
 
 **The map's readout replaced the slide-in panel**
 - Clicking a node no longer pushes a full-height drawer in from the right over
@@ -38,6 +82,11 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 ---
 
 ## v27 — 2026-09-11
+
+**What's new** · New tool · [tools.html#personal]
+### Project Phases
+A phase tracker with a time log. Break a project into phases, move through
+them, and keep an honest record of where the hours actually went.
 
 **New tool — Project Phases (Personal, 16th build)**
 
@@ -74,6 +123,12 @@ driving the real UI in Chromium.
 ---
 
 ## v26 — 2026-09-10
+
+**What's new** · Rebuilt · [tools.html#personal]
+### Budget Tracker,<br>Twice Over
+Assets, per-line frequencies and templates, so it handles money that doesn't
+arrive in neat monthly lumps. Then a second pass so the whole thing reads
+properly on a phone rather than asking you to pinch at a spreadsheet.
 
 **Budget Tracker v10 — reads properly on a phone**
 - The tool had no viewport tag, so phones laid it out at ~980px and shrank the
@@ -154,6 +209,16 @@ built-in and template name fits without clipping.
 
 ## v24 — 2026-09-01
 
+**What's new** · New homepage · [index.html]
+### The Map Became<br>A Point Cloud
+The homepage mind map is no longer boxes joined by lines. It's a single field
+of particles that forms the nodes and the links themselves, with the mark held
+sharp at the centre while everything around it drifts.
+
+The layout is grown rather than placed -- by space colonization, the algorithm
+behind tree branching and leaf venation -- and then kept, so it doesn't
+rearrange itself every time you open it.
+
 **The homepage map is now the particle point cloud**
 - The old DOM map — absolutely-positioned node boxes, an SVG wire layer and a
   spring simulation — is gone, not layered over. No `#stage`, `#world`,
@@ -200,6 +265,11 @@ built-in and template name fits without clipping.
 ---
 
 ## v23 — 2026-09-01
+
+**What's new** · New piece · [tools.html#art]
+### Neural<br>Mind Map
+The generative piece the homepage grew out of. Added to Art, then rebuilt so
+its structure is grown rather than positioned by hand.
 
 **Neural Mind Map updated to v5**
 - The layout is now **grown rather than placed**. A space-colonization grower
@@ -257,6 +327,15 @@ built-in and template name fits without clipping.
 ---
 
 ## v21 — 2026-09-03
+
+**What's new** · Fixes · [tools.html#portfolio]
+### Carousel Planner<br>On A Phone
+Several rounds of it, honestly. Phones are unforgiving about memory, and a
+carousel of full-resolution photos is exactly the thing they give up on.
+
+- Fixed views that were unusable on a small screen
+- Stopped the page reloading itself mid-edit
+- Slides past the fifth now behave -- the fix that needed three attempts
 
 **Carousel Planner v10 — the slides past the fifth, actually fixed**
 Built from v8. v9 guessed at this and guessed wrong; this time the bug was
@@ -428,6 +507,12 @@ thumbnails, which is why it never had the problem.
 ---
 
 ## v16 — 2026-09-01
+
+**What's new** · Rebuilt · [tools.html#portfolio]
+### Feed Planner,<br>Properly Portable
+Carousels, export post by post, and enough memory discipline that a phone can
+hold a full grid without dropping it. Drag to reorder now works with a finger,
+which it never did.
 
 **Feed Planner updated to v12 — IndexedDB, and sharper exports**
 
@@ -804,6 +889,12 @@ budget: it discards the tab and reloads.
 
 ## v9 — 2026-08-27
 
+**What's new** · New tool · [tools.html#personal]
+### Idea Bank
+Dump it, rank it, ship it. Every idea scored on impact, confidence and ease,
+plotted on a matrix, then pushed across a board until it's done or honestly
+parked.
+
 **New tool**
 - **Idea Bank** added to Personal, after the Budget Tracker. Capture ideas
   without judging them, score each on impact × confidence × ease, see them
@@ -826,6 +917,11 @@ budget: it discards the tab and reloads.
 ---
 
 ## v8 — 2026-08-26
+
+**What's new** · Updated · [tools.html#events]
+### Volley &amp; BBQ
+The Monday night zine now notices who's coming to eat but hasn't claimed a
+dish, and keeps that in each week's history. Gently accusatory, as intended.
 
 **Volley & BBQ Zine updated to v3**
 - Adds "no dish" tracking: BBQ attendees who haven't claimed a potluck slot
@@ -877,6 +973,11 @@ budget: it discards the tab and reloads.
 
 ## v6 — 2026-08-25
 
+**What's new** · New tool · [tools.html#portfolio]
+### Carousel Planner
+Build an Instagram carousel that reads as one picture. Photos span across
+slides, snap to the edges, and export ready to post.
+
 **New tool**
 - **Carousel Planner** added to Portfolio Makers, directly after Feed Planner.
   Builds seamless Instagram carousels — photos span across slides, snap to the
@@ -895,6 +996,12 @@ budget: it discards the tab and reloads.
 ---
 
 ## v5 — 2026-08-25
+
+**What's new** · Opened up · [tools.html]
+### Every Tool,<br>Public
+The whole workshop is on the site now rather than half of it. Sixteen builds
+across five categories, all running in the browser, none of them needing an
+install.
 
 **All tools public**
 - The four tools held back in v4 are now published: `package-builder`,
@@ -917,6 +1024,11 @@ budget: it discards the tab and reloads.
 ---
 
 ## v4 — 2026-08-25
+
+**What's new** · Live
+### The Site<br>Went Up
+First public version. The map, the tools hub and the work page, in black,
+white and one yellow.
 
 **Going live**
 - Set up for deployment to GitHub Pages. Every push to `main` publishes.
@@ -969,6 +1081,11 @@ budget: it discards the tab and reloads.
 ---
 
 ## v1 — 2026-08-10
+
+**What's new** · Built
+### Day One
+An interactive mind map as the front door, a hub for everything I'd built, and
+a page for the three things I actually spend my life on.
 
 Initial build.
 
