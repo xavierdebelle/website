@@ -5,6 +5,24 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## Verified — 2026-09-11
+
+**Project Phases sync is confirmed working end to end**
+Closing the items left open across v35–v39.
+
+- `xavierdebelle.github.io` is on the authorised domains list.
+- Rules are published and locked to a single uid. Re-checked from outside:
+  anonymous requests to the root, `/users`, Xavier's own node, a stranger's
+  node and a write probe all return `401 Permission denied`. His own node
+  refusing an unauthenticated caller is the point — access needs the account,
+  not knowledge of the path.
+- Xavier confirms sign-in and sync work on the live site.
+- The pilot is therefore done: local-first behaviour for visitors, private
+  cloud sync for one account, conflict detection rather than last-write-wins,
+  and failures that explain themselves.
+
+---
+
 ## v39 — 2026-09-11
 
 **Sync is now private to one account**
