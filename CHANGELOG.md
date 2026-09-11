@@ -5,6 +5,66 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v34 — 2026-09-11
+
+**What's new** · Updated piece · [tools.html#art]
+### The Map Now Grows<br>This Site
+The Neural Mind Map used to branch into placeholder words — reading, cooking,
+a cabin somewhere. It now grows the shape of this site instead: the work, the
+tools, the ways to get in touch. The piece and the thing it describes are
+finally the same object.
+
+- A branch that leads somewhere can be opened. Tap once to arm it, tap again
+  to go, so nothing launches from a stray finger.
+- Every node still fires when you tap it, and the signal still takes its time
+  reaching the other end.
+
+**Landed**
+
+- `tools/neural-mind-map.html` replaced with the v10 engine. Same slug, same
+  URL, so any shared link still works.
+- Content is now the real site structure — Work, Tools, Connect, About,
+  Personal — grown and baked for both the portrait and landscape arrangements.
+- Nodes carry an optional link. A node opens only when its box is ticked and
+  the address is genuine http(s); `javascript:`, `data:` and other schemes are
+  refused, so a stored address can never become script.
+- Opening takes two deliberate taps with a 4.5s arming window, cleared when
+  the map closes. An earlier build keyed this off "is this node selected",
+  which meant a node left selected opened on the very next tap — fixed before
+  it shipped.
+- Card copy corrected: it promised "double-click to flip the light", which
+  this build no longer does. It now describes what the piece actually does.
+- Homepage untouched beyond the footer version marker — Xavier asked for the
+  art piece only, and the map on `index.html` is a separate build.
+
+**Disclosed**
+
+- The build carries a client-side edit mode behind the password
+  `xavierdebelle`. This repo is public, so that string is now public
+  permanently, git history included. It guards nothing shared: edit mode
+  writes only to the visitor's own browser storage and cannot reach this
+  repo, any backend, or what anyone else sees. The real cost is the string
+  itself — if it is reused anywhere that matters, change it there.
+- `scan_tool.py` reported this file clean and missed both facts. Its password
+  pattern only matches `ADMIN_PASSWORD`/`adminPassword` (this one is
+  `EDIT_PASS`), and its storage-key pattern rejects keys containing `/` (this
+  one is `neural-mind-map/v9`). Worth widening before the next tool relies on
+  it.
+
+**Verified**
+
+- Loaded from the local server and used: drag, wheel zoom, tap-to-fire,
+  anchors expanding and collapsing, the mark opening and closing the map.
+- Link flow exercised end to end with `window.open` stubbed: first tap arms
+  and opens nothing, second opens once, arming expires after 4.5s, a node
+  without a link never opens anything.
+- Bake & export rebuilt a complete HTML file with `fetch` blocked, to prove
+  the `file://` path; the exported file was then booted in an iframe and ran.
+- No console output on load. 23 nodes, 26 links, no regrow at load, ~1.1ms a
+  frame at 1280×820.
+
+---
+
 ## v33 — 2026-09-11
 
 **What's new** · Project Phases · [tools.html#personal]

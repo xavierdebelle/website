@@ -5,15 +5,79 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>Neural Mind Map</title>
 <style>
+  :root{--ui:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Helvetica,Arial,sans-serif}
   html,body{margin:0;padding:0;height:100%;width:100%;background:#000;overflow:hidden;
             overscroll-behavior:none;-webkit-tap-highlight-color:transparent}
   canvas{display:block;position:fixed;top:0;left:0;width:100%;height:100%;
          touch-action:none;cursor:grab;background:#000}
   canvas.dragging{cursor:grabbing}
+
+  /* Edit mode chrome. Deliberately plain: it belongs to the editor, not to
+     the piece, and only ever appears while editing. */
+  #gate{position:fixed;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;
+        background:rgba(10,10,12,.72);backdrop-filter:blur(3px)}
+  /* an id selector outranks the UA's [hidden] rule, so say it explicitly */
+  #gate[hidden],#ed[hidden]{display:none}
+  #gateForm{background:#f6f6f4;color:#16171a;padding:20px 20px 16px;border-radius:4px;
+            width:min(300px,86vw);box-shadow:0 18px 50px rgba(0,0,0,.5)}
+  .gtt{font:600 10px/1 var(--ui);letter-spacing:.18em;opacity:.55;margin-bottom:12px}
+  #gatePass{width:100%;box-sizing:border-box;font:400 13px/1 var(--ui);padding:8px 9px;
+            border:1px solid #cfcfc9;border-radius:3px;background:#fff;color:#16171a}
+  .gtr{display:flex;gap:7px;margin-top:11px}
+  .gtm{font:400 11px/1.4 var(--ui);color:#a8383a;margin-top:9px;min-height:15px}
+
+  #ed{position:fixed;z-index:19;left:14px;top:14px;width:212px;
+      background:#f6f6f4;color:#16171a;border-radius:4px;padding:13px 13px 11px;
+      box-shadow:0 12px 34px rgba(0,0,0,.28);font:400 11px/1.45 var(--ui)}
+  .edhd{font-weight:600;font-size:9.5px;letter-spacing:.18em;opacity:.5;margin-bottom:9px}
+  .edsel{font-weight:600;font-size:12px;margin-bottom:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .edf{display:block;font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;opacity:.5;margin-bottom:8px}
+  .edf input{display:block;width:100%;box-sizing:border-box;margin-top:3px;
+             font:400 12px/1 var(--ui);padding:6px 7px;border:1px solid #cfcfc9;
+             border-radius:3px;background:#fff;color:#16171a;text-transform:none;letter-spacing:0}
+  .edck{display:flex;align-items:center;gap:6px;font-size:11px;opacity:.8;margin-bottom:11px}
+  .edck input{margin:0}
+  .edrow{display:flex;gap:6px;margin-bottom:7px}
+  #ed button,.gtr button{flex:1;font:500 10.5px/1 var(--ui);padding:7px 4px;cursor:pointer;
+          border:1px solid #cfcfc9;border-radius:3px;background:#fff;color:#16171a;white-space:nowrap}
+  #ed button:hover:not(:disabled),.gtr button:hover{background:#ebebe6}
+  #ed button:disabled{opacity:.38;cursor:default}
+  #edDel:not(:disabled){color:#a8383a}
+  .edst{font-size:10px;opacity:.62;min-height:14px;margin-top:4px}
+  .edhint{font-size:9.5px;opacity:.4;margin-top:5px}
+  @media (max-width:460px){ #ed{width:178px;left:9px;top:9px;padding:11px} }
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
+
+<div id="gate" hidden>
+  <form id="gateForm" autocomplete="off">
+    <div class="gtt">EDIT MODE</div>
+    <input id="gatePass" type="password" placeholder="password" spellcheck="false" autocomplete="off">
+    <div class="gtr"><button type="submit">Enter</button><button type="button" id="gateCancel">Cancel</button></div>
+    <div class="gtm" id="gateMsg"></div>
+  </form>
+</div>
+
+<div id="ed" hidden>
+  <div class="edhd">EDIT MODE</div>
+  <div class="edsel" id="edSel">tap a node to select it</div>
+  <label class="edf">Label<input id="edLabel" type="text" spellcheck="false" autocomplete="off" disabled></label>
+  <label class="edf">Link<input id="edUrl" type="text" placeholder="https://…" spellcheck="false" autocomplete="off" disabled></label>
+  <label class="edck"><input id="edExt" type="checkbox" disabled> opens this link</label>
+  <div class="edrow">
+    <button id="edAddChild" disabled>+ Child</button>
+    <button id="edAddBranch">+ Branch</button>
+    <button id="edDel" disabled>Delete</button>
+  </div>
+  <div class="edrow">
+    <button id="edExport">Bake &amp; export</button>
+    <button id="edRevert">Revert</button>
+  </div>
+  <div class="edst" id="edStatus"></div>
+  <div class="edhint">double-click the mark to save &amp; leave</div>
+</div>
 <script>
 "use strict";
 (function(){
@@ -25,38 +89,38 @@
    four deep beside a bare one is what stops the map reading as a diagram.
    Editing this invalidates the baked layout below, which regrows on next load.
    ========================================================================== */
+/* <<<MAP>>> */
 const MAP = [
   { label:"Work", children:[
-      { label:"Photography", children:[
-          { label:"Weddings", children:[ { label:"de Belle" } ] },
-          { label:"Editorial" } ]},
-      { label:"Commercial", children:[ { label:"333 Photo" } ] },
-      { label:"Direction" },
-      { label:"Post", children:[ { label:"Colour" } ] },
-      { label:"Clients" } ]},
+      { label:"Real Estate" },
+      { label:"333 Photo" },
+      { label:"De Belle Photo" } ]},
 
-  { label:"Personal", children:[
-      { label:"Reading" },
-      { label:"Training", children:[ { label:"Running" } ] },
-      { label:"Music" } ]},
+  { label:"Tools", children:[
+      { label:"Portfolio Makers" },
+      { label:"De Belle Tools" },
+      { label:"Personal" },
+      { label:"Events" },
+      { label:"Art" } ]},
 
-  { label:"Family", children:[
-      { label:"Sundays" },
-      { label:"Travel", children:[ { label:"Patagonia" } ] },
-      { label:"Archive", children:[ { label:"Letters" }, { label:"Recipes" } ] } ]},
-
-  { label:"Dreams", children:[
-      { label:"Own Studio", children:[
-          { label:"The Space", children:[ { label:"Darkroom" } ] } ]},
-      { label:"A Book" },
-      { label:"Slow Year" },
-      { label:"Cabin" },
-      { label:"Workshop" } ]},
+  { label:"Connect", children:[
+      { label:"Email" },
+      /* url + external mark a node that leads off the map. Nothing consumes
+         them yet; they are here so a link-out can be wired up later.        */
+      { label:"Instagram",          url:"", external:true },
+      { label:"Submit a Tool",      url:"", external:true } ]},
 
   { label:"About", children:[
-      { label:"Story" },
-      { label:"Contact" } ]}
+      { label:"Who am I?" },
+      { label:"Changelog" },
+      { label:"What is this website?" } ]},
+
+  { label:"Personal", children:[
+      { label:"Food for Thought" },
+      { label:"Digital Archives" },
+      { label:"Self Improvement" } ]}
 ];
+/* <<</MAP>>> */
 
 /* ==========================================================================
    1b · GROWTH TUNING
@@ -72,7 +136,11 @@ const GROW = {
   /* reference viewports the two arrangements are grown against -------------- */
   refPortrait   : [420, 880],
   refLandscape  : [1320, 780],
-  ring          : { portrait:{ rx:0.66, ry:0.82 }, landscape:{ rx:0.90, ry:0.70 } },
+  /* NOTE: portrait rx tracks the anchor COUNT. A four-anchor square puts two
+     anchors on the portrait's narrow axis, where they collide with the logo
+     mark and need rx ~1.06. A five-anchor pentagon puts none there, so it can
+     sit tighter. Re-check anchor clearance against the mark if this changes. */
+  ring          : { portrait:{ rx:0.78, ry:0.82 }, landscape:{ rx:0.90, ry:0.70 } },
 
   /* Two scales set everything, so both arrangements grow correctly:
        S        the layout scale — legibility is measured against this
@@ -94,7 +162,11 @@ const GROW = {
   iterCap       : 300,
 
   /* growth regions — offset from the anchor, never centred on it ----------- */
-  attractors    : [54, 24, 32, 46, 14],  // per cluster; deliberately unequal
+  attractorDefault: 32,     // budget for a branch added in edit mode
+  attractors    : [32, 46, 32, 32, 32],  // per cluster, sized to its fan.
+                            // Indexed BY CLUSTER, so this list must be re-sized
+                            // and re-ordered whenever the clusters change.
+                            // Tools carries five children and needs the most.
   regionOffset  : 0.58,     // region centre pushed this far along the growth dir
   regionR       : [0.62, 0.58],// ×RING: along the growth dir, across it. Big
                             // enough that neighbouring regions graze — the map
@@ -215,6 +287,7 @@ const T = {
 
   /* theme ----------------------------------------------------------------- */
   doubleTap      : 0.32,     // seconds — window for a double tap on the mark
+  linkArm        : 4.5,      // how long a tapped link stays armed to open
   themeEase      : 0.075,    // crossfade speed between dark and light
 
   /* first run ------------------------------------------------------------- */
@@ -458,119 +531,96 @@ function applyCloudScale(kx, ky, kz){
    the grower (see regrow) after changing MAP or the growth constants; it is
    rebuilt automatically if this no longer matches the hierarchy.
    ========================================================================== */
+/* <<<GROWN>>> */
 const GROWN_BAKED = {
-cross:[29,34,7,33,14,21,19,25],
+cross:[9,12,13,18,2,8,4,21],
 portrait:{
 p:[
--0.043,-1.767,-0.019,-2.022,0.03,-2.276,0.04,-2.529,0.56,-2.465,-0.511,-1.928,-1.019,-1.794,
--0.463,-1.607,-0.433,-2.174,-0.701,-2.39,-0.242,-2.769,0.603,-0.545,0.994,-0.781,1.039,-0.391,
-1.538,-0.537,1.599,-0.295,0.407,1.439,0.29,1.902,0.615,1.701,0.917,1.941,0.821,1.222,1.225,
-1.378,1.172,0.944,-0.402,1.385,-0.461,1.685,-0.425,1.937,-0.284,2.179,-0.946,1.765,-0.915,1.992,
--0.076,2.464,-0.57,2.361,-0.633,-0.52,-0.737,-0.278,-0.683,-0.028],
+-0.043,-1.767,-0.057,-2.016,0.023,-2.263,-0.544,-1.842,0.721,-0.551,1.164,-0.666,1.028,-0.301,
+1.014,-0.921,1.177,-0.048,1.101,-1.219,0.481,1.434,0.762,1.636,0.714,1.946,1.214,2.116,-0.48,
+1.373,-0.443,1.693,-0.333,1.987,-0.819,1.866,-0.746,-0.522,-1.253,-0.469,-1.255,-0.727,-0.833,
+-0.254],
 q:[
 20,0,0,-0.02,-0.146,-0.027,-0.242,-0.037,-0.332,-0.045,-0.414,-0.046,-0.494,-0.054,-0.569,
 -0.073,-0.641,-0.077,-0.717,-0.065,-0.801,-0.054,-0.895,-0.045,-0.996,-0.052,-1.097,-0.068,
 -1.203,-0.083,-1.314,-0.095,-1.418,-0.098,-1.52,-0.096,-1.62,-0.087,-1.717,-0.043,-1.767,4,
--0.043,-1.767,-0.038,-1.86,-0.03,-1.944,-0.019,-2.022,4,-0.019,-2.022,0.001,-2.106,0.007,-2.194,
-0.03,-2.276,4,0.03,-2.276,0.013,-2.362,0.003,-2.448,0.04,-2.529,8,-0.019,-2.022,0.028,-2.129,
-0.053,-2.242,0.122,-2.335,0.218,-2.401,0.334,-2.414,0.447,-2.44,0.56,-2.465,8,-0.043,-1.767,
--0.038,-1.86,-0.11,-1.901,-0.195,-1.931,-0.277,-1.917,-0.354,-1.875,-0.438,-1.891,-0.511,-1.928,
-6,-0.511,-1.928,-0.615,-1.98,-0.732,-1.982,-0.836,-1.931,-0.94,-1.879,-1.019,-1.794,9,-0.043,
--1.767,-0.038,-1.86,-0.11,-1.901,-0.195,-1.931,-0.277,-1.917,-0.354,-1.875,-0.419,-1.801,-0.467,
--1.709,-0.463,-1.607,6,-0.043,-1.767,-0.08,-1.877,-0.165,-1.957,-0.242,-2.043,-0.344,-2.1,
--0.433,-2.174,4,-0.433,-2.174,-0.53,-2.238,-0.602,-2.329,-0.701,-2.39,10,-0.043,-1.767,-0.095,
--1.87,-0.13,-1.981,-0.177,-2.088,-0.202,-2.201,-0.254,-2.306,-0.257,-2.422,-0.258,-2.538,-0.241,
--2.653,-0.242,-2.769,10,0,0,0.048,-0.114,0.104,-0.173,0.163,-0.22,0.23,-0.267,0.302,-0.32,0.366,
--0.378,0.428,-0.435,0.499,-0.493,0.603,-0.545,5,0.603,-0.545,0.716,-0.574,0.816,-0.632,0.9,
--0.713,0.994,-0.781,6,0.603,-0.545,0.699,-0.535,0.785,-0.508,0.876,-0.475,0.97,-0.446,1.039,
--0.391,7,1.039,-0.391,1.135,-0.35,1.244,-0.348,1.335,-0.368,1.425,-0.4,1.499,-0.452,1.538,
--0.537,10,0.603,-0.545,0.716,-0.516,0.811,-0.45,0.927,-0.437,1.042,-0.426,1.155,-0.397,1.257,
--0.341,1.371,-0.321,1.487,-0.329,1.599,-0.295,17,0,0,0.005,0.051,0.02,0.148,0.038,0.248,0.06,
-0.357,0.086,0.454,0.116,0.537,0.146,0.628,0.173,0.734,0.191,0.837,0.224,0.926,0.262,1.018,0.295,
-1.109,0.328,1.203,0.36,1.303,0.398,1.397,0.407,1.439,7,0.407,1.439,0.459,1.515,0.497,1.585,
-0.476,1.674,0.408,1.765,0.36,1.852,0.29,1.902,5,0.407,1.439,0.459,1.515,0.497,1.585,0.543,1.652,
-0.615,1.701,5,0.615,1.701,0.69,1.743,0.773,1.794,0.855,1.862,0.917,1.941,6,0.407,1.439,0.504,
-1.44,0.594,1.386,0.675,1.327,0.734,1.255,0.821,1.222,7,0.821,1.222,0.897,1.182,0.976,1.155,
-1.064,1.154,1.134,1.219,1.188,1.299,1.225,1.378,5,0.821,1.222,0.929,1.18,1.034,1.129,1.116,
-1.046,1.172,0.944,17,0,0,-0.045,0.044,-0.076,0.135,-0.107,0.23,-0.136,0.335,-0.171,0.438,-0.205,
-0.532,-0.224,0.627,-0.242,0.717,-0.273,0.808,-0.306,0.896,-0.331,0.981,-0.351,1.069,-0.377,
-1.146,-0.397,1.223,-0.404,1.301,-0.402,1.385,4,-0.402,1.385,-0.433,1.475,-0.44,1.585,-0.461,
-1.685,4,-0.461,1.685,-0.493,1.771,-0.471,1.859,-0.425,1.937,4,-0.425,1.937,-0.376,2.015,-0.33,
-2.101,-0.284,2.179,7,-0.402,1.385,-0.446,1.493,-0.532,1.57,-0.62,1.647,-0.724,1.698,-0.838,
-1.723,-0.946,1.765,8,-0.402,1.385,-0.433,1.497,-0.51,1.585,-0.568,1.685,-0.665,1.749,-0.748,
-1.831,-0.832,1.911,-0.915,1.992,11,-0.402,1.385,-0.381,1.499,-0.399,1.614,-0.4,1.73,-0.357,
-1.838,-0.304,1.942,-0.248,2.043,-0.171,2.131,-0.12,2.235,-0.104,2.351,-0.076,2.464,10,-0.402,
-1.385,-0.482,1.47,-0.517,1.581,-0.564,1.687,-0.623,1.787,-0.631,1.903,-0.61,2.017,-0.613,2.134,
--0.601,2.249,-0.57,2.361,10,0,0,-0.087,-0.102,-0.147,-0.16,-0.209,-0.219,-0.279,-0.268,-0.345,
--0.315,-0.413,-0.358,-0.487,-0.399,-0.563,-0.446,-0.633,-0.52,4,-0.633,-0.52,-0.717,-0.474,
--0.742,-0.379,-0.737,-0.278,7,-0.633,-0.52,-0.717,-0.474,-0.742,-0.379,-0.737,-0.278,-0.708,
--0.196,-0.675,-0.12,-0.683,-0.028,23,-0.915,1.992,-0.926,1.893,-0.925,1.797,-0.919,1.701,-0.899,
-1.606,-0.88,1.505,-0.87,1.404,-0.864,1.31,-0.857,1.216,-0.857,1.124,-0.86,1.033,-0.849,0.934,
--0.829,0.849,-0.814,0.777,-0.802,0.69,-0.788,0.594,-0.772,0.511,-0.758,0.432,-0.74,0.346,-0.715,
-0.257,-0.694,0.171,-0.681,0.085,-0.683,-0.028,18,-1.019,-1.794,-0.989,-1.7,-0.968,-1.602,-0.951,
--1.518,-0.937,-1.433,-0.923,-1.342,-0.909,-1.265,-0.892,-1.192,-0.878,-1.105,-0.863,-1.015,
--0.841,-0.927,-0.833,-0.836,-0.83,-0.743,-0.811,-0.647,-0.787,-0.539,-0.767,-0.434,-0.744,
--0.336,-0.737,-0.278,19,1.039,-0.391,1,-0.312,1.004,-0.232,1.002,-0.143,0.997,-0.048,0.983,
-0.052,0.965,0.151,0.946,0.25,0.924,0.345,0.91,0.443,0.899,0.546,0.884,0.645,0.87,0.73,0.854,
-0.804,0.84,0.871,0.837,0.943,0.838,1.033,0.839,1.128,0.821,1.222,13,0.615,1.701,0.541,1.723,
-0.431,1.737,0.321,1.739,0.223,1.729,0.126,1.713,0.032,1.701,-0.059,1.701,-0.144,1.713,-0.223,
-1.725,-0.3,1.729,-0.384,1.722,-0.461,1.685]},
+-0.043,-1.767,-0.051,-1.856,-0.069,-1.936,-0.057,-2.016,7,-0.043,-1.767,-0.051,-1.856,-0.069,
+-1.936,-0.057,-2.016,-0.042,-2.102,-0.005,-2.183,0.023,-2.263,8,-0.043,-1.767,-0.051,-1.856,
+-0.119,-1.905,-0.205,-1.928,-0.287,-1.918,-0.371,-1.9,-0.458,-1.866,-0.544,-1.842,11,0,0,0.053,
+-0.108,0.115,-0.16,0.179,-0.203,0.252,-0.244,0.326,-0.291,0.394,-0.343,0.463,-0.394,0.543,
+-0.445,0.626,-0.506,0.721,-0.551,6,0.721,-0.551,0.808,-0.567,0.894,-0.596,0.992,-0.628,1.073,
+-0.691,1.164,-0.666,6,0.721,-0.551,0.808,-0.567,0.9,-0.525,0.976,-0.46,0.998,-0.377,1.028,
+-0.301,7,0.721,-0.551,0.808,-0.567,0.894,-0.596,0.992,-0.628,1.035,-0.728,1.037,-0.831,1.014,
+-0.921,9,0.721,-0.551,0.808,-0.567,0.9,-0.525,0.976,-0.46,0.998,-0.377,1.028,-0.301,1.08,-0.22,
+1.125,-0.129,1.177,-0.048,8,0.721,-0.551,0.824,-0.605,0.901,-0.692,0.939,-0.802,1.017,-0.888,
+1.051,-1,1.103,-1.103,1.101,-1.219,17,0,0,0.009,0.051,0.028,0.148,0.052,0.247,0.079,0.356,0.111,
+0.452,0.146,0.536,0.18,0.628,0.214,0.735,0.241,0.834,0.28,0.92,0.316,1.01,0.355,1.101,0.394,
+1.197,0.432,1.299,0.471,1.39,0.481,1.434,5,0.481,1.434,0.553,1.489,0.621,1.54,0.702,1.576,0.762,
+1.636,9,0.481,1.434,0.553,1.489,0.621,1.54,0.702,1.576,0.762,1.636,0.828,1.694,0.824,1.785,
+0.748,1.845,0.714,1.946,10,0.481,1.434,0.528,1.541,0.582,1.643,0.676,1.712,0.772,1.777,0.867,
+1.844,0.982,1.865,1.081,1.925,1.149,2.019,1.214,2.116,17,0,0,-0.05,0.043,-0.085,0.134,-0.12,
+0.227,-0.154,0.332,-0.193,0.433,-0.233,0.529,-0.257,0.627,-0.28,0.715,-0.316,0.802,-0.357,0.886,
+-0.384,0.971,-0.407,1.053,-0.439,1.123,-0.465,1.199,-0.481,1.278,-0.48,1.373,4,-0.48,1.373,
+-0.476,1.475,-0.468,1.586,-0.443,1.693,8,-0.48,1.373,-0.476,1.475,-0.468,1.586,-0.443,1.693,
+-0.457,1.784,-0.475,1.872,-0.419,1.945,-0.333,1.987,9,-0.48,1.373,-0.476,1.475,-0.468,1.586,
+-0.443,1.693,-0.457,1.784,-0.552,1.807,-0.648,1.824,-0.737,1.843,-0.819,1.866,11,0,0,-0.091,
+-0.096,-0.156,-0.148,-0.22,-0.199,-0.295,-0.244,-0.364,-0.286,-0.437,-0.324,-0.515,-0.358,
+-0.594,-0.397,-0.675,-0.448,-0.746,-0.522,7,-0.746,-0.522,-0.83,-0.538,-0.925,-0.572,-1.03,
+-0.585,-1.125,-0.608,-1.21,-0.558,-1.253,-0.469,7,-0.746,-0.522,-0.83,-0.538,-0.925,-0.572,
+-1.03,-0.585,-1.125,-0.608,-1.204,-0.653,-1.255,-0.727,4,-0.746,-0.522,-0.806,-0.447,-0.839,
+-0.353,-0.833,-0.254,20,1.177,-0.048,1.18,0.021,1.153,0.117,1.126,0.215,1.093,0.312,1.063,0.412,
+1.036,0.514,1.013,0.613,0.993,0.699,0.967,0.777,0.937,0.848,0.916,0.918,0.903,1.004,0.892,1.1,
+0.885,1.194,0.872,1.29,0.856,1.38,0.843,1.464,0.819,1.55,0.762,1.636,18,0.714,1.946,0.657,1.968,
+0.558,1.97,0.451,1.972,0.342,1.963,0.244,1.941,0.15,1.929,0.05,1.92,-0.046,1.913,-0.127,1.916,
+-0.207,1.92,-0.297,1.922,-0.389,1.915,-0.486,1.902,-0.581,1.891,-0.67,1.88,-0.758,1.868,-0.819,
+1.866,17,-0.057,-2.016,0.014,-1.981,0.068,-1.924,0.127,-1.847,0.193,-1.762,0.253,-1.689,0.32,
+-1.625,0.392,-1.564,0.465,-1.489,0.529,-1.405,0.589,-1.323,0.649,-1.248,0.721,-1.177,0.802,
+-1.117,0.874,-1.069,0.937,-1.008,1.014,-0.921,15,-0.544,-1.842,-0.576,-1.759,-0.622,-1.663,
+-0.667,-1.585,-0.719,-1.518,-0.779,-1.443,-0.838,-1.363,-0.889,-1.286,-0.939,-1.227,-0.991,
+-1.16,-1.049,-1.081,-1.105,-0.998,-1.17,-0.913,-1.227,-0.821,-1.255,-0.727]},
 landscape:{
 p:[
--0.062,-0.682,-0.064,-1.045,-0.238,-1.293,-0.347,-1.518,0.296,-1.309,-0.535,-0.747,-0.975,
--0.922,-0.707,-1.736,-1.205,-1.185,-1.278,-1.517,-0.296,-1.891,1.465,-0.237,1.953,-0.311,1.739,
--0.039,1.765,0.238,2.359,-0.435,0.873,0.616,1.476,0.733,1.092,0.87,1.089,1.122,1.554,1.197,
-1.954,1.42,2.196,1.643,-0.926,0.551,-0.922,0.809,-0.985,1.068,-1.018,1.366,-1.433,0.896,-1.409,
-0.405,-1.462,1.275,-0.647,1.58,-1.504,-0.233,-2.029,-0.206,-2.066,0.06],
+-0.062,-0.682,0.083,-0.923,0.108,-1.226,0.384,-1.427,1.465,-0.237,2.01,-0.22,1.906,-0.506,1.621,
+0.041,1.544,0.327,2.121,0.14,0.873,0.616,1.422,0.733,0.995,0.94,0.83,1.165,-0.926,0.551,-1.182,
+0.769,-1.414,1.021,-0.68,0.915,-1.504,-0.233,-1.979,-0.195,-1.581,-0.595,-1.482,-0.843],
 q:[
 8,0,0,-0.027,-0.15,-0.04,-0.252,-0.057,-0.347,-0.07,-0.43,-0.079,-0.511,-0.097,-0.586,-0.062,
--0.682,5,-0.062,-0.682,-0.062,-0.759,-0.062,-0.848,-0.055,-0.947,-0.064,-1.045,4,-0.064,-1.045,
--0.1,-1.141,-0.167,-1.225,-0.238,-1.293,4,-0.238,-1.293,-0.297,-1.35,-0.328,-1.424,-0.347,
--1.518,6,-0.064,-1.045,-0.043,-1.144,0.013,-1.227,0.101,-1.266,0.203,-1.259,0.296,-1.309,8,
--0.062,-0.682,-0.062,-0.759,-0.134,-0.811,-0.22,-0.824,-0.296,-0.824,-0.376,-0.81,-0.449,-0.772,
--0.535,-0.747,7,-0.535,-0.747,-0.632,-0.715,-0.728,-0.7,-0.823,-0.693,-0.904,-0.747,-0.958,
--0.824,-0.975,-0.922,12,-0.062,-0.682,-0.112,-0.786,-0.204,-0.858,-0.287,-0.939,-0.369,-1.021,
--0.413,-1.129,-0.497,-1.209,-0.559,-1.307,-0.621,-1.406,-0.656,-1.516,-0.654,-1.633,-0.707,
--1.736,12,-0.062,-0.682,-0.161,-0.741,-0.253,-0.813,-0.348,-0.88,-0.459,-0.914,-0.559,-0.973,
--0.673,-0.996,-0.789,-1.01,-0.899,-1.047,-1.015,-1.052,-1.115,-1.111,-1.205,-1.185,4,-1.205,
--1.185,-1.26,-1.287,-1.284,-1.401,-1.278,-1.517,12,-0.062,-0.682,-0.085,-0.796,-0.126,-0.904,
--0.146,-1.019,-0.212,-1.114,-0.274,-1.213,-0.289,-1.328,-0.337,-1.434,-0.34,-1.55,-0.331,-1.666,
--0.289,-1.775,-0.296,-1.891,17,0,0,0.074,-0.06,0.161,-0.063,0.243,-0.065,0.329,-0.068,0.426,
--0.078,0.52,-0.103,0.61,-0.122,0.702,-0.136,0.796,-0.151,0.896,-0.167,1.002,-0.184,1.101,-0.195,
-1.196,-0.211,1.292,-0.226,1.386,-0.24,1.465,-0.237,7,1.465,-0.237,1.557,-0.216,1.648,-0.206,
-1.739,-0.194,1.834,-0.181,1.917,-0.229,1.953,-0.311,5,1.465,-0.237,1.557,-0.216,1.648,-0.206,
-1.705,-0.128,1.739,-0.039,4,1.739,-0.039,1.753,0.051,1.758,0.143,1.765,0.238,9,1.465,-0.237,
-1.58,-0.252,1.693,-0.277,1.809,-0.272,1.923,-0.299,2.024,-0.356,2.131,-0.401,2.243,-0.432,2.359,
--0.435,12,0,0,0.059,0.019,0.125,0.089,0.199,0.156,0.283,0.219,0.357,0.284,0.437,0.35,0.524,
-0.409,0.605,0.475,0.68,0.551,0.76,0.62,0.873,0.616,7,0.873,0.616,0.948,0.705,1.044,0.771,1.149,
-0.82,1.266,0.817,1.38,0.8,1.476,0.733,5,0.873,0.616,0.948,0.673,1.027,0.726,1.071,0.796,1.092,
-0.87,4,1.092,0.87,1.104,0.948,1.094,1.028,1.089,1.122,9,0.873,0.616,0.954,0.7,1.061,0.745,1.171,
-0.782,1.275,0.834,1.363,0.911,1.433,1.003,1.475,1.111,1.554,1.197,5,1.554,1.197,1.663,1.238,
-1.75,1.315,1.86,1.352,1.954,1.42,8,1.554,1.197,1.66,1.245,1.775,1.256,1.876,1.315,1.976,1.374,
-2.043,1.469,2.118,1.557,2.196,1.643,13,0,0,-0.095,0,-0.167,0.055,-0.24,0.114,-0.321,0.163,
--0.401,0.208,-0.476,0.261,-0.551,0.316,-0.635,0.363,-0.717,0.412,-0.795,0.457,-0.875,0.492,
--0.926,0.551,4,-0.926,0.551,-0.933,0.639,-0.931,0.724,-0.922,0.809,4,-0.922,0.809,-0.938,0.892,
--0.975,0.974,-0.985,1.068,4,-0.985,1.068,-0.993,1.169,-1,1.273,-1.018,1.366,8,-0.926,0.551,
--1.005,0.603,-1.08,0.644,-1.151,0.687,-1.222,0.741,-1.289,0.805,-1.354,0.862,-1.433,0.896,7,
--0.926,0.551,-1.005,0.603,-1.093,0.586,-1.163,0.524,-1.223,0.455,-1.312,0.419,-1.409,0.405,9,
--0.926,0.551,-0.95,0.665,-0.987,0.775,-1.038,0.879,-1.115,0.967,-1.203,1.043,-1.294,1.115,
--1.375,1.198,-1.462,1.275,11,-0.926,0.551,-1.004,0.638,-1.033,0.75,-1.016,0.865,-0.947,0.959,
--0.91,1.069,-0.847,1.166,-0.778,1.26,-0.726,1.364,-0.67,1.466,-0.647,1.58,17,0,0,-0.111,-0.059,
--0.198,-0.066,-0.279,-0.072,-0.363,-0.077,-0.449,-0.078,-0.546,-0.083,-0.647,-0.087,-0.74,
--0.092,-0.826,-0.097,-0.918,-0.104,-1.018,-0.126,-1.124,-0.155,-1.238,-0.184,-1.357,-0.212,
--1.465,-0.232,-1.504,-0.233,8,-1.504,-0.233,-1.585,-0.258,-1.663,-0.256,-1.741,-0.242,-1.819,
--0.206,-1.894,-0.154,-1.971,-0.143,-2.029,-0.206,9,-1.504,-0.233,-1.585,-0.258,-1.663,-0.256,
--1.741,-0.242,-1.819,-0.206,-1.894,-0.154,-1.961,-0.092,-2.017,-0.02,-2.066,0.06,9,-1.409,0.405,
--1.536,0.333,-1.62,0.292,-1.692,0.253,-1.767,0.208,-1.832,0.17,-1.892,0.144,-1.961,0.123,-2.066,
-0.06,15,-0.975,-0.922,-1.051,-0.908,-1.142,-0.849,-1.22,-0.782,-1.288,-0.716,-1.363,-0.659,
--1.443,-0.6,-1.522,-0.554,-1.593,-0.516,-1.666,-0.472,-1.727,-0.421,-1.788,-0.366,-1.859,-0.312,
--1.935,-0.254,-2.029,-0.206,14,1.739,-0.039,1.744,0.049,1.741,0.145,1.729,0.248,1.714,0.353,
-1.698,0.457,1.678,0.548,1.659,0.64,1.646,0.735,1.638,0.824,1.624,0.907,1.598,0.997,1.577,1.09,
-1.554,1.197,23,1.092,0.87,0.982,0.87,0.883,0.87,0.783,0.872,0.685,0.873,0.598,0.877,0.519,0.874,
-0.433,0.866,0.341,0.866,0.238,0.873,0.126,0.872,0.031,0.868,-0.059,0.863,-0.15,0.861,-0.241,
-0.861,-0.335,0.858,-0.427,0.851,-0.513,0.833,-0.598,0.814,-0.683,0.797,-0.774,0.791,-0.87,0.786,
--0.922,0.809]}
+-0.682,4,-0.062,-0.682,-0.036,-0.759,0.028,-0.835,0.083,-0.923,7,-0.062,-0.682,-0.036,-0.759,
+0.028,-0.835,0.083,-0.923,0.108,-1.023,0.113,-1.125,0.108,-1.226,9,-0.062,-0.682,-0.083,-0.796,
+-0.078,-0.912,-0.018,-1.012,0.055,-1.102,0.142,-1.179,0.209,-1.274,0.293,-1.354,0.384,-1.427,17,
+0,0,0.074,-0.06,0.161,-0.063,0.243,-0.065,0.329,-0.068,0.426,-0.078,0.52,-0.103,0.61,-0.122,
+0.702,-0.136,0.796,-0.151,0.896,-0.167,1.002,-0.184,1.101,-0.195,1.196,-0.211,1.292,-0.226,
+1.386,-0.24,1.465,-0.237,7,1.465,-0.237,1.557,-0.235,1.644,-0.256,1.737,-0.27,1.829,-0.261,
+1.923,-0.247,2.01,-0.22,8,1.465,-0.237,1.557,-0.235,1.644,-0.256,1.737,-0.27,1.829,-0.261,1.89,
+-0.325,1.911,-0.414,1.906,-0.506,5,1.465,-0.237,1.557,-0.235,1.616,-0.156,1.624,-0.058,1.621,
+0.041,8,1.465,-0.237,1.557,-0.235,1.616,-0.156,1.624,-0.058,1.621,0.041,1.566,0.128,1.554,0.227,
+1.544,0.327,8,1.465,-0.237,1.579,-0.256,1.693,-0.232,1.8,-0.186,1.89,-0.112,1.975,-0.033,2.067,
+0.038,2.121,0.14,12,0,0,0.059,0.019,0.125,0.089,0.199,0.156,0.283,0.219,0.357,0.284,0.437,0.35,
+0.524,0.409,0.605,0.475,0.68,0.551,0.76,0.62,0.873,0.616,7,0.873,0.616,0.925,0.691,1.004,0.74,
+1.106,0.758,1.209,0.762,1.316,0.741,1.422,0.733,4,0.873,0.616,0.93,0.718,0.952,0.832,0.995,0.94,
+6,0.873,0.616,0.92,0.723,0.919,0.839,0.928,0.955,0.886,1.064,0.83,1.165,13,0,0,-0.095,0,-0.167,
+0.055,-0.24,0.114,-0.321,0.163,-0.401,0.208,-0.476,0.261,-0.551,0.316,-0.635,0.363,-0.717,0.412,
+-0.795,0.457,-0.875,0.492,-0.926,0.551,5,-0.926,0.551,-0.972,0.631,-1.028,0.692,-1.101,0.736,
+-1.182,0.769,9,-0.926,0.551,-0.972,0.631,-1.028,0.692,-1.101,0.736,-1.182,0.769,-1.256,0.821,
+-1.317,0.881,-1.364,0.953,-1.414,1.021,6,-0.926,0.551,-0.909,0.636,-0.855,0.714,-0.808,0.789,
+-0.75,0.851,-0.68,0.915,17,0,0,-0.111,-0.059,-0.198,-0.066,-0.279,-0.072,-0.363,-0.077,-0.449,
+-0.078,-0.546,-0.083,-0.647,-0.087,-0.74,-0.092,-0.826,-0.097,-0.918,-0.104,-1.018,-0.126,
+-1.124,-0.155,-1.238,-0.184,-1.357,-0.212,-1.465,-0.232,-1.504,-0.233,7,-1.504,-0.233,-1.586,
+-0.255,-1.662,-0.264,-1.737,-0.266,-1.814,-0.261,-1.898,-0.234,-1.979,-0.195,6,-1.504,-0.233,
+-1.586,-0.255,-1.612,-0.331,-1.601,-0.413,-1.577,-0.5,-1.581,-0.595,9,-1.504,-0.233,-1.586,
+-0.255,-1.612,-0.331,-1.601,-0.413,-1.577,-0.5,-1.581,-0.595,-1.553,-0.681,-1.513,-0.764,-1.482,
+-0.843,6,1.544,0.327,1.556,0.443,1.532,0.518,1.508,0.586,1.49,0.662,1.422,0.733,19,0.995,0.94,
+0.881,0.929,0.784,0.93,0.686,0.933,0.597,0.945,0.513,0.949,0.424,0.949,0.329,0.951,0.223,0.957,
+0.112,0.969,0.015,0.977,-0.078,0.969,-0.174,0.963,-0.269,0.955,-0.364,0.948,-0.456,0.942,-0.543,
+0.923,-0.631,0.903,-0.68,0.915,21,0.083,-0.923,0.124,-0.847,0.195,-0.805,0.268,-0.765,0.347,
+-0.724,0.424,-0.691,0.507,-0.654,0.595,-0.609,0.679,-0.556,0.752,-0.504,0.828,-0.444,0.905,
+-0.389,0.975,-0.347,1.063,-0.306,1.159,-0.263,1.245,-0.219,1.327,-0.174,1.408,-0.123,1.489,
+-0.069,1.567,-0.012,1.621,0.041,24,0.384,-1.427,0.284,-1.413,0.192,-1.37,0.091,-1.334,-0.006,
+-1.294,-0.087,-1.247,-0.162,-1.204,-0.237,-1.167,-0.31,-1.136,-0.387,-1.109,-0.463,-1.073,
+-0.544,-1.035,-0.63,-0.998,-0.72,-0.963,-0.803,-0.937,-0.886,-0.917,-0.981,-0.884,-1.079,-0.846,
+-1.173,-0.799,-1.254,-0.744,-1.335,-0.697,-1.421,-0.654,-1.512,-0.62,-1.581,-0.595]}
 };
+/* <<</GROWN>>> */
 
 /* ==========================================================================
    7b · THE GROWER  —  space colonization
@@ -582,28 +632,56 @@ q:[
 /* ---- the hierarchy, flattened depth-first. Every baked array is indexed by
         this order, so the data needs no ids. ---------------------------- */
 function flattenMap(){
-  const out = [{ label:"", cluster:-1, depth:0, parent:-1 }];
+  const out = [{ label:"", cluster:-1, depth:0, parent:-1, src:null }];
   for(let c=0;c<MAP.length;c++){
     (function walk(node, parent, depth){
       const i = out.length;
-      out.push({ label:node.label, cluster:c, depth:depth, parent:parent });
+      out.push({ label:node.label, cluster:c, depth:depth, parent:parent,
+                 url:node.url || "", external:!!node.external, src:node });
       const kids = node.children || [];
       for(let k=0;k<kids.length;k++) walk(kids[k], i, depth+1);
     })(MAP[c], 0, 1);
   }
   return out;
 }
-const FLAT = flattenMap();
-const KIDS = FLAT.map(function(){ return []; });
-for(let i=1;i<FLAT.length;i++) KIDS[FLAT[i].parent].push(i);
-const HEIGHT = new Int32Array(FLAT.length);
-for(let i=FLAT.length-1;i>=0;i--){
-  let h = 0;
-  for(let k=0;k<KIDS[i].length;k++) h = Math.max(h, HEIGHT[KIDS[i][k]]+1);
-  HEIGHT[i] = h;
+
+/* Rebuilt after every structural edit. `src` points at the live MAP object,
+   so renaming a node is a write straight through to the data. */
+let FLAT = [], KIDS = [], HEIGHT = null, CLUSTER_ROOT = [];
+function rebuildFlat(){
+  FLAT = flattenMap();
+  KIDS = FLAT.map(function(){ return []; });
+  for(let i=1;i<FLAT.length;i++) KIDS[FLAT[i].parent].push(i);
+  HEIGHT = new Int32Array(FLAT.length);
+  for(let i=FLAT.length-1;i>=0;i--){
+    let h = 0;
+    for(let k=0;k<KIDS[i].length;k++) h = Math.max(h, HEIGHT[KIDS[i][k]]+1);
+    HEIGHT[i] = h;
+  }
+  CLUSTER_ROOT = [];
+  for(let i=1;i<FLAT.length;i++) if(FLAT[i].depth===1) CLUSTER_ROOT[FLAT[i].cluster] = i;
 }
-const CLUSTER_ROOT = [];
-for(let i=1;i<FLAT.length;i++) if(FLAT[i].depth===1) CLUSTER_ROOT[FLAT[i].cluster] = i;
+
+/* A cluster's nodes are emitted contiguously by the depth-first flatten, so a
+   cluster is just an index range — which is what lets one cluster be regrown
+   while every other keeps the coordinates it already had. */
+function clusterRanges(flat){
+  const r = {};
+  for(let i=1;i<flat.length;i++){
+    const c = flat[i].cluster;
+    if(r[c] === undefined) r[c] = [i, i+1]; else r[c][1] = i+1;
+  }
+  return r;
+}
+function splitPaths(q){
+  const out = []; let i = 0;
+  while(i < q.length){
+    const n = q[i++], a = new Array(n*2);
+    for(let k=0;k<n*2;k++) a[k] = q[i++];
+    out.push(a);
+  }
+  return out;
+}
 
 /* ---- the meander: one smooth vector field over the whole plane. Applying it
         to the SKELETON rather than to each path is what keeps bundled trunks
@@ -821,7 +899,7 @@ function subdivideWarp(ax, ay, bx, by){     // a straight run, bent by the field
 }
 
 /* ---- grow one arrangement ------------------------------------------------ */
-function growLayout(ref, LCfg, ringCfg, rnd){
+function growLayout(ref, LCfg, ringCfg, seedBase, only, reuse){
   const Sx = Math.min(ref[0]*LCfg.sx, LCfg.cx);
   const Sy = Math.min(ref[1]*LCfg.sy, LCfg.cy);
   const S  = Math.min(Sx, Sy);
@@ -840,6 +918,11 @@ function growLayout(ref, LCfg, ringCfg, rnd){
   }
   ring /= MAP.length;
   resolveLengths(S, ring);
+  /* One RNG per cluster, seeded from its index. A cluster therefore grows the
+     same way whether it is grown alone or as part of a full regrow. */
+  const crnd = [];
+  for(let c=0;c<MAP.length;c++)
+    crnd.push(mulberry32((seedBase ^ ((c+1)*2654435761)) >>> 0));
   /* Growth direction: outward from the centre, nudged off by the neighbours,
      then given a seeded tangential lean. Where two neighbours happen to lean
      toward one another their fans meet — the bleed between territories. */
@@ -854,23 +937,54 @@ function growLayout(ref, LCfg, ringCfg, rnd){
       const w  = GROW.neighbourPush*(ring/el)*(ring/el);
       dx += ex/el*w; dy += ey/el*w;
     }
-    const ang = Math.atan2(dy,dx) + (rnd()*2-1)*GROW.lean;
+    const ang = Math.atan2(dy,dx) + (crnd[c]()*2-1)*GROW.lean;
     dir.push([Math.cos(ang), Math.sin(ang)]);
   }
 
   const pos = new Array(FLAT.length), bidx = new Array(FLAT.length);
-  const trees = [], placed = [];
+  const trees = new Array(MAP.length), placed = [];
   pos[0] = [0,0];
+
+  /* Clusters that are not being regrown keep the coordinates they already had,
+     and go into `placed` FIRST so the new growth steers around them. */
+  const newR = clusterRanges(FLAT);
+  const oldR = reuse ? clusterRanges(reuse.flat) : null;
+  const kept = {};
+  if(reuse && only !== null && only !== undefined){
+    for(let c=0;c<MAP.length;c++){
+      if(c === only) continue;
+      const o = oldR[c], n = newR[c];
+      if(!o || !n || (o[1]-o[0]) !== (n[1]-n[0])) continue;   // shape moved: regrow it
+      for(let k=0;k<n[1]-n[0];k++){
+        const oi = o[0]+k, ni = n[0]+k;
+        pos[ni] = [reuse.p[(oi-1)*2]*S, reuse.p[(oi-1)*2+1]*S];
+        placed.push(pos[ni]);
+      }
+      kept[c] = [o, n];
+    }
+  }
+
   for(let c=0;c<MAP.length;c++){
-    const t = growSkeleton(rnd, anc[c], dir[c], GROW.attractors[c]);
-    trees.push(t);
-    hangCluster(t, CLUSTER_ROOT[c], pos, bidx, placed, rnd);
+    if(kept[c]) continue;
+    const nAtt = GROW.attractors[c] !== undefined ? GROW.attractors[c] : GROW.attractorDefault;
+    const t = growSkeleton(crnd[c], anc[c], dir[c], nAtt);
+    trees[c] = t;
+    hangCluster(t, CLUSTER_ROOT[c], pos, bidx, placed, crnd[c]);
   }
 
   /* link paths, in flat order: link j joins FLAT[j].parent → j */
+  const oldPaths = reuse ? splitPaths(reuse.q) : null;
   const paths = [];
   for(let j=1;j<FLAT.length;j++){
     const par = FLAT[j].parent;
+    const kc  = kept[FLAT[j].cluster];
+    if(kc){                                        // reuse this link's path too
+      const oi = kc[0][0] + (j - kc[1][0]);
+      const a  = oldPaths[oi-1], b = new Array(a.length);
+      for(let m=0;m<a.length;m++) b[m] = a[m]*S;
+      paths.push(b);
+      continue;
+    }
     if(par === 0){
       paths.push(subdivideWarp(0, 0, pos[j][0], pos[j][1]));   // root → anchor
     } else {
@@ -910,11 +1024,13 @@ function bake(g, pairs){
 }
 
 /* ---- the entry point. Called only when the baked data is stale. ---------- */
-function regrow(){
+function regrow(only, prev){
+  const rp = prev ? { flat:prev.flat, p:prev.grown.portrait.p,  q:prev.grown.portrait.q  } : null;
+  const rl = prev ? { flat:prev.flat, p:prev.grown.landscape.p, q:prev.grown.landscape.q } : null;
   const A = growLayout(GROW.refPortrait,  LAYOUT.portrait,  GROW.ring.portrait,
-                       mulberry32(GROW.seed));
+                       GROW.seed, only, rp);
   const B = growLayout(GROW.refLandscape, LAYOUT.landscape, GROW.ring.landscape,
-                       mulberry32(GROW.seed ^ 0x5bf03));
+                       GROW.seed ^ 0x5bf03, only, rl);
 
   /* A cross link is only worth having where the two clusters grew near each
      other in BOTH arrangements — otherwise rotating the device leaves a wire
@@ -953,6 +1069,7 @@ let ancHalfW = 400, ancHalfH = 400;   // anchors only
 /* The baked layout. Regrown automatically when it no longer matches MAP —
    which is exactly "when a node is added" — and otherwise never touched. */
 let GROWN = GROWN_BAKED;
+let GROWN_FLAT = null;            // the flatten GROWN's coordinates belong to
 
 function layoutStale(){
   return !GROWN || !GROWN.portrait || !GROWN.landscape ||
@@ -1001,12 +1118,15 @@ function pathTan(li, u, o){
 
 let geomBuilt = false;
 function buildStructure(){
-  nodes = [{ x:0, y:0, kind:0, depth:0, label:"", cluster:-1, parent:-1,
-             expanded:true, lox:0, loy:1, labelA:0, arriveAt:0, fireAt:-99, parts:[] }];
+  nodes = [{ x:0, y:0, kind:0, depth:0, label:"", cluster:-1, parent:-1, url:"",
+             external:false, link:null, hasKids:true, expanded:true,
+             lox:0, loy:1, labelA:0, arriveAt:0, fireAt:-99, parts:[] }];
   for(let i=1;i<FLAT.length;i++){
     const f = FLAT[i];
     nodes.push({ x:0, y:0, kind: f.depth===1 ? 1 : 2, depth:f.depth, label:f.label,
-                 cluster:f.cluster, parent:f.parent, expanded:!isSmall,
+                 cluster:f.cluster, parent:f.parent, url:f.url, external:f.external,
+                 link: f.external ? safeUrl(f.url) : null,
+                 hasKids: KIDS[i].length > 0, expanded:!isSmall,
                  lox:0, loy:1, labelA:0, arriveAt:0, fireAt:-99, parts:[] });
   }
   links = [];
@@ -1089,6 +1209,24 @@ function syncGeometry(){
 }
 
 /* an anchor carries its whole subtree, however deep it runs */
+/* A node opens a link only when the box is ticked AND the address is a real
+   http(s) one. Anything else — javascript:, data:, nonsense — is refused, so
+   a stored URL can never turn into script. A bare domain gets https://. */
+function safeUrl(u){
+  if(!u) return null;
+  let t = String(u).trim();
+  if(!t) return null;
+  if(!/^https?:\/\//i.test(t)){
+    if(/^[a-z][a-z0-9+.\-]*:/i.test(t)) return null;     // some other scheme
+    t = "https://" + t;
+  }
+  try{
+    const p = new URL(t);
+    return (p.protocol === "http:" || p.protocol === "https:") ? p.href : null;
+  }catch(e){ return null; }
+}
+function nodeLink(n){ return n.external ? safeUrl(n.url) : null; }
+
 function nodeVisible(i){
   if(!mapOpen) return false;
   const n = nodes[i];
@@ -1377,7 +1515,7 @@ function openMap(now){
 }
 function closeMap(now){
   if(!mapOpen) return;
-  mapOpen = false; selected = -1;
+  mapOpen = false; selected = -1; armedLink = -1;
   reconcile(now);
 }
 function toggleAnchor(ni, now){
@@ -1633,7 +1771,7 @@ function frame(now, dt){
 
   drawLabels(now, dts);
   drawLogo();
-  drawHint(dts);
+  drawHint(dts, now);
 }
 
 /* ==========================================================================
@@ -1683,10 +1821,11 @@ function drawLabels(now, dts){
     ctx.fillStyle = gold
       ? "rgba("+CUR.accent+","+a.toFixed(3)+")"
       : (anchor ? CUR.label : CUR.labelDim) + a.toFixed(3) + ")";
-    ctx.fillText(anchor ? n.label.toUpperCase() : n.label, tx, ty);
+    ctx.fillText((anchor ? n.label.toUpperCase() : n.label) + (n.link ? "  \u2197" : ""), tx, ty);
 
-    /* a hairline tick under a collapsed anchor, so it reads as openable */
-    if(anchor && !n.expanded && n.labelA > 0.3){
+    /* a hairline tick under a collapsed anchor, so it reads as openable.
+       A leaf anchor has nothing to open, so it never gets one. */
+    if(anchor && n.hasKids && !n.expanded && n.labelA > 0.3){
       ctx.fillStyle = CUR.labelDim + (n.labelA*0.34).toFixed(3) + ")";
       ctx.fillRect(SX-5*dpr, SY+35*dpr, 10*dpr, Math.max(1, dpr*0.8));
     }
@@ -1721,16 +1860,20 @@ function drawLogo(){
 /* ==========================================================================
    19 · HINT
    ========================================================================== */
-let hintFade = false;
-function drawHint(dts){
-  hintA += ((hintFade?0:1) - hintA)*0.045*dts;
+let hintFade = false, linkHintAt = -99, armedLink = -1, armedAt = -99;
+function drawHint(dts, now){
+  const linky = (now - linkHintAt) < T.linkArm;
+  hintA += ((hintFade && !linky ? 0 : 1) - hintA)*0.045*dts;
   if(hintA < 0.02) return;
   ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
   ctx.font = "500 " + (9.5*dpr).toFixed(1) + "px " + FONT;
   if("letterSpacing" in ctx) ctx.letterSpacing = (1.6*dpr)+"px";
   ctx.fillStyle = CUR.hint + (hintA*0.75).toFixed(3) + ")";
-  ctx.fillText(isSmall ? "TAP THE MARK  ·  DOUBLE-TAP TO INVERT  ·  DRAG  ·  PINCH"
-                       : "TAP THE MARK  ·  DOUBLE-CLICK TO INVERT  ·  DRAG TO PAN  ·  SCROLL TO ZOOM",
+  /* the mark's double-click is the way into edit mode now, so the hint no
+     longer advertises it — visitors have no use for it */
+  ctx.fillText(linky ? "TAP AGAIN TO OPEN  \u2197"
+             : isSmall ? "TAP THE MARK  ·  DRAG  ·  PINCH TO ZOOM"
+                       : "TAP THE MARK  ·  DRAG TO PAN  ·  SCROLL TO ZOOM",
                cw*0.5, ch - 22*dpr);
   if("letterSpacing" in ctx) ctx.letterSpacing = "0px";
 }
@@ -1876,15 +2019,33 @@ cv.addEventListener("wheel", function(e){
   zoomAt(zoom*k, e.clientX, e.clientY);
 }, {passive:false});
 
+function nearestNode(x, y, reach){
+  let best = -1, bestD = reach*reach;
+  for(let i=1;i<nodes.length;i++){
+    if(!nodeVisible(i)) continue;
+    const dx = x - ((nodes[i].x-camX)*zoom + vw*0.5);
+    const dy = y - ((nodes[i].y-camY)*zoom + vh*0.5);
+    const d = dx*dx+dy*dy;
+    if(d < bestD){ bestD = d; best = i; }
+  }
+  return best;
+}
+
 function handleTap(x, y, now){
-  /* the mark: one tap toggles the map, two invert the whole piece */
+  const reach = isSmall ? 34 : 30;
+  const near  = nearestNode(x, y, reach);
+
+  /* the mark: one tap toggles the map, two invert the whole piece. A node
+     sitting closer to the finger than the mark's centre wins, so an anchor
+     that lands near the middle never becomes untappable. */
   const ldx = x*dpr - logoX, ldy = y*dpr - logoY;
-  if(ldx*ldx + ldy*ldy < (logoR + 12*dpr)*(logoR + 12*dpr)){
+  const overLogo = ldx*ldx + ldy*ldy < (logoR + 12*dpr)*(logoR + 12*dpr);
+  if(overLogo && near < 0){
     logoPulse = 1;                                   // feedback is immediate
     if(now - lastLogoTap < T.doubleTap){
       lastLogoTap  = -99;
       pendingToggle = 0;                             // cancel the queued toggle
-      themeTarget   = 1 - themeTarget;
+      onMarkDouble(now);
     } else {
       lastLogoTap   = now;
       pendingToggle = now + T.doubleTap;             // fires from the loop
@@ -1892,21 +2053,27 @@ function handleTap(x, y, now){
     return;
   }
   if(!mapOpen){ selected = -1; return; }
+  const best = near;
+  if(best < 0){ selected = -1; syncPanel(); return; }
 
-  /* nearest node within reach */
-  let best = -1, bestD = (isSmall ? 34 : 30)*(isSmall ? 34 : 30);
-  for(let i=1;i<nodes.length;i++){
-    if(!nodeVisible(i)) continue;
-    const sx = (nodes[i].x-camX)*zoom + vw*0.5;
-    const sy = (nodes[i].y-camY)*zoom + vh*0.5;
-    const dx = x-sx, dy = y-sy, d = dx*dx+dy*dy;
-    if(d < bestD){ bestD = d; best = i; }
-  }
-  if(best < 0){ selected = -1; return; }
-
+  /* A link needs two deliberate taps: the first arms it and says so, the
+     second opens it. The arming is explicit and expires, so a node left
+     selected from earlier can never open on the next stray tap. Never in
+     edit mode, where tapping is how you pick a node to work on. */
   selected = best;
+  if(!editMode && nodes[best].link){
+    if(armedLink === best && (now - armedAt) < T.linkArm){
+      armedLink = -1;
+      window.open(nodes[best].link, "_blank", "noopener,noreferrer");
+      return;
+    }
+    armedLink = best; armedAt = now; linkHintAt = now;
+  } else {
+    armedLink = -1;
+  }
   fireNode(best, now);                       // tapping any node fires it
-  if(nodes[best].kind === 1) toggleAnchor(best, now);
+  if(!editMode && nodes[best].kind === 1 && nodes[best].hasKids) toggleAnchor(best, now);
+  syncPanel();
 }
 
 /* ==========================================================================
@@ -1933,6 +2100,344 @@ document.addEventListener("visibilitychange", function(){
 window.addEventListener("resize", resize);
 window.addEventListener("orientationchange", function(){ setTimeout(resize, 120); });
 
+
+/* ==========================================================================
+   24 · EDIT MODE
+   Light theme IS edit mode: double-click the mark, give the password, and the
+   whole piece inverts to say you are editing. Double-click again to save and
+   leave. Edits live in this browser's localStorage only — nothing is written
+   back to the file on disk, because a page opened from file:// cannot do that.
+   "Bake & export" is the way to make an edit permanent.
+   ========================================================================== */
+const EDIT_PASS = "xavierdebelle";
+const LS_KEY    = "neural-mind-map/v9";
+
+let editMode = false, unlocked = false, storageOK = true;
+let elGate, elGateForm, elGatePass, elGateMsg, elEd,
+    elSel, elLabel, elUrl, elExt, elAddChild, elAddBranch, elDel,
+    elExport, elRevert, elStatus;
+
+try{ unlocked = sessionStorage.getItem(LS_KEY+"/unlocked") === "1"; }catch(e){}
+
+/* ---- persistence ---------------------------------------------------------
+   MAP is mutated in place so every reference to it stays valid.            */
+function loadLocal(){
+  let raw = null;
+  try{ raw = localStorage.getItem(LS_KEY); }
+  catch(e){ storageOK = false; return false; }
+  if(!raw) return false;
+  try{
+    const d = JSON.parse(raw);
+    if(!d || !Array.isArray(d.map) || !d.map.length || !d.grown) return false;
+    MAP.length = 0;
+    for(let i=0;i<d.map.length;i++) MAP.push(d.map[i]);
+    GROWN = d.grown;
+    return true;
+  }catch(e){ return false; }
+}
+function saveLocal(){
+  try{
+    localStorage.setItem(LS_KEY, JSON.stringify({ map:cleanMap(MAP), grown:GROWN }));
+    setStatus("saved in this browser");
+  }catch(e){
+    storageOK = false;
+    setStatus("storage unavailable — use Bake & export");
+  }
+}
+function clearLocal(){ try{ localStorage.removeItem(LS_KEY); }catch(e){} }
+
+function cleanMap(list){
+  const out = [];
+  for(let i=0;i<list.length;i++){
+    const n = list[i], o = { label:n.label };
+    if(n.url) o.url = n.url;
+    if(n.external) o.external = true;
+    if(n.children && n.children.length) o.children = cleanMap(n.children);
+    out.push(o);
+  }
+  return out;
+}
+
+/* ---- entering and leaving ------------------------------------------------ */
+function onMarkDouble(now){
+  if(editMode){ exitEdit(now); return; }
+  if(unlocked){ enterEdit(now); return; }
+  openGate();
+}
+function openGate(){
+  elGateMsg.textContent = "";
+  elGatePass.value = "";
+  elGate.hidden = false;
+  setTimeout(function(){ elGatePass.focus(); }, 30);
+}
+function closeGate(){ elGate.hidden = true; }
+function tryUnlock(){
+  if(elGatePass.value !== EDIT_PASS){
+    elGateMsg.textContent = "Not that one.";
+    elGatePass.value = ""; elGatePass.focus();
+    return;
+  }
+  unlocked = true;
+  try{ sessionStorage.setItem(LS_KEY+"/unlocked", "1"); }catch(e){}
+  closeGate();
+  enterEdit(clock);
+}
+function enterEdit(now){
+  editMode = true;
+  themeTarget = 1;                                  // white = editing
+  for(let i=1;i<nodes.length;i++) if(nodes[i].kind===1) nodes[i].expanded = true;
+  reconcile(now);                                   // everything on show
+  elEd.hidden = false;
+  setStatus(storageOK ? "" : "storage unavailable — use Bake & export");
+  syncPanel();
+}
+function exitEdit(now){
+  editMode = false;
+  themeTarget = 0;
+  elEd.hidden = true;
+  selected = -1; armedLink = -1;        // never leave a link primed to open
+  saveLocal();
+}
+
+/* ---- the panel ----------------------------------------------------------- */
+function setStatus(t){ if(elStatus) elStatus.textContent = t; }
+function syncPanel(){
+  if(!elEd || elEd.hidden) return;
+  const has = selected > 0 && selected < nodes.length;
+  const n   = has ? nodes[selected] : null;
+  elSel.textContent = has ? n.label : "tap a node to select it";
+  elLabel.disabled = elUrl.disabled = elExt.disabled = !has;
+  elAddChild.disabled = !has;
+  elDel.disabled = !has;
+  elLabel.value = has ? n.label : "";
+  elUrl.value   = has ? (n.url || "") : "";
+  elExt.checked = has ? !!n.external : false;
+}
+
+/* ---- edits --------------------------------------------------------------- */
+/* label / link changes touch no geometry, so nothing regrows */
+function editLabel(text){
+  if(selected <= 0) return;
+  const t = text.trim() || "Untitled";
+  FLAT[selected].src.label = t;
+  FLAT[selected].label = t;
+  nodes[selected].label = t;
+  elSel.textContent = t;
+  saveLocal();
+}
+function editLink(url, ext){
+  if(selected <= 0) return;
+  const src = FLAT[selected].src;
+  src.url = url.trim();
+  src.external = !!ext;
+  if(!src.url) delete src.url;
+  if(!src.external) delete src.external;
+  FLAT[selected].url = nodes[selected].url = src.url || "";
+  FLAT[selected].external = nodes[selected].external = !!src.external;
+  nodes[selected].link = nodeLink(nodes[selected]);
+  saveLocal();
+}
+
+/* structural edits regrow ONE cluster and leave every other cluster exactly
+   where it was — except adding or removing a whole branch, which re-angles
+   the ring and so has to regrow the lot. */
+function addChild(){
+  if(selected <= 0) return;
+  const src = FLAT[selected].src;
+  if(!src.children) src.children = [];
+  const node = { label:"New node" };
+  src.children.push(node);
+  applyStructuralEdit(FLAT[selected].cluster, node, "added a node");
+}
+function addBranch(){
+  const node = { label:"New branch", children:[] };
+  MAP.push(node);
+  applyStructuralEdit(null, node, "added a branch — whole map regrown");
+}
+function deleteSelected(){
+  if(selected <= 0) return;
+  const f = FLAT[selected];
+  const kids = countSubtree(selected) - 1;
+  const msg = kids > 0
+    ? 'Delete "' + f.label + '" and its ' + kids + ' descendant' + (kids>1?'s':'') + '?'
+    : 'Delete "' + f.label + '"?';
+  if(!window.confirm(msg)) return;
+  if(f.depth === 1){
+    MAP.splice(f.cluster, 1);
+    if(!MAP.length){ MAP.push({ label:"About" }); }     // never leave it empty
+    applyStructuralEdit(null, null, "branch removed — whole map regrown");
+  } else {
+    const ps = FLAT[f.parent].src;
+    ps.children.splice(ps.children.indexOf(f.src), 1);
+    if(!ps.children.length) delete ps.children;
+    applyStructuralEdit(f.cluster, null, "node removed");
+  }
+}
+function countSubtree(i){
+  let n = 1;
+  for(let k=0;k<KIDS[i].length;k++) n += countSubtree(KIDS[i][k]);
+  return n;
+}
+
+function applyStructuralEdit(only, focus, msg){
+  const prev = { flat: GROWN_FLAT || FLAT, grown: GROWN };
+  rebuildFlat();
+  GROWN = regrow(only, prev);
+  GROWN_FLAT = FLAT;
+
+  /* hand every particle back before the node and link objects that own them
+     are replaced, then let the springs carry them to the new shape */
+  for(let i=0;i<nodes.length;i++) releaseParts(nodes[i].parts, clock);
+  for(let i=0;i<links.length;i++) releaseParts(links[i].parts, clock);
+
+  geomBuilt = false;
+  buildGeometry();
+  for(let i=1;i<nodes.length;i++) if(nodes[i].kind===1) nodes[i].expanded = true;
+
+  selected = -1;
+  if(focus) for(let i=1;i<FLAT.length;i++) if(FLAT[i].src === focus){ selected = i; break; }
+
+  reconcile(clock);
+  saveLocal();
+  if(msg) setStatus(msg);
+  syncPanel();
+}
+
+function revertToBaked(){
+  if(!window.confirm("Throw away every local edit and go back to the baked map?")) return;
+  clearLocal();
+  location.reload();
+}
+
+/* ---- bake & export -------------------------------------------------------
+   Served over http(s) the page can read its own source and hand back a whole
+   updated HTML file. Opened from file:// that read is blocked, so it falls
+   back to the two data blocks for you to paste between the markers.        */
+function fmtNums(a){
+  let out = "", line = "";
+  for(let i=0;i<a.length;i++){
+    const t = String(Math.round(a[i]*1000)/1000);
+    if(line.length + t.length + 1 > 96){ out += line + "\n"; line = ""; }
+    line += t + ",";
+  }
+  out += line;
+  return out.replace(/,$/, "");
+}
+function compactGrown(g){
+  let o = "{\ncross:[" + g.cross.join(",") + "],\n";
+  const one = function(k){
+    return k + ":{\np:[\n" + fmtNums(g[k].p) + "],\nq:[\n" + fmtNums(g[k].q) + "]}";
+  };
+  return o + one("portrait") + ",\n" + one("landscape") + "\n}";
+}
+function download(text, name, type){
+  const b = new Blob([text], { type:type });
+  const u = URL.createObjectURL(b);
+  const a = document.createElement("a");
+  a.href = u; a.download = name;
+  document.body.appendChild(a); a.click();
+  setTimeout(function(){ URL.revokeObjectURL(u); a.remove(); }, 1200);
+}
+/* The page cannot read its own file from file://, so the source is rebuilt
+   from the live DOM instead: the inline <script> and <style> are text nodes
+   that never change at runtime, so they come back verbatim. Only the chrome
+   the editor touched has to be wound back to its at-rest state. */
+function sourceFromDOM(){
+  const el = document.documentElement.cloneNode(true);
+  el.removeAttribute("style");                     // theme background, set live
+
+  const cv2 = el.querySelector("#c");
+  if(cv2){ cv2.removeAttribute("width"); cv2.removeAttribute("height");
+           cv2.removeAttribute("style"); cv2.removeAttribute("class"); }
+
+  const g = el.querySelector("#gate"), e = el.querySelector("#ed");
+  if(g) g.setAttribute("hidden", "");
+  if(e) e.setAttribute("hidden", "");
+
+  const dis = ["#edLabel","#edUrl","#edExt","#edAddChild","#edDel"];
+  for(let i=0;i<dis.length;i++){ const q = el.querySelector(dis[i]); if(q) q.setAttribute("disabled",""); }
+  const und = ["#edAddBranch","#edExport","#edRevert"];
+  for(let i=0;i<und.length;i++){ const q = el.querySelector(und[i]); if(q) q.removeAttribute("disabled"); }
+
+  const pw = el.querySelector("#gatePass"); if(pw) pw.removeAttribute("value");
+  const lb = el.querySelector("#edLabel");  if(lb) lb.removeAttribute("value");
+  const ur = el.querySelector("#edUrl");    if(ur) ur.removeAttribute("value");
+  const ck = el.querySelector("#edExt");    if(ck) ck.removeAttribute("checked");
+
+  const sel = el.querySelector("#edSel");    if(sel) sel.textContent = "tap a node to select it";
+  const st  = el.querySelector("#edStatus"); if(st)  st.textContent  = "";
+  const gm  = el.querySelector("#gateMsg");  if(gm)  gm.textContent  = "";
+
+  return "<!DOCTYPE html>\n" + el.outerHTML + "\n";
+}
+
+function spliceData(html){
+  const mapSrc   = "/* <<<MAP>>> */\nconst MAP = " + JSON.stringify(cleanMap(MAP), null, 2)
+                 + ";\n/* <<</MAP>>> */";
+  const grownSrc = "/* <<<GROWN>>> */\nconst GROWN_BAKED = " + compactGrown(GROWN)
+                 + ";\n/* <<</GROWN>>> */";
+  return html.replace(/\/\* <<<MAP>>> \*\/[\s\S]*?\/\* <<<\/MAP>>> \*\//,     function(){ return mapSrc; })
+             .replace(/\/\* <<<GROWN>>> \*\/[\s\S]*?\/\* <<<\/GROWN>>> \*\//, function(){ return grownSrc; });
+}
+
+/* Always hands back a complete, runnable HTML file. Over http(s) it prefers
+   the served source, which is byte-exact; from file:// it uses the DOM. */
+function exportBake(){
+  setStatus("baking…");
+  const finish = function(html, how){
+    if(!html || html.indexOf("/* <<<MAP>>> */") < 0){
+      setStatus("could not rebuild the file — nothing written");
+      return;
+    }
+    download(spliceData(html), "neural_mind_map_baked.html", "text/html");
+    setStatus("downloaded a full HTML file (" + how + ")");
+  };
+  let p;
+  try{ p = fetch(location.href, { cache:"no-store" })
+             .then(function(r){ return r.ok ? r.text() : null; })
+             .catch(function(){ return null; }); }
+  catch(err){ p = Promise.resolve(null); }
+  p.then(function(src){
+    if(src && src.indexOf("/* <<<MAP>>> */") >= 0) finish(src, "from source");
+    else finish(sourceFromDOM(), "rebuilt from the page");
+  });
+}
+
+/* ---- wiring -------------------------------------------------------------- */
+function initEditor(){
+  elGate = document.getElementById("gate");
+  elGateForm = document.getElementById("gateForm");
+  elGatePass = document.getElementById("gatePass");
+  elGateMsg  = document.getElementById("gateMsg");
+  elEd       = document.getElementById("ed");
+  elSel      = document.getElementById("edSel");
+  elLabel    = document.getElementById("edLabel");
+  elUrl      = document.getElementById("edUrl");
+  elExt      = document.getElementById("edExt");
+  elAddChild = document.getElementById("edAddChild");
+  elAddBranch= document.getElementById("edAddBranch");
+  elDel      = document.getElementById("edDel");
+  elExport   = document.getElementById("edExport");
+  elRevert   = document.getElementById("edRevert");
+  elStatus   = document.getElementById("edStatus");
+
+  elGateForm.addEventListener("submit", function(e){ e.preventDefault(); tryUnlock(); });
+  document.getElementById("gateCancel").addEventListener("click", closeGate);
+  elGate.addEventListener("pointerdown", function(e){ if(e.target === elGate) closeGate(); });
+  document.addEventListener("keydown", function(e){
+    if(e.key === "Escape" && !elGate.hidden) closeGate();
+  });
+
+  elLabel.addEventListener("input",  function(){ editLabel(elLabel.value); });
+  elUrl  .addEventListener("input",  function(){ editLink(elUrl.value, elExt.checked); });
+  elExt  .addEventListener("change", function(){ editLink(elUrl.value, elExt.checked); });
+  elAddChild .addEventListener("click", addChild);
+  elAddBranch.addEventListener("click", addBranch);
+  elDel      .addEventListener("click", deleteSelected);
+  elExport   .addEventListener("click", exportBake);
+  elRevert   .addEventListener("click", revertToBaked);
+}
+
 /* ==========================================================================
    23 · BOOT
    ========================================================================== */
@@ -1940,12 +2445,16 @@ window.addEventListener("orientationchange", function(){ setTimeout(resize, 120)
   vw = window.innerWidth; vh = window.innerHeight;
   isSmall = Math.min(vw,vh) < 620;
   densityK = isSmall ? 0.78 : 1;
+  loadLocal();                    // local edits, if this browser has any
+  rebuildFlat();
   allocParticles(isSmall ? T.countMobile : T.countDesktop);
   buildCloud();
   initFreeGrid();
   initBuckets();
   applyTheme(0);
   resize();
+  GROWN_FLAT = FLAT;
+  initEditor();
   start();
 })();
 
