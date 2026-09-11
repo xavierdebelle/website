@@ -1754,6 +1754,29 @@ var cloud = {
   pending: null                      // a conflict waiting on a decision
 };
 
+/* A bare code like auth/unauthorized-domain tells you nothing useful while
+   you are standing in front of the tool. These are the failures that actually
+   happen when wiring this up, each with the fix rather than the symptom. */
+function explain(code) {
+  var map = {
+    'auth/unauthorized-domain':
+      'This site is not on the Firebase authorised domains list. Add ' +
+      location.hostname + ' under Authentication → Settings → Authorized domains.',
+    'auth/operation-not-allowed':
+      'Google sign-in is not enabled for this Firebase project. Turn it on under ' +
+      'Authentication → Sign-in method.',
+    'auth/popup-blocked':
+      'Your browser blocked the sign-in popup. Allow popups for this site, or try again.',
+    'auth/popup-closed-by-user':
+      'The sign-in window closed before it finished.',
+    'auth/network-request-failed':
+      'No network. The tool keeps working offline and will sync when you are back.',
+    'PERMISSION_DENIED':
+      'The database rules refused this account. Check the rules allow users/<your uid>.'
+  };
+  return map[code] || ('Sync failed' + (code ? ' (' + code + ')' : '') + '.');
+}
+
 function deviceName() {
   var ua = navigator.userAgent;
   if (/iPhone/.test(ua)) return 'iPhone';
@@ -1950,7 +1973,7 @@ function paintSync() {
     case 'working':  label = 'Syncing…';                 title = 'Talking to the cloud'; break;
     case 'synced':   label = 'Synced · ' + hhmm(cloud.at); title = 'Click to sync now'; break;
     case 'conflict': label = 'Both changed';             title = 'This device and the cloud disagree'; break;
-    case 'error':    label = 'Sync failed';              title = cloud.msg || 'Click to retry'; break;
+    case 'error':    label = 'Sync failed';              title = explain(cloud.msg); break;
     default:         label = 'Sign in to sync';          title = 'Save this across your devices';
   }
   btn.textContent = label;
@@ -1958,6 +1981,16 @@ function paintSync() {
   btn.className = 'btn' + (cloud.status === 'conflict' || cloud.status === 'error' ? ' del' : '');
   btn.style.display = '';
   out.style.display = cloud.uid ? '' : 'none';
+
+  if (cloud.status === 'error') {
+    $('sync-what').textContent = explain(cloud.msg);
+    $('sync-keep-local').style.display = 'none';
+    $('sync-keep-cloud').style.display = 'none';
+    bar.classList.add('on');
+    return;
+  }
+  $('sync-keep-local').style.display = '';
+  $('sync-keep-cloud').style.display = '';
 
   if (cloud.status === 'conflict' && cloud.pending) {
     $('sync-what').textContent =
@@ -2028,7 +2061,10 @@ window.__app = {
     deviceName: deviceName,
     // Realtime Database drops empty arrays and objects, so anything coming
     // back off the wire must survive normalise(). Testable from here.
-    normalise: normalise
+    normalise: normalise,
+    paint: paintSync,
+    setStatus: setStatus,
+    explain: explain
   }
 };
 })();

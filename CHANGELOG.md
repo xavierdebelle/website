@@ -5,6 +5,26 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v38 — 2026-09-11
+
+**Sync failures now say what is wrong**
+- Sign-in was failing on the live site with nothing shown but "Sync failed".
+  The cause was `auth/unauthorized-domain`: Firebase only allowed `localhost`,
+  `xdb-tools.firebaseapp.com` and `xdb-tools.web.app`, so the button could only
+  ever have worked locally. Fixed in the console by authorising
+  `xavierdebelle.github.io` — no code change needed for that part.
+- The real fault was mine: the failure reason was buried in a tooltip, so the
+  tool needed a diagnostic run against the Identity Toolkit API to explain
+  itself. Errors now appear in the notice bar in plain language, naming the
+  actual hostname and the exact console path to fix it.
+- Covered: unauthorised domain, provider not enabled, popup blocked, popup
+  closed, no network, and rules refusing the account. Anything unrecognised
+  still shows its raw code rather than swallowing it.
+- The conflict bar's Keep-this-device / Keep-cloud buttons hide on an error,
+  since there is nothing to choose between.
+
+---
+
 ## v37 — 2026-09-11
 
 **What's new** · Project Phases · [tools.html#personal]
