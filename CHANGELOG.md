@@ -7,7 +7,7 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ## v26 — 2026-09-10
 
-**Budget Tracker reads properly on a phone**
+**Budget Tracker v10 — reads properly on a phone**
 - The tool had no viewport tag, so phones laid it out at ~980px and shrank the
   whole thing to fit — the "too zoomed out" everyone was seeing. Added, along
   with the rest of the mobile work that only matters once the page is at real size.
