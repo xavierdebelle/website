@@ -5,6 +5,41 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v26 — 2026-09-10
+
+**Budget Tracker reads properly on a phone**
+- The tool had no viewport tag, so phones laid it out at ~980px and shrank the
+  whole thing to fit — the "too zoomed out" everyone was seeing. Added, along
+  with the rest of the mobile work that only matters once the page is at real size.
+- **Rows go two-storey under 640px**: the name gets the full width on top, the
+  frequency, planned, actual and % sit underneath, aligned to the column headers.
+  Section totals follow the same shape. Under 360px the % column drops out to
+  give the numbers room.
+- **Every field is 16px on mobile**, because iOS zooms the page when you focus
+  anything smaller and then leaves you there.
+- **Drag to reorder works on touch.** HTML5 drag-and-drop does not fire on a
+  phone at all, so the handle now runs on pointer events for touch and keeps
+  native drag on the desktop. Drop markers and forward propagation behave the same.
+- Controls that only appeared on hover — drag handles, delete buttons — are
+  pinned visible on touch devices, where there is no hover to reveal them.
+- Header stacks, buttons become a 3-up grid, month nav gets thumb-sized arrows,
+  summary cards go 3-up (2-up on small phones), modals become full-height sheets
+  with the footer on the bottom edge.
+- Fixed the section grid forcing a 400px track on a 360px screen, which was
+  pushing the page sideways.
+
+**Also fixed, and it was a desktop bug too:** the Assets total row had a spare
+spacer cell in a four-column grid, so the change-since-last-month figure wrapped
+onto its own line. One cell removed, it sits where it belongs at every width.
+
+**Verified** at 360, 375, 414, 768 and desktop widths under real viewport
+emulation: no horizontal overflow at any of them, nothing wider than the screen,
+inputs at 16px, and a simulated touch drag reordering a row and propagating it
+forward. Desktop layout re-checked after the change — rows still single-line,
+13px, handles still hidden until hover.
+
+---
+
 ## v25 — 2026-09-10
 
 **Budget Tracker v9 — assets, frequencies, templates**
