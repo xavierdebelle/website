@@ -5,6 +5,38 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v37 — 2026-09-11
+
+**What's new** · Project Phases · [tools.html#personal]
+### Your Phases,<br>On Every Device
+Project Phases can now follow you between phone and laptop. Sign in and your
+projects, phases and time log are kept in step; stay signed out and it behaves
+exactly as it always has, saving only in your own browser.
+
+If both devices changed since they last agreed, it stops and asks which copy
+to keep rather than quietly picking one.
+
+**Sync switched on**
+- Realtime Database wired to Project Phases, project `xdb-tools`.
+- **Rules verified before any data went near it.** Unauthenticated `curl`
+  against the root, `/users`, and a write probe all returned
+  `401 Permission denied`. Confirmed, not assumed.
+- Verified in the browser: SDK loads, sign-in control appears, no console
+  errors, tool renders and saves as before.
+- Config is committed in the clear, which is correct — `apiKey` and
+  `databaseURL` are public identifiers that ship in every Firebase web app.
+  The rules are the protection.
+
+**Outstanding**
+- End-to-end round trip still untested: signing in needs Xavier's Google
+  account, so laptop → phone → laptop is his to confirm.
+- Rules currently give *any* signed-in Google account its own private subtree.
+  Visitors' data would be isolated from his, but it would use his quota. Worth
+  a deliberate decision: leave it open, or lock the rules to his uid.
+- Budget Tracker and Idea Bank still to adopt the same module.
+
+---
+
 ## v36 — 2026-09-11
 
 **Sync moved from Firestore to the Realtime Database**
