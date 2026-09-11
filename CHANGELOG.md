@@ -5,6 +5,77 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v33 — 2026-09-11
+
+**What's new** · Project Phases · [tools.html#personal]
+### Steps That Move,<br>Between Phases Too
+A plan never survives its first week in the order you wrote it. Every step and
+every phase now has a grip on its left: drag it where it belongs, including
+into a completely different phase, and the hours already logged against it
+move with it.
+
+- Drag the grip and a label follows your finger while a dashed band shows
+  exactly where the step will land. Works with a mouse and works with a thumb,
+  which it never did before.
+- Drop a step onto a phase that is collapsed and it goes to the end of it —
+  no need to open the phase first.
+- Prefer the keyboard? Focus a grip and press the arrow keys. A step at the
+  top or bottom of its phase steps into the next one rather than stopping.
+- Editing a step now offers a Phase dropdown, so you can rename it, re-estimate
+  it and re-home it in a single save.
+- Importing a backup asks for the file instead of asking you to paste the
+  contents of it. It reads the file first and tells you what is inside —
+  "3 projects · 14 phases · 82 entries" — before you agree to replace anything.
+
+**Reordering, on the board**
+- Steps and phases both carry a drag handle. Pointer events rather than HTML5
+  drag-and-drop, because the latter does nothing on iOS; `touch-action: none`
+  on the grip alone, so a finger on the handle drags while a finger anywhere
+  else still scrolls the page.
+- The dragged element hides and a placeholder is inserted at the live drop
+  position, so the target index is read straight off the DOM with the source
+  already out of the way — the same number `moveStep` wants after its splice.
+- Dragging near the top or bottom of the window auto-scrolls the board.
+  Escape cancels mid-drag and nothing changes.
+- Arrow keys on a focused grip do the same two moves. A step leaving its phase
+  expands the neighbour it lands in, and focus follows the item across the
+  re-render so you can keep pressing.
+- Time entries store a `phaseId` alongside the step. A step that changes phase
+  rewrites it on every entry, so the log, the filters and the report all agree
+  about where those hours belong.
+
+**Import takes a file**
+- A drop zone with a file picker, replacing the paste-a-blob textarea. The
+  file is read and validated on selection, not on submit, so the button only
+  ever commits something already parsed.
+- Non-JSON, wrong extension and empty-submit each get their own message, and
+  cancelling clears the armed file so a stale one can never be committed by
+  the next import.
+
+**Housekeeping**
+- The tool Xavier handed over was a browser "save page as" capture of the live
+  one: 180KB of it was rendered board HTML that the app throws away and
+  rebuilds on every load. Stripped back to empty containers — 242KB to 73KB,
+  identical behaviour. Confirmed the capture's code was byte-identical to the
+  deployed file first, so nothing on the site was rolled back by taking it as
+  the base.
+- Storage key is unchanged at `ptt.v1`, so existing projects and time entries
+  load untouched.
+
+**Verified**
+- Scan clean: no external hosts, no endpoints, no secrets, no personal data.
+- Exercised in the browser against the final file: drag within a phase, drag
+  across phases, drop onto a collapsed phase, Escape-cancel, arrow keys in
+  both directions and across the phase boundary, phase reorder, the modal
+  move, all four import paths, plus timer, CSV export, collapse-all and
+  delete-step as regressions. No console errors.
+- Persistence checked over the local server rather than a `file://` URL, which
+  is the only place `localStorage` actually runs: moved a step into another
+  phase, reloaded, and found it still there with its time entry re-filed under
+  the new phase.
+
+---
+
 ## v32 — 2026-09-11
 
 **What's new** · Fixed · [tools.html]

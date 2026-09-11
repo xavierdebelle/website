@@ -1,7 +1,6 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
+<html lang="en"><head><meta charset="utf-8">
+
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Project Phases &amp; Time Log</title>
 <style>
@@ -120,6 +119,29 @@ select:focus,input:focus,textarea:focus{outline:2px solid var(--accent-soft);bor
 .add-step:hover{color:var(--accent);background:var(--accent-soft)}
 .empty{background:var(--card);border:1px dashed var(--line);border-radius:var(--radius);padding:28px;text-align:center;color:var(--muted)}
 
+/* ---------- reordering ---------- */
+.handle{cursor:grab;touch-action:none;padding:5px 3px}
+.handle:active{cursor:grabbing}
+.handle:focus{outline:none}
+.handle:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.phase-handle{margin-left:-4px}
+.step.dragging,.phase.dragging{display:none}
+.drop-ph{list-style:none;height:36px;border:1px dashed var(--accent);background:var(--accent-soft);border-radius:8px;margin:4px 12px}
+.drop-ph.phase-ph{height:56px;margin:0 0 14px}
+.phase.drop-into{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+#drag-ghost{
+  position:fixed;left:0;top:0;z-index:60;pointer-events:none;max-width:70vw;
+  background:var(--card);color:var(--ink);border:1px solid var(--accent);border-radius:9px;
+  padding:7px 12px;font-weight:600;box-shadow:0 10px 26px rgba(16,24,40,.22);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+body.dragging-on{user-select:none;-webkit-user-select:none}
+
+/* ---------- file drop ---------- */
+.filedrop{border:1px dashed var(--line);border-radius:10px;padding:18px 14px;text-align:center;background:var(--bg)}
+.filedrop.over{border-color:var(--accent);background:var(--accent-soft)}
+.filedrop .hint{margin-top:9px}
+
 /* ---------- tables ---------- */
 table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow)}
 th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
@@ -178,6 +200,7 @@ tfoot td{font-weight:700;background:var(--bg);border-top:2px solid var(--line)}
   .tb-label{display:none}
   .timer-btn{padding:4px 10px}
   .step-actions{margin-left:auto}
+  .handle{padding:8px 6px}
   .chip{min-width:auto;padding:2px 8px}
   #running-elapsed{margin-left:0}
 }
@@ -195,8 +218,8 @@ tfoot td{font-weight:700;background:var(--bg);border-top:2px solid var(--line)}
       <select id="project-select" aria-label="Project"></select>
     </div>
     <button class="btn" id="btn-add-project">New project</button>
-    <button class="btn ghost icon" id="btn-rename-project" title="Rename project"></button>
-    <button class="btn ghost icon del" id="btn-delete-project" title="Delete project"></button>
+    <button class="btn ghost icon" id="btn-rename-project" title="Rename project"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false"><path d="M11.9 1.9l2.2 2.2-8.4 8.4-2.9.7.7-2.9 8.4-8.4z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"></path></svg></button>
+    <button class="btn ghost icon del" id="btn-delete-project" title="Delete project"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false"><path d="M2.9 4.3h10.2M6.3 4.3V2.9h3.4v1.4M4.5 4.3l.6 8.3h5.8l.6-8.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"></path></svg></button>
     <button class="btn" id="btn-export">Export</button>
     <button class="btn" id="btn-import">Import</button>
   </div>
@@ -226,11 +249,11 @@ tfoot td{font-weight:700;background:var(--bg);border-top:2px solid var(--line)}
     <div class="filters">
       <div>
         <label for="f-phase">Phase</label>
-        <select id="f-phase"></select>
+        <select id="f-phase"><option value="">All phases</option></select>
       </div>
       <div>
         <label for="f-step">Step</label>
-        <select id="f-step"></select>
+        <select id="f-step"><option value="">All steps</option></select>
       </div>
       <div>
         <label for="f-from">From</label>
@@ -276,9 +299,9 @@ tfoot td{font-weight:700;background:var(--bg);border-top:2px solid var(--line)}
   </section>
 </div>
 
-<div id="modal-overlay">
+<div id="modal-overlay" class="">
   <form id="modal" autocomplete="off">
-    <h3 id="modal-title"></h3>
+    <h3 id="modal-title">Import</h3>
     <div id="modal-body"></div>
     <div id="modal-error"></div>
     <div class="modal-actions">
@@ -637,7 +660,10 @@ var ICO = {
   trash: svgIcon('M2.9 4.3h10.2M6.3 4.3V2.9h3.4v1.4M4.5 4.3l.6 8.3h5.8l.6-8.3'),
   up: svgIcon('M8 12.8V3.6M4.4 7.2L8 3.6l3.6 3.6'),
   down: svgIcon('M8 3.2v9.2M4.4 8.8L8 12.4l3.6-3.6'),
-  chev: svgIcon('M6.2 3.4L10.8 8l-4.6 4.6')
+  chev: svgIcon('M6.2 3.4L10.8 8l-4.6 4.6'),
+  grip: '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false">' +
+    '<path d="M6 4.2h.01M10 4.2h.01M6 8h.01M10 8h.01M6 11.8h.01M10 11.8h.01" fill="none" ' +
+    'stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>'
 };
 
 function esc(s) {
@@ -662,6 +688,7 @@ function openModal(title, bodyHTML, onSave, focusId) {
   if (f) { f.focus(); if (f.select) f.select(); }
 }
 function closeModal() {
+  pendingImport = null;
   $('modal-overlay').classList.remove('open');
   modalSave = null;
   $('modal-body').innerHTML = '';
@@ -791,6 +818,9 @@ function renderBoard() {
       var stepOver = st.estimate > 0 && sSec > st.estimate;
       return '' +
         '<li class="step ' + st.status + (isRunning ? ' running' : '') + '" data-step="' + esc(st.id) + '">' +
+          '<button type="button" class="icon handle" data-act="handle" ' +
+            'title="Drag to reorder or drop into another phase — or use the arrow keys" ' +
+            'aria-label="Move step">' + ICO.grip + '</button>' +
           '<button type="button" class="chip ' + st.status + '" data-act="cycle" title="Change status">' + statusLabel(st.status) + '</button>' +
           '<span class="step-name">' + esc(st.name) + '</span>' +
           '<span class="step-time"' + (isRunning ? ' id="live-step-time"' : '') + '>' + fmtHM(sSec) + '</span>' +
@@ -809,6 +839,9 @@ function renderBoard() {
       '<section class="phase' + (ph.collapsed ? ' collapsed' : '') + '" data-phase="' + esc(ph.id) + '">' +
         '<header class="phase-head">' +
           '<div class="phase-title">' +
+            '<button type="button" class="icon handle phase-handle" data-act="handle" ' +
+              'title="Drag to reorder this phase — or use the arrow keys" ' +
+              'aria-label="Move phase">' + ICO.grip + '</button>' +
             '<button type="button" class="phase-toggle" data-act="toggle-phase" ' +
               'aria-expanded="' + (ph.collapsed ? 'false' : 'true') + '" ' +
               'title="' + (ph.collapsed ? 'Expand' : 'Collapse') + ' this phase">' +
@@ -994,6 +1027,249 @@ function tick() {
 setInterval(tick, 1000);
 
 /* ============================================================
+   Reordering
+   ------------------------------------------------------------
+   Two ways in, both ending in the same two moves: drag the grip,
+   or focus it and press the arrow keys. A step that lands in a
+   different phase takes its time entries with it.
+   ============================================================ */
+function phaseIndex(id) {
+  var p = currentProject();
+  if (!p) return -1;
+  for (var i = 0; i < p.phases.length; i++) if (p.phases[i].id === id) return i;
+  return -1;
+}
+
+function moveStep(stepId, toPhaseId, toIndex) {
+  var from = phaseOfStep(stepId);
+  var to = findPhase(toPhaseId) || from;
+  if (!from || !to) return false;
+  var i = -1;
+  for (var k = 0; k < from.steps.length; k++) if (from.steps[k].id === stepId) { i = k; break; }
+  if (i < 0) return false;
+  var st = from.steps.splice(i, 1)[0];
+  var at = toIndex == null ? to.steps.length : Math.max(0, Math.min(toIndex, to.steps.length));
+  to.steps.splice(at, 0, st);
+  if (to.id !== from.id) {
+    // The log derives its phase from the step, but the stored id should not lie.
+    state.log.forEach(function (e) { if (e.stepId === stepId) e.phaseId = to.id; });
+  }
+  save();
+  return true;
+}
+
+function movePhaseTo(phaseId, toIndex) {
+  var p = currentProject();
+  var i = phaseIndex(phaseId);
+  if (!p || i < 0) return false;
+  var ph = p.phases.splice(i, 1)[0];
+  p.phases.splice(Math.max(0, Math.min(toIndex, p.phases.length)), 0, ph);
+  save();
+  return true;
+}
+
+// Put the caret back on the grip that just moved, so arrow keys keep working.
+function focusHandle(kind, id) {
+  var el = document.querySelector(kind === 'step'
+    ? '.step[data-step="' + id + '"] .handle'
+    : '.phase[data-phase="' + id + '"] .handle');
+  if (el) el.focus();
+}
+
+/* ---------- drag ---------- */
+var drag = null;
+
+function ghostAt(x, y) {
+  if (drag) drag.ghost.style.transform = 'translate(' + (x + 14) + 'px,' + (y - 14) + 'px)';
+}
+
+function startDrag(handle, ev) {
+  var stepEl = handle.closest('.step');
+  var phaseEl = handle.closest('.phase');
+  var el = stepEl || phaseEl;
+  if (!el) return;
+  var kind = stepEl ? 'step' : 'phase';
+  var id = kind === 'step' ? stepEl.getAttribute('data-step') : phaseEl.getAttribute('data-phase');
+  var thing = kind === 'step' ? findStep(id) : findPhase(id);
+
+  var ghost = document.createElement('div');
+  ghost.id = 'drag-ghost';
+  ghost.textContent = thing ? thing.name : (kind === 'step' ? 'Step' : 'Phase');
+  document.body.appendChild(ghost);
+
+  var holder = document.createElement(kind === 'step' ? 'li' : 'div');
+  holder.className = 'drop-ph' + (kind === 'phase' ? ' phase-ph' : '');
+  el.parentNode.insertBefore(holder, el.nextSibling);
+
+  drag = { kind: kind, id: id, el: el, ghost: ghost, holder: holder };
+  el.classList.add('dragging');
+  document.body.classList.add('dragging-on');
+  ghostAt(ev.clientX, ev.clientY);
+
+  document.addEventListener('pointermove', onDragMove, { passive: false });
+  document.addEventListener('pointerup', onDragUp);
+  document.addEventListener('pointercancel', onDragCancel);
+}
+
+function clearDropInto() {
+  var marked = document.querySelectorAll('.phase.drop-into');
+  for (var i = 0; i < marked.length; i++) marked[i].classList.remove('drop-into');
+}
+
+function placeStep(y) {
+  var phases = document.querySelectorAll('#board > .phase');
+  if (!phases.length) return;
+  var target = null;
+  for (var i = 0; i < phases.length; i++) {
+    var r = phases[i].getBoundingClientRect();
+    if (y >= r.top && y <= r.bottom) { target = phases[i]; break; }
+  }
+  if (!target) {
+    // Off the ends of the board — stick to the nearest phase rather than doing nothing.
+    target = y < phases[0].getBoundingClientRect().top ? phases[0] : phases[phases.length - 1];
+  }
+  clearDropInto();
+  var list = target.querySelector('.steps');
+  if (!list) return;
+  if (target.classList.contains('collapsed')) {
+    // Nothing to aim between while it is shut: dropping adds it to the end.
+    target.classList.add('drop-into');
+    list.appendChild(drag.holder);
+    return;
+  }
+  var items = list.children, before = null;
+  for (var j = 0; j < items.length; j++) {
+    var it = items[j];
+    if (it === drag.el || !it.classList.contains('step')) continue;
+    var rr = it.getBoundingClientRect();
+    if (y < rr.top + rr.height / 2) { before = it; break; }
+  }
+  list.insertBefore(drag.holder, before);
+}
+
+function placePhase(y) {
+  var board = $('board');
+  var items = board.children, before = null;
+  for (var i = 0; i < items.length; i++) {
+    var it = items[i];
+    if (it === drag.el || !it.classList.contains('phase')) continue;
+    var r = it.getBoundingClientRect();
+    if (y < r.top + r.height / 2) { before = it; break; }
+  }
+  board.insertBefore(drag.holder, before);
+}
+
+// Dragging past the edge of the window scrolls the board along.
+function autoScroll(y) {
+  var margin = 80, h = window.innerHeight;
+  if (y < margin) window.scrollBy(0, -Math.ceil((margin - y) / 5));
+  else if (y > h - margin) window.scrollBy(0, Math.ceil((y - (h - margin)) / 5));
+}
+
+function onDragMove(ev) {
+  if (!drag) return;
+  ev.preventDefault();
+  ghostAt(ev.clientX, ev.clientY);
+  autoScroll(ev.clientY);
+  if (drag.kind === 'step') placeStep(ev.clientY);
+  else placePhase(ev.clientY);
+}
+
+function onDragUp() { endDrag(true); }
+function onDragCancel() { endDrag(false); }
+
+// How many real siblings sit above the placeholder — the index it should land at,
+// counted with the dragged element already out of the way.
+function holderIndex(d, cls) {
+  var n = d.holder.previousElementSibling, i = 0;
+  while (n) {
+    if (n !== d.el && n.classList.contains(cls)) i++;
+    n = n.previousElementSibling;
+  }
+  return i;
+}
+
+function endDrag(commit) {
+  if (!drag) return;
+  var d = drag;
+  drag = null;
+  document.removeEventListener('pointermove', onDragMove);
+  document.removeEventListener('pointerup', onDragUp);
+  document.removeEventListener('pointercancel', onDragCancel);
+  if (d.ghost.parentNode) d.ghost.parentNode.removeChild(d.ghost);
+  d.el.classList.remove('dragging');
+  document.body.classList.remove('dragging-on');
+  clearDropInto();
+
+  if (commit && d.holder.parentNode) {
+    if (d.kind === 'step') {
+      var host = d.holder.parentNode.closest('.phase');
+      if (host) moveStep(d.id, host.getAttribute('data-phase'), holderIndex(d, 'step'));
+    } else {
+      movePhaseTo(d.id, holderIndex(d, 'phase'));
+    }
+  }
+  if (d.holder.parentNode) d.holder.parentNode.removeChild(d.holder);
+  document.body.classList.remove('dragging-on');
+  render();
+  focusHandle(d.kind, d.id);
+}
+
+$('board').addEventListener('pointerdown', function (ev) {
+  var handle = ev.target.closest && ev.target.closest('[data-act="handle"]');
+  if (!handle || drag) return;
+  if (ev.button != null && ev.button !== 0) return;
+  ev.preventDefault();
+  startDrag(handle, ev);
+});
+
+// Arrow keys off a focused grip. A step at the top or bottom of its phase
+// steps into the neighbouring one, which is the whole point.
+$('board').addEventListener('keydown', function (ev) {
+  if (ev.key !== 'ArrowUp' && ev.key !== 'ArrowDown') return;
+  var handle = ev.target.closest && ev.target.closest('[data-act="handle"]');
+  if (!handle) return;
+  var p = currentProject();
+  if (!p) return;
+  ev.preventDefault();
+  var up = ev.key === 'ArrowUp';
+  var stepEl = handle.closest('.step');
+
+  if (stepEl) {
+    var sid = stepEl.getAttribute('data-step');
+    var ph = phaseOfStep(sid);
+    if (!ph) return;
+    var i = -1;
+    for (var k = 0; k < ph.steps.length; k++) if (ph.steps[k].id === sid) { i = k; break; }
+    var j = up ? i - 1 : i + 1;
+    if (j >= 0 && j < ph.steps.length) {
+      moveStep(sid, ph.id, j);
+    } else {
+      var nb = p.phases[phaseIndex(ph.id) + (up ? -1 : 1)];
+      if (!nb) return;
+      nb.collapsed = false;                       // show where it went
+      moveStep(sid, nb.id, up ? nb.steps.length : 0);
+    }
+    render();
+    focusHandle('step', sid);
+    return;
+  }
+
+  var phaseEl = handle.closest('.phase');
+  if (!phaseEl) return;
+  var pid = phaseEl.getAttribute('data-phase');
+  var t = phaseIndex(pid) + (up ? -1 : 1);
+  if (t < 0 || t >= p.phases.length) return;
+  movePhaseTo(pid, t);
+  render();
+  focusHandle('phase', pid);
+});
+
+document.addEventListener('keydown', function (ev) {
+  if (ev.key === 'Escape' && drag) endDrag(false);
+});
+
+/* ============================================================
    Board interactions
    ============================================================ */
 $('board').addEventListener('click', function (ev) {
@@ -1004,6 +1280,7 @@ $('board').addEventListener('click', function (ev) {
   var phaseEl = btn.closest('.phase');
   var stepId = stepEl && stepEl.getAttribute('data-step');
   var phaseId = phaseEl && phaseEl.getAttribute('data-phase');
+  if (act === 'handle') return;                 // the grip is dragged, not clicked
   resetSaveBtn();
 
   if (act === 'timer') return startTimer(stepId);
@@ -1081,9 +1358,15 @@ function editStep(stepId, phaseId) {
   var st = stepId ? findStep(stepId) : null;
   var ph = st ? phaseOfStep(stepId) : findPhase(phaseId);
   if (!ph) return;
+  var phases = currentProject().phases;
   openModal(st ? 'Edit step' : 'New step in ' + ph.name,
     '<div class="row"><label for="st-name">Step name</label>' +
       '<input type="text" id="st-name" value="' + esc(st ? st.name : '') + '" placeholder="Wireframes"></div>' +
+    '<div class="row"><label for="st-phase">Phase</label><select id="st-phase">' +
+      phases.map(function (x) {
+        return '<option value="' + esc(x.id) + '"' + (x.id === ph.id ? ' selected' : '') + '>' + esc(x.name) + '</option>';
+      }).join('') + '</select>' +
+      '<div class="hint">Move this step to another phase — its logged time moves with it.</div></div>' +
     '<div class="row"><label for="st-est">Estimate</label>' +
       '<input type="text" id="st-est" value="' + (st && st.estimate ? esc(fmtHM(st.estimate)) : '') + '" placeholder="2h 30m">' +
       '<div class="hint">Optional. “2h”, “90m”, “1:30” or a plain number of minutes.</div></div>' +
@@ -1101,8 +1384,13 @@ function editStep(stepId, phaseId) {
         if (est === null) { modalError('Could not read that estimate — try “2h 30m”.'); return false; }
       }
       var status = $('st-status').value;
-      if (st) { st.name = name; st.estimate = est; st.status = status; }
-      else ph.steps.push({ id: uid('st'), name: name, status: status, estimate: est });
+      var target = $('st-phase').value;
+      if (st) {
+        st.name = name; st.estimate = est; st.status = status;
+        if (target && target !== ph.id) moveStep(st.id, target, null);
+      } else {
+        (findPhase(target) || ph).steps.push({ id: uid('st'), name: name, status: status, estimate: est });
+      }
       save();
       return true;
     }, 'st-name');
@@ -1314,23 +1602,78 @@ $('btn-export').addEventListener('click', function () {
   download('project-phases-' + dateKey(Date.now()) + '.json', 'application/json', JSON.stringify(state, null, 2));
 });
 
+var pendingImport = null;
+
+function describeImport(next) {
+  var n = next.projects.length;
+  var phases = next.projects.reduce(function (a, x) { return a + x.phases.length; }, 0);
+  return n + (n === 1 ? ' project' : ' projects') + ' · ' +
+    phases + (phases === 1 ? ' phase' : ' phases') + ' · ' +
+    next.log.length + ' time ' + (next.log.length === 1 ? 'entry' : 'entries');
+}
+
+// Read the chosen file straight away, so the Import button only ever commits
+// something already parsed and checked.
+function readImportFile(file) {
+  var status = $('imp-status');
+  pendingImport = null;
+  if (!file) return;
+  if (!/\.json$/i.test(file.name) && String(file.type || '').indexOf('json') === -1) {
+    modalError('Pick the .json file you exported from this tool.');
+    return;
+  }
+  if (status) status.textContent = 'Reading ' + file.name + '…';
+  var reader = new FileReader();
+  reader.onload = function () {
+    var next = null;
+    try { next = normalise(JSON.parse(String(reader.result))); } catch (e) { next = null; }
+    if (!next) { modalError('That file is not valid JSON.'); if (status) status.textContent = 'Nothing to import.'; return; }
+    if (!next.projects.length) { modalError('No projects found in that file.'); if (status) status.textContent = 'Nothing to import.'; return; }
+    pendingImport = next;
+    $('modal-error').classList.remove('on');
+    if (status) status.innerHTML = '<strong>' + esc(file.name) + '</strong><br>' + esc(describeImport(next));
+  };
+  reader.onerror = function () { modalError('That file could not be read.'); };
+  reader.readAsText(file);
+}
+
 $('btn-import').addEventListener('click', function () {
   resetSaveBtn();
+  pendingImport = null;
   openModal('Import',
-    '<div class="row"><label for="imp-json">Paste a previously exported JSON file</label>' +
-      '<textarea id="imp-json" rows="8" placeholder="{ &quot;version&quot;: 1, … }"></textarea>' +
-      '<div class="hint">This replaces everything currently stored in this browser.</div></div>',
+    '<div class="row"><label>Exported file</label>' +
+      '<div class="filedrop" id="imp-drop">' +
+        '<input type="file" id="imp-file" accept="application/json,.json" style="display:none">' +
+        '<button type="button" class="btn" id="imp-pick">Choose a .json file</button>' +
+        '<div class="hint" id="imp-status">…or drop it here.</div>' +
+      '</div>' +
+      '<div class="hint">This replaces every project and time entry stored in this browser.</div></div>',
     function () {
-      var next;
-      try { next = normalise(JSON.parse($('imp-json').value)); }
-      catch (e) { modalError('That is not valid JSON.'); return false; }
-      if (!next || !next.projects.length) { modalError('No projects found in that file.'); return false; }
-      state = next;
+      if (!pendingImport) { modalError('Choose the exported .json file first.'); return false; }
+      state = pendingImport;
+      pendingImport = null;
       if (!currentProject()) state.currentId = state.projects[0].id;
       filters = { phaseId: '', stepId: '', from: '', to: '' };
       save();
       return true;
-    }, 'imp-json');
+    });
+  $('modal-save').textContent = 'Import';
+
+  $('imp-pick').addEventListener('click', function () { $('imp-file').click(); });
+  $('imp-file').addEventListener('change', function () { readImportFile(this.files && this.files[0]); });
+
+  var zone = $('imp-drop');
+  ['dragenter', 'dragover'].forEach(function (t) {
+    zone.addEventListener(t, function (ev) { ev.preventDefault(); zone.classList.add('over'); });
+  });
+  ['dragleave', 'dragend'].forEach(function (t) {
+    zone.addEventListener(t, function () { zone.classList.remove('over'); });
+  });
+  zone.addEventListener('drop', function (ev) {
+    ev.preventDefault();
+    zone.classList.remove('over');
+    readImportFile(ev.dataTransfer && ev.dataTransfer.files && ev.dataTransfer.files[0]);
+  });
 });
 
 $('btn-add-phase').addEventListener('click', function () {
@@ -1365,9 +1708,12 @@ window.__app = {
   seconds: function (stepId) { return secondsOfStep(stepId, Date.now()); },
   parseDuration: parseDuration,
   fmtHM: fmtHM,
+  moveStep: moveStep,
+  movePhase: movePhaseTo,
   render: render
 };
 })();
 </script>
-</body>
-</html>
+
+
+</body></html>
