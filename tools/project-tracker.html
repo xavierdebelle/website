@@ -64,6 +64,16 @@ select:focus,input:focus,textarea:focus{outline:2px solid var(--accent-soft);bor
   padding:10px 14px;margin-bottom:14px;
 }
 #running-bar.on{display:flex}
+/* the same shape as the running bar, in the warning palette rather than the
+   running one — this tool is a light theme, so the fill must stay pale */
+#sync-bar{
+  display:none;align-items:center;gap:12px;flex-wrap:wrap;
+  background:var(--warn-soft);border:1px solid var(--warn);border-radius:var(--radius);
+  padding:10px 14px;margin-bottom:14px;color:var(--ink);
+}
+#sync-bar.on{display:flex}
+#sync-bar .dot{width:8px;height:8px;border-radius:50%;background:var(--warn);flex:none}
+#sync-bar #sync-what{flex:1;min-width:240px;font-size:13px;line-height:1.45}
 .dot{width:9px;height:9px;border-radius:50%;background:var(--run);animation:pulse 1.6s ease-in-out infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
 #running-what{font-weight:600}
@@ -222,6 +232,15 @@ tfoot td{font-weight:700;background:var(--bg);border-top:2px solid var(--line)}
     <button class="btn ghost icon del" id="btn-delete-project" title="Delete project"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false"><path d="M2.9 4.3h10.2M6.3 4.3V2.9h3.4v1.4M4.5 4.3l.6 8.3h5.8l.6-8.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"></path></svg></button>
     <button class="btn" id="btn-export">Export</button>
     <button class="btn" id="btn-import">Import</button>
+    <button class="btn" id="btn-sync" style="display:none">Sign in to sync</button>
+    <button class="btn ghost" id="btn-signout" style="display:none" title="Sign out of sync">Sign out</button>
+  </div>
+
+  <div id="sync-bar">
+    <span class="dot"></span>
+    <span id="sync-what"></span>
+    <button class="btn" id="sync-keep-local">Keep this device</button>
+    <button class="btn ghost" id="sync-keep-cloud">Keep cloud copy</button>
   </div>
 
   <div id="running-bar">
@@ -529,6 +548,7 @@ function normalise(s) {
 
 function save() {
   try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { /* private mode: keep going in memory */ }
+  cloudTouch();
 }
 
 // A write made moments before the page goes away can still be sitting in the
@@ -1693,6 +1713,284 @@ $('btn-collapse-all').addEventListener('click', function () {
 
 $('running-stop').addEventListener('click', stopTimer);
 
+
+/* ============================================================
+   Cloud sync — local first, optional, inert until configured
+
+   The tool works exactly as it always has with no account: everything
+   lives in localStorage and nothing leaves the browser. Signing in adds
+   a second copy in Firestore under your own user id, so the same data
+   follows you between phone and laptop.
+
+   Until FIREBASE below is filled in, none of this runs: no SDK is
+   fetched, no network call is made, and the sync controls stay hidden.
+   That keeps the tool exactly as fast for a visitor as it is today.
+   ============================================================ */
+
+/* Public Firebase identifiers. These are NOT secrets — they are meant to
+   ship in client code, and the security rules are what actually protect
+   the data. Paste the config from the Firebase console here. */
+var FIREBASE = {
+  apiKey:            '',
+  authDomain:        '',
+  projectId:         '',
+  appId:             ''
+};
+
+var SDK = 'https://www.gstatic.com/firebasejs/10.12.2/';
+var DOC = 'project-phases';          // users/{uid}/tools/project-phases
+var META_KEY = KEY + '.meta';        // watermarks live beside the data, not in it
+
+var cloud = {
+  on: !!FIREBASE.projectId,
+  status: 'signedout',               // signedout | working | synced | conflict | error
+  uid: null,
+  at: 0,                             // when we last completed a sync
+  msg: '',
+  fb: null,                          // the loaded SDK pieces
+  pushTimer: null,
+  pending: null                      // a conflict waiting on a decision
+};
+
+function deviceName() {
+  var ua = navigator.userAgent;
+  if (/iPhone/.test(ua)) return 'iPhone';
+  if (/iPad/.test(ua)) return 'iPad';
+  if (/Android/.test(ua)) return 'Android';
+  if (/Mac OS X/.test(ua)) return 'Mac';
+  if (/Windows/.test(ua)) return 'Windows';
+  return 'this device';
+}
+
+/* Sync bookkeeping is kept out of `state` so exports stay clean and so a
+   hand-edited import never carries someone else's watermark. */
+function meta() {
+  try {
+    var m = JSON.parse(localStorage.getItem(META_KEY) || '{}');
+    return {
+      updatedAt:    +m.updatedAt || 0,     // last local edit
+      lastSyncedAt: +m.lastSyncedAt || 0   // cloud's stamp the last time we agreed
+    };
+  } catch (e) { return { updatedAt: 0, lastSyncedAt: 0 }; }
+}
+function setMeta(patch) {
+  var m = meta();
+  for (var k in patch) m[k] = patch[k];
+  try { localStorage.setItem(META_KEY, JSON.stringify(m)); } catch (e) {}
+  return m;
+}
+
+/* ---- loading the SDK, once and only on demand ---- */
+function loadSDK() {
+  if (cloud.fb) return Promise.resolve(cloud.fb);
+  return Promise.all([
+    import(SDK + 'firebase-app.js'),
+    import(SDK + 'firebase-auth.js'),
+    import(SDK + 'firebase-firestore.js')
+  ]).then(function (mods) {
+    var app = mods[0], auth = mods[1], db = mods[2];
+    var application = app.initializeApp(FIREBASE);
+    cloud.fb = {
+      auth: auth.getAuth(application),
+      db: db.getFirestore(application),
+      a: auth,
+      f: db
+    };
+    return cloud.fb;
+  });
+}
+
+function docRef() {
+  var f = cloud.fb.f;
+  return f.doc(cloud.fb.db, 'users', cloud.uid, 'tools', DOC);
+}
+
+/* ---- the three way decision ----------------------------------------
+   Comparing local and cloud timestamps alone cannot tell an edit from a
+   stale copy. The watermark — the cloud stamp we last agreed with — is
+   what makes "both changed since we last spoke" detectable instead of
+   silently overwriting one side. */
+function reconcile(remote) {
+  var m = meta();
+  var localAt  = m.updatedAt;
+  var syncedAt = m.lastSyncedAt;
+  var remoteAt = remote ? (+remote.updatedAt || 0) : 0;
+
+  if (!remote) return localAt ? 'push' : 'idle';
+  if (remoteAt === syncedAt) return localAt > syncedAt ? 'push' : 'idle';
+  return localAt > syncedAt ? 'conflict' : 'pull';
+}
+
+function adopt(remote) {
+  var next = normalise(remote.data);
+  if (!next) return false;
+  state = next;
+  if (!currentProject() && state.projects.length) state.currentId = state.projects[0].id;
+  try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
+  setMeta({ updatedAt: +remote.updatedAt || Date.now(), lastSyncedAt: +remote.updatedAt || Date.now() });
+  render();
+  return true;
+}
+
+function pushNow() {
+  if (!cloud.uid) return Promise.resolve();
+  var stamp = Date.now();
+  var f = cloud.fb.f;
+  return f.setDoc(docRef(), {
+    data: JSON.parse(JSON.stringify(state)),
+    updatedAt: stamp,
+    device: deviceName()
+  }).then(function () {
+    setMeta({ updatedAt: stamp, lastSyncedAt: stamp });
+    cloud.at = stamp;
+  });
+}
+
+function pullNow() {
+  var f = cloud.fb.f;
+  return f.getDoc(docRef()).then(function (snap) {
+    return snap.exists() ? snap.data() : null;
+  });
+}
+
+/* One pass: look at the cloud, decide, act. */
+function syncNow(userAsked) {
+  if (!cloud.on || !cloud.uid || cloud.status === 'working') return;
+  setStatus('working');
+  return pullNow().then(function (remote) {
+    var move = reconcile(remote);
+    if (move === 'pull')     { adopt(remote); cloud.at = Date.now(); setStatus('synced'); return; }
+    if (move === 'push')     { return pushNow().then(function () { setStatus('synced'); }); }
+    if (move === 'conflict') { cloud.pending = remote; setStatus('conflict'); return; }
+    cloud.at = Date.now();
+    setStatus('synced');
+  }).catch(function (err) {
+    cloud.msg = (err && err.code) || 'failed';
+    setStatus('error');
+    if (userAsked) console.warn('[sync]', err);
+  });
+}
+
+/* Saving stays instant and local. The cloud write trails it, so typing is
+   never waiting on a network round trip. */
+function cloudTouch() {
+  setMeta({ updatedAt: Date.now() });
+  if (!cloud.on || !cloud.uid) return;
+  clearTimeout(cloud.pushTimer);
+  cloud.pushTimer = setTimeout(function () {
+    if (cloud.status === 'conflict') return;     // never overwrite a pending decision
+    setStatus('working');
+    pushNow().then(function () { setStatus('synced'); })
+             .catch(function () { setStatus('error'); });
+  }, 1500);
+}
+
+/* ---- sign in / out ---- */
+function signIn() {
+  if (!cloud.on) return;
+  setStatus('working');
+  loadSDK().then(function (fb) {
+    var provider = new fb.a.GoogleAuthProvider();
+    return fb.a.signInWithPopup(fb.auth, provider).catch(function (err) {
+      // iOS and locked-down browsers block popups; a redirect always works
+      if (err && /popup/i.test(err.code || '')) return fb.a.signInWithRedirect(fb.auth, provider);
+      throw err;
+    });
+  }).catch(function (err) {
+    cloud.msg = (err && err.code) || 'failed';
+    setStatus('error');
+  });
+}
+
+function signOutNow() {
+  if (!cloud.fb) return;
+  cloud.fb.a.signOut(cloud.fb.auth);
+}
+
+/* ---- conflict resolution ---- */
+function keepLocal() {
+  var remote = cloud.pending;
+  cloud.pending = null;
+  setMeta({ lastSyncedAt: +remote.updatedAt || 0 });   // acknowledge what we saw
+  setStatus('working');
+  pushNow().then(function () { setStatus('synced'); })
+           .catch(function () { setStatus('error'); });
+}
+function keepCloud() {
+  var remote = cloud.pending;
+  cloud.pending = null;
+  adopt(remote);
+  cloud.at = Date.now();
+  setStatus('synced');
+}
+
+/* ---- the visible half ---- */
+function hhmm(ms) {
+  var d = new Date(ms);
+  return (d.getHours() < 10 ? '0' : '') + d.getHours() + ':' +
+         (d.getMinutes() < 10 ? '0' : '') + d.getMinutes();
+}
+
+function setStatus(s) {
+  cloud.status = s;
+  if (s === 'synced') cloud.at = cloud.at || Date.now();
+  paintSync();
+}
+
+function paintSync() {
+  var btn = $('btn-sync'), out = $('btn-signout'), bar = $('sync-bar');
+  if (!btn) return;
+
+  if (!cloud.on) { btn.style.display = 'none'; out.style.display = 'none'; bar.classList.remove('on'); return; }
+
+  var label, title;
+  switch (cloud.status) {
+    case 'working':  label = 'Syncing…';                 title = 'Talking to the cloud'; break;
+    case 'synced':   label = 'Synced · ' + hhmm(cloud.at); title = 'Click to sync now'; break;
+    case 'conflict': label = 'Both changed';             title = 'This device and the cloud disagree'; break;
+    case 'error':    label = 'Sync failed';              title = cloud.msg || 'Click to retry'; break;
+    default:         label = 'Sign in to sync';          title = 'Save this across your devices';
+  }
+  btn.textContent = label;
+  btn.title = title;
+  btn.className = 'btn' + (cloud.status === 'conflict' || cloud.status === 'error' ? ' del' : '');
+  btn.style.display = '';
+  out.style.display = cloud.uid ? '' : 'none';
+
+  if (cloud.status === 'conflict' && cloud.pending) {
+    $('sync-what').textContent =
+      'This ' + deviceName() + ' and the cloud copy have both changed since they last agreed. ' +
+      'The cloud copy was last written ' + hhmm(+cloud.pending.updatedAt) +
+      ' from ' + (cloud.pending.device || 'another device') + '.';
+    bar.classList.add('on');
+  } else {
+    bar.classList.remove('on');
+  }
+}
+
+function initCloud() {
+  paintSync();
+  if (!cloud.on) return;
+
+  /* A previous session is restored silently; nothing loads for someone who
+     has never signed in. */
+  loadSDK().then(function (fb) {
+    fb.a.onAuthStateChanged(fb.auth, function (user) {
+      cloud.uid = user ? user.uid : null;
+      if (user) { setStatus('working'); syncNow(); }
+      else { setStatus('signedout'); }
+    });
+  }).catch(function () { setStatus('error'); });
+
+  /* Coming back to the tab is the moment a phone edit should appear. */
+  document.addEventListener('visibilitychange', function () {
+    if (!document.hidden && cloud.uid && cloud.status !== 'conflict') syncNow();
+  });
+  window.addEventListener('focus', function () {
+    if (cloud.uid && cloud.status !== 'conflict') syncNow();
+  });
+}
+
 /* ============================================================
    Boot
    ============================================================ */
@@ -1701,6 +1999,14 @@ $('btn-delete-project').innerHTML = ICO.trash;
 
 load();
 render();
+initCloud();
+
+$('btn-sync').addEventListener('click', function () {
+  if (!cloud.uid) signIn(); else syncNow(true);
+});
+$('btn-signout').addEventListener('click', signOutNow);
+$('sync-keep-local').addEventListener('click', keepLocal);
+$('sync-keep-cloud').addEventListener('click', keepCloud);
 
 // Test/debug hooks — the same shape the tests drive.
 window.__app = {
@@ -1710,7 +2016,15 @@ window.__app = {
   fmtHM: fmtHM,
   moveStep: moveStep,
   movePhase: movePhaseTo,
-  render: render
+  render: render,
+  // sync internals, same spirit: drivable by a test without a live backend
+  sync: {
+    reconcile: reconcile,
+    meta: meta,
+    setMeta: setMeta,
+    cloud: function () { return cloud; },
+    deviceName: deviceName
+  }
 };
 })();
 </script>

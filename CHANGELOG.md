@@ -5,6 +5,39 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v35 — 2026-09-11
+
+**Project Phases: cloud sync, built but dormant**
+- Groundwork for saving tool data across devices, piloted on Project Phases.
+  Nothing is visible or different yet: the Firebase config is empty, so no SDK
+  is fetched, no network call is made, and the sync controls stay hidden.
+  Verified in the browser — zero requests to gstatic, tool renders and saves
+  exactly as before.
+- Local first by design. Without an account the tool behaves as it always has,
+  entirely in localStorage. Signing in adds a second copy under your own user
+  id; it never replaces the local one.
+- Conflict handling is real rather than last-write-wins, because phone and
+  laptop is the actual use case. A watermark records the cloud stamp both
+  sides last agreed on, so "both changed since then" is detectable instead of
+  silently destroying one side — it stops and asks which to keep.
+- Reconcile logic is unit-tested through `window.__app.sync` against an
+  eight-case truth table: fresh device, local-only, cloud-only, both idle,
+  both changed, first sign-in with existing cloud data. All pass.
+- Writes are debounced 1.5s and always trail the local save, so typing never
+  waits on the network. Pulls happen on load and whenever the tab regains
+  focus, which is the moment a phone edit should appear on the laptop.
+- The scanner now reports `www.gstatic.com` for this tool. That is the Firebase
+  SDK URL sitting in the source; it is only fetched once configured and signed
+  in.
+
+**Outstanding**
+- Needs a Firebase project, Google sign-in enabled, Firestore created and its
+  rules pasted before any of this does anything. Config goes in `FIREBASE` at
+  the top of the sync block.
+- No public-facing note this release: none of it is visible to a visitor yet.
+
+---
+
 ## v34 — 2026-09-11
 
 **What's new** · Updated piece · [tools.html#art]
