@@ -5,6 +5,40 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v31 — 2026-09-11
+
+**What's new** · Fixed · [tools.html]
+### The Tools Page,<br>Uncrammed
+On a phone the header took three rows, the filter bar was half hidden behind
+it, and between them they ate 40% of the screen before a single tool showed.
+
+The header is two clean rows now, the filters scroll sideways in one line, and
+nothing sits on top of anything else.
+
+**The tools page on a phone**
+- Two sticky elements were both pinned to `top: 0` — the header at z-index 50
+  and the filter rail at 30 — so on scroll the rail slid *underneath* the
+  header and lost its top half. That is why the chips were clipped. The rail
+  now sits below the header, offset by its measured height rather than a
+  guessed constant, so it survives the nav wrapping at any width. This was
+  broken on desktop too, by 62px.
+- Header: 135px → 87px. Five nav items beside the wordmark wrapped to three
+  rows; on narrow screens it stacks instead, with the nav as one row that
+  scrolls sideways if it must.
+- Filter rail: 201px → 100px. Chips now live in their own track that scrolls
+  horizontally instead of wrapping, with search full width beneath.
+- Sticky furniture overall: 336px → 187px of an 844px screen.
+- Section headings stack their number, title and description rather than
+  colliding beside each other.
+
+**Housekeeping**
+- The stylesheet is requested as `style.css?v=31` so a CSS change is never
+  served from cache. Bump it with the version marker. This bit me while
+  testing — the fix was live on the server and the page kept using the old
+  copy, which is exactly what a visitor would have hit.
+
+---
+
 ## v30 — 2026-09-11
 
 **What's new** · The map · [index.html]

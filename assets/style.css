@@ -210,6 +210,30 @@ a { color: inherit; }
   border: 0;
 }
 
+/* Phones: five nav items beside the wordmark wrapped to three rows and made
+   the sticky header 135px tall. Stack instead — wordmark, then the nav as one
+   row that scrolls sideways if it must. */
+@media (max-width: 760px) {
+  .topbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 9px;
+    padding: 11px var(--gut);
+  }
+
+  .topbar__nav {
+    margin-left: 0;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    gap: 20px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .topbar__nav::-webkit-scrollbar { display: none; }
+  .topbar__nav a { white-space: nowrap; flex: none; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.001ms !important;

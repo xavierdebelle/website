@@ -6,7 +6,7 @@
 <title>TOOLS — XAVIER DE BELLE</title>
 <meta name="description" content="Every browser tool Xavier de Belle has built — portfolio makers, de Belle Photography tools, personal tools, event builds and generative art.">
 <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
-<link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="assets/style.css?v=31">
 <style>
   /* ---------- masthead ---------- */
 
@@ -31,7 +31,10 @@
 
   .rail {
     position: sticky;
-    top: 0;
+    /* the header is sticky at 0 too — without this offset the rail slides
+       underneath it and loses its top half. Set from the real height by the
+       script below, so it survives the nav wrapping at any width. */
+    top: var(--topbar-h, 62px);
     z-index: 30;
     background: var(--ink);
     border-bottom: var(--edge) solid var(--paper);
@@ -40,6 +43,14 @@
     align-items: center;
     gap: 10px;
     padding: 14px var(--gut);
+  }
+
+  .rail__chips {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
   }
 
   .chip {
@@ -229,9 +240,37 @@
     margin: 0;
   }
 
-  @media (max-width: 700px) {
+  @media (max-width: 760px) {
+    /* the filter bar was 201px of a 844px screen. One scrolling row of chips
+       and a full-width search is about half that, and nothing is clipped. */
+    .rail {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 8px;
+      padding: 10px var(--gut);
+    }
+
+    .rail__chips {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      overscroll-behavior-x: contain;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+      padding-bottom: 1px;
+    }
+    .rail__chips::-webkit-scrollbar { display: none; }
+    .chip { flex: none; }
+
     .rail__search { margin-left: 0; width: 100%; }
     .rail__search input { width: 100%; }
+
+    /* "01 / Portfolio Makers" beside a two-line title reads as a collision
+       on a narrow screen. Let the three parts stack. */
+    .band__head {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 10px;
+    }
     .band__head p { margin-left: 0; }
   }
 </style>
@@ -264,12 +303,14 @@
 </section>
 
 <div class="rail" role="group" aria-label="Filter tools">
-  <button class="chip" type="button" data-filter="all" aria-pressed="true">All &mdash; 12</button>
-  <button class="chip" type="button" data-filter="portfolio" aria-pressed="false">Portfolio</button>
-  <button class="chip" type="button" data-filter="debelle" aria-pressed="false">de Belle Photography</button>
-  <button class="chip" type="button" data-filter="personal" aria-pressed="false">Personal</button>
-  <button class="chip" type="button" data-filter="events" aria-pressed="false">Events</button>
-  <button class="chip" type="button" data-filter="art" aria-pressed="false">Art</button>
+  <div class="rail__chips">
+    <button class="chip" type="button" data-filter="all" aria-pressed="true">All &mdash; 12</button>
+    <button class="chip" type="button" data-filter="portfolio" aria-pressed="false">Portfolio</button>
+    <button class="chip" type="button" data-filter="debelle" aria-pressed="false">de Belle Photography</button>
+    <button class="chip" type="button" data-filter="personal" aria-pressed="false">Personal</button>
+    <button class="chip" type="button" data-filter="events" aria-pressed="false">Events</button>
+    <button class="chip" type="button" data-filter="art" aria-pressed="false">Art</button>
+  </div>
 
   <label class="rail__search">
     <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
@@ -477,7 +518,7 @@
       <a href="mailto:xavier@debellephotography.com">Email</a>
     </div>
   </div>
-  <p class="foot__sig">&copy; <span id="yr"></span> Xavier de Belle &middot; v30</p>
+  <p class="foot__sig">&copy; <span id="yr"></span> Xavier de Belle &middot; v31</p>
 </footer>
 
 <script>
@@ -485,6 +526,18 @@
   "use strict";
 
   document.getElementById('yr').textContent = new Date().getFullYear();
+
+  /* The rail sticks below the header rather than under it. The header's height
+     changes with the viewport, so measure it instead of guessing. */
+  var topbar = document.querySelector('.topbar');
+  function syncStickyOffset(){
+    document.documentElement.style.setProperty(
+      '--topbar-h', Math.round(topbar.getBoundingClientRect().height) + 'px');
+  }
+  syncStickyOffset();
+  window.addEventListener('load', syncStickyOffset);
+  window.addEventListener('resize', syncStickyOffset);
+  window.addEventListener('orientationchange', function(){ setTimeout(syncStickyOffset, 120); });
 
   /* ---------------------------------------------------------------
      Numbering, counts and category chips are all derived from the
