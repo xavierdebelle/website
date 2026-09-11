@@ -93,6 +93,8 @@ a { color: inherit; }
 .topbar__nav {
   margin-left: auto;
   display: flex;
+  flex-wrap: wrap;
+  row-gap: 4px;
   gap: clamp(12px, 2.5vw, 32px);
   align-items: center;
   font-family: var(--mono);

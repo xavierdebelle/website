@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WHAT'S NEW — XAVIER DE BELLE</title>
+<meta name="description" content="What changed on this site and in the tools — new builds, rebuilds and fixes, newest first.">
+<link rel="icon" href="assets/logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/style.css">
+<style>
+  /* ---------- masthead ---------- */
+
+  .mast {
+    padding: clamp(40px, 8vw, 96px) var(--gut) clamp(28px, 5vw, 56px);
+    border-bottom: var(--edge) solid var(--paper);
+  }
+  .mast h1 {
+    font-size: clamp(52px, 15vw, 200px);
+    margin: 14px 0 0;
+  }
+  .mast h1 em { font-style: normal; color: var(--volt); }
+  .mast__sub {
+    margin: 26px 0 0;
+    font-size: clamp(15px, 1.9vw, 20px);
+    line-height: 1.5;
+    max-width: 44ch;
+    font-weight: 500;
+  }
+
+  /* ---------- the log ---------- */
+
+  .log { border-bottom: var(--edge) solid var(--paper); }
+
+  .entry {
+    display: grid;
+    grid-template-columns: 168px minmax(0, 1fr);
+    gap: clamp(18px, 4vw, 48px);
+    padding: clamp(28px, 4vw, 44px) var(--gut);
+    border-bottom: 2px solid var(--ash);
+    align-items: start;
+  }
+  .entry:last-child { border-bottom: none; }
+  .entry:hover { background: var(--smoke); }
+
+  .entry__when {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--dust);
+    padding-top: 6px;
+    line-height: 1.9;
+  }
+  .entry__when b {
+    display: block;
+    color: var(--volt);
+    font-weight: 700;
+    letter-spacing: .2em;
+  }
+
+  .entry h2 {
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: -0.035em;
+    line-height: .95;
+    font-size: clamp(22px, 3vw, 36px);
+    margin: 0 0 12px;
+  }
+  .entry p {
+    margin: 0 0 10px;
+    font-size: clamp(14px, 1.6vw, 16px);
+    line-height: 1.6;
+    max-width: 56ch;
+    color: #c6c6c6;
+  }
+  .entry p:last-child { margin-bottom: 0; }
+  .entry a.go {
+    display: inline-block;
+    margin-top: 6px;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    text-decoration: none;
+    border-bottom: 2px solid var(--ash);
+    padding-bottom: 3px;
+  }
+  .entry a.go:hover { color: var(--volt); border-bottom-color: var(--volt); }
+
+  /* a run of small fixes, collapsed into one line each */
+  .entry ul {
+    margin: 10px 0 0;
+    padding: 0;
+    list-style: none;
+  }
+  .entry li {
+    font-size: 14px;
+    line-height: 1.6;
+    color: #c6c6c6;
+    padding-left: 18px;
+    position: relative;
+  }
+  .entry li::before {
+    content: "";
+    position: absolute;
+    left: 0; top: 9px;
+    width: 7px; height: 7px;
+    background: var(--volt);
+  }
+
+  @media (max-width: 700px) {
+    .entry { grid-template-columns: 1fr; gap: 10px; }
+    .entry__when { padding-top: 0; line-height: 1.6; }
+    .entry__when b { display: inline; margin-right: 10px; }
+  }
+</style>
+</head>
+<body>
+
+<a class="skip" href="#log">Skip to the log</a>
+
+<header class="topbar">
+  <a class="topbar__mark" href="index.html">
+    <img src="assets/logo.svg" alt="">
+    Xavier de Belle
+  </a>
+  <nav class="topbar__nav" aria-label="Main">
+    <a href="index.html">Map</a>
+    <a href="work.html">Work</a>
+    <a href="tools.html">Tools</a>
+    <a href="changelog.html" aria-current="page">What&rsquo;s New</a>
+    <a href="https://www.instagram.com/xavierdebelle/" target="_blank" rel="noopener">Instagram &#8599;</a>
+  </nav>
+</header>
+
+<section class="mast">
+  <p class="kicker">The Log &mdash; newest first</p>
+  <h1 class="display">What&rsquo;s<br><em>New</em></h1>
+  <p class="mast__sub">
+    Everything that has changed on this site and in the tools. Mostly new builds and
+    rebuilds, occasionally an admission that something didn&rsquo;t work on a phone.
+  </p>
+</section>
+
+<main class="log" id="log">
+
+  <article class="entry">
+    <p class="entry__when"><b>11 Sep 2026</b>New tool</p>
+    <div>
+      <h2>Project Phases</h2>
+      <p>
+        A phase tracker with a time log. Break a project into phases, move through them,
+        and keep an honest record of where the hours actually went. The sixteenth build.
+      </p>
+      <a class="go" href="tools.html#personal">See it &rarr;</a>
+    </div>
+  </article>
+
+  <article class="entry">
+    <p class="entry__when"><b>10 Sep 2026</b>Rebuilt</p>
+    <div>
+      <h2>Budget Tracker,<br>Twice Over</h2>
+      <p>
+        Assets, per-line frequencies and templates, so it handles money that doesn&rsquo;t
+        arrive in neat monthly lumps. Then a second pass so the whole thing reads properly
+        on a phone rather than asking you to pinch at a spreadsheet.
+      </p>
+      <a class="go" href="tools.html#personal">See it &rarr;</a>
+    </div>
+  </article>
+
+  <article class="entry">
+    <p class="entry__when"><b>3 Sep 2026</b>Fixes</p>
+    <div>
+      <h2>Carousel Planner<br>On A Phone</h2>
+      <p>
+        Several rounds of it, honestly. Phones are unforgiving about memory, and a
+        carousel of full-resolution photos is exactly the thing they give up on.
+      </p>
+      <ul>
+        <li>Fixed views that were unusable on a small screen</li>
+        <li>Stopped the page reloading itself mid-edit</li>
+        <li>Slides past the fifth now behave &mdash; the fix that needed three attempts</li>
+      </ul>
+      <a class="go" href="tools.html#portfolio">See it &rarr;</a>
+    </div>
+  </article>
+
+  <article class="entry">
+    <p class="entry__when"><b>1 Sep 2026</b>New homepage</p>
+    <div>
+      <h2>The Map Became<br>A Point Cloud</h2>
+      <p>
+        The homepage mind map is no longer boxes joined by lines. It&rsquo;s a single field
+        of particles that forms the nodes and the links themselves, with the mark held sharp
+        at the centre while everything around it drifts.
+      </p>
+      <p>
+        The layout is grown rather than placed &mdash; by space colonization, the algorithm
+        behind tree branching and leaf venation &mdash; and then kept, so it doesn&rsquo;t
+        rearrange itself every time you open it.
+      </p>
+      <a class="go" href="index.html">Open the map &rarr;</a>
+    </div>
+  </article>
+
+  <article class="entry">
+    <p class="entry__when"><b>1 Sep 2026</b>New piece</p>
+    <div>
+      <h2>Neural<br>Mind Map</h2>
+      <p>
+        The generative piece the homepage grew out of. Added to Art, then rebuilt so its
+        structure is grown rather than positioned by hand.
+      </p>
+      <a class="go" href="tools.html#art">See it &rarr;</a>
+    </div>
+  </article>
+
+  <article class="entry">
+    <p class="entry__when"><b>1 Sep 2026</b>Rebuilt</p>
+    <div>
+      <h2>Feed Planner,<br>Properly Portable</h2>
+      <p>
+        Carousels, export post by post, and enough memory discipline that a phone can hold
+        a full grid without dropping it. Drag to reorder now works with a finger, which it
+        never did.
+      </p>
+      <a class="go" href="tools.html#portfolio">See it &rarr;</a>
+    </div>
+  </article>
+
+  <article class="entry">
+    <p class="entry__when"><b>27 Aug 2026</b>New tool</p>
+    <div>
+      <h2>Idea Bank</h2>
+      <p>
+        Dump it, rank it, ship it. Every idea scored on impact, confidence and ease, plotted
+        on a matrix, then pushed across a board until it&rsquo;s done or honestly parked.
+      </p>
+      <a class="go" href="tools.html#personal">See it &rarr;</a>
+    </div>
+  </article>
+
+  <article class="entry">
+    <p class="entry__when"><b>26 Aug 2026</b>Updated</p>
+    <div>
+      <h2>Volley &amp; BBQ</h2>
+      <p>
+        The Monday night zine now notices who&rsquo;s coming to eat but hasn&rsquo;t claimed
+        a dish, and keeps that in each week&rsquo;s history. Gently accusatory, as intended.
+      </p>
+      <a class="go" href="tools.html#events">See it &rarr;</a>
+    </div>
+  </article>
+
+  <article class="entry">
+    <p class="entry__when"><b>25 Aug 2026</b>New tool</p>
+    <div>
+      <h2>Carousel Planner</h2>
+      <p>
+        Build an Instagram carousel that reads as one picture. Photos span across slides,
+        snap to the edges, and export ready to post.
+      </p>
+      <a class="go" href="tools.html#portfolio">See it &rarr;</a>
+    </div>
+  </article>
+
+  <article class="entry">
+    <p class="entry__when"><b>25 Aug 2026</b>Opened up</p>
+    <div>
+      <h2>Every Tool,<br>Public</h2>
+      <p>
+        The whole workshop is on the site now rather than half of it. Sixteen builds across
+        five categories, all running in the browser, none of them needing an install.
+      </p>
+      <a class="go" href="tools.html">See them all &rarr;</a>
+    </div>
+  </article>
+
+  <article class="entry">
+    <p class="entry__when"><b>25 Aug 2026</b>Live</p>
+    <div>
+      <h2>The Site<br>Went Up</h2>
+      <p>
+        First public version. The map, the tools hub and the work page, in black, white and
+        one yellow.
+      </p>
+    </div>
+  </article>
+
+  <article class="entry">
+    <p class="entry__when"><b>10 Aug 2026</b>Built</p>
+    <div>
+      <h2>Day One</h2>
+      <p>
+        An interactive mind map as the front door, a hub for everything I&rsquo;d built, and
+        a page for the three things I actually spend my life on.
+      </p>
+    </div>
+  </article>
+
+</main>
+
+<footer class="foot">
+  <div>
+    <p class="kicker" style="margin-bottom:14px">Xavier de Belle &mdash; Montreal</p>
+    <div class="foot__links">
+      <a href="index.html">The Map</a>
+      <a href="work.html">Work</a>
+      <a href="tools.html">Tools</a>
+      <a href="https://debellephotography.com/" target="_blank" rel="noopener">de Belle Photography &#8599;</a>
+      <a href="https://333photo.com/" target="_blank" rel="noopener">333 Photo &#8599;</a>
+      <a href="https://www.instagram.com/xavierdebelle/" target="_blank" rel="noopener">Instagram &#8599;</a>
+      <a href="mailto:xavier@debellephotography.com">Email</a>
+    </div>
+  </div>
+  <p class="foot__sig">&copy; <span id="yr"></span> Xavier de Belle &middot; v28</p>
+</footer>
+
+<script>document.getElementById('yr').textContent = new Date().getFullYear();</script>
+
+</body>
+</html>

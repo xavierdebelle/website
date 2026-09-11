@@ -5,6 +5,38 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v28 — 2026-09-11
+
+**The map's readout replaced the slide-in panel**
+- Clicking a node no longer pushes a full-height drawer in from the right over
+  a dimmed map. It opens a bordered card where it is — no slide, no scrim — so
+  the cloud stays visible and still takes a drag or a zoom while you read.
+- On a phone the card sits above the controls, full width, and scrolls inside
+  itself. Selecting another node swaps the contents; clearing the selection or
+  closing the map closes it.
+
+**What's New page**
+- New `changelog.html`, written for visitors rather than as a build log:
+  what landed, in plain language, newest first. Linked from every page's nav
+  and footer, from the homepage text index, and from the noscript fallback.
+- Hand-authored rather than rendered from this file, deliberately — see below.
+
+**Work page**
+- de Belle Photography body copy replaced with Xavier's text. The spec list
+  and the buttons are unchanged.
+
+**Housekeeping**
+- The topbar nav wraps now that it carries five items, instead of overflowing
+  on a narrow screen.
+
+**Outstanding**
+- This file is deployed, so it is readable at /CHANGELOG.md, and its
+  "Outstanding" sections describe the zine's open Firebase database and the
+  live CRM webhook. That predates this release and is Xavier's call, but it is
+  why the public page is hand-written instead of rendered from here.
+
+---
+
 ## v27 — 2026-09-11
 
 **New tool — Project Phases (Personal, 16th build)**
