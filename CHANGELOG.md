@@ -5,6 +5,30 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v39 — 2026-09-11
+
+**Sync is now private to one account**
+- The published rules allowed *any* signed-in Google account its own private
+  subtree. Sandboxed from each other, but broader than the original brief,
+  which was visitors local and Xavier synced. Narrowed to a single uid.
+- The tool checks the account client-side purely as a courtesy: a stranger who
+  signs in now reads "Sync on this site is private to one account. Your work
+  still saves in this browser exactly as before, and nothing is sent
+  anywhere," and no database call is attempted. The rules are what enforce it;
+  the check only exists so nobody meets a raw permission error.
+- Sign-out is offered to anyone signed in, not only the owner, so a visitor is
+  never stuck in a signed-in state they cannot leave.
+- The owner uid sits in client source, which is fine — it is an identifier,
+  not a credential, and editing it away changes nothing the server does.
+
+**Outstanding**
+- Rules must be republished in the console for the lock to take effect; the
+  client change alone does not restrict anything.
+- End-to-end round trip still unconfirmed, and the authorised-domain entry for
+  `xavierdebelle.github.io` was still missing at the time of writing.
+
+---
+
 ## v38 — 2026-09-11
 
 **Sync failures now say what is wrong**

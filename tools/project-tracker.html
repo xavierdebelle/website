@@ -1741,12 +1741,19 @@ var FIREBASE = {
 
 var SDK = 'https://www.gstatic.com/firebasejs/10.12.2/';
 var DOC = 'project-phases';          // users/{uid}/tools/project-phases
+
+/* Sync here is private to one account. This is a courtesy check only: the
+   database rules are what actually enforce it, and they would refuse anyone
+   else even if this line were edited away. */
+var OWNER = 'jGJdt3h4EeaOL3mYWUHA4yMZsRx2';
 var META_KEY = KEY + '.meta';        // watermarks live beside the data, not in it
 
 var cloud = {
   on: !!FIREBASE.databaseURL,
   status: 'signedout',               // signedout | working | synced | conflict | error
-  uid: null,
+  uid: null,                         // set only when the signed-in account owns this sync
+  authed: false,                     // signed in to Google at all
+
   at: 0,                             // when we last completed a sync
   msg: '',
   fb: null,                          // the loaded SDK pieces
@@ -1973,6 +1980,7 @@ function paintSync() {
     case 'working':  label = 'Syncing…';                 title = 'Talking to the cloud'; break;
     case 'synced':   label = 'Synced · ' + hhmm(cloud.at); title = 'Click to sync now'; break;
     case 'conflict': label = 'Both changed';             title = 'This device and the cloud disagree'; break;
+    case 'private':  label = 'Sync is private';          title = 'This sync belongs to one account'; break;
     case 'error':    label = 'Sync failed';              title = explain(cloud.msg); break;
     default:         label = 'Sign in to sync';          title = 'Save this across your devices';
   }
@@ -1980,7 +1988,17 @@ function paintSync() {
   btn.title = title;
   btn.className = 'btn' + (cloud.status === 'conflict' || cloud.status === 'error' ? ' del' : '');
   btn.style.display = '';
-  out.style.display = cloud.uid ? '' : 'none';
+  out.style.display = cloud.authed ? '' : 'none';
+
+  if (cloud.status === 'private') {
+    $('sync-what').textContent =
+      'Sync on this site is private to one account. Your work still saves in this ' +
+      'browser exactly as before, and nothing is sent anywhere.';
+    $('sync-keep-local').style.display = 'none';
+    $('sync-keep-cloud').style.display = 'none';
+    bar.classList.add('on');
+    return;
+  }
 
   if (cloud.status === 'error') {
     $('sync-what').textContent = explain(cloud.msg);
@@ -2011,9 +2029,20 @@ function initCloud() {
      has never signed in. */
   loadSDK().then(function (fb) {
     fb.a.onAuthStateChanged(fb.auth, function (user) {
-      cloud.uid = user ? user.uid : null;
-      if (user) { setStatus('working'); syncNow(); }
-      else { setStatus('signedout'); }
+      cloud.authed = !!user;
+      if (!user) { cloud.uid = null; setStatus('signedout'); return; }
+
+      /* Someone else's Google account: say so plainly rather than letting them
+         walk into a permission error. No read is attempted at all. */
+      if (OWNER && user.uid !== OWNER) {
+        cloud.uid = null;
+        setStatus('private');
+        return;
+      }
+
+      cloud.uid = user.uid;
+      setStatus('working');
+      syncNow();
     });
   }).catch(function () { setStatus('error'); });
 
