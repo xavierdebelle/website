@@ -5,6 +5,63 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v40 — 2026-09-14
+
+**What's new** · Budget Tracker · [tools.html#personal]
+### Your Budget,<br>On Every Device
+The Budget Tracker can now follow you between phone and laptop, the same way
+Project Phases does. Sign in and your months and saved templates are kept in
+step; stay signed out and it behaves exactly as it always has, saving only in
+your own browser.
+
+If both devices changed since they last agreed, it stops and asks which copy
+to keep rather than quietly picking one.
+
+**Sync added to Budget Tracker**
+- Same module and same locked project as Project Phases (`xdb-tools`), stored
+  at `users/{uid}/tools/budget-tracker`. The published rules already cover
+  every path under the owner's uid, so no console change was needed.
+- Saved as `Tools files/Tools/budget_tracker_app_v11.html`; v10 untouched.
+  Storage key unchanged (`debelle.budget-tracker.v3`), so existing budgets
+  carry over.
+- **Months and custom templates sync as one document. The month being viewed
+  does not** — flipping months on the phone should not make the laptop think
+  something changed.
+- **Edits are detected by content, not by save calls.** This tool re-saves on
+  load, on month changes and on the way out; stamping every save would have
+  made every device permanently "disagree". A fingerprint of the synced data
+  decides instead.
+- **A device that already held a budget before sync existed is marked as
+  holding unsynced work.** Without that, its missing watermark reads as "never
+  edited" and the cloud would replace it silently on first sign-in; now the
+  worst case is being asked. A device holding only the untouched sample budget
+  is not marked, so a new phone takes the cloud copy without a question.
+  Project Phases lacks this guard — harmless there now that both devices have
+  synced, but worth carrying into Idea Bank.
+- **The Firebase SDK is no longer fetched for visitors.** It loads only after
+  Sign in has been pressed on that browser. Project Phases still loads it for
+  everyone (no data sent, but a request made).
+- The popup-to-redirect fallback now triggers only on a blocked popup, not
+  when the user closes the window — closing it should cancel, not redirect.
+
+**Verified locally (no writes to the live database)**
+- Loads with no console errors and no request to `gstatic.com`; sign-in
+  control present.
+- Reconcile truth table 8/8.
+- Opening a new month counts as an edit; switching between existing months
+  does not; re-saving right after adopting a cloud copy does not.
+- A database-shaped copy — empty sections and assets dropped, templates
+  returned as an object — adopts whole: every section rebuilt as a list,
+  frequencies kept, current month preserved, templates restored.
+- An empty cloud copy is refused rather than wiping the budget.
+- Existing budget with no watermark boots marked as unsynced; conflict,
+  private and error bars render on desktop and at phone width.
+
+**Outstanding**
+- End-to-end sign-in round trip on the live site, which only Xavier can do.
+
+---
+
 ## Verified — 2026-09-11
 
 **Project Phases sync is confirmed working end to end**

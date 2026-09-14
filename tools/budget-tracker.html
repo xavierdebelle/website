@@ -51,6 +51,19 @@
   .prop-status{font-family:'DM Mono',monospace;font-size:11px;color:var(--blue-text);text-align:right;opacity:0;transition:opacity .25s;min-height:14px}
   .prop-status.show{opacity:1}
 
+  /* SYNC — optional, signed-in only. Pale-on-dark in the tool's own yellow,
+     the same family as the Copy month button, so it reads as a notice rather
+     than an error until something actually fails. */
+  .sync-btn{border-color:#3a4a60;color:var(--text2)}
+  .sync-btn.ok{border-color:#1a5a3a;background:var(--green-dim);color:var(--green-text)}
+  .sync-btn.bad{border-color:#5a2a2a;background:var(--red-dim);color:#ff8f8f}
+  #sync-bar{display:none;align-items:center;gap:12px;flex-wrap:wrap;
+            background:var(--yellow-dim);border:1px solid #5a4800;border-radius:var(--radius);
+            padding:10px 14px;margin-bottom:16px;color:var(--text)}
+  #sync-bar.on{display:flex}
+  #sync-bar .sync-dot{width:8px;height:8px;border-radius:50%;background:var(--yellow);flex:none}
+  #sync-what{flex:1;min-width:220px;font-size:13px;line-height:1.5}
+
   /* HERO — remaining per month, independent of rollover */
   .hero{display:grid;grid-template-columns:minmax(240px,1fr) 2fr;gap:18px;align-items:center;
         background:linear-gradient(135deg,var(--surface2),var(--surface));
@@ -382,6 +395,8 @@
         <button class="io-btn" onclick="exportData()" title="Download every month as a .json file">Export</button>
         <button class="io-btn" onclick="document.getElementById('import-file').click()" title="Load a previously exported .json file">Import</button>
         <input type="file" id="import-file" accept="application/json,.json" style="display:none" onchange="importData(this)">
+        <button class="io-btn sync-btn" id="btn-sync" onclick="syncClick()" style="display:none">Sign in to sync</button>
+        <button class="io-btn" id="btn-signout" onclick="signOutNow()" style="display:none" title="Sign out of sync">Sign out</button>
       </div>
       <div class="month-nav">
         <button onclick="prevMonth()">&#8592;</button>
@@ -389,6 +404,13 @@
         <button onclick="nextMonth()">&#8594;</button>
       </div>
     </div>
+  </div>
+
+  <div id="sync-bar" role="status">
+    <span class="sync-dot"></span>
+    <span id="sync-what"></span>
+    <button class="io-btn" id="sync-keep-local" onclick="keepLocal()">Keep this device</button>
+    <button class="io-btn" id="sync-keep-cloud" onclick="keepCloud()">Keep cloud copy</button>
   </div>
 
   <!-- Correction 3: remaining per month, its own box, independent of rollover -->
@@ -722,6 +744,7 @@ function loadTemplates(){
 }
 function saveTemplates(){
   try{ localStorage.setItem(TPL_KEY,JSON.stringify(customTemplates)); }catch(e){}
+  cloudTouch();
 }
 
 let saveTimer=null;
@@ -738,6 +761,7 @@ function saveNow(){
   }catch(e){
     status('Not saved — storage blocked',true);
   }
+  cloudTouch();
 }
 function status(msg,warn){
   const el=document.getElementById('save-status');
@@ -1881,13 +1905,367 @@ document.addEventListener('keydown',e=>{
   });
 });
 
+/* ============================================================
+   Cloud sync — local first, optional
+
+   With no account the tool behaves exactly as it always has: everything
+   lives in localStorage and nothing leaves the browser — the Firebase SDK
+   is not even fetched until someone presses Sign in. Signing in keeps a
+   second copy under your own account, so the same budget follows you
+   between phone and laptop.
+
+   Same design as Project Phases, adapted to this tool's two stores: the
+   months and the saved templates travel together as one document. Which
+   month you happen to be looking at does not — that stays per device.
+   ============================================================ */
+
+/* Public Firebase identifiers — not secrets. They ship in every Firebase
+   web app; the database rules are what protect the data. */
+const FIREBASE = {
+  apiKey:      'AIzaSyCu0CA6eLWIkhhl-Z7jr_dDisuXDt1dKco',
+  authDomain:  'xdb-tools.firebaseapp.com',
+  databaseURL: 'https://xdb-tools-default-rtdb.firebaseio.com',
+  projectId:   'xdb-tools',
+  appId:       '1:6009567091:web:f7ee8c43ebe1bd25fcb706'
+};
+const SDK = 'https://www.gstatic.com/firebasejs/10.12.2/';
+const DOC = 'budget-tracker';                 // users/{uid}/tools/budget-tracker
+
+/* Sync is private to one account. Courtesy check only — the rules enforce
+   it, and would refuse anyone else even if this line were edited away. */
+const OWNER = 'jGJdt3h4EeaOL3mYWUHA4yMZsRx2';
+const META_KEY = STORAGE_KEY + '.meta';       // watermarks live beside the data, not in it
+
+const cloud = {
+  on: !!FIREBASE.databaseURL,
+  status: 'signedout',      // signedout | working | synced | conflict | private | error
+  uid: null,                // set only when the signed-in account owns this sync
+  authed: false,
+  listening: false,
+  at: 0,
+  msg: '',
+  fb: null,
+  pushTimer: null,
+  pending: null,            // a conflict waiting on a decision
+  print: null               // fingerprint of what was last saved, to tell edits from re-saves
+};
+
+function syncEl(id){ return document.getElementById(id); }
+
+function explain(code){
+  const map={
+    'auth/unauthorized-domain':
+      'This site is not on the Firebase authorised domains list. Add '+location.hostname+
+      ' under Authentication → Settings → Authorized domains.',
+    'auth/operation-not-allowed':
+      'Google sign-in is not enabled for this Firebase project. Turn it on under Authentication → Sign-in method.',
+    'auth/popup-blocked':
+      'Your browser blocked the sign-in popup. Allow popups for this site, or try again.',
+    'auth/popup-closed-by-user':
+      'The sign-in window closed before it finished.',
+    'auth/network-request-failed':
+      'No network. The tool keeps working offline and will sync when you are back.',
+    'PERMISSION_DENIED':
+      'The database rules refused this account. Check the rules allow users/<your uid>.'
+  };
+  return map[code]||('Sync failed'+(code?' ('+code+')':'')+'.');
+}
+
+function deviceName(){
+  const ua=navigator.userAgent;
+  if(/iPhone/.test(ua)) return 'iPhone';
+  if(/iPad/.test(ua)) return 'iPad';
+  if(/Android/.test(ua)) return 'Android';
+  if(/Mac OS X/.test(ua)) return 'Mac';
+  if(/Windows/.test(ua)) return 'Windows';
+  return 'this device';
+}
+
+/* Kept out of `state` so exports stay clean and an imported file never
+   carries another device's watermark. */
+function meta(){
+  try{
+    const m=JSON.parse(localStorage.getItem(META_KEY)||'{}');
+    return { updatedAt:+m.updatedAt||0, lastSyncedAt:+m.lastSyncedAt||0, signedIn:!!m.signedIn };
+  }catch(e){ return { updatedAt:0, lastSyncedAt:0, signedIn:false }; }
+}
+function setMeta(patch){
+  const m=Object.assign(meta(),patch);
+  try{ localStorage.setItem(META_KEY,JSON.stringify(m)); }catch(e){}
+  return m;
+}
+
+/* What syncs. Deliberately excludes state.current: flipping to another
+   month is not an edit, and should not make two devices "disagree". */
+function syncPayload(){ return { months:state.months, templates:customTemplates }; }
+function syncPrint(){ return JSON.stringify(syncPayload()); }
+
+/* The sample budget a first visit starts with. A device holding only that
+   has nothing worth protecting, so it should take the cloud copy quietly. */
+function isUntouched(){
+  const keys=Object.keys(state.months);
+  return keys.length===1 && !customTemplates.length &&
+         JSON.stringify(state.months[keys[0]])===JSON.stringify(defaultMonth());
+}
+
+/* A device that already had a real budget before sync existed has no
+   watermark at all, which would read as "never edited" and let the cloud
+   silently replace it. Mark it as holding unsynced work instead, so the
+   worst case is being asked. Runs once, before anything is compared. */
+function seedMeta(){
+  let noWatermark=false;
+  try{ noWatermark=localStorage.getItem(META_KEY)==null; }catch(e){}
+  if(noWatermark && !isUntouched()) setMeta({updatedAt:1});
+  cloud.print=syncPrint();
+}
+
+/* ---- SDK, loaded once and only on demand ---- */
+function loadSDK(){
+  if(cloud.fb) return Promise.resolve(cloud.fb);
+  return Promise.all([
+    import(SDK+'firebase-app.js'),
+    import(SDK+'firebase-auth.js'),
+    import(SDK+'firebase-database.js')
+  ]).then(mods=>{
+    const application=mods[0].initializeApp(FIREBASE);
+    cloud.fb={ auth:mods[1].getAuth(application), db:mods[2].getDatabase(application), a:mods[1], f:mods[2] };
+    return cloud.fb;
+  });
+}
+function docRef(){ return cloud.fb.f.ref(cloud.fb.db,'users/'+cloud.uid+'/tools/'+DOC); }
+
+/* ---- the three way decision ----------------------------------------
+   Local and cloud timestamps alone cannot tell an edit from a stale copy.
+   The watermark — the cloud stamp we last agreed with — is what makes
+   "both changed since we last spoke" detectable. */
+function reconcile(remote){
+  const m=meta();
+  const localAt=m.updatedAt, syncedAt=m.lastSyncedAt;
+  const remoteAt=remote?(+remote.updatedAt||0):0;
+  if(!remote) return localAt?'push':'idle';
+  if(remoteAt===syncedAt) return localAt>syncedAt?'push':'idle';
+  return localAt>syncedAt?'conflict':'pull';
+}
+
+/* The Realtime Database drops empty arrays and objects, so a month with no
+   debt rows comes back without a debt key. normalize() already rebuilds
+   every missing section, which is why it is the only way in. */
+function listOf(v){ return Array.isArray(v)?v:(v&&typeof v==='object'?Object.values(v):[]); }
+
+function adopt(remote){
+  const d=remote&&remote.data;
+  const next=d&&normalize({months:d.months,current:state.current});
+  if(!next) return false;
+  state=next;
+  customTemplates=listOf(d.templates).map(normalizeTemplate).filter(Boolean);
+  cloud.print=syncPrint();
+  try{
+    localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
+    localStorage.setItem(TPL_KEY,JSON.stringify(customTemplates));
+  }catch(e){}
+  const stamp=+remote.updatedAt||Date.now();
+  setMeta({updatedAt:stamp,lastSyncedAt:stamp});
+  propStatus(0);
+  bind();
+  renderAll();
+  if(syncEl('tpl-overlay').classList.contains('show')) renderTemplateGrid();
+  status('Updated from '+(remote.device||'the cloud'));
+  return true;
+}
+
+function pushNow(){
+  if(!cloud.uid) return Promise.resolve();
+  const stamp=Date.now();
+  return cloud.fb.f.set(docRef(),{
+    data:JSON.parse(syncPrint()),
+    updatedAt:stamp,
+    device:deviceName()
+  }).then(()=>{
+    setMeta({updatedAt:stamp,lastSyncedAt:stamp});
+    cloud.at=stamp;
+  });
+}
+function pullNow(){
+  return cloud.fb.f.get(docRef()).then(snap=>snap.exists()?snap.val():null);
+}
+
+function syncNow(userAsked){
+  if(!cloud.on||!cloud.uid||cloud.status==='working') return;
+  setStatus('working');
+  return pullNow().then(remote=>{
+    const move=reconcile(remote);
+    if(move==='pull'){ adopt(remote); cloud.at=Date.now(); setStatus('synced'); return; }
+    if(move==='push'){ return pushNow().then(()=>setStatus('synced')); }
+    if(move==='conflict'){ cloud.pending=remote; setStatus('conflict'); return; }
+    cloud.at=Date.now();
+    setStatus('synced');
+  }).catch(err=>{
+    cloud.msg=(err&&err.code)||'failed';
+    setStatus('error');
+    if(userAsked) console.warn('[sync]',err);
+  });
+}
+
+/* Called on every save. saveNow() also runs on month changes, on load and
+   on the way out, so the fingerprint is what decides whether anything was
+   actually edited — otherwise merely opening the tool would stamp it as
+   changed and every device would look like it disagreed with the others. */
+function cloudTouch(){
+  if(cloud.print===null) return;              // still booting
+  const p=syncPrint();
+  if(p===cloud.print) return;
+  cloud.print=p;
+  setMeta({updatedAt:Date.now()});
+  if(!cloud.on||!cloud.uid) return;
+  clearTimeout(cloud.pushTimer);
+  cloud.pushTimer=setTimeout(()=>{
+    if(cloud.status==='conflict') return;     // never overwrite a pending decision
+    setStatus('working');
+    pushNow().then(()=>setStatus('synced'))
+             .catch(err=>{ cloud.msg=(err&&err.code)||'failed'; setStatus('error'); });
+  },1500);
+}
+
+/* ---- sign in / out ---- */
+function listen(fb){
+  if(cloud.listening) return;
+  cloud.listening=true;
+  fb.a.onAuthStateChanged(fb.auth,user=>{
+    cloud.authed=!!user;
+    setMeta({signedIn:!!user});
+    if(!user){ cloud.uid=null; setStatus('signedout'); return; }
+    // someone else's Google account: say so plainly, attempt no read at all
+    if(OWNER&&user.uid!==OWNER){ cloud.uid=null; setStatus('private'); return; }
+    cloud.uid=user.uid;
+    syncNow();
+  });
+}
+
+function signIn(){
+  if(!cloud.on) return;
+  setMeta({signedIn:true});   // so a redirect sign-in is picked up when the page comes back
+  setStatus('working');
+  loadSDK().then(fb=>{
+    listen(fb);
+    const provider=new fb.a.GoogleAuthProvider();
+    return fb.a.signInWithPopup(fb.auth,provider).catch(err=>{
+      // iOS and locked-down browsers block popups; a redirect always works
+      if(err&&/popup-blocked|operation-not-supported/i.test(err.code||'')) return fb.a.signInWithRedirect(fb.auth,provider);
+      throw err;
+    });
+  }).catch(err=>{
+    setMeta({signedIn:false});
+    cloud.msg=(err&&err.code)||'failed';
+    setStatus('error');
+  });
+}
+function signOutNow(){ if(cloud.fb) cloud.fb.a.signOut(cloud.fb.auth); }
+function syncClick(){ if(!cloud.uid) signIn(); else syncNow(true); }
+
+/* ---- conflict resolution ---- */
+function keepLocal(){
+  const remote=cloud.pending;
+  if(!remote) return;
+  cloud.pending=null;
+  setMeta({lastSyncedAt:+remote.updatedAt||0});   // acknowledge what we saw
+  setStatus('working');
+  pushNow().then(()=>setStatus('synced'))
+           .catch(err=>{ cloud.msg=(err&&err.code)||'failed'; setStatus('error'); });
+}
+function keepCloud(){
+  const remote=cloud.pending;
+  if(!remote) return;
+  cloud.pending=null;
+  adopt(remote);
+  cloud.at=Date.now();
+  setStatus('synced');
+}
+
+/* ---- the visible half ---- */
+function hhmm(ms){
+  const d=new Date(ms);
+  return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+}
+function setStatus(s){
+  cloud.status=s;
+  if(s==='synced') cloud.at=cloud.at||Date.now();
+  paintSync();
+}
+
+function paintSync(){
+  const btn=syncEl('btn-sync'), out=syncEl('btn-signout'), bar=syncEl('sync-bar');
+  if(!btn) return;
+  if(!cloud.on){ btn.style.display='none'; out.style.display='none'; bar.classList.remove('on'); return; }
+
+  let label,title;
+  switch(cloud.status){
+    case 'working':  label='Syncing…';               title='Talking to the cloud'; break;
+    case 'synced':   label='Synced · '+hhmm(cloud.at); title='Click to sync now'; break;
+    case 'conflict': label='Both changed';           title='This device and the cloud disagree'; break;
+    case 'private':  label='Sync is private';        title='This sync belongs to one account'; break;
+    case 'error':    label='Sync failed';            title=explain(cloud.msg); break;
+    default:         label='Sign in to sync';        title='Keep this budget in step across your devices';
+  }
+  btn.textContent=label;
+  btn.title=title;
+  btn.className='io-btn sync-btn'+(cloud.status==='synced'?' ok':'')+
+                (cloud.status==='conflict'||cloud.status==='error'?' bad':'');
+  btn.style.display='';
+  out.style.display=cloud.authed?'':'none';
+
+  const what=syncEl('sync-what'), kl=syncEl('sync-keep-local'), kc=syncEl('sync-keep-cloud');
+  if(cloud.status==='private'||cloud.status==='error'){
+    what.textContent=cloud.status==='private'
+      ? 'Sync on this site is private to one account. Your budget still saves in this browser exactly as before, and nothing is sent anywhere.'
+      : explain(cloud.msg);
+    kl.style.display='none'; kc.style.display='none';
+    bar.classList.add('on');
+    return;
+  }
+  kl.style.display=''; kc.style.display='';
+  if(cloud.status==='conflict'&&cloud.pending){
+    const n=Object.keys((cloud.pending.data&&cloud.pending.data.months)||{}).length;
+    what.textContent='This '+deviceName()+' and the cloud copy have both changed since they last agreed. '+
+      'The cloud copy ('+n+' month'+(n===1?'':'s')+') was last written '+hhmm(+cloud.pending.updatedAt)+
+      ' from '+(cloud.pending.device||'another device')+'.';
+    bar.classList.add('on');
+  }else{
+    bar.classList.remove('on');
+  }
+}
+
+function initCloud(){
+  seedMeta();
+  paintSync();
+  if(!cloud.on) return;
+
+  /* Only someone who has signed in here before gets the SDK on load; a
+     visitor who never touches the button never fetches it. */
+  if(meta().signedIn){
+    setStatus('working');
+    loadSDK().then(listen).catch(err=>{ cloud.msg=(err&&err.code)||'failed'; setStatus('error'); });
+  }
+
+  // coming back to the tab is the moment a phone edit should appear
+  document.addEventListener('visibilitychange',()=>{
+    if(!document.hidden&&cloud.uid&&cloud.status!=='conflict') syncNow();
+  });
+  window.addEventListener('focus',()=>{
+    if(cloud.uid&&cloud.status!=='conflict') syncNow();
+  });
+}
+
 /* ---------- boot ---------- */
 state=loadState();
 customTemplates=loadTemplates();
 bind();
 renderAll();
 saveNow();
+initCloud();
 window.addEventListener('beforeunload',saveNow);
+
+// test hooks
+window.__budgetSync={ cloud, meta, setMeta, reconcile, adopt, isUntouched, syncPrint, normalize, paintSync, setStatus, explain };
 </script>
 </body>
 </html>
