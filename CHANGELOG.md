@@ -5,6 +5,44 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v43 — 2026-09-15
+
+**What's new** · Idea Bank · [tools.html#personal]
+### Your Ideas,<br>On Every Device
+The Idea Bank now syncs the same way Project Phases and the Budget Tracker do.
+Sign in on your phone and your laptop, jot an idea down on one, and it shows
+up on the other a second or two later. Stay signed out and nothing changes:
+it saves only in your own browser.
+
+**Sync added to Idea Bank**
+- Same shared sync core as the other two tools, verified byte-identical in all
+  three, plus a small adapter. Stored at `users/{uid}/tools/idea-bank` under
+  the existing locked rules — no console change needed.
+- The ideas travel; the light/dark choice stays per device.
+- Storage key unchanged (`ideabank.v1`), so existing ideas carry over. A
+  browser that already holds ideas and has never synced is treated as holding
+  unsynced work, so it asks rather than being overwritten; an empty one takes
+  the cloud copy quietly.
+- An empty cloud copy is refused rather than wiping the bank.
+- Sign in / Sync status / Sign out sit in the header; the "both changed" bar
+  uses the tool's own warning colours in light and dark.
+- Saved as `Tools files/Tools/ideas-v2.html`; `ideas-v1.html` untouched.
+
+**Verified against the local Firebase stand-in — no writes to the live database**
+- Visitor: no Firebase SDK requested before Sign in is pressed.
+- Signing in with an empty bank wrote nothing; adding an idea reached the
+  cloud; toggling the theme did not count as an edit.
+- Second device pulled on sign-in; an idea added on it appeared on the first
+  live, and a deletion on the first disappeared from the second live.
+- Offline idea on the phone showed "No connection", then "Both changed" on
+  reconnect instead of overwriting; Keep cloud copy took the other device's
+  ideas. Sign-out works. No console errors.
+
+**Outstanding**
+- End-to-end on the real Firebase, which only Xavier can do.
+
+---
+
 ## v42 — 2026-09-15
 
 **What's new** · Project Phases · [tools.html#personal]
