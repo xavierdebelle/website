@@ -5,6 +5,59 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v44 — 2026-09-15
+
+**What's new** · Idea Bank · [tools.html#personal]
+### One Bank,<br>Many Projects
+The Idea Bank can now hold separate projects — one for each business, client
+or part of life — each with its own pile, priorities and board. Start one,
+rename it, switch between them from the top bar, or move an idea from one
+project to another without losing its score, plan or notes.
+
+Your existing ideas are waiting in the first project, "My ideas".
+
+**Projects in Idea Bank**
+- Project picker with idea counts, New, Rename and Delete in the top bar.
+  Names must be unique. The last project cannot be deleted.
+- Deleting asks first and offers Undo; moving an idea (from the idea panel's
+  new Project picker, shown once there are two projects) offers Undo too.
+- Brain dump, Prioritise, Build, Shipped & parked, areas, stats and search all
+  work on the open project.
+- **The rest of the tool was left untouched.** `state.ideas` is now a live,
+  non-enumerable view of the open project's list, so every existing capture,
+  rank, board and archive path works as before, and saving, export and sync
+  only ever see ideas inside their projects — never a second copy.
+- An existing bank migrates into "My ideas" with a fixed id, so phone and
+  laptop migrating the same bank agree. Old export files still import (as one
+  project); new exports carry every project.
+- **Sync** carries every project and its ideas. Which project is open, and the
+  theme, stay per device — switching projects is not an edit. A copy written
+  by a device still on the single-bank page is refused wherever it could erase
+  projects, instead of flattening them.
+- Shared sync core unchanged and still byte-identical to the other tools.
+- Saved as `Tools files/Tools/ideas-v3.html`.
+
+**Verified against the local Firebase stand-in — no writes to the live database**
+- A saved single-bank browser opened as "My ideas (2)" with both ideas.
+- New project: duplicate name refused (case-insensitive), then created and
+  opened empty; an idea captured there stayed out of "My ideas".
+- Rename kept the prefill and updated the picker. Move to another project and
+  Undo both updated counts and piles. Delete asked "Delete “333 Photo Co” and
+  its 1 idea?", removed it, and Undo restored it with its idea.
+- Saved data: `version, projects, currentId, theme` — no top-level ideas.
+- Two devices: the migrated computer uploaded both projects on sign-in
+  (without `currentId` or theme); switching projects did not change the cloud;
+  the phone pulled both; a project it created appeared on the computer live
+  without moving the computer off its open project; an old single-bank copy
+  arriving was refused and all three projects stayed. Phone-width header
+  checked. No console errors.
+
+**Outstanding**
+- Reload the Idea Bank on every device — a tab still on the single-bank page
+  cannot read projects (it refuses the copy rather than damaging it).
+
+---
+
 ## v43 — 2026-09-15
 
 **What's new** · Idea Bank · [tools.html#personal]

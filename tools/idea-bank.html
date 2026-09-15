@@ -303,6 +303,32 @@
   #sync-bar.on { display: flex; }
   #sync-bar .sync-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--warn); flex: none; }
   #sync-what { flex: 1; min-width: 220px; font-size: 13px; line-height: 1.5; }
+
+  /* ---------- projects ---------- */
+  .brand { margin-right: 0; }
+  .proj { display: flex; align-items: center; gap: 6px; margin-right: auto; min-width: 0; }
+  #project-select {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 9px;
+    padding: 6px 8px; color: var(--ink); font: inherit; font-size: 13.5px; max-width: 220px; min-width: 0;
+  }
+  .icon-btn:disabled { opacity: .4; cursor: default; }
+  .icon-btn.danger:hover:not(:disabled) { border-color: var(--bad); color: var(--bad); }
+  #proj-dialog {
+    border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); color: var(--ink);
+    padding: 18px; width: min(380px, calc(100vw - 32px)); box-shadow: var(--shadow);
+  }
+  #proj-dialog::backdrop { background: rgba(0, 0, 0, .35); }
+  #proj-dialog h3 { margin: 0 0 12px; font-size: 16px; }
+  #pd-name {
+    width: 100%; background: var(--bg); border: 1px solid var(--line); border-radius: 9px;
+    padding: 9px 10px; font: inherit; color: var(--ink);
+  }
+  .pd-err { color: var(--bad); font-size: 12.5px; margin-top: 6px; min-height: 1.2em; }
+  .pd-acts { display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px; }
+  @media (max-width: 820px) {
+    .proj { flex: 1 1 100%; order: 1; margin-right: 0; }
+    #project-select { flex: 1; max-width: none; }
+  }
 </style>
 </head>
 <body>
@@ -312,6 +338,12 @@
     <div class="brand">
       <h1>Idea Bank</h1>
       <span class="sub">dump it · rank it · ship it</span>
+    </div>
+    <div class="proj">
+      <select id="project-select" aria-label="Project"></select>
+      <button class="icon-btn" id="project-new" title="Start a new project">New</button>
+      <button class="icon-btn" id="project-rename" title="Rename this project" aria-label="Rename project">✎</button>
+      <button class="icon-btn danger" id="project-delete" title="Delete this project" aria-label="Delete project">✕</button>
     </div>
     <input id="search" type="search" placeholder="Search ideas…" aria-label="Search ideas">
     <button class="icon-btn" id="theme-btn" title="Light / dark">Theme</button>
@@ -408,6 +440,18 @@
 
 </div>
 
+<dialog id="proj-dialog" aria-labelledby="pd-title">
+  <form id="proj-form" method="dialog">
+    <h3 id="pd-title">New project</h3>
+    <input id="pd-name" type="text" maxlength="60" placeholder="e.g. 333 Photo" autocomplete="off">
+    <div class="pd-err" id="pd-err"></div>
+    <div class="pd-acts">
+      <button type="button" class="btn ghost" id="pd-cancel">Cancel</button>
+      <button type="submit" class="btn primary" id="pd-save">Create</button>
+    </div>
+  </form>
+</dialog>
+
 <div class="scrim" id="scrim"></div>
 <aside class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="m-title">
   <div class="mhead">
@@ -433,7 +477,14 @@
   var DEFAULT_AREAS = ['De Belle Photography', '333 Photo', 'Wedding Experts', 'Marketing', 'Operations'];
   var STAGES = { inbox: 'In the pile', ranked: 'Prioritised', next: 'Next up', doing: 'In progress', done: 'Shipped', parked: 'Parked' };
 
-  var state = { ideas: [], theme: '' };
+  var DEFAULT_PROJECT = 'My ideas';
+
+  /* Ideas live inside projects. `state.ideas` is still how the rest of the
+     tool reads and edits them: it is a live view of the open project's list,
+     so every existing capture, rank, board and archive path keeps working
+     untouched. It is not enumerable, so saving, export and sync only ever
+     see the ideas inside their projects — never a second copy. */
+  var state = normalise({});
 
   function readStore() {
     try { return JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { return null; }
@@ -448,28 +499,61 @@
     var s = readStore();
     if (s) state = normalise(s);
   }
+  function projectOf(s) {
+    for (var k = 0; k < s.projects.length; k++) if (s.projects[k].id === s.currentId) return s.projects[k];
+    return s.projects[0];
+  }
+  function currentProject() { return projectOf(state); }
+
+  function normaliseIdea(i) {
+    i = i || {};
+    return {
+      id: i.id || uid(),
+      title: (i.title || '').trim(),
+      detail: i.detail || '',
+      area: i.area || '',
+      tags: listOf(i.tags),
+      impact: clamp(i.impact, 1, 5, 3),
+      confidence: clamp(i.confidence, 1, 5, 3),
+      ease: clamp(i.ease, 1, 5, 3),
+      stage: STAGES[i.stage] ? i.stage : 'inbox',
+      steps: listOf(i.steps).map(function (st) {
+        st = st || {};
+        return { id: st.id || uid(), text: st.text || '', done: !!st.done };
+      }),
+      owner: i.owner || '',
+      due: i.due || '',
+      notes: i.notes || '',
+      createdAt: i.createdAt || new Date().toISOString(),
+      shippedAt: i.shippedAt || ''
+    };
+  }
+
   function normalise(s) {
-    var out = { ideas: [], theme: s.theme || '' };
-    (s.ideas || []).forEach(function (i) {
-      out.ideas.push({
-        id: i.id || uid(),
-        title: (i.title || '').trim(),
-        detail: i.detail || '',
-        area: i.area || '',
-        tags: Array.isArray(i.tags) ? i.tags : [],
-        impact: clamp(i.impact, 1, 5, 3),
-        confidence: clamp(i.confidence, 1, 5, 3),
-        ease: clamp(i.ease, 1, 5, 3),
-        stage: STAGES[i.stage] ? i.stage : 'inbox',
-        steps: (i.steps || []).map(function (st) {
-          return { id: st.id || uid(), text: st.text || '', done: !!st.done };
-        }),
-        owner: i.owner || '',
-        due: i.due || '',
-        notes: i.notes || '',
-        createdAt: i.createdAt || new Date().toISOString(),
-        shippedAt: i.shippedAt || ''
+    s = s || {};
+    var out = { version: 2, projects: [], currentId: null, theme: s.theme || '' };
+
+    /* A bank saved before projects existed becomes the first project. Its id
+       is fixed, so two devices migrating the same bank agree on it. */
+    var src = listOf(s.projects);
+    if (!src.length) src = [{ id: 'p-main', name: DEFAULT_PROJECT, ideas: s.ideas }];
+
+    src.forEach(function (p) {
+      p = p || {};
+      out.projects.push({
+        id: p.id || pid(),
+        name: String(p.name || '').trim() || DEFAULT_PROJECT,
+        createdAt: p.createdAt || new Date().toISOString(),
+        ideas: listOf(p.ideas).map(normaliseIdea)
       });
+    });
+    out.currentId = out.projects.some(function (p) { return p.id === s.currentId; }) ? s.currentId : out.projects[0].id;
+
+    Object.defineProperty(out, 'ideas', {
+      enumerable: false,
+      configurable: true,
+      get: function () { return projectOf(out).ideas; },
+      set: function (v) { projectOf(out).ideas = v; }
     });
     return out;
   }
@@ -477,6 +561,9 @@
     v = Number(v);
     if (!isFinite(v)) return dflt;
     return Math.min(hi, Math.max(lo, Math.round(v)));
+  }
+  function pid() {
+    return 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
   }
   function uid() {
     return 'i' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
@@ -626,6 +713,7 @@
   }
 
   function renderAll() {
+    renderProjects();
     renderCounts();
     if (view === 'dump') renderDump();
     if (view === 'prioritize') { renderMatrix(); renderRank(); }
@@ -959,6 +1047,12 @@
       '<div><label>Area</label><input type="text" id="m-area" list="area-list" value="' + esc(i.area) + '"></div>' +
       '<div><label>Tags</label><input type="text" id="m-tags" value="' + esc(i.tags.join(', ')) + '"></div>' +
       '</div></div>';
+    if (state.projects.length > 1) {
+      html += '<div class="field"><label>Project</label><select id="m-project">' +
+        state.projects.map(function (p) {
+          return '<option value="' + esc(p.id) + '"' + (p.id === state.currentId ? ' selected' : '') + '>' + esc(p.name) + '</option>';
+        }).join('') + '</select></div>';
+    }
     html += '<div class="field"><div class="two">' +
       '<div><label>Owner</label><input type="text" id="m-owner" value="' + esc(i.owner) + '" placeholder="Who is on the hook"></div>' +
       '<div><label>Target date</label><input type="date" id="m-due" value="' + esc(i.due) + '"></div>' +
@@ -1241,11 +1335,13 @@
       var before = state;
       try {
         var parsed = JSON.parse(String(fr.result));
-        if (!parsed || !Array.isArray(parsed.ideas)) throw new Error('no ideas array');
+        if (!parsed || (!Array.isArray(parsed.ideas) && !Array.isArray(parsed.projects))) throw new Error('not an export');
         state = normalise(parsed);
         save();
         renderAll();
-        toast('Imported ' + state.ideas.length + ' ideas', 'Undo', function () {
+        var total = state.projects.reduce(function (n, p) { return n + p.ideas.length; }, 0);
+        toast('Imported ' + state.projects.length + ' project' + (state.projects.length === 1 ? '' : 's') +
+              ' · ' + total + ' idea' + (total === 1 ? '' : 's'), 'Undo', function () {
           state = before; save(); renderAll();
         });
       } catch (err) {
@@ -1269,6 +1365,115 @@
     save();
   });
 
+  /* ============================ projects ============================ */
+
+  function renderProjects() {
+    var cur = currentProject();
+    $('#project-select').innerHTML = state.projects.map(function (p) {
+      return '<option value="' + esc(p.id) + '"' + (p.id === cur.id ? ' selected' : '') + '>' +
+        esc(p.name) + ' (' + p.ideas.length + ')</option>';
+    }).join('');
+    $('#project-delete').disabled = state.projects.length < 2;
+  }
+
+  function switchProject(id) {
+    if (openId) closeModal();
+    state.currentId = id;
+    save();
+    renderAll();
+  }
+  $('#project-select').addEventListener('change', function () { switchProject(this.value); });
+
+  var projectMode = 'new';
+  function openProjectDialog(mode) {
+    projectMode = mode;
+    $('#pd-title').textContent = mode === 'new' ? 'New project' : 'Rename project';
+    $('#pd-save').textContent = mode === 'new' ? 'Create' : 'Save';
+    $('#pd-name').value = mode === 'new' ? '' : currentProject().name;
+    $('#pd-err').textContent = '';
+    var d = $('#proj-dialog');
+    if (d.showModal) d.showModal(); else d.setAttribute('open', '');
+    $('#pd-name').focus();
+    $('#pd-name').select();
+  }
+  function closeProjectDialog() {
+    var d = $('#proj-dialog');
+    if (d.close) d.close(); else d.removeAttribute('open');
+  }
+  $('#project-new').addEventListener('click', function () { openProjectDialog('new'); });
+  $('#project-rename').addEventListener('click', function () { openProjectDialog('rename'); });
+  $('#pd-cancel').addEventListener('click', closeProjectDialog);
+
+  $('#proj-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var name = $('#pd-name').value.trim();
+    if (!name) { $('#pd-err').textContent = 'Give the project a name.'; return; }
+    var taken = state.projects.some(function (p) {
+      return p.name.toLowerCase() === name.toLowerCase() && (projectMode === 'new' || p.id !== state.currentId);
+    });
+    if (taken) { $('#pd-err').textContent = 'There is already a project called that.'; return; }
+    closeProjectDialog();
+    if (projectMode === 'new') {
+      var p = { id: pid(), name: name, createdAt: new Date().toISOString(), ideas: [] };
+      state.projects.push(p);
+      switchProject(p.id);
+      show('dump');
+      $('#capture-text').focus();
+      toast('Started “' + shorten(name) + '”');
+    } else {
+      currentProject().name = name;
+      save();
+      renderAll();
+    }
+  });
+
+  $('#project-delete').addEventListener('click', function () {
+    if (state.projects.length < 2) return;
+    var p = currentProject();
+    var n = p.ideas.length;
+    if (!window.confirm('Delete “' + p.name + '”' + (n ? ' and its ' + n + ' idea' + (n === 1 ? '' : 's') : '') + '?')) return;
+    var at = state.projects.indexOf(p);
+    if (openId) closeModal();
+    state.projects.splice(at, 1);
+    state.currentId = state.projects[Math.max(0, at - 1)].id;
+    save();
+    renderAll();
+    toast('Deleted “' + shorten(p.name) + '”', 'Undo', function () {
+      if (state.projects.some(function (x) { return x.id === p.id; })) return;
+      state.projects.splice(Math.min(at, state.projects.length), 0, p);
+      state.currentId = p.id;
+      save();
+      renderAll();
+    });
+  });
+
+  /* Moving an idea keeps everything about it — score, plan, notes. */
+  function moveIdea(id, toId) {
+    var from = currentProject(), to = null;
+    state.projects.forEach(function (p) { if (p.id === toId) to = p; });
+    if (!to || to === from) return;
+    var idx = -1;
+    for (var k = 0; k < from.ideas.length; k++) if (from.ideas[k].id === id) idx = k;
+    if (idx === -1) return;
+    var idea = from.ideas.splice(idx, 1)[0];
+    to.ideas.unshift(idea);
+    closeModal();
+    save();
+    renderAll();
+    toast('Moved “' + shorten(idea.title) + '” to ' + to.name, 'Undo', function () {
+      if (state.projects.indexOf(to) === -1 || state.projects.indexOf(from) === -1) return;
+      var j = to.ideas.indexOf(idea);
+      if (j === -1) return;
+      to.ideas.splice(j, 1);
+      from.ideas.splice(Math.min(idx, from.ideas.length), 0, idea);
+      save();
+      renderAll();
+    });
+  }
+  document.addEventListener('change', function (e) {
+    if (e.target && e.target.id === 'm-project' && openId) moveIdea(openId, e.target.value);
+  });
+
   /* ============================ sync adapter ============================ */
   /* What this tool hands the shared sync code below. */
 
@@ -1283,36 +1488,34 @@
     storageKey: KEY,
     noun: 'ideas',
 
-    /* The ideas travel. Light or dark does not — that belongs to the screen. */
-    payload: function () { return { ideas: state.ideas }; },
+    /* Every project and its ideas travel. Which project is open, and light or
+       dark, stay with the device — switching projects is not an edit. */
+    payload: function () { return { projects: state.projects }; },
 
-    /* The Realtime Database drops empty arrays, so an idea with no tags or
-       steps comes back without those keys. normalise() rebuilds them. */
     apply: function (d) {
-      var ideas = listOf(d.ideas);
-      if (!ideas.length) return false;          // an empty copy never wipes the bank
-      state = normalise({
-        ideas: ideas.map(function (i) {
-          i = i || {};
-          i.tags = listOf(i.tags);
-          i.steps = listOf(i.steps);
-          return i;
-        }),
-        theme: state.theme
-      });
+      var projects = listOf(d.projects);
+      if (!projects.length) {
+        /* A device still on the single-bank version writes { ideas }. Take it
+           only where it cannot erase projects this device has. */
+        if (!listOf(d.ideas).length || state.projects.length > 1) return false;
+        projects = [{ id: state.projects[0].id, name: state.projects[0].name, ideas: d.ideas }];
+      }
+      if (openId && !projects.some(function (p) { return p.id === state.currentId; })) closeModal();
+      state = normalise({ projects: projects, currentId: state.currentId, theme: state.theme });
       try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
       renderAll();                              // repaints an open idea too, or closes it if gone
       return true;
     },
 
-    /* A browser with no ideas has nothing worth asking about. */
-    untouched: function () { return !state.ideas.length; },
+    /* One untouched project with nothing in it is not worth asking about. */
+    untouched: function () { return state.projects.length === 1 && !state.ideas.length; },
 
     flush: function () { save(); },
 
     describe: function (d) {
-      var n = listOf(d && d.ideas).length;
-      return 'It holds ' + n + ' idea' + (n === 1 ? '' : 's') + '.';
+      var ps = listOf(d && d.projects);
+      var n = ps.reduce(function (a, p) { return a + listOf(p && p.ideas).length; }, 0);
+      return 'It holds ' + ps.length + ' project' + (ps.length === 1 ? '' : 's') + ' and ' + n + ' idea' + (n === 1 ? '' : 's') + '.';
     },
 
     buttonClass: function (s) {
@@ -1732,7 +1935,7 @@
   $('#sync-keep-cloud').addEventListener('click', keepCloud);
 
   window.__ideabank = {
-    state: function () { return state; }, score: score, render: renderAll,
+    state: function () { return state; }, score: score, render: renderAll, currentProject: currentProject,
     sync: { cloud: cloud, meta: meta, setMeta: setMeta, reconcile: reconcile, adopt: adopt,
             syncPrint: syncPrint, syncNow: syncNow, explain: explain, adapter: SYNC }
   };
