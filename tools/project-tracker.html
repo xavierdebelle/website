@@ -214,6 +214,28 @@ tfoot td{font-weight:700;background:var(--bg);border-top:2px solid var(--line)}
   .chip{min-width:auto;padding:2px 8px}
   #running-elapsed{margin-left:0}
 }
+
+/* ---------- client links ---------- */
+a.btn{text-decoration:none;color:inherit;display:inline-flex;align-items:center}
+.share-note{margin:0 0 14px;color:var(--muted);font-size:14px;line-height:1.5}
+.share-row{display:flex;gap:6px;align-items:center}
+.share-row input{flex:1;min-width:0;font-size:13px}
+.share-actions{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:10px}
+
+/* ---------- client view (#view=<token>) ----------
+   Every control that edits is hidden here, and a capture-phase guard in the
+   script refuses them too — hiding alone is not the protection. */
+.view-pill{display:none}
+#view-msg{display:none}
+body.view .view-pill{display:inline-block;font-size:12px;font-weight:600;color:var(--accent);
+  background:var(--accent-soft);border-radius:999px;padding:3px 10px;white-space:nowrap}
+body.view #view-msg.on{display:block;margin-top:10px}
+body.view.view-empty .tabs,body.view.view-empty .panel,body.view.view-empty #running-bar{display:none!important}
+body.view .topbar .field,body.view .topbar .btn,body.view #sync-bar,
+body.view .handle,body.view .timer-btn,body.view .step-actions,body.view .phase-actions,
+body.view .add-step,body.view #btn-add-phase,body.view #running-stop,body.view #btn-log-add,
+body.view .log-row .icon{display:none!important}
+body.view .chip{pointer-events:none;cursor:default}
 </style>
 </head>
 <body>
@@ -232,6 +254,8 @@ tfoot td{font-weight:700;background:var(--bg);border-top:2px solid var(--line)}
     <button class="btn ghost icon del" id="btn-delete-project" title="Delete project"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false"><path d="M2.9 4.3h10.2M6.3 4.3V2.9h3.4v1.4M4.5 4.3l.6 8.3h5.8l.6-8.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"></path></svg></button>
     <button class="btn" id="btn-export">Export</button>
     <button class="btn" id="btn-import">Import</button>
+    <button class="btn" id="btn-share" style="display:none" title="A read-only link to this project for your client">Client link</button>
+    <span class="view-pill">View only · updates live</span>
     <button class="btn" id="btn-sync" style="display:none">Sign in to sync</button>
     <button class="btn ghost" id="btn-signout" style="display:none" title="Sign out of sync">Sign out</button>
   </div>
@@ -249,6 +273,8 @@ tfoot td{font-weight:700;background:var(--bg);border-top:2px solid var(--line)}
     <span id="running-elapsed">0:00</span>
     <button class="btn" id="running-stop">Stop</button>
   </div>
+
+  <div id="view-msg" class="empty"></div>
 
   <div class="tabs">
     <button class="tab on" id="tab-board">Board</button>
@@ -342,6 +368,13 @@ tfoot td{font-weight:700;background:var(--bg);border-top:2px solid var(--line)}
    totals are always summed from it, never stored alongside it.
    ============================================================ */
 var KEY = 'ptt.v1';
+
+/* Client view: opened with #view=<token>, this page is a read-only window
+   onto one shared project. It never reads or writes this browser's storage. */
+var VIEW = (function () {
+  var m = /[#&]view=([\w-]{20,64})/.exec(location.hash);
+  return m ? m[1] : null;
+})();
 var state = null;
 
 function uid(p) { return (p || 'x') + '-' + Math.random().toString(36).slice(2, 9); }
@@ -513,6 +546,7 @@ function normalise(s) {
     return {
       id: p.id || uid('p'),
       name: String(p.name == null ? 'Untitled' : p.name),
+      shareId: typeof p.shareId === 'string' && /^[\w-]{20,64}$/.test(p.shareId) ? p.shareId : null,
       createdAt: p.createdAt || Date.now(),
       phases: (p.phases || []).map(function (ph) {
         return {
@@ -547,6 +581,7 @@ function normalise(s) {
 }
 
 function save() {
+  if (VIEW) return;                 // a client's browser is never written to
   try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { /* private mode: keep going in memory */ }
   cloudTouch();
 }
@@ -790,6 +825,7 @@ function render() {
   renderLogFilters();
   renderLog();
   renderReport();
+  paintShare();
 }
 
 function renderProjects() {
@@ -802,7 +838,11 @@ function renderProjects() {
 function renderRunning() {
   var open = runningEntry();
   var bar = $('running-bar');
-  if (!open) { bar.classList.remove('on'); document.title = 'Project Phases & Time Log'; return; }
+  if (!open) {
+    bar.classList.remove('on');
+    document.title = VIEW && state.projects.length ? state.projects[0].name + ' — Project Phases' : 'Project Phases & Time Log';
+    return;
+  }
   var st = findStep(open.stepId), ph = phaseOfStep(open.stepId);
   bar.classList.add('on');
   $('running-what').textContent = (ph ? ph.name + ' · ' : '') + (st ? st.name : 'step');
@@ -1573,7 +1613,10 @@ $('btn-delete-project').addEventListener('click', function () {
   if (!p) return;
   resetSaveBtn();
   var ids = p.phases.reduce(function (a, ph) { return a.concat(ph.steps.map(function (s) { return s.id; })); }, []);
-  confirmModal('Delete project', 'Delete “' + p.name + '” with everything logged against it?', function () {
+  var token = p.shareId;
+  confirmModal('Delete project', 'Delete “' + p.name + '” with everything logged against it?' +
+    (token ? ' Its client link stops working too.' : ''), function () {
+    if (token) revokeShare(token).catch(shareFail);
     state.projects = state.projects.filter(function (x) { return x.id !== p.id; });
     state.log = state.log.filter(function (e) { return ids.indexOf(e.stepId) === -1; });
     state.currentId = state.projects.length ? state.projects[0].id : null;
@@ -2160,21 +2203,298 @@ function initCloud() {
   window.addEventListener('online', function () { if (cloud.uid) syncNow(); });
 }
 
+
+/* ============================================================
+   Client links
+   ------------------------------------------------------------
+   A project can be given a secret link that shows it, read-only, to a
+   client. The link carries a random 128-bit token; a copy of just that
+   project lives at shares/{token}, which anyone holding the token can
+   read and only the owner can write. The copy is refreshed whenever this
+   device finishes a sync, so the client watches the work live.
+
+   Turning a link off deletes the copy, so the old link shows nothing.
+   ============================================================ */
+var PUBLIC_URL = 'https://xavierdebelle.github.io/website/tools/project-tracker.html';
+var REVOKE_KEY = KEY + '.revoke';   // links to turn off once this device is signed in again
+var sharePrinted = {};              // token -> what this page last published there
+var shareError = '';
+
+function newToken() {
+  var b = new Uint8Array(16);
+  crypto.getRandomValues(b);
+  return btoa(String.fromCharCode.apply(null, b)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+function shareURL(token) {
+  var base = /^https?:$/.test(location.protocol) ? location.origin + location.pathname : PUBLIC_URL;
+  return base + '#view=' + token;
+}
+function shareRef(token) { return cloud.fb.f.ref(cloud.fb.db, 'shares/' + token); }
+
+/* Only what the client page shows. No other projects, no sync bookkeeping,
+   no collapsed flags. */
+function sharePayload(p) {
+  var ids = {};
+  var project = {
+    id: p.id, name: p.name, createdAt: p.createdAt,
+    phases: p.phases.map(function (ph) {
+      return {
+        id: ph.id, name: ph.name,
+        steps: ph.steps.map(function (st) {
+          ids[st.id] = true;
+          return { id: st.id, name: st.name, status: st.status, estimate: st.estimate };
+        })
+      };
+    })
+  };
+  var log = state.log.filter(function (e) { return ids[e.stepId]; }).map(function (e) {
+    return { id: e.id, stepId: e.stepId, phaseId: e.phaseId, start: e.start, end: e.end, note: e.note, source: e.source };
+  });
+  return { project: project, log: log };
+}
+
+function shareFail(err) {
+  var code = err && err.code;
+  shareError = code === 'PERMISSION_DENIED'
+    ? 'The database refused the client link. The Firebase rules need a “shares” section before links can work.'
+    : explain(code);
+  if (err) console.warn('[share]', err);
+  paintShare();
+}
+
+function writeShare(token, p) {
+  var body = sharePayload(p);
+  var print = JSON.stringify(body);
+  body.v = 1;
+  body.updatedAt = Date.now();
+  return cloud.fb.f.set(shareRef(token), body).then(function () {
+    sharePrinted[token] = print;
+    shareError = '';
+  });
+}
+
+/* Runs after every completed sync: refresh each shared project whose
+   client-visible content changed since this page last published it. */
+function publishShares() {
+  if (VIEW || !cloud.uid || !cloud.fb) return;
+  flushRevokes();
+  state.projects.forEach(function (p) {
+    if (!p.shareId) return;
+    if (sharePrinted[p.shareId] === JSON.stringify(sharePayload(p))) return;
+    writeShare(p.shareId, p).catch(shareFail);
+  });
+}
+
+function queuedRevokes() {
+  try { return JSON.parse(localStorage.getItem(REVOKE_KEY) || '[]'); } catch (e) { return []; }
+}
+function setRevokes(list) {
+  try {
+    if (list.length) localStorage.setItem(REVOKE_KEY, JSON.stringify(list));
+    else localStorage.removeItem(REVOKE_KEY);
+  } catch (e) {}
+}
+function revokeShare(token) {
+  delete sharePrinted[token];
+  if (!cloud.uid || !cloud.fb) { setRevokes(queuedRevokes().concat([token])); return Promise.resolve(); }
+  return cloud.fb.f.remove(shareRef(token)).catch(function (err) {
+    setRevokes(queuedRevokes().concat([token]));
+    throw err;
+  });
+}
+function flushRevokes() {
+  var list = queuedRevokes();
+  if (!list.length) return;
+  setRevokes([]);
+  list.forEach(function (token) { revokeShare(token).catch(shareFail); });
+}
+
+function paintShare() {
+  var b = $('btn-share');
+  if (!b) return;
+  var p = state && currentProject();
+  b.style.display = !VIEW && cloud.uid && p ? '' : 'none';
+  b.textContent = p && p.shareId ? 'Client link · on' : 'Client link';
+}
+
+/* The shared sync code is identical across tools, so rather than give it a
+   hook, this tool listens in on its status changes: the button follows
+   sign-in, and a finished sync is the moment to refresh client copies. */
+var coreSetStatus = setStatus;
+setStatus = function (s) {
+  coreSetStatus(s);
+  paintShare();
+  if (s === 'synced') publishShares();
+};
+
+function copyText(text, btn) {
+  function done() { btn.textContent = 'Copied'; setTimeout(function () { btn.textContent = 'Copy'; }, 1600); }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(done, function () { $('share-url').select(); document.execCommand('copy'); done(); });
+  } else {
+    $('share-url').select(); document.execCommand('copy'); done();
+  }
+}
+
+function openShare() {
+  var p = currentProject();
+  if (!p || !cloud.uid) return;
+  resetSaveBtn();
+  $('modal-save').disabled = false;
+  var url = p.shareId ? shareURL(p.shareId) : '';
+
+  if (!p.shareId) {
+    openModal('Client link',
+      '<p class="share-note">Create a read-only link to <strong>' + esc(p.name) + '</strong> for your client. ' +
+      'They will see its phases, steps, estimates, logged time and log notes, updating as you work — ' +
+      'and nothing they do can change it. Every project gets its own link, and you can turn it off at any time.</p>',
+      function () { createShare(p); return false; });
+    $('modal-save').textContent = 'Create link';
+  } else {
+    openModal('Client link — ' + p.name,
+      '<p class="share-note">Anyone with this link can see this project and watch it update. ' +
+      'They cannot change, add or remove anything.</p>' +
+      '<div class="row"><label for="share-url">Link</label><div class="share-row">' +
+        '<input type="text" id="share-url" readonly value="' + esc(url) + '">' +
+        '<button type="button" class="btn" id="share-copy">Copy</button>' +
+        '<a class="btn" href="' + esc(url) + '" target="_blank" rel="noopener">Open</a>' +
+      '</div></div>' +
+      '<div class="share-actions">' +
+        '<button type="button" class="btn ghost" id="share-new" title="The current link stops working">Replace with a new link</button>' +
+        '<button type="button" class="btn ghost danger" id="share-off">Turn off link</button>' +
+      '</div>',
+      function () { return true; }, 'share-url');
+    $('modal-save').textContent = 'Done';
+    $('share-copy').addEventListener('click', function () { copyText(url, this); });
+    $('share-off').addEventListener('click', function () {
+      var token = p.shareId;
+      this.disabled = true;
+      revokeShare(token).then(function () {
+        p.shareId = null;
+        save();
+        closeModal();
+        render();
+      }, function (err) { shareFail(err); modalError(shareError); });
+    });
+    $('share-new').addEventListener('click', function () {
+      var token = p.shareId;
+      this.disabled = true;
+      revokeShare(token).then(function () {
+        p.shareId = null;
+        createShare(p);
+      }, function (err) { shareFail(err); modalError(shareError); });
+    });
+  }
+  if (shareError) modalError(shareError);
+}
+
+function createShare(p) {
+  var token = newToken();
+  var btn = $('modal-save');
+  btn.disabled = true;
+  btn.textContent = 'Creating…';
+  writeShare(token, p).then(function () {
+    p.shareId = token;
+    save();
+    render();
+    openShare();
+  }, function (err) {
+    btn.disabled = false;
+    btn.textContent = 'Create link';
+    shareFail(err);
+    modalError(shareError);
+  });
+}
+
+/* ---- the client's side ---- */
+function viewMessage(text) {
+  var el = $('view-msg');
+  el.textContent = text;
+  el.classList.toggle('on', !!text);
+  document.body.classList.toggle('view-empty', !!text);
+}
+
+function viewGone() {
+  state = blankState();
+  render();
+  document.querySelector('.brand h1').textContent = 'Project Phases';
+  document.title = 'Link not active';
+  viewMessage('This link is not active. It may have been turned off or replaced — ask for a new one.');
+}
+
+function showShared(d) {
+  var collapsed = {};                       // the client's own expand/collapse survives updates
+  var cur = currentProject();
+  if (cur) cur.phases.forEach(function (ph) { collapsed[ph.id] = ph.collapsed; });
+  var next = normalise({ projects: [d.project], log: listOf(d.log), currentId: d.project.id });
+  if (!next || !next.projects.length) return viewGone();
+  next.projects[0].shareId = null;
+  next.projects[0].phases.forEach(function (ph) { ph.collapsed = !!collapsed[ph.id]; });
+  state = next;
+  viewMessage('');
+  document.querySelector('.brand h1').textContent = state.projects[0].name;
+  keepingFocus(render);
+  if (!runningEntry()) document.title = state.projects[0].name + ' — Project Phases';
+}
+
+function bootView() {
+  document.body.classList.add('view');
+  document.querySelector('.brand .sub').textContent = 'shared by Xavier de Belle';
+  state = blankState();
+  render();
+  viewMessage('Loading…');
+
+  /* Nothing a client can press changes anything. Hidden controls are also
+     refused here, before any handler sees them. Allowed: tabs, expanding a
+     phase, the log filters and the CSV download. */
+  var allowedIds = /^(tab-board|tab-log|tab-report|btn-collapse-all|f-clear|btn-log-csv)$/;
+  document.addEventListener('click', function (ev) {
+    var el = ev.target.closest && ev.target.closest('button, [data-act]');
+    if (!el) return;
+    if (el.getAttribute('data-act') === 'toggle-phase' || allowedIds.test(el.id || '')) return;
+    ev.preventDefault();
+    ev.stopImmediatePropagation();
+  }, true);
+  ['pointerdown', 'keydown', 'dblclick'].forEach(function (type) {
+    document.addEventListener(type, function (ev) {
+      if (ev.target.closest && ev.target.closest('[data-act="handle"]')) {
+        ev.preventDefault();
+        ev.stopImmediatePropagation();
+      }
+    }, true);
+  });
+
+  Promise.all([import(SDK + 'firebase-app.js'), import(SDK + 'firebase-database.js')]).then(function (m) {
+    var db = m[1].getDatabase(m[0].initializeApp(FIREBASE));
+    m[1].onValue(m[1].ref(db, 'shares/' + VIEW), function (snap) {
+      var d = snap.exists() ? snap.val() : null;
+      if (!d || !d.project) viewGone(); else showShared(d);
+    }, function () { viewGone(); });
+  }).catch(function () {
+    viewMessage('This project could not be loaded. Check the connection and reload the page.');
+  });
+}
+
 /* ============================================================
    Boot
    ============================================================ */
 $('btn-rename-project').innerHTML = ICO.pencil;
 $('btn-delete-project').innerHTML = ICO.trash;
 
-try { hadStoredAtBoot = localStorage.getItem(KEY) != null; } catch (e) {}
-load();
-render();
-initCloud();
+if (VIEW) {
+  bootView();
+} else {
+  try { hadStoredAtBoot = localStorage.getItem(KEY) != null; } catch (e) {}
+  load();
+  render();
+  initCloud();
+}
 
 $('btn-sync').addEventListener('click', syncClick);
 $('btn-signout').addEventListener('click', signOutNow);
 $('sync-keep-local').addEventListener('click', keepLocal);
 $('sync-keep-cloud').addEventListener('click', keepCloud);
+$('btn-share').addEventListener('click', openShare);
 
 // Test/debug hooks — the same shape the tests drive.
 window.__app = {
@@ -2202,6 +2522,13 @@ window.__app = {
     adopt: adopt,
     syncPrint: syncPrint,
     adapter: SYNC
+  },
+  share: {
+    payload: sharePayload,
+    publish: publishShares,
+    url: shareURL,
+    view: function () { return VIEW; },
+    printed: function () { return sharePrinted; }
   }
 };
 window.__sync = { cloud: cloud, meta: meta, setMeta: setMeta, reconcile: reconcile, adopt: adopt,

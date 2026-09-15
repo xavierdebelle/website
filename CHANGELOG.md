@@ -5,6 +5,66 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v42 — 2026-09-15
+
+**What's new** · Project Phases · [tools.html#personal]
+### A Link For<br>The Client
+Every project in Project Phases can now have its own client link. Your client
+opens it and sees the project exactly as you do — phases, steps, estimates,
+logged time and notes — updating live as you work. They cannot change, add or
+remove anything.
+
+Turn a link off, or replace it with a new one, whenever you like.
+
+**Client links**
+- "Client link" button in the top bar, shown only when signed in as the owner.
+  Create, copy, open, replace with a new link, or turn off.
+- Each link carries a random 128-bit token. A copy of just that project —
+  no other projects, no sync bookkeeping — lives at `shares/{token}` and is
+  refreshed after every completed sync, so the client sees changes within a
+  couple of seconds.
+- Turning a link off deletes that copy; the old link then shows "This link is
+  not active". Replacing does the same and issues a new token. Deleting a
+  shared project turns its link off too, and the confirmation says so. A
+  device that is signed out when a link is turned off queues the removal and
+  finishes it on next sign-in.
+- The token travels with the project, so a link made on the laptop keeps
+  updating from the phone.
+- **The client page is the tool itself, opened with `#view=<token>`.** In that
+  mode it never reads or writes the visitor's storage, never loads sign-in,
+  hides every editing control, and a capture-phase guard refuses those
+  controls even if one were showing. Tabs, expanding phases, log filters and
+  the CSV download still work. The token sits in the URL fragment, which
+  browsers do not send to the server.
+- The real protection is the database rules: `shares` can be read only by
+  exact token (no listing) and written only by the owner uid.
+- The shared sync core is untouched and still identical to Budget Tracker's;
+  this tool listens in on its status changes instead of adding a hook.
+
+**Verified against the local Firebase stand-in — no writes to the live database**
+- Button hidden before sign-in, shown after, hidden again after sign-out.
+- Creating a link writes only the project and its log; the token syncs into
+  the owner's document.
+- Client on a separate origin: project name and "View only" shown, no editing
+  controls visible; clicking status, timer, delete, edit, add and drag
+  handles changed nothing and opened nothing; tabs and collapse worked;
+  storage stayed empty throughout.
+- Owner rename, status change and a new log note reached the client live, with
+  the client's collapsed phase kept.
+- Turn off → client shows not active without reloading. Create, then replace →
+  only the newest token remains. Delete shared project → its copy removed, no
+  queued leftovers. No console errors.
+- Saved as `Tools files/Tools/project_tracker_v6.html`.
+
+**Outstanding**
+- **The Firebase rules must gain a `shares` section before links work.** Until
+  then, creating a link shows "The database refused the client link".
+- A link turned off on one device could come back if another device holding
+  the old copy chose "Keep this device" in a sync conflict before seeing the
+  change. Narrow, but real — replace the link if that ever happens.
+
+---
+
 ## v41 — 2026-09-15
 
 **What's new** · Budget Tracker &amp; Project Phases · [tools.html#personal]
