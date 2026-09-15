@@ -5,6 +5,81 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v41 — 2026-09-15
+
+**What's new** · Budget Tracker &amp; Project Phases · [tools.html#personal]
+### Changes Now<br>Arrive Live
+Sign in on your phone and your laptop, change a number on one, and it appears
+on the other within a second or two — no reloading, no tapping to sync.
+
+Signed out, nothing is different: both tools still save only in your own
+browser.
+
+**Sync was broken in two ways — both mine, both fixed**
+- **After any page load, sync stuck on "Syncing…" and never pulled.** Sign-in
+  set the status to working, and the sync pass refused to start while the
+  status said working. A freshly opened computer therefore never picked up
+  phone edits — exactly what Xavier reported. Pulls only resumed once that
+  device had itself pushed something.
+- **Edits were pushed without looking at the cloud first.** The conflict check
+  ran only on the load/focus path; the save path wrote straight over whatever
+  was there. Reproduced: a phone that had never pulled overwrote the
+  computer's newer budget on its first keystroke. Silent data loss, not a
+  cosmetic bug.
+- Project Phases also stamped an "edit" every time the page was hidden, so an
+  untouched phone looked changed to the other device.
+- Both were in Project Phases since v37 and in Budget Tracker since v40.
+
+**Rebuilt as one shared sync core**
+- Both tools now carry an identical sync block; everything tool-specific
+  lives in a small adapter above it. No more two drifting copies.
+- **Every write is read-compare-act.** A device that is behind cannot
+  overwrite a newer copy; if both changed, it asks.
+- **Live:** the cloud copy is watched while signed in. A device ignores the
+  echo of its own writes.
+- One sync pass at a time; anything that asks mid-pass gets another pass
+  afterwards instead of being dropped.
+- Edits arriving mid-push are not lost: if the data changed while a write was
+  in flight, it stays marked unsynced and goes out next.
+- Stamps always move forward past the watermark, so a phone clock a second
+  behind the laptop cannot make a fresh edit look older than the copy.
+- Going to the background flushes pending saves and sends them immediately,
+  since a phone suspends the page soon after.
+- A change arriving while the cursor sits in a field puts the cursor back.
+- Project Phases now syncs projects and the time log but not which project is
+  open, and no longer loads the Firebase SDK for visitors. It gains the
+  existing-data guard Budget Tracker had.
+- Label reads **Live · hh:mm** when connected.
+
+**Verified against a local stand-in for Firebase — no writes to the live database**
+- Built a mock Realtime Database (drops empty arrays/objects like the real one,
+  echoes a client's own writes before acknowledging them) and ran two browser
+  origins as two devices.
+- The failure reproduced on the v40 code first: stuck "Syncing…", no pull on
+  the phone, phone edit overwrote the computer.
+- New Budget Tracker: sample-only device signs in without writing; edit
+  reaches the cloud; second device pulls on sign-in; edits appear live in both
+  directions with no reload or focus; offline phone edit shows "No connection",
+  then "Both changed" on reconnect instead of overwriting; Keep this device
+  pushes and the computer updates live with its cursor kept in the field;
+  reload stays Live; sign-out works. No console errors.
+- New Project Phases: same live round trip; a copy written by the old v39
+  shape (full state, empty phase without steps, another device's current
+  project) adopts correctly and keeps the local open project; an empty cloud
+  copy is refused and nothing is wiped.
+- Saved as `Tools files/Tools/budget_tracker_app_v12.html` and
+  `project_tracker_v5.html`. Storage keys unchanged.
+
+**Outstanding**
+- Any tab still open on the old version keeps the old behaviour until
+  reloaded — reload on every device.
+- Data written while the bugs were live cannot be recovered by the fix. If a
+  budget or project looks wrong, the device still holding the right version
+  will show "Both changed" once edited; choose Keep this device there.
+- End-to-end on the real Firebase, which only Xavier can do.
+
+---
+
 ## v40 — 2026-09-14
 
 **What's new** · Budget Tracker · [tools.html#personal]
