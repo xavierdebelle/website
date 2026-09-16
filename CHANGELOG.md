@@ -5,6 +5,63 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v45 — 2026-09-16
+
+**What's new** · Budget Tracker · [tools.html#personal]
+### For The Things<br>That Happen Once
+Every line in the Budget Tracker now has a **Once** frequency (shown as 1×).
+A car repair, a tax refund, a one-time bill — it counts in full in the month
+you add it, and it is never copied into the months after.
+
+If it pushes the month over budget, that still carries into next month's
+starting balance, the way real money does. It just doesn't come back as a
+recurring cost.
+
+**Once frequency**
+- New `once` frequency: counts at full value, in its own month only. Marked
+  in violet with a note under the line ("One-off · only in September 2026 —
+  not copied to later months"); its delete button no longer claims it removes
+  anything from later months.
+- **Never leaves its month:** edits, renames and deletes of a one-off are not
+  carried forward; new months (forward or back-filled) never inherit one;
+  Copy month doesn't copy them and leaves a target month's own one-offs in
+  place; templates never save one, and applying a template in replace mode
+  keeps the month's one-offs.
+- **Switching frequency:** turning a recurring line into Once removes the
+  copies later months were given; turning a one-off into a recurring line
+  carries it forward like a new line.
+- **Rows are now lined up across months by position among recurring lines
+  only.** Edits find their matching line in later months partly by position,
+  so a one-off sitting mid-list would otherwise have shifted a new, still
+  blank line onto the wrong row. With no one-offs anywhere, matching is
+  exactly what it was.
+- The goals calculator's average monthly saving ignores one-offs — a single
+  big month should not change what a typical month looks like.
+- Nothing about sync changed: one-offs travel inside their month.
+- Saved as `Tools files/Tools/budget_tracker_app_v13.html`.
+
+**Verified locally (no live database involved)**
+- **Regression:** the same edit sequence with no one-offs — add, rename,
+  amount, reorder, delete, frequency change, blank-named row, asset reorder,
+  copy month — produced a byte-identical budget in v12 and v13.
+- **One-offs, 29 checks, all passing:** stays in its month and out of later
+  ones; month total and next month's opening balance move by exactly its
+  amount while next month's own flow doesn't; goals average unchanged; moving
+  it moves nothing elsewhere; with a one-off above them, a newly typed line
+  and a second blank line land on the right rows in later months and an
+  existing line's edit reaches the right row; deleting a line below it removes
+  the right one; once → monthly → once adds then removes the forward copies;
+  forward and back-filled new months, Copy month, template import, template
+  export and template replace all behave as above; choosing 1× from the
+  dropdown works; a database-shaped sync copy keeps the frequency. Desktop and
+  phone layouts checked. No console errors.
+
+**Outstanding**
+- Reload the Budget Tracker on every device. A tab still on the previous
+  version doesn't know "Once" and would treat those lines as monthly.
+
+---
+
 ## v44 — 2026-09-15
 
 **What's new** · Idea Bank · [tools.html#personal]

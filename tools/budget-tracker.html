@@ -132,6 +132,7 @@
   .freq-sel:hover{border-color:var(--border2);color:var(--text)}
   .freq-sel.nonmonthly{background:var(--amber-dim);border-color:#6b4a12;color:var(--amber)}
   .freq-sel:focus{border-color:var(--blue)}
+  .freq-sel.is-once{background:var(--violet-dim);border-color:#3d3480;color:#b3acff}
   .row-item .pct-badge{font-family:'DM Mono',monospace;font-size:10px;font-weight:500;text-align:center;padding:2px 3px;border-radius:4px;width:32px;display:inline-block}
   .pct-cell{text-align:center}
   .pct-over{background:var(--red-dim);color:var(--red)}
@@ -611,9 +612,11 @@ const FREQ = {
   biweekly: {label:'Bi-weekly', short:'2W', per:26/12},
   monthly:  {label:'Monthly',   short:'M',  per:1},
   yearly:   {label:'Yearly',    short:'Y',  per:1/12},
+  once:     {label:'Once',      short:'1×', per:1},     // a one-off: counts in full, in its own month only
 };
 const FREQ_KEYS = Object.keys(FREQ);
 function freqOf(r){ return (r && FREQ[r.freq]) ? r.freq : 'monthly'; }
+function isOnce(r){ return freqOf(r)==='once'; }
 function perMonth(r,field){ return num(r&&r[field]) * FREQ[freqOf(r)].per; }
 
 function defaultMonth(){
@@ -785,7 +788,9 @@ function sortedKeys(){ return Object.keys(state.months).sort(); }
 function prevKeyOf(k){ const ks=sortedKeys().filter(x=>x<k); return ks.length?ks[ks.length-1]:null; }
 function nextKeyOf(k){ const ks=sortedKeys().filter(x=>x>k); return ks.length?ks[0]:null; }
 
-function sectionSum(m,key,field){ return (m.sections[key]||[]).reduce((a,r)=>a+perMonth(r,field),0); }
+function sectionSum(m,key,field,recurringOnly){
+  return (m.sections[key]||[]).reduce((a,r)=>a+(recurringOnly&&isOnce(r)?0:perMonth(r,field)),0);
+}
 function assetsTotal(m){ return (m.assets||[]).reduce((a,r)=>a+num(r.balance),0); }
 
 /* Correction 3: net flow for the month, with no rollover in it. */
@@ -835,12 +840,29 @@ function propagate(fn){
 
 /* Find the row in a later month that corresponds to row `ri` / `name`.
    Same index wins; otherwise match by name; otherwise skip that month. */
-function matchRow(m,secKey,ri,name){
-  const rows=m.sections[secKey]||[];
-  const at=rows[ri];
+/* One-off lines live only in their own month, so they are left out whenever
+   rows are lined up across months. Positions count recurring rows only: a
+   one-off sitting mid-list must not shift which later row an edit lands on.
+   With no one-offs anywhere this is exactly the old index-then-name match. */
+function recIndex(secKey,ri){
+  return (month().sections[secKey]||[]).slice(0,ri).filter(r=>!isOnce(r)).length;
+}
+function matchRecurring(m,secKey,rix,name){
+  const rows=(m.sections[secKey]||[]).filter(r=>!isOnce(r));
+  const at=rows[rix];
   if(at && at.name===name) return at;
   if(name){ const byName=rows.filter(r=>r.name===name); if(byName.length===1) return byName[0]; }
   return null;
+}
+function matchRow(m,secKey,ri,name){ return matchRecurring(m,secKey,recIndex(secKey,ri),name); }
+function insertRecurring(rows,rix,row){
+  let seen=0;
+  for(let i=0;i<rows.length;i++){
+    if(isOnce(rows[i])) continue;
+    if(seen===rix){ rows.splice(i,0,row); return; }
+    seen++;
+  }
+  rows.push(row);
 }
 function matchAsset(m,ri,name){
   const rows=m.assets||[];
@@ -862,7 +884,7 @@ function seedMonth(target){
     const src=state.months[earlier[earlier.length-1]];
     const m={rvPlanned:0,rvActual:0,rvAuto:true,sections:{},assets:[]};
     SECTION_META.forEach(meta=>{
-      m.sections[meta.key]=src.sections[meta.key].map(r=>({name:r.name,planned:num(r.planned),actual:num(r.actual),freq:freqOf(r)}));
+      m.sections[meta.key]=src.sections[meta.key].filter(r=>!isOnce(r)).map(r=>({name:r.name,planned:num(r.planned),actual:num(r.actual),freq:freqOf(r)}));
     });
     m.assets=(src.assets||[]).map(a=>({name:a.name,balance:num(a.balance)}));
     return m;
@@ -873,7 +895,7 @@ function seedMonth(target){
     const src=state.months[later[0]];
     const m={rvPlanned:0,rvActual:0,rvAuto:false,sections:{},assets:[]};
     SECTION_META.forEach(meta=>{
-      m.sections[meta.key]=src.sections[meta.key].map(r=>({name:r.name,planned:num(r.planned),actual:0,freq:freqOf(r)}));
+      m.sections[meta.key]=src.sections[meta.key].filter(r=>!isOnce(r)).map(r=>({name:r.name,planned:num(r.planned),actual:0,freq:freqOf(r)}));
     });
     m.assets=(src.assets||[]).map(a=>({name:a.name,balance:0}));
     return m;
@@ -906,7 +928,7 @@ function bind(){
 
 /* ---------- rendering ---------- */
 function freqSelect(zone,ri,cur){
-  let out='<select class="freq-sel'+(cur!=='monthly'?' nonmonthly':'')+'" title="How often this happens" onchange="setField('+zone+','+ri+',\'freq\',this.value)">';
+  let out='<select class="freq-sel'+(cur==='once'?' is-once':cur!=='monthly'?' nonmonthly':'')+'" title="How often this happens" onchange="setField('+zone+','+ri+',\'freq\',this.value)">';
   FREQ_KEYS.forEach(k=>{
     out+='<option value="'+k+'"'+(k===cur?' selected':'')+'>'+FREQ[k].short+'</option>';
   });
@@ -971,7 +993,7 @@ function renderRows(si){
       '<div class="name-cell">'+
         '<input type="text" class="name-in" title="'+esc(row.name)+'" value="'+esc(row.name)+'" placeholder="Item name" '+
           'oninput="setField('+si+','+ri+',\'name\',this.value)" onkeydown="rowKey(event,'+si+','+ri+')">'+
-        '<button class="del-btn" onclick="delRow('+si+','+ri+')" title="Delete row (also removed from later months)">&#215;</button>'+
+        '<button class="del-btn" onclick="delRow('+si+','+ri+')" title="'+(f==='once'?'Delete this one-off':'Delete row (also removed from later months)')+'">&#215;</button>'+
       '</div>'+
       freqSelect(si,ri,f)+
       '<input type="number" class="planned-in" value="'+(row.planned||'')+'" placeholder="0" step="1" oninput="setField('+si+','+ri+',\'planned\',+this.value||0)">'+
@@ -985,6 +1007,7 @@ function renderRows(si){
 }
 
 function monthlyNote(row){
+  if(isOnce(row)) return 'One-off · only in '+labelOf(state.current)+' — not copied to later months';
   return '≈ '+fmt(perMonth(row,'planned'))+' / mo planned · '+fmt(perMonth(row,'actual'))+' / mo actual';
 }
 
@@ -1064,15 +1087,34 @@ function setField(si,ri,field,value){
   const row=sec.rows[ri];
   if(!row) return;
   const oldName=row.name;
+  const wasOnce=isOnce(row);
   row[field]=value;
 
-  let touched=0;
-  if(field==='name'){
-    touched=propagate(m=>{ const t=matchRow(m,sec.key,ri,oldName); if(t){ t.name=value; } });
-  }else{
-    touched=propagate(m=>{ const t=matchRow(m,sec.key,ri,row.name); if(t){ t[field]=value; } });
+  let touched=0, verb='updated';
+  if(field==='freq' && wasOnce!==isOnce(row)){
+    if(isOnce(row)){
+      // now a one-off: the copies later months were given no longer belong there
+      verb='removed';
+      propagate(m=>{
+        const t=matchRow(m,sec.key,ri,row.name);
+        if(t){ const rows=m.sections[sec.key]; rows.splice(rows.indexOf(t),1); touched++; }
+      });
+    }else{
+      // a one-off becoming recurring carries on into later months, like a new row
+      verb='added';
+      touched=propagate(m=>{
+        insertRecurring(m.sections[sec.key],recIndex(sec.key,ri),
+          {name:row.name,planned:num(row.planned),actual:num(row.actual),freq:row.freq});
+      });
+    }
+  }else if(!wasOnce){
+    if(field==='name'){
+      touched=propagate(m=>{ const t=matchRow(m,sec.key,ri,oldName); if(t){ t.name=value; } });
+    }else{
+      touched=propagate(m=>{ const t=matchRow(m,sec.key,ri,row.name); if(t){ t[field]=value; } });
+    }
   }
-  propStatus(touched,'updated');
+  propStatus(touched,verb);
 
   if(field==='name'){ save(); return; }
   if(field==='freq'){ renderRows(si); }
@@ -1100,8 +1142,7 @@ function addRow(si){
   sec.rows.push({name:'',planned:0,actual:0,freq:'monthly'});
   const ri=sec.rows.length-1;
   const touched=propagate(m=>{
-    const rows=m.sections[sec.key];
-    rows.splice(Math.min(ri,rows.length),0,{name:'',planned:0,actual:0,freq:'monthly'});
+    insertRecurring(m.sections[sec.key],recIndex(sec.key,ri),{name:'',planned:0,actual:0,freq:'monthly'});
   });
   propStatus(touched,'added');
   renderRows(si);
@@ -1117,11 +1158,13 @@ function delRow(si,ri){
   if(!gone) return;
   const name=gone.name;
   let touched=0;
-  propagate(m=>{
-    const rows=m.sections[sec.key];
-    const t=matchRow(m,sec.key,ri,name);
-    if(t){ rows.splice(rows.indexOf(t),1); touched++; }
-  });
+  if(!isOnce(gone)){                       // a one-off was never in later months
+    propagate(m=>{
+      const rows=m.sections[sec.key];
+      const t=matchRow(m,sec.key,ri,name);
+      if(t){ rows.splice(rows.indexOf(t),1); touched++; }
+    });
+  }
   sec.rows.splice(ri,1);
   propStatus(touched,'removed');
   renderRows(si);
@@ -1251,20 +1294,34 @@ function moveRow(zone,from,to){
   const isAssets = zone==='assets';
   const list = isAssets ? month().assets : SECTIONS[+zone].rows;
   if(from===to||from<0||from>=list.length||to<0||to>=list.length) return;
+  const key = isAssets ? null : SECTIONS[+zone].key;
+  const fromRix = isAssets ? from : recIndex(key,from);        // counted before the move
   const moved=list.splice(from,1)[0];
   list.splice(to,0,moved);
 
   let touched=0;
-  propagate(m=>{
-    const rows = isAssets ? (m.assets||[]) : (m.sections[SECTIONS[+zone].key]||[]);
-    const t = isAssets ? matchAsset(m,from,moved.name) : matchRow(m,SECTIONS[+zone].key,from,moved.name);
-    if(!t) return;
-    const i=rows.indexOf(t);
-    if(i<0) return;
-    rows.splice(i,1);
-    rows.splice(Math.min(to,rows.length),0,t);
-    touched++;
-  });
+  if(isAssets){
+    propagate(m=>{
+      const rows=m.assets||[];
+      const t=matchAsset(m,from,moved.name);
+      if(!t) return;
+      const i=rows.indexOf(t);
+      if(i<0) return;
+      rows.splice(i,1);
+      rows.splice(Math.min(to,rows.length),0,t);
+      touched++;
+    });
+  }else if(!isOnce(moved)){                                   // moving a one-off changes nothing elsewhere
+    const toRix = list.slice(0,to).filter(r=>!isOnce(r)).length;
+    propagate(m=>{
+      const rows=m.sections[key]||[];
+      const t=matchRecurring(m,key,fromRix,moved.name);
+      if(!t) return;
+      rows.splice(rows.indexOf(t),1);
+      insertRecurring(rows,toRix,t);
+      touched++;
+    });
+  }
   propStatus(touched,'reordered');
 
   if(isAssets){ renderAssets(); save(); }
@@ -1488,12 +1545,13 @@ function cloneMonthInto(target,mode){
   if(!state.months[target]) state.months[target]=blankMonth();
   const m=state.months[target];
   SECTION_META.forEach(meta=>{
-    m.sections[meta.key]=src.sections[meta.key].map(r=>({
+    const keep=(m.sections[meta.key]||[]).filter(isOnce);  // the target's own one-offs stay put
+    m.sections[meta.key]=src.sections[meta.key].filter(r=>!isOnce(r)).map(r=>({
       name:r.name,
       freq:freqOf(r),
       planned: mode==='structure'?0:num(r.planned),
       actual:  mode==='all'?num(r.actual):0
-    }));
+    })).concat(keep);
   });
   m.assets=(src.assets||[]).map(a=>({name:a.name,balance:mode==='structure'?0:num(a.balance)}));
 }
@@ -1507,7 +1565,7 @@ function applyCopy(){
   if(!keys.length){ alert('Pick at least one month to copy into.'); return; }
   const created=keys.filter(k=>!state.months[k]).length;
   const msg='Copy '+labelOf(state.current)+' into '+keys.length+' month'+(keys.length===1?'':'s')+
-            (created?' ('+created+' will be created)':'')+'?\n\nRows in those months are replaced.';
+            (created?' ('+created+' will be created)':'')+'?\n\nRows in those months are replaced. One-off lines are not copied, and theirs stay put.';
   if(!confirm(msg)) return;
   keys.forEach(k=>cloneMonthInto(k,mode));
   closeModal('copy-overlay');
@@ -1595,7 +1653,7 @@ function normalizeTemplate(t){
       name:String((r&&r.name)||''),
       planned:num(r&&r.planned),
       freq:(r&&FREQ[r.freq])?r.freq:'monthly'
-    })).filter(r=>r.name);
+    })).filter(r=>r.name && r.freq!=='once');   // templates describe recurring budgets
     if(out.sections[meta.key].length) any=true;
   });
   if(!any&&!out.assets.length) return null;
@@ -1669,7 +1727,8 @@ function applyTemplate(){
     SECTION_META.forEach(meta=>{
       const tplRows=(t.sections[meta.key]||[]).map(r=>({name:r.name,planned:num(r.planned),actual:0,freq:r.freq||'monthly'}));
       if(mode==='replace'){
-        m.sections[meta.key]=tplRows.map(r=>({name:r.name,planned:r.planned,actual:0,freq:r.freq}));
+        m.sections[meta.key]=tplRows.map(r=>({name:r.name,planned:r.planned,actual:0,freq:r.freq}))
+          .concat(m.sections[meta.key].filter(isOnce));      // a template never wipes a one-off
       }else{
         const have={};
         m.sections[meta.key].forEach(r=>{ have[r.name.trim().toLowerCase()]=1; });
@@ -1708,7 +1767,7 @@ function exportTemplate(){
   };
   SECTION_META.forEach(meta=>{
     payload.sections[meta.key]=m.sections[meta.key]
-      .filter(r=>r.name.trim())
+      .filter(r=>r.name.trim() && !isOnce(r))
       .map(r=>({name:r.name,planned:num(r.planned),freq:freqOf(r)}));
   });
   downloadJSON(payload,'budget-template-'+(payload.name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'shared')+'.json');
@@ -1801,10 +1860,10 @@ function avgSavingCapacity(){
   let sum=0;
   keys.forEach(k=>{
     const m=state.months[k];
-    sum += sectionSum(m,'income','actual')
-         - sectionSum(m,'expenses','actual')
-         - sectionSum(m,'bills','actual')
-         - sectionSum(m,'debt','actual');
+    sum += sectionSum(m,'income','actual',true)     // one-offs would skew a typical month
+         - sectionSum(m,'expenses','actual',true)
+         - sectionSum(m,'bills','actual',true)
+         - sectionSum(m,'debt','actual',true);
   });
   return sum/keys.length;
 }
