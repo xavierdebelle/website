@@ -5,6 +5,58 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v46 — 2026-09-18
+
+**What's new** · Project Phases · [tools.html#personal]
+### Forgot To Switch?<br>Split It
+Deep in the work, it's easy to leave the timer on the wrong step. Any time
+entry — including the one running right now — can now be split between steps
+after the fact.
+
+Tap the bar to cut it, drag a cut to where you actually switched, or type the
+exact time, then give each piece its step. The pieces always add up to exactly
+the time that was logged: nothing lost, nothing counted twice. Split the running
+timer and the last piece keeps running on the step you're really on.
+
+**Split time entries**
+- ✂ Split on every row of the time log, and a Split button beside Stop on the
+  running timer.
+- Editor: a bar of the entry's span with draggable cuts (click the bar to add
+  one), exact time fields, arrow keys to nudge a focused cut by a minute (five
+  with Shift), "+ Add a cut" to halve the longest piece, and a bin on each
+  piece to remove its cut. Each piece gets a step and its own note.
+- Pieces are contiguous and exactly cover the original entry; every piece is
+  at least a minute. Neighbouring pieces left on the same step save as one
+  entry. The first piece keeps the entry's id; a step that was "To do" becomes
+  "In progress" when it receives time, as with the timer.
+- Splitting the running timer closes the earlier pieces and leaves the last
+  one running. If the timer is stopped (here or on another device) before you
+  save, a cut past the stop is refused rather than restarting the timer.
+- Entries crossing midnight show dates, and a typed time means the first such
+  time after the previous cut.
+- Save refuses anything that isn't a clean, forward, minute-or-longer set of
+  pieces, and an entry that changed on another device while open.
+- Client view: the Split controls are hidden and refused, like every other edit.
+- Saved as `Tools files/Tools/project_tracker_v7.html`.
+
+**Verified locally (no live database involved)**
+- 31 checks, all passing, driven through the real modal: button in the log
+  row; opens with a midpoint cut; click, typed, arrow-key and dragged cuts,
+  including a drag clamped at its neighbour; an impossible typed time refused;
+  add and remove a cut; save gives three contiguous entries summing to the
+  original 3h with the right steps, times, id, notes and statuses;
+  same-step neighbours joined; running timer split from the running bar keeps
+  running on the new step with the bar updated; a timer stopped before the cut
+  is refused; a sub-two-minute entry is refused; an overnight entry shows dates
+  and accepts a time after midnight.
+- Found and fixed during testing: with a zero-width layout (a hidden preview
+  pane), a drag computed `NaN` times and saved broken entries. Measurements are
+  now ignored when there is nothing to measure against, and save validates
+  every piece — a deliberately corrupted cut was refused.
+- Desktop and phone layouts checked. No console errors.
+
+---
+
 ## v45 — 2026-09-16
 
 **What's new** · Budget Tracker · [tools.html#personal]

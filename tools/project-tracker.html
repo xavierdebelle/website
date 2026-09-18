@@ -179,7 +179,7 @@ tfoot td{font-weight:700;background:var(--bg);border-top:2px solid var(--line)}
 /* ---------- modal ---------- */
 #modal-overlay{display:none;position:fixed;inset:0;background:rgba(10,14,20,.5);z-index:50;padding:20px;overflow:auto}
 #modal-overlay.open{display:flex;align-items:flex-start;justify-content:center}
-#modal{background:var(--card);border:1px solid var(--line);border-radius:12px;width:100%;max-width:440px;margin-top:8vh;padding:18px}
+#modal{background:var(--card);border:1px solid var(--line);border-radius:12px;width:100%;max-width:440px;margin-top:8vh;padding:18px;max-height:84vh;overflow-y:auto}
 #modal h3{font-size:16px;margin-bottom:12px}
 .row{margin-bottom:12px}
 .row label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px}
@@ -236,6 +236,25 @@ body.view .handle,body.view .timer-btn,body.view .step-actions,body.view .phase-
 body.view .add-step,body.view #btn-add-phase,body.view #running-stop,body.view #btn-log-add,
 body.view .log-row .icon{display:none!important}
 body.view .chip{pointer-events:none;cursor:default}
+
+/* ---------- split a time entry ---------- */
+#modal.wide{max-width:620px}
+.split-hint{margin:0 0 10px;font-size:13px;color:var(--muted);line-height:1.5}
+.split-bar{position:relative;height:36px;margin:6px 7px 4px;cursor:crosshair;touch-action:none;user-select:none;-webkit-user-select:none}
+.split-segs{position:absolute;inset:0;border-radius:8px;overflow:hidden;background:var(--bg);border:1px solid var(--line)}
+.split-seg{position:absolute;top:0;bottom:0;opacity:.8}
+.split-cut{position:absolute;top:-6px;bottom:-6px;width:18px;margin-left:-9px;cursor:ew-resize;touch-action:none;outline:none}
+.split-cut::after{content:'';position:absolute;left:8px;top:0;bottom:0;width:2px;border-radius:1px;background:var(--ink)}
+.split-cut:focus-visible::after,.split-cut.dragging::after{background:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.split-scale{display:flex;justify-content:space-between;gap:10px;font-size:12px;color:var(--muted);margin:0 0 6px}
+.split-row{display:grid;grid-template-columns:12px 1fr auto;gap:6px 8px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+.split-row .sw{width:12px;height:12px;border-radius:3px}
+.split-row .when{font-size:13px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-variant-numeric:tabular-nums}
+.split-row .when input{width:auto;padding:3px 6px}
+.split-row select,.split-row .note{grid-column:2 / 4;width:100%}
+.split-row .note{font-size:13px}
+.split-add{margin-top:8px}
+body.view #running-split{display:none!important}
 </style>
 </head>
 <body>
@@ -271,6 +290,7 @@ body.view .chip{pointer-events:none;cursor:default}
     <span class="dot"></span>
     <span id="running-what"></span>
     <span id="running-elapsed">0:00</span>
+    <button class="btn ghost" id="running-split" title="Forgot to switch? Split this time between steps">Split</button>
     <button class="btn" id="running-stop">Stop</button>
   </div>
 
@@ -716,6 +736,7 @@ var ICO = {
   up: svgIcon('M8 12.8V3.6M4.4 7.2L8 3.6l3.6 3.6'),
   down: svgIcon('M8 3.2v9.2M4.4 8.8L8 12.4l3.6-3.6'),
   chev: svgIcon('M6.2 3.4L10.8 8l-4.6 4.6'),
+  split: svgIcon('M4.4 5.6a1.7 1.7 0 1 1 0-3.4 1.7 1.7 0 0 1 0 3.4zM4.4 13.8a1.7 1.7 0 1 1 0-3.4 1.7 1.7 0 0 1 0 3.4zM5.9 4.9l7.6 6.6M5.9 11.1l7.6-6.6'),
   grip: '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false">' +
     '<path d="M6 4.2h.01M10 4.2h.01M6 8h.01M10 8h.01M6 11.8h.01M10 11.8h.01" fill="none" ' +
     'stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>'
@@ -743,6 +764,8 @@ function openModal(title, bodyHTML, onSave, focusId) {
   if (f) { f.focus(); if (f.select) f.select(); }
 }
 function closeModal() {
+  split = null;
+  $('modal').classList.remove('wide');
   pendingImport = null;
   $('modal-overlay').classList.remove('open');
   modalSave = null;
@@ -990,6 +1013,7 @@ function renderLog() {
         '<td class="num">' + fmtHM(r.sec) + (running ? ' <span class="muted">(running)</span>' : '') + '</td>' +
         '<td>' + esc(e.note) + '</td>' +
         '<td class="num">' +
+          '<button type="button" class="icon" data-act="split-entry" title="Split between steps">' + ICO.split + '</button>' +
           '<button type="button" class="icon" data-act="edit-entry" title="Edit entry">' + ICO.pencil + '</button>' +
           '<button type="button" class="icon del" data-act="del-entry" title="Delete entry">' + ICO.trash + '</button>' +
         '</td>' +
@@ -1523,6 +1547,7 @@ $('log-body').addEventListener('click', function (ev) {
   var id = btn.closest('.log-row').getAttribute('data-entry');
   resetSaveBtn();
   if (btn.getAttribute('data-act') === 'edit-entry') return openTimeEntry(id);
+  if (btn.getAttribute('data-act') === 'split-entry') return openSplit(id);
   confirmModal('Delete entry', 'Delete this time entry?', function () {
     state.log = state.log.filter(function (e) { return e.id !== id; });
   });
@@ -1546,6 +1571,274 @@ $('f-clear').addEventListener('click', function () {
   renderLogFilters();
   renderLog();
 });
+
+
+/* ============================================================
+   Split a time entry
+   ------------------------------------------------------------
+   Forgetting to switch timers is normal. Any entry — including the one
+   running now — can be cut into consecutive pieces, each given to a
+   step. The pieces cover exactly the original span, end to end, so no
+   minute is lost or counted twice, and the log stays the only place
+   time lives. Split a running timer and its last piece keeps running.
+   ============================================================ */
+var MIN = 60000;
+var SPLIT_COLOURS = ['var(--accent)', 'var(--run)', 'var(--warn)', '#d0579a', '#2f9ec2', '#8a8f98'];
+var split = null;       // { entry, start, end, running, cuts:[ms], steps:[id], notes:[text] }
+
+function splitBounds() { return [split.start].concat(split.cuts, [split.end]); }
+function snapMin(ms) { return Math.round(ms / MIN) * MIN; }
+function fmtWhen(ms) {
+  // add the date only when the entry crosses midnight
+  return dateKey(split.start) === dateKey(split.end) ? fmtTime(ms) : fmtDate(ms) + ' ' + fmtTime(ms);
+}
+/* Keep cut i at least a minute clear of its neighbours. */
+function clampCut(i, ms) {
+  var b = splitBounds();
+  return Math.max(b[i] + MIN, Math.min(b[i + 2] - MIN, ms));
+}
+
+function openSplit(entryId) {
+  var e = state.log.filter(function (x) { return x.id === entryId; })[0];
+  if (!e) return;
+  resetSaveBtn();
+  if (!findStep(e.stepId)) {
+    openModal('Split time', '<p class="muted" style="margin:0">That time belongs to another project — switch to it first.</p>', function () { return true; });
+    return;
+  }
+  var end = e.end == null ? Date.now() : e.end;
+  if (end - e.start < 2 * MIN) {
+    openModal('Split time', '<p class="muted" style="margin:0">This entry is under two minutes — too short to split.</p>', function () { return true; });
+    return;
+  }
+  var mid = snapMin(e.start + (end - e.start) / 2);
+  split = { entry: e, start: e.start, end: end, running: e.end == null, cuts: [], steps: [e.stepId], notes: [e.note || ''] };
+  split.cuts = [Math.max(e.start + MIN, Math.min(end - MIN, mid))];
+  split.steps.push(e.stepId);
+  split.notes.push('');
+
+  openModal(split.running ? 'Split the running timer' : 'Split time entry', '<div id="split-ui"></div>', saveSplit);
+  $('modal').classList.add('wide');
+  $('modal-save').textContent = 'Split';
+  wireSplit($('split-ui'));
+  paintSplit();
+}
+
+function paintSplit() {
+  var s = split, n = s.cuts.length + 1, html = '';
+  html += '<p class="split-hint">Tap the bar to add a cut, drag a cut to move it, or type the exact time. ' +
+    'Give each piece its step' + (s.running ? ' — the last piece keeps running.' : '.') + '</p>';
+  html += '<div class="split-bar" id="split-bar"><div class="split-segs">';
+  for (var i = 0; i < n; i++) {
+    html += '<div class="split-seg" data-seg-bar="' + i + '" style="background:' + SPLIT_COLOURS[i % SPLIT_COLOURS.length] + '"></div>';
+  }
+  html += '</div>';
+  s.cuts.forEach(function (c, k) {
+    html += '<span class="split-cut" data-cut-handle="' + k + '" tabindex="0" role="slider" aria-label="Cut ' + (k + 1) + '"></span>';
+  });
+  html += '</div><div class="split-scale"><span>' + fmtWhen(s.start) + '</span><span>' +
+    (s.running ? 'now' : fmtWhen(s.end)) + '</span></div>';
+
+  for (var j = 0; j < n; j++) {
+    html += '<div class="split-row">' +
+      '<span class="sw" style="background:' + SPLIT_COLOURS[j % SPLIT_COLOURS.length] + '"></span>' +
+      '<span class="when"><span data-from="' + j + '"></span> → ' +
+        (j < n - 1 ? '<input type="time" step="60" data-cut="' + j + '" aria-label="Piece ' + (j + 1) + ' ends at">'
+                   : '<span>' + (s.running ? 'now, and running' : fmtWhen(s.end)) + '</span>') +
+        ' <span class="muted" data-dur="' + j + '"></span></span>' +
+      (j > 0 ? '<button type="button" class="icon del" data-merge="' + j + '" title="Remove this cut — join with the piece above">' + ICO.trash + '</button>' : '<span></span>') +
+      '<select data-seg="' + j + '" aria-label="Step for piece ' + (j + 1) + '">' + stepOptions(s.steps[j]) + '</select>' +
+      '<input type="text" class="note" data-note="' + j + '" placeholder="Note (optional)" value="' + esc(s.notes[j]) + '">' +
+    '</div>';
+  }
+  html += '<button type="button" class="btn ghost split-add" id="split-add">+ Add a cut</button>';
+  $('split-ui').innerHTML = html;
+  layoutSplit();
+}
+
+/* Moves things in place, so a cut being dragged keeps hold of the pointer. */
+function layoutSplit() {
+  var s = split, b = splitBounds(), span = s.end - s.start;
+  function pct(ms) { return ((ms - s.start) / span * 100) + '%'; }
+  var ui = $('split-ui');
+  for (var i = 0; i < b.length - 1; i++) {
+    var bar = ui.querySelector('[data-seg-bar="' + i + '"]');
+    if (bar) { bar.style.left = pct(b[i]); bar.style.width = ((b[i + 1] - b[i]) / span * 100) + '%'; }
+    var from = ui.querySelector('[data-from="' + i + '"]');
+    if (from) from.textContent = fmtWhen(b[i]);
+    var dur = ui.querySelector('[data-dur="' + i + '"]');
+    if (dur) dur.textContent = '· ' + fmtHM(Math.round((b[i + 1] - b[i]) / 1000));
+    var inp = ui.querySelector('input[data-cut="' + i + '"]');
+    if (inp && document.activeElement !== inp) inp.value = fmtTime(b[i + 1]);
+  }
+  s.cuts.forEach(function (c, k) {
+    var h = ui.querySelector('[data-cut-handle="' + k + '"]');
+    if (h) { h.style.left = pct(c); h.setAttribute('aria-valuetext', fmtWhen(c)); }
+  });
+}
+
+function addCutAt(ms) {
+  var s = split, b = splitBounds();
+  if (!isFinite(ms)) return;
+  ms = snapMin(ms);
+  for (var i = 0; i < b.length - 1; i++) {
+    if (ms > b[i] && ms < b[i + 1]) {
+      if (ms - b[i] < MIN || b[i + 1] - ms < MIN) return;    // too close to an existing edge
+      s.cuts.splice(i, 0, ms);
+      s.steps.splice(i + 1, 0, s.steps[i]);
+      s.notes.splice(i + 1, 0, '');
+      paintSplit();
+      return;
+    }
+  }
+}
+
+/* A typed time means the first moment at or after the previous edge. */
+function resolveTime(k, hhmm) {
+  var m = /^(\d{1,2}):(\d{2})$/.exec(hhmm || '');
+  if (!m) return null;
+  var b = splitBounds(), lo = b[k], hi = b[k + 2];
+  var d = new Date(lo);
+  d.setHours(+m[1], +m[2], 0, 0);
+  while (d.getTime() <= lo) d.setDate(d.getDate() + 1);
+  var ms = d.getTime();
+  return ms >= lo + MIN && ms <= hi - MIN ? ms : null;
+}
+
+function wireSplit(ui) {
+  ui.addEventListener('change', function (ev) {
+    var t = ev.target;
+    if (t.hasAttribute('data-seg')) { split.steps[+t.getAttribute('data-seg')] = t.value; return; }
+    if (t.hasAttribute('data-cut')) {
+      var k = +t.getAttribute('data-cut');
+      var ms = resolveTime(k, t.value);
+      if (ms == null) {
+        modalError('That time has to fall inside this entry, at least a minute from the next cut.');
+      } else {
+        $('modal-error').classList.remove('on');
+        split.cuts[k] = ms;
+      }
+      t.blur();
+      layoutSplit();
+    }
+  });
+  ui.addEventListener('input', function (ev) {
+    var t = ev.target;
+    if (t.hasAttribute('data-note')) split.notes[+t.getAttribute('data-note')] = t.value;
+  });
+  ui.addEventListener('click', function (ev) {
+    var mg = ev.target.closest('[data-merge]');
+    if (mg) {
+      var j = +mg.getAttribute('data-merge');
+      split.cuts.splice(j - 1, 1);
+      var joined = [split.notes[j - 1], split.notes[j]].filter(function (x) { return x && x.trim(); }).join(' · ');
+      split.notes.splice(j - 1, 2, joined);
+      split.steps.splice(j, 1);
+      paintSplit();
+      return;
+    }
+    if (ev.target.id === 'split-add') {
+      var b = splitBounds(), best = 0;
+      for (var i = 1; i < b.length - 1; i++) if (b[i + 1] - b[i] > b[best + 1] - b[best]) best = i;
+      if (b[best + 1] - b[best] >= 2 * MIN) addCutAt(b[best] + (b[best + 1] - b[best]) / 2);
+      else modalError('Every piece is already a minute or two — nothing left to cut.');
+    }
+  });
+
+  var drag = null;
+  function msAt(clientX) {
+    var r = $('split-bar').getBoundingClientRect();
+    if (!(r.width > 0) || !isFinite(clientX)) return null;   // nothing laid out to measure against
+    var f = Math.max(0, Math.min(1, (clientX - r.left) / r.width));
+    return split.start + f * (split.end - split.start);
+  }
+  ui.addEventListener('pointerdown', function (ev) {
+    var h = ev.target.closest('[data-cut-handle]');
+    if (h) {
+      ev.preventDefault();
+      drag = { k: +h.getAttribute('data-cut-handle'), el: h };
+      h.classList.add('dragging');
+      try { h.setPointerCapture(ev.pointerId); } catch (e) {}
+      return;
+    }
+    if (ev.target.closest('#split-bar')) { ev.preventDefault(); var at = msAt(ev.clientX); if (at != null) addCutAt(at); }
+  });
+  ui.addEventListener('pointermove', function (ev) {
+    if (!drag) return;
+    var at = msAt(ev.clientX);
+    if (at == null) return;
+    split.cuts[drag.k] = clampCut(drag.k, snapMin(at));
+    layoutSplit();
+  });
+  function endDrag() {
+    if (!drag) return;
+    drag.el.classList.remove('dragging');
+    drag = null;
+  }
+  ui.addEventListener('pointerup', endDrag);
+  ui.addEventListener('pointercancel', endDrag);
+
+  // a focused cut moves a minute per arrow press, five with shift
+  ui.addEventListener('keydown', function (ev) {
+    var h = ev.target.closest && ev.target.closest('[data-cut-handle]');
+    if (!h || (ev.key !== 'ArrowLeft' && ev.key !== 'ArrowRight')) return;
+    ev.preventDefault();
+    var k = +h.getAttribute('data-cut-handle');
+    var step = (ev.shiftKey ? 5 : 1) * MIN * (ev.key === 'ArrowLeft' ? -1 : 1);
+    split.cuts[k] = clampCut(k, split.cuts[k] + step);
+    layoutSplit();
+  });
+}
+
+function saveSplit() {
+  var s = split;
+  if (!s) return true;
+  var e = s.entry;
+  var at = state.log.indexOf(e);
+  if (at === -1) { modalError('This entry changed on another device. Close and try again.'); return false; }
+
+  // a running timer stopped meanwhile (here or elsewhere) ends where it stopped
+  var last = s.running ? e.end : s.end;
+  if (last != null && s.cuts[s.cuts.length - 1] > last - MIN) {
+    modalError('The timer stopped before the last cut. Move the cut earlier.');
+    return false;
+  }
+
+  // never write a piece that isn't a real, forward, minute-or-longer span
+  var edges = [s.start].concat(s.cuts, [last == null ? Date.now() : last]);
+  for (var q = 1; q < edges.length; q++) {
+    if (!isFinite(edges[q]) || edges[q] - edges[q - 1] < MIN) {
+      modalError('Those cuts don\'t line up — every piece needs at least a minute. Move a cut and try again.');
+      return false;
+    }
+  }
+  var b = [s.start].concat(s.cuts, [last]);
+  var pieces = [];
+  for (var i = 0; i < s.steps.length; i++) {
+    var note = (s.notes[i] || '').trim();
+    var prev = pieces[pieces.length - 1];
+    if (prev && prev.stepId === s.steps[i]) {           // neighbours on the same step become one piece
+      prev.end = b[i + 1];
+      if (note) prev.note = prev.note ? prev.note + ' · ' + note : note;
+    } else {
+      pieces.push({ stepId: s.steps[i], start: b[i], end: b[i + 1], note: note });
+    }
+  }
+
+  var entries = pieces.map(function (p, i) {
+    var ph = phaseOfStep(p.stepId), st = findStep(p.stepId);
+    if (st && st.status === 'todo') st.status = 'doing';
+    return {
+      id: i === 0 ? e.id : uid('e'),
+      projectId: e.projectId, phaseId: ph ? ph.id : null, stepId: p.stepId,
+      start: p.start, end: p.end, note: p.note, source: e.source
+    };
+  });
+  state.log.splice.apply(state.log, [at, 1].concat(entries));
+  split = null;
+  save();
+  return true;
+}
 
 /* ============================================================
    Tabs
@@ -1755,6 +2048,10 @@ $('btn-collapse-all').addEventListener('click', function () {
 });
 
 $('running-stop').addEventListener('click', stopTimer);
+$('running-split').addEventListener('click', function () {
+  var open = runningEntry();
+  if (open) openSplit(open.id);
+});
 
 
 /* ============================================================
@@ -2529,6 +2826,12 @@ window.__app = {
     url: shareURL,
     view: function () { return VIEW; },
     printed: function () { return sharePrinted; }
+  },
+  split: {
+    open: openSplit,
+    state: function () { return split; },
+    addCutAt: addCutAt,
+    save: saveSplit
   }
 };
 window.__sync = { cloud: cloud, meta: meta, setMeta: setMeta, reconcile: reconcile, adopt: adopt,
