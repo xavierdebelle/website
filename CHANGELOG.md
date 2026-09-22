@@ -5,6 +5,31 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v49 — 2026-09-22
+
+**What's new** · Project Phases · [tools.html#personal]
+### Project Phases,<br>Redesigned
+Project Phases has a new look in the 333 Photo & Design style: a proper
+header with the 333 mark, the open project's name in large type across the
+top, and new type and colours throughout. It works exactly as before —
+phases, the timer, Split, sync and client links are all unchanged.
+
+**Project Phases — visual redesign**
+- Replaced with `Tools files/Tools/project_tracker_v8.html` (Xavier's
+  redesign of v7).
+- New header with the 333 Photo & Design mark, a hero showing the open
+  project's name (kept in step with the project picker, including in client
+  view), restyled throughout. Page title is now "Project Phases · 333 Photo".
+- Fonts: Adobe Fonts kit `zxm4vjv` (Owners) plus Inter Tight from Google
+  Fonts. The Adobe kit is new to the site; it serves on this domain.
+- Split bar colours follow the new palette.
+- Logic unchanged: the only script changes are the split colours and the
+  small block that mirrors the project picker into the hero. Sync core, client
+  links and Split are line-for-line the v7 code, so no sync re-test was
+  needed.
+
+---
+
 ## v48 — 2026-09-22
 
 **What's new** · Food for Thought · [food-for-thought.html]
