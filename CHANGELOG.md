@@ -5,6 +5,39 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v47 — 2026-09-22
+
+**What's new** · Liquid Silver · [tools.html#art]
+### Full Screen,<br>On A Phone Too
+Tapping a piece in Liquid Silver now fills the screen on a phone, the way it
+always has on a laptop. iPhones never allowed a page to make anything but a
+video full screen, so the tap did nothing at all there.
+
+Tap a piece to open it, tap it again — or the ✕ in the corner — to go back to
+the six.
+
+**Full screen on mobile**
+- Native full screen is still used where the browser has it (laptops, Android
+  Chrome). Where it doesn't, or where it's refused, the piece is laid over the
+  whole viewport instead, so the result is the same.
+- A ✕ button sits in the top corner, clear of the notch and the rounded
+  corners, because there is no browser chrome to escape with on a phone.
+- Esc closes it on a laptop, and leaving full screen from the browser's own
+  control drops the overlay with it.
+- The renderer refits to the new size on the way in and out — full resolution
+  when open, back to the tile when closed.
+- The other five pieces stop drawing while one is open, which is what keeps it
+  smooth on a phone.
+
+**Verified in a real browser, at phone and laptop size**
+- Phone (390×664, native full screen removed as on iOS): tap grows the piece
+  from 129×332 to the full 390×664, canvas rebuilt at 780×1328, ✕ shown; ✕ and
+  a second tap both return to the grid.
+- Laptop (1280×800): tap enters native full screen on the piece itself; Esc
+  exits and clears the overlay; all six pieces resume drawing.
+
+---
+
 ## v46 — 2026-09-18
 
 **What's new** · Project Phases · [tools.html#personal]
