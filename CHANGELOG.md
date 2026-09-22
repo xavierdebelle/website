@@ -5,6 +5,49 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v50 — 2026-09-22
+
+**What's new** · Idea Bank · [tools.html#personal]
+### Idea Bank,<br>Redesigned
+Idea Bank now wears the site's own look — black, white and one volt of
+yellow — with a big header showing how many ideas are in the pile, shipped
+and in flight. Your ideas, projects and live sync carry over untouched.
+
+**Idea Bank — redesign**
+- Replaced with Xavier's redesign, archived as `Tools files/Tools/ideas-v4/`
+  (`ideas-v4.html` plus the files it needs).
+- Built with the site's design system, so it is no longer a single file: the
+  page loads `tools/idea-bank/support.js` (the design runtime), the design
+  system bundle under `tools/idea-bank/_ds/`, and `idea-bank-sync.js`. At
+  runtime it also loads React, ReactDOM and Babel from unpkg.com, each pinned
+  with an integrity hash.
+- Site copy only: asset paths point into `tools/idea-bank/`; the header and
+  footer links (placeholders in the design file) now go to the map, work and
+  tools pages, and the footer's Project Tracker link to
+  `project-tracker.html`; added a page title and icon.
+- Sync: `idea-bank-sync.js` is the shared sync core, ported to paint through
+  the component instead of the DOM. Same document (`idea-bank`), same local
+  key (`ideabank.v1`), same saved shape — so v3 and v4 read each other's data.
+
+**Home**
+- Removed the Food for Thought button from the map's shortcut bar (the map
+  node and the text index still link to it). The 900px breakpoint added for a
+  fifth button is reverted to 820px.
+
+**Verified locally (mock database, never the live one)**
+- Upgrade: a device holding a signed-in v3 bank (two projects, steps, tags,
+  scores, dates) opened v4 — every idea identical, still "Live", and no write
+  to the cloud on load.
+- v4 and v3 on two origins as two devices: an idea added in v4 appeared live
+  in v3 and vice versa; saved ideas keep exactly v3's fields.
+- Enter-to-add and "Add to the pile" work; desktop and 375px phone checked,
+  no horizontal scroll.
+- Known and harmless: the design runtime logs one "Cannot set properties of
+  undefined (setting 'jsx')" on load — the component bundle is tried once
+  before React is ready, then loaded properly.
+
+---
+
 ## v49 — 2026-09-22
 
 **What's new** · Project Phases · [tools.html#personal]

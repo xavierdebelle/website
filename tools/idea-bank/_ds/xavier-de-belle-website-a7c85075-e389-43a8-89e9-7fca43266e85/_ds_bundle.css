@@ -1,0 +1,906 @@
+/* === core.css === */
+/* =========================================================
+   XAVIER DE BELLE — core design system
+   Black. White. One volt of yellow. Nothing else.
+   ========================================================= */
+
+:root {
+  --ink:    #000000;
+  --paper:  #ffffff;
+  --volt:   #ffe800;
+  --smoke:  #141414;
+  --ash:    #2a2a2a;
+  --dust:   #8a8a8a;
+
+  --stack: "Helvetica Neue", Helvetica, Arial, "Segoe UI", system-ui, sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  --edge: 3px;
+  --gut: clamp(16px, 4vw, 40px);
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--ink);
+  color: var(--paper);
+  font-family: var(--stack);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+body { overflow-x: hidden; }
+
+a { color: inherit; }
+
+::selection { background: var(--volt); color: var(--ink); }
+
+:focus-visible {
+  outline: var(--edge) solid var(--volt);
+  outline-offset: 3px;
+}
+
+/* ---------- type ---------- */
+
+.display {
+  font-weight: 900;
+  letter-spacing: -0.045em;
+  line-height: 0.82;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+.kicker {
+  font-family: var(--mono);
+  font-size: clamp(10px, 1.1vw, 12px);
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--dust);
+  margin: 0;
+}
+
+.volt { color: var(--volt); }
+
+/* ---------- shared chrome ---------- */
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: var(--gut);
+  padding: 14px var(--gut);
+  background: var(--ink);
+  border-bottom: var(--edge) solid var(--paper);
+}
+
+.topbar__mark {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+  font-size: clamp(13px, 1.4vw, 16px);
+  white-space: nowrap;
+}
+
+.topbar__mark img { width: 26px; height: 26px; display: block; }
+
+.topbar__nav {
+  margin-left: auto;
+  display: flex;
+  flex-wrap: wrap;
+  row-gap: 4px;
+  gap: clamp(12px, 2.5vw, 32px);
+  align-items: center;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.topbar__nav a {
+  text-decoration: none;
+  padding: 6px 0;
+  border-bottom: 2px solid transparent;
+  transition: color .15s, border-color .15s;
+}
+
+.topbar__nav a:hover,
+.topbar__nav a[aria-current="page"] {
+  color: var(--volt);
+  border-bottom-color: var(--volt);
+}
+
+/* ---------- buttons ---------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 22px;
+  border: var(--edge) solid var(--paper);
+  background: transparent;
+  color: var(--paper);
+  font-family: var(--stack);
+  font-weight: 900;
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background .15s, color .15s, border-color .15s, transform .15s;
+}
+
+.btn:hover {
+  background: var(--volt);
+  border-color: var(--volt);
+  color: var(--ink);
+  transform: translate(-2px, -2px);
+}
+
+.btn--solid {
+  background: var(--volt);
+  border-color: var(--volt);
+  color: var(--ink);
+}
+
+.btn--solid:hover { background: var(--paper); border-color: var(--paper); }
+
+/* ---------- footer ---------- */
+
+.foot {
+  border-top: var(--edge) solid var(--paper);
+  padding: clamp(32px, 6vw, 64px) var(--gut);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+
+.foot__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: clamp(14px, 3vw, 34px);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.foot__links a { text-decoration: none; border-bottom: 2px solid var(--ash); padding-bottom: 3px; }
+.foot__links a:hover { color: var(--volt); border-bottom-color: var(--volt); }
+
+.foot__sig {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  color: var(--dust);
+  text-transform: uppercase;
+}
+
+/* ---------- utility ---------- */
+
+.skip {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 200;
+  background: var(--volt);
+  color: var(--ink);
+  padding: 12px 18px;
+  font-weight: 900;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+.skip:focus { left: 0; }
+
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Phones: five nav items beside the wordmark wrapped to three rows and made
+   the sticky header 135px tall. Stack instead — wordmark, then the nav as one
+   row that scrolls sideways if it must. */
+@media (max-width: 760px) {
+  .topbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 9px;
+    padding: 11px var(--gut);
+  }
+
+  .topbar__nav {
+    margin-left: 0;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    gap: 20px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .topbar__nav::-webkit-scrollbar { display: none; }
+  .topbar__nav a { white-space: nowrap; flex: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* Short viewports (landscape phones, small panes): the map needs the height
+   more than the strapline does. */
+@media (max-height: 620px) {
+  .hud--brand p { display: none; }
+  .hud--hint { display: none; }
+}
+
+
+/* === root.css === */
+/* =========================================================
+   ROOT — the surface every screen sits on.
+   The site sets these on <body>; a component tree needs them
+   on an element it owns, so <Root> carries them instead.
+   ========================================================= */
+
+.xdb-root {
+  background: var(--ink);
+  color: var(--paper);
+  font-family: var(--stack);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+.xdb-root--paper {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.xdb-root--full { min-height: 100vh; }
+
+/* ---------------------------------------------------------
+   Display sizes — the four scales the site actually uses.
+   Taken from the page stylesheets: masthead h1, chapter h2,
+   tools band h2, index h2. A bare .display inherits its size
+   from context, as it does inside .mast / .chapter / .band.
+   --------------------------------------------------------- */
+
+.display--page    { font-size: clamp(56px, 16vw, 210px); }
+.display--chapter { font-size: clamp(42px, 9.5vw, 132px); }
+.display--band    { font-size: clamp(34px, 6.4vw, 84px); }
+.display--section { font-size: clamp(24px, 3.4vw, 46px); }
+
+/* ---------------------------------------------------------
+   Paper inversions. The page stylesheet flips these inside a
+   .chapter--paper; a paper Root needs the same flips, or a
+   white-bordered button lands invisible on white.
+   --------------------------------------------------------- */
+
+.xdb-root--paper .btn { border-color: var(--ink); color: var(--ink); }
+.xdb-root--paper .btn:hover { background: var(--volt); border-color: var(--volt); color: var(--ink); }
+.xdb-root--paper .btn--solid { background: var(--volt); border-color: var(--volt); color: var(--ink); }
+.xdb-root--paper .btn--solid:hover { background: var(--ink); border-color: var(--ink); color: var(--volt); }
+.xdb-root--paper .kicker { color: #6a6a6a; }
+.xdb-root--paper .spec { border-top-color: var(--ink); }
+.xdb-root--paper .spec li { border-bottom-color: #dcdcdc; }
+.xdb-root--paper .spec b { color: #6a6a6a; }
+
+
+/* === map.css === */
+/* =========================================================
+   MAP — the homepage mind map and its HUD
+   Ported verbatim from index.html's <style> block, with one
+   deliberate change: the page pins the canvas and every HUD
+   corner to the VIEWPORT (position: fixed). Here they pin to
+   .map-stage instead (position: absolute), so the map can be
+   composed into a design at any size. Give .map-stage the
+   full viewport and the result is pixel-identical to the site.
+   ========================================================= */
+
+.map-stage {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: var(--ink);
+  overflow: hidden;
+}
+
+/* ============ THE MAP ============ */
+
+/* One canvas, drawn by the particle engine. Everything the old DOM
+   map needed — stage, world, wires, node boxes — is gone with it. */
+.map-stage__canvas {
+  display: block;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background: var(--ink);
+  touch-action: none;
+  cursor: grab;
+}
+.map-stage__canvas.dragging { cursor: grabbing; }
+
+/* ============ HUD ============ */
+
+.hud {
+  position: absolute;
+  z-index: 40;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: var(--dust);
+}
+
+.hud--brand {
+  top: 0; left: 0;
+  padding: var(--gut);
+  max-width: min(46vw, 460px);
+  pointer-events: none;
+}
+.hud--brand h1 {
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: -0.05em;
+  line-height: .84;
+  font-size: clamp(30px, 5.2vw, 62px);
+  margin: 0 0 10px;
+  color: var(--paper);
+}
+.hud--brand h1 i { font-style: normal; display: block; }
+.hud--brand h1 em { font-style: normal; color: var(--volt); display: block; }
+.hud--brand p { margin: 0; line-height: 1.9; }
+
+.hud--hint {
+  bottom: 0; left: 0;
+  padding: var(--gut);
+  line-height: 2;
+  pointer-events: none;
+}
+.hud--hint b { color: var(--paper); font-weight: 700; }
+
+.hud--ctl {
+  bottom: 0; right: 0;
+  padding: var(--gut);
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.ctl {
+  width: 42px; height: 42px;
+  display: grid;
+  place-items: center;
+  background: var(--ink);
+  border: 3px solid var(--paper);
+  color: var(--paper);
+  font-family: var(--stack);
+  font-weight: 900;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background .15s, color .15s, border-color .15s;
+}
+.ctl:hover { background: var(--volt); border-color: var(--volt); color: var(--ink); }
+.ctl--wide { width: auto; padding: 0 16px; font-size: 11px; letter-spacing: .16em; font-family: var(--mono); }
+
+.hud--top {
+  top: 0; right: 0;
+  padding: var(--gut);
+  display: flex;
+  gap: 10px;
+}
+.hud--top a {
+  padding: 11px 16px;
+  border: 3px solid var(--paper);
+  color: var(--paper);
+  text-decoration: none;
+  font-weight: 700;
+  background: var(--ink);
+  transition: background .15s, color .15s, border-color .15s;
+}
+.hud--top a:hover { background: var(--volt); border-color: var(--volt); color: var(--ink); }
+
+/* ============ INDEX (fallback / list view) ============ */
+
+.index {
+  position: absolute;
+  inset: 0;
+  z-index: 70;
+  background: var(--ink);
+  overflow-y: auto;
+  padding: var(--gut);
+  display: none;
+}
+.index.is-on { display: block; }
+.index h2 {
+  font-weight: 900; text-transform: uppercase; letter-spacing: -.04em;
+  font-size: clamp(34px, 8vw, 76px); line-height: .85; margin: 0 0 8px;
+}
+.index__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 2px;
+  margin-top: 34px;
+  background: var(--paper);
+  border: 3px solid var(--paper);
+}
+.index__col { background: var(--ink); padding: 24px; }
+.index__col h3 {
+  font-family: var(--mono); font-size: 11px; letter-spacing: .24em;
+  color: var(--volt); margin: 0 0 18px; text-transform: uppercase;
+}
+.index__col a {
+  display: block; text-decoration: none; font-weight: 900; text-transform: uppercase;
+  font-size: 15px; padding: 9px 0; border-bottom: 2px solid var(--ash);
+  letter-spacing: -.01em;
+}
+.index__col a:hover { color: var(--volt); }
+
+/* ============ RESPONSIVE ============ */
+
+@media (max-width: 820px) {
+  /* the map itself is the navigation on small screens — the shortcut
+     buttons only fought the wordmark for the same corner */
+  .hud--top { display: none; }
+  .hud--hint { display: none; }
+
+  .hud--brand { max-width: 100%; padding: 16px var(--gut); }
+  .hud--brand h1 { font-size: clamp(21px, 6.4vw, 30px); margin-bottom: 6px; }
+  .hud--brand h1 i, .hud--brand h1 em { display: inline; }
+  .hud--brand p { font-size: 9px; letter-spacing: .18em; line-height: 1.7; }
+
+  .hud--ctl {
+    left: 0; right: 0;
+    justify-content: center;
+    padding: 0 12px 16px;
+  }
+
+  .ctl { width: 38px; height: 38px; font-size: 14px; }
+  .ctl--wide { width: auto; padding: 0 12px; font-size: 10px; }
+}
+
+
+/* === work.css === */
+/* WORK — masthead, marquee, chapters, spec lists, closing call.
+   Verbatim from work.html's <style> block. */
+  /* ---------- masthead ---------- */
+
+  .mast {
+    padding: clamp(40px, 8vw, 96px) var(--gut) clamp(30px, 5vw, 60px);
+    border-bottom: var(--edge) solid var(--paper);
+  }
+  .mast h1 {
+    font-size: clamp(56px, 16vw, 210px);
+    margin: 14px 0 0;
+  }
+  .mast h1 em { font-style: normal; color: var(--volt); }
+  /* the tools page draws the accent word as an outline instead of filling it */
+  .mast--stroke h1 em {
+    font-style: normal;
+    -webkit-text-stroke: 2px var(--paper);
+    color: transparent;
+  }
+  .mast__sub {
+    margin: 28px 0 0;
+    font-size: clamp(16px, 2vw, 22px);
+    line-height: 1.5;
+    max-width: 42ch;
+    font-weight: 500;
+  }
+
+  /* ---------- marquee strip ---------- */
+
+  .strip {
+    border-bottom: var(--edge) solid var(--paper);
+    background: var(--volt);
+    color: var(--ink);
+    overflow: hidden;
+    padding: 12px 0;
+  }
+  .strip__run {
+    display: flex;
+    gap: 40px;
+    width: max-content;
+    animation: slide 34s linear infinite;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: -.02em;
+    font-size: clamp(14px, 1.8vw, 20px);
+    white-space: nowrap;
+  }
+  .strip__run span::after { content: " ✦"; opacity: .5; margin-left: 40px; }
+  @keyframes slide { to { transform: translateX(-50%); } }
+  @media (prefers-reduced-motion: reduce) { .strip__run { animation: none; } }
+
+  /* ---------- chapters ---------- */
+
+  .chapter {
+    border-bottom: var(--edge) solid var(--paper);
+    padding: clamp(44px, 8vw, 110px) var(--gut);
+    position: relative;
+  }
+
+  .chapter__no {
+    font-family: var(--mono);
+    font-size: clamp(11px, 1.2vw, 13px);
+    letter-spacing: .24em;
+    color: var(--volt);
+    text-transform: uppercase;
+    margin: 0 0 18px;
+  }
+
+  .chapter h2 {
+    font-size: clamp(42px, 9.5vw, 132px);
+    margin: 0 0 6px;
+  }
+
+  .chapter__role {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: var(--dust);
+    margin: 0 0 clamp(26px, 4vw, 46px);
+  }
+
+  .chapter__cols {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+    gap: clamp(28px, 5vw, 76px);
+    align-items: start;
+  }
+
+  .chapter__cols p {
+    font-size: clamp(15px, 1.7vw, 18px);
+    line-height: 1.66;
+    margin: 0 0 20px;
+    max-width: 52ch;
+  }
+  .chapter__cols p:first-child {
+    font-size: clamp(19px, 2.4vw, 27px);
+    line-height: 1.36;
+    font-weight: 700;
+    letter-spacing: -.02em;
+  }
+
+  .spec {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border-top: var(--edge) solid var(--paper);
+  }
+  .spec li {
+    display: grid;
+    grid-template-columns: 108px minmax(0, 1fr);
+    gap: 16px;
+    padding: 15px 0;
+    border-bottom: 2px solid var(--ash);
+    font-size: 14px;
+    line-height: 1.45;
+  }
+  .spec b {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--dust);
+    font-weight: 400;
+    padding-top: 3px;
+  }
+
+  .acts { display: flex; flex-wrap: wrap; gap: 12px; margin-top: clamp(28px, 4vw, 44px); }
+
+  /* alternating flip: yellow chapter */
+  .chapter--volt {
+    background: var(--volt);
+    color: var(--ink);
+  }
+  .chapter--volt .chapter__no { color: var(--ink); opacity: .6; }
+  .chapter--volt .chapter__role { color: rgba(0,0,0,.55); }
+  .chapter--volt .spec { border-top-color: var(--ink); }
+  .chapter--volt .spec li { border-bottom-color: rgba(0,0,0,.22); }
+  .chapter--volt .spec b { color: rgba(0,0,0,.6); }
+  .chapter--volt .btn { border-color: var(--ink); color: var(--ink); }
+  .chapter--volt .btn:hover { background: var(--ink); border-color: var(--ink); color: var(--volt); }
+
+  /* white chapter */
+  .chapter--paper {
+    background: var(--paper);
+    color: var(--ink);
+  }
+  .chapter--paper .chapter__role { color: #6a6a6a; }
+  .chapter--paper .spec { border-top-color: var(--ink); }
+  .chapter--paper .spec li { border-bottom-color: #dcdcdc; }
+  .chapter--paper .spec b { color: #6a6a6a; }
+  .chapter--paper .btn { border-color: var(--ink); color: var(--ink); }
+  .chapter--paper .btn:hover { background: var(--volt); border-color: var(--volt); color: var(--ink); }
+
+  /* ---------- closing call ---------- */
+
+  .call {
+    padding: clamp(50px, 10vw, 130px) var(--gut);
+    border-bottom: var(--edge) solid var(--paper);
+  }
+  .call h2 { font-size: clamp(40px, 9vw, 128px); margin: 0 0 26px; }
+  .call h2 em { font-style: normal; -webkit-text-stroke: 2px var(--paper); color: transparent; }
+  .call p { font-size: clamp(15px, 1.8vw, 19px); line-height: 1.6; max-width: 44ch; margin: 0 0 34px; }
+
+  @media (max-width: 860px) {
+    .chapter__cols { grid-template-columns: 1fr; }
+    .spec li { grid-template-columns: 92px minmax(0, 1fr); }
+  }
+
+
+/* === tools.css === */
+/* TOOLS — filter rail, bands, tool cards, empty state.
+   Verbatim from tools.html's <style> block. */
+  /* ---------- filter rail ---------- */
+
+  .rail {
+    position: sticky;
+    /* the header is sticky at 0 too — without this offset the rail slides
+       underneath it and loses its top half. Set from the real height by the
+       script below, so it survives the nav wrapping at any width. */
+    top: var(--topbar-h, 62px);
+    z-index: 30;
+    background: var(--ink);
+    border-bottom: var(--edge) solid var(--paper);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    padding: 14px var(--gut);
+  }
+
+  .rail__chips {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+  }
+
+  .chip {
+    appearance: none;
+    background: transparent;
+    border: 2px solid var(--ash);
+    color: var(--dust);
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    padding: 10px 15px;
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .chip:hover { border-color: var(--paper); color: var(--paper); }
+  .chip[aria-pressed="true"] {
+    background: var(--volt);
+    border-color: var(--volt);
+    color: var(--ink);
+    font-weight: 700;
+  }
+
+  .rail__search {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 2px solid var(--ash);
+    padding-bottom: 4px;
+  }
+  .rail__search input {
+    background: transparent;
+    border: 0;
+    color: var(--paper);
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: .1em;
+    padding: 6px 0;
+    width: 190px;
+    outline: none;
+  }
+  .rail__search input::placeholder { color: var(--dust); text-transform: uppercase; letter-spacing: .18em; font-size: 10px; }
+  .rail__search:focus-within { border-bottom-color: var(--volt); }
+  .rail__search svg { width: 14px; height: 14px; stroke: var(--dust); fill: none; stroke-width: 2; flex: none; }
+
+  /* ---------- sections ---------- */
+
+  .band { border-bottom: var(--edge) solid var(--paper); }
+  .band[hidden] { display: none; }
+
+  .band__head {
+    display: flex;
+    align-items: baseline;
+    gap: clamp(14px, 3vw, 30px);
+    flex-wrap: wrap;
+    padding: clamp(34px, 6vw, 64px) var(--gut) clamp(18px, 3vw, 30px);
+  }
+  .band__no {
+    font-family: var(--mono);
+    font-size: clamp(11px, 1.3vw, 13px);
+    color: var(--volt);
+    letter-spacing: .2em;
+  }
+  .band__head h2 {
+    font-size: clamp(34px, 6.4vw, 84px);
+    margin: 0;
+  }
+  .band__head p {
+    margin: 0;
+    max-width: 34ch;
+    color: var(--dust);
+    font-size: 14px;
+    line-height: 1.55;
+    margin-left: auto;
+  }
+
+  /* ---------- cards ---------- */
+
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: var(--edge);
+    background: var(--paper);
+    border-top: var(--edge) solid var(--paper);
+  }
+
+  .card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    background: var(--ink);
+    color: var(--paper);
+    text-decoration: none;
+    padding: clamp(24px, 3vw, 34px);
+    min-height: 230px;
+    overflow: hidden;
+    transition: background .18s, color .18s;
+  }
+  .card[hidden] { display: none; }
+
+  .card::after {
+    content: "";
+    position: absolute;
+    right: -60px; bottom: -60px;
+    width: 150px; height: 150px;
+    background: var(--volt);
+    clip-path: polygon(100% 0, 100% 100%, 0 100%);
+    opacity: 0;
+    transition: opacity .2s, transform .25s;
+    transform: translate(20px, 20px);
+  }
+  .card:hover::after { opacity: 1; transform: translate(0, 0); }
+
+  .card:hover { background: var(--smoke); }
+
+  .card__no {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: .22em;
+    color: var(--dust);
+  }
+  .card h3 {
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: -0.035em;
+    line-height: .92;
+    font-size: clamp(24px, 2.6vw, 34px);
+    margin: 0;
+    position: relative;
+    z-index: 1;
+  }
+  .card:hover h3 { color: var(--volt); }
+  .card p {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.55;
+    color: #b9b9b9;
+    position: relative;
+    z-index: 1;
+  }
+  .card__go {
+    margin-top: auto;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    position: relative;
+    z-index: 1;
+  }
+  .card__go span { color: var(--volt); font-size: 14px; }
+
+  .card__tags {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    position: relative;
+    z-index: 1;
+  }
+  .card__tags i {
+    font-style: normal;
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    border: 1px solid var(--ash);
+    padding: 4px 8px;
+    color: var(--dust);
+  }
+
+  /* empty state */
+  .empty {
+    padding: clamp(50px, 10vw, 110px) var(--gut);
+    text-align: center;
+    border-bottom: var(--edge) solid var(--paper);
+  }
+  .empty[hidden] { display: none; }
+  .empty p {
+    font-weight: 900;
+    text-transform: uppercase;
+    font-size: clamp(20px, 3vw, 34px);
+    letter-spacing: -.03em;
+    margin: 0;
+  }
+
+  @media (max-width: 760px) {
+    /* the filter bar was 201px of a 844px screen. One scrolling row of chips
+       and a full-width search is about half that, and nothing is clipped. */
+    .rail {
+      flex-direction: column;
+      /* the base rule wraps, and a wrapping *column* lays its items out in
+         columns sized to their content — which made the chip track wider
+         than the rail itself, so its tail was clipped and unreachable */
+      flex-wrap: nowrap;
+      align-items: stretch;
+      gap: 8px;
+      padding: 10px var(--gut);
+    }
+
+    .rail__chips {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior-x: contain;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+      padding-bottom: 1px;
+      /* a little run-off so the last chip clears the edge instead of sitting
+         flush against it, which reads as "there is nothing more" */
+      padding-right: 6px;
+    }
+    .rail__chips::-webkit-scrollbar { display: none; }
+    .chip { flex: none; }
+
+    .rail__search { margin-left: 0; width: 100%; }
+    .rail__search input { width: 100%; }
+
+    /* "01 / Portfolio Makers" beside a two-line title reads as a collision
+       on a narrow screen. Let the three parts stack. */
+    .band__head {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 10px;
+    }
+    .band__head p { margin-left: 0; }
+  }
