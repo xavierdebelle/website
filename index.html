@@ -6,7 +6,7 @@
 <title>XAVIER DE BELLE</title>
 <meta name="description" content="Photographer, cinematographer, tool-builder. Montreal. A mind map of everything I make.">
 <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
-<link rel="stylesheet" href="assets/style.css?v=47">
+<link rel="stylesheet" href="assets/style.css?v=48">
 <style>
   html, body { height: 100%; overflow: hidden; }
 
@@ -144,6 +144,10 @@
 
   /* ============ RESPONSIVE ============ */
 
+  /* five shortcuts need ~680px beside the wordmark; below this they would
+     sit on top of the name, and the map is the navigation anyway */
+  @media (max-width: 900px) { .hud--top { display: none; } }
+
   @media (max-width: 820px) {
     /* the map itself is the navigation on small screens — the shortcut
        buttons only fought the wordmark for the same corner */
@@ -187,6 +191,7 @@
 <nav class="hud hud--top" aria-label="Shortcuts">
   <a href="tools.html">Tools</a>
   <a href="work.html">Work</a>
+  <a href="food-for-thought.html">Food for Thought</a>
   <a href="changelog.html">What&rsquo;s New</a>
   <a href="https://www.instagram.com/xavierdebelle/" target="_blank" rel="noopener">Instagram &#8599;</a>
 </nav>
@@ -194,7 +199,7 @@
 <div class="hud hud--hint" aria-hidden="true">
   <b>Tap the mark</b> to open the map &middot; twice to invert it<br>
   <b>Click</b> a node to open it &middot; <b>Drag</b> to move &middot; <b>Scroll</b> to zoom<br>
-  <span style="opacity:.5">v47</span>
+  <span style="opacity:.5">v48</span>
 </div>
 
 <div class="hud hud--ctl">
@@ -228,6 +233,7 @@
     </div>
     <div class="index__col">
       <h3>The Site</h3>
+      <a href="food-for-thought.html">Food for Thought</a>
       <a href="changelog.html">What&rsquo;s New &rarr;</a>
     </div>
     <div class="index__col">
@@ -279,7 +285,7 @@ const MAP = [
   /* Distinct from Tools > Personal: that one is a category of builds, this is
      the part of the site that isn't work at all. Both keep their own label. */
   { label:"Personal", children:[
-      { label:"Food for Thought", href:"soon.html#food-for-thought" },
+      { label:"Food for Thought", href:"food-for-thought.html" },
       { label:"Digital Archives", href:"soon.html#digital-archives" },
       { label:"Self Improvement", href:"soon.html#self-improvement" } ]}
 ];

@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FOOD FOR THOUGHT — XAVIER DE BELLE</title>
+<meta name="description" content="Food for Thought — short writing by Xavier de Belle. Things worth chewing on.">
+<link rel="icon" href="assets/logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/style.css?v=48">
+<style>
+  /* ---------- masthead ---------- */
+
+  .mast {
+    padding: clamp(40px, 8vw, 96px) var(--gut) clamp(30px, 5vw, 60px);
+    border-bottom: var(--edge) solid var(--paper);
+  }
+  .mast h1 {
+    font-size: clamp(52px, 14vw, 190px);
+    margin: 14px 0 0;
+  }
+  .mast h1 em { font-style: normal; color: var(--volt); }
+  .mast__sub {
+    margin: 28px 0 0;
+    font-size: clamp(16px, 2vw, 22px);
+    line-height: 1.5;
+    max-width: 42ch;
+    font-weight: 500;
+  }
+
+  /* ---------- author bar + composer (only ever shown to Xavier) ---------- */
+
+  .desk {
+    background: var(--volt);
+    color: var(--ink);
+    border-bottom: var(--edge) solid var(--paper);
+    padding: clamp(28px, 5vw, 56px) var(--gut);
+  }
+  .desk[hidden] { display: none; }
+  .desk__top {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 22px;
+  }
+  .desk__top .kicker { color: rgba(0,0,0,.6); }
+  .desk__title {
+    font-size: clamp(30px, 5vw, 56px);
+    margin: 8px 0 0;
+  }
+  .desk label {
+    display: block;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: rgba(0,0,0,.65);
+    margin: 18px 0 8px;
+  }
+  .desk input, .desk textarea {
+    width: 100%;
+    display: block;
+    border: var(--edge) solid var(--ink);
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--stack);
+    padding: 14px 16px;
+    border-radius: 0;
+    -webkit-appearance: none;
+  }
+  .desk input {
+    font-size: clamp(20px, 2.6vw, 28px);
+    font-weight: 900;
+    letter-spacing: -.02em;
+  }
+  .desk textarea {
+    font-size: 17px;
+    line-height: 1.6;
+    min-height: 280px;
+    resize: vertical;
+  }
+  .desk input:focus-visible, .desk textarea:focus-visible { outline: var(--edge) solid var(--ink); outline-offset: 3px; }
+  .desk__hint {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .06em;
+    color: rgba(0,0,0,.6);
+    margin: 10px 0 0;
+  }
+  .desk__acts { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-top: 22px; }
+  .desk .btn { border-color: var(--ink); color: var(--ink); }
+  .desk .btn:hover { background: var(--ink); border-color: var(--ink); color: var(--volt); }
+  .desk .btn--solid { background: var(--ink); color: var(--volt); }
+  .desk .btn--solid:hover { background: var(--paper); color: var(--ink); }
+  .desk .btn[disabled] { opacity: .45; cursor: default; transform: none; }
+  .desk .btn[hidden] { display: none; }
+  .desk__msg {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: .04em;
+    line-height: 1.5;
+    margin: 0;
+    flex: 1 1 220px;
+  }
+  .desk__msg.bad { font-weight: 700; }
+  .desk__who {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+  }
+  .linkish {
+    background: none;
+    border: 0;
+    padding: 0;
+    font: inherit;
+    color: inherit;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+  }
+
+  /* shown to someone who signed in but isn't Xavier */
+  .notice {
+    border-bottom: var(--edge) solid var(--paper);
+    padding: 22px var(--gut);
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: .06em;
+    line-height: 1.6;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    align-items: center;
+  }
+  .notice[hidden] { display: none; }
+
+  /* ---------- the posts ---------- */
+
+  .feed { padding: 0 var(--gut); }
+
+  .post {
+    border-bottom: var(--edge) solid var(--paper);
+    padding: clamp(40px, 7vw, 96px) 0;
+    display: grid;
+    grid-template-columns: minmax(150px, 220px) minmax(0, 1fr);
+    gap: clamp(20px, 5vw, 70px);
+    scroll-margin-top: 90px;
+  }
+  .post__meta {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--dust);
+    line-height: 1.9;
+  }
+  .post__no { color: var(--volt); display: block; margin-bottom: 6px; }
+  .post__m { display: block; }
+  .post__meta a.post__m { display: inline-block; }
+  .post__meta a { text-decoration: none; border-bottom: 2px solid var(--ash); }
+  .post__meta a:hover { color: var(--volt); border-bottom-color: var(--volt); }
+  .post h2 {
+    font-size: clamp(34px, 6.5vw, 92px);
+    margin: 0 0 clamp(22px, 3vw, 36px);
+    overflow-wrap: anywhere;
+  }
+  .post__body { max-width: 64ch; }
+  .post__body p {
+    font-size: clamp(16px, 1.8vw, 19px);
+    line-height: 1.7;
+    margin: 0 0 1.1em;
+    overflow-wrap: anywhere;
+  }
+  .post__body p:first-child {
+    font-size: clamp(19px, 2.3vw, 25px);
+    line-height: 1.45;
+    font-weight: 700;
+    letter-spacing: -.015em;
+  }
+  .post__body a { color: var(--volt); text-underline-offset: 3px; }
+  .post__tools { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 26px; }
+  .post__tools[hidden] { display: none; }
+  .post__tools .btn { padding: 10px 16px; font-size: 11px; }
+  .post--hit h2 { color: var(--volt); }
+
+  .state {
+    padding: clamp(50px, 10vw, 120px) 0;
+    border-bottom: var(--edge) solid var(--paper);
+  }
+  .state h2 { font-size: clamp(34px, 7vw, 96px); margin: 0 0 20px; }
+  .state h2 em { font-style: normal; -webkit-text-stroke: 2px var(--paper); color: transparent; }
+  .state p { font-size: clamp(15px, 1.8vw, 19px); line-height: 1.6; max-width: 46ch; margin: 0; }
+
+  .foot__links .linkish {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    text-decoration: none;
+    border-bottom: 2px solid var(--ash);
+    padding-bottom: 3px;
+  }
+  .foot__links .linkish:hover { color: var(--volt); border-bottom-color: var(--volt); }
+
+  @media (max-width: 760px) {
+    .post { grid-template-columns: 1fr; gap: 14px; }
+    .post__no { display: inline; margin: 0; white-space: nowrap; }
+    .post__meta { letter-spacing: .12em; }
+    .post__m, .post__meta a.post__m { display: inline; white-space: nowrap; }
+    .post__meta a.post__m { border-bottom: 0; color: var(--paper); }
+    .post__m::before { content: "\00b7  "; color: var(--ash); }
+  }
+</style>
+</head>
+<body>
+
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <a class="topbar__mark" href="index.html">
+    <img src="assets/logo.svg" alt="">
+    Xavier de Belle
+  </a>
+  <nav class="topbar__nav" aria-label="Main">
+    <a href="index.html">Map</a>
+    <a href="work.html">Work</a>
+    <a href="tools.html">Tools</a>
+    <a href="food-for-thought.html" aria-current="page">Food for Thought</a>
+    <a href="changelog.html">What&rsquo;s New</a>
+    <a href="https://www.instagram.com/xavierdebelle/" target="_blank" rel="noopener">Instagram &#8599;</a>
+  </nav>
+</header>
+
+<section class="mast">
+  <p class="kicker">Writing &mdash; Montreal</p>
+  <h1 class="display">Food for<br><em>Thought</em></h1>
+  <p class="mast__sub">
+    Things worth chewing on &mdash; what I&rsquo;m reading, watching, building and arguing with.
+  </p>
+</section>
+
+<!-- Xavier's desk. Hidden from everyone else; the database rules are what
+     actually stop anyone else from writing. -->
+<section class="desk" id="desk" hidden aria-label="Write a post">
+  <div class="desk__top">
+    <div>
+      <p class="kicker" id="desk-kicker">New post</p>
+      <h2 class="display desk__title" id="desk-title">Write</h2>
+    </div>
+    <span class="desk__who" id="desk-who"></span>
+  </div>
+  <form id="compose" autocomplete="off">
+    <label for="f-title">Title</label>
+    <input id="f-title" maxlength="200" required>
+    <label for="f-body">Body</label>
+    <textarea id="f-body" maxlength="50000"></textarea>
+    <p class="desk__hint">Leave a blank line between paragraphs. Links starting with http are made clickable. Your draft is kept on this device until you publish.</p>
+    <div class="desk__acts">
+      <button class="btn btn--solid" id="b-publish" type="submit">Publish</button>
+      <button class="btn" id="b-cancel" type="button" hidden>Cancel edit</button>
+      <p class="desk__msg" id="desk-msg" role="status" aria-live="polite"></p>
+    </div>
+  </form>
+</section>
+
+<div class="notice" id="notice" hidden>
+  <span id="notice-text"></span>
+  <button class="linkish" type="button" data-act="signout">Sign out</button>
+</div>
+
+<main id="main" class="feed" aria-live="polite">
+  <div class="state" id="state">
+    <p class="kicker">Loading</p>
+  </div>
+  <div id="posts"></div>
+</main>
+
+<footer class="foot">
+  <div>
+    <p class="kicker" style="margin-bottom:14px">Xavier de Belle &mdash; Montreal</p>
+    <div class="foot__links">
+      <a href="index.html">The Map</a>
+      <a href="work.html">Work</a>
+      <a href="tools.html">Tools</a>
+      <a href="changelog.html">What&rsquo;s New</a>
+      <a href="https://www.instagram.com/xavierdebelle/" target="_blank" rel="noopener">Instagram &#8599;</a>
+      <a href="mailto:xavier@debellephotography.com">Email</a>
+      <button class="linkish" type="button" id="b-author" data-act="author">Write</button>
+    </div>
+  </div>
+  <p class="foot__sig">&copy; <span id="yr"></span> Xavier de Belle &middot; v48</p>
+</footer>
+
+<script>document.getElementById('yr').textContent = new Date().getFullYear();</script>
+
+<script>
+/* ============================================================
+   FOOD FOR THOUGHT
+   Posts live in the same Firebase Realtime Database as the tools,
+   at blog/posts/{id}. Anyone can read them; only Xavier's account can
+   write — enforced by the database rules, not by this page. New posts
+   appear live for anyone who has the page open.
+   ============================================================ */
+(function () {
+  /* Public Firebase identifiers — not secrets. The rules protect the data. */
+  var FIREBASE = {
+    apiKey:      'AIzaSyCu0CA6eLWIkhhl-Z7jr_dDisuXDt1dKco',
+    authDomain:  'xdb-tools.firebaseapp.com',
+    databaseURL: 'https://xdb-tools-default-rtdb.firebaseio.com',
+    projectId:   'xdb-tools',
+    appId:       '1:6009567091:web:f7ee8c43ebe1bd25fcb706'
+  };
+  var SDK = 'https://www.gstatic.com/firebasejs/10.12.2/';
+  var OWNER = 'jGJdt3h4EeaOL3mYWUHA4yMZsRx2';
+  var PATH = 'blog/posts';
+  var DRAFT_KEY = 'xdb.fft.draft';
+  var AUTHOR_KEY = 'xdb.fft.author';   // "this device has signed in before" — load auth on arrival
+
+  var fb = null;          // { db, f, auth?, a? }
+  var posts = [];         // newest first
+  var loaded = false;
+  var owner = false;
+  var editing = null;     // id of the post in the composer, or null for a new one
+  var saving = false;
+  var pendingId = null;   // a new post's id, kept until it lands, so a retry can't publish it twice
+
+  function $(id) { return document.getElementById(id); }
+  function store(k, v) { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) {} }
+  function recall(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+
+  function withTimeout(p, ms) {
+    return Promise.race([p, new Promise(function (_, no) {
+      setTimeout(function () { no({ code: 'timeout' }); }, ms);
+    })]);
+  }
+
+  /* ---- loading ---- */
+  function loadCore() {
+    return Promise.all([
+      import(SDK + 'firebase-app.js'),
+      import(SDK + 'firebase-database.js')
+    ]).then(function (m) {
+      var app = m[0].initializeApp(FIREBASE);
+      fb = { app: app, db: m[1].getDatabase(app), f: m[1] };
+      return fb;
+    });
+  }
+  function loadAuth() {
+    if (fb.a) return Promise.resolve(fb);
+    return import(SDK + 'firebase-auth.js').then(function (a) {
+      fb.a = a;
+      fb.auth = a.getAuth(fb.app);
+      a.onAuthStateChanged(fb.auth, onUser);
+      return fb;
+    });
+  }
+
+  function clean(id, p) {
+    if (!p || typeof p !== 'object') return null;
+    var title = typeof p.title === 'string' ? p.title : '';
+    var body = typeof p.body === 'string' ? p.body : '';
+    if (!title.trim() && !body.trim()) return null;
+    return { id: id, title: title, body: body, createdAt: +p.createdAt || 0, updatedAt: +p.updatedAt || 0 };
+  }
+
+  function watch() {
+    fb.f.onValue(fb.f.ref(fb.db, PATH), function (snap) {
+      var all = snap.val() || {};
+      posts = Object.keys(all).map(function (k) { return clean(k, all[k]); })
+        .filter(Boolean)
+        .sort(function (x, y) { return y.createdAt - x.createdAt; });
+      loaded = true;
+      render();
+    }, function (err) {
+      showState('Can&rsquo;t <em>load</em>', err && /permission/i.test(String(err.code || err.message))
+        ? 'The posts aren&rsquo;t open to readers yet. Check back soon.'
+        : 'The posts didn&rsquo;t load. Check your connection and refresh.');
+    });
+  }
+
+  /* ---- rendering ---- */
+  var DATE = new Intl.DateTimeFormat('en-CA', { year: 'numeric', month: 'long', day: 'numeric' });
+
+  function showState(title, text) {
+    var s = $('state');
+    s.hidden = false;
+    s.innerHTML = '<h2 class="display">' + title + '</h2><p>' + text + '</p>';
+  }
+
+  /* Plain text in, safe nodes out: paragraphs on blank lines, <br> on single
+     line breaks, http(s) links made clickable. Nothing is parsed as HTML. */
+  function bodyNodes(text) {
+    var wrap = document.createElement('div');
+    wrap.className = 'post__body';
+    text.replace(/\r\n?/g, '\n').split(/\n\s*\n/).forEach(function (para) {
+      if (!para.trim()) return;
+      var p = document.createElement('p');
+      para.trim().split('\n').forEach(function (line, i) {
+        if (i) p.appendChild(document.createElement('br'));
+        line.split(/(https?:\/\/[^\s<>"]+[^\s<>".,;:!?)\]])/).forEach(function (bit, j) {
+          if (!bit) return;
+          if (j % 2) {
+            var a = document.createElement('a');
+            a.href = bit; a.textContent = bit; a.target = '_blank'; a.rel = 'noopener nofollow';
+            p.appendChild(a);
+          } else p.appendChild(document.createTextNode(bit));
+        });
+      });
+      wrap.appendChild(p);
+    });
+    return wrap;
+  }
+
+  function minutes(text) {
+    var words = (text.match(/\S+/g) || []).length;
+    return Math.max(1, Math.round(words / 220));
+  }
+
+  function render() {
+    if (!loaded) return;
+    var list = $('posts');
+    list.textContent = '';
+    if (!posts.length) {
+      showState('Nothing <em>yet</em>', owner
+        ? 'Write the first one above. It goes public the moment you press Publish.'
+        : 'The first one is on its way.');
+      return;
+    }
+    $('state').hidden = true;
+    posts.forEach(function (p, i) {
+      var art = document.createElement('article');
+      art.className = 'post';
+      art.id = p.id;
+
+      var meta = document.createElement('div');
+      meta.className = 'post__meta';
+      var no = document.createElement('span');
+      no.className = 'post__no';
+      no.textContent = 'No. ' + String(posts.length - i).padStart(2, '0');
+      meta.appendChild(no);
+      [p.createdAt ? DATE.format(new Date(p.createdAt)) : '', minutes(p.body) + ' min read'].forEach(function (t) {
+        if (!t) return;
+        var m = document.createElement('span');
+        m.className = 'post__m';
+        m.textContent = t;
+        meta.appendChild(document.createTextNode(' '));   // a place for the line to wrap on phones
+        meta.appendChild(m);
+      });
+      var link = document.createElement('a');
+      link.className = 'post__m';
+      meta.appendChild(document.createTextNode(' '));
+      link.href = '#' + p.id;
+      link.textContent = 'Link';
+      link.setAttribute('aria-label', 'Link to ' + p.title);
+      meta.appendChild(link);
+
+      var main = document.createElement('div');
+      var h = document.createElement('h2');
+      h.className = 'display';
+      h.textContent = p.title;
+      main.appendChild(h);
+      main.appendChild(bodyNodes(p.body));
+
+      if (owner) {
+        var tools = document.createElement('div');
+        tools.className = 'post__tools';
+        tools.innerHTML = '<button class="btn" type="button" data-act="edit">Edit</button>' +
+                          '<button class="btn" type="button" data-act="delete">Delete</button>';
+        tools.dataset.id = p.id;
+        main.appendChild(tools);
+      }
+
+      art.appendChild(meta);
+      art.appendChild(main);
+      list.appendChild(art);
+    });
+    jumpToHash();
+  }
+
+  var jumped = false;
+  function jumpToHash() {
+    var id = decodeURIComponent((location.hash || '').slice(1));
+    if (jumped || !id || id === 'main') return;
+    var el = document.getElementById(id);
+    if (!el || !el.classList.contains('post')) return;
+    jumped = true;
+    el.classList.add('post--hit');
+    el.scrollIntoView();
+  }
+  window.addEventListener('hashchange', function () { jumped = false; jumpToHash(); });
+
+  /* ---- author ---- */
+  function onUser(user) {
+    owner = !!user && user.uid === OWNER;
+    $('desk').hidden = !owner;
+    $('notice').hidden = !user || owner;
+    $('b-author').textContent = user ? 'Sign out' : 'Write';
+    $('b-author').dataset.act = user ? 'signout' : 'author';
+    if (user && !owner) {
+      $('notice-text').textContent = 'Signed in as ' + (user.email || 'another account') +
+        '. Only Xavier can write here — you can still read everything.';
+    }
+    if (owner) {
+      store(AUTHOR_KEY, '1');
+      $('desk-who').textContent = user.email || 'Signed in';
+      restoreDraft();
+    }
+    if (!user) store(AUTHOR_KEY, null);
+    render();
+  }
+
+  function signIn() {
+    store(AUTHOR_KEY, '1');   // so a redirect sign-in is picked up when the page comes back
+    (fb ? Promise.resolve(fb) : loadCore()).then(loadAuth).then(function () {
+      var provider = new fb.a.GoogleAuthProvider();
+      return fb.a.signInWithPopup(fb.auth, provider).catch(function (err) {
+        // iOS and locked-down browsers block popups; a redirect always works
+        if (err && /popup-blocked|operation-not-supported/i.test(err.code || '')) return fb.a.signInWithRedirect(fb.auth, provider);
+        throw err;
+      });
+    }).catch(function (err) {
+      store(AUTHOR_KEY, null);
+      if (err && err.code === 'auth/popup-closed-by-user') return;
+      alert('Sign-in didn’t work' + (err && err.code ? ' (' + err.code + ')' : '') + '.');
+    });
+  }
+  function signOut() {
+    if (fb && fb.a) fb.a.signOut(fb.auth);
+  }
+
+  /* ---- composer ---- */
+  function say(text, bad) {
+    var m = $('desk-msg');
+    m.textContent = text || '';
+    m.className = 'desk__msg' + (bad ? ' bad' : '');
+  }
+
+  function saveDraft() {
+    if (editing) return;   // edits aren't drafts; the post itself is the copy
+    var t = $('f-title').value, b = $('f-body').value;
+    store(DRAFT_KEY, (t || b) ? JSON.stringify({ title: t, body: b }) : null);
+  }
+  function restoreDraft() {
+    if (editing || $('f-title').value || $('f-body').value) return;
+    try {
+      var d = JSON.parse(recall(DRAFT_KEY) || 'null');
+      if (d) { $('f-title').value = d.title || ''; $('f-body').value = d.body || ''; say('Draft restored.'); }
+    } catch (e) {}
+  }
+
+  function setMode(id) {
+    editing = id;
+    $('desk-kicker').textContent = id ? 'Editing' : 'New post';
+    $('desk-title').textContent = id ? 'Edit' : 'Write';
+    $('b-publish').textContent = id ? 'Save changes' : 'Publish';
+    $('b-cancel').hidden = !id;
+  }
+
+  function newId() {
+    var r = new Uint8Array(4);
+    crypto.getRandomValues(r);
+    return 'p' + Date.now().toString(36) + Array.prototype.map.call(r, function (n) { return n.toString(16).padStart(2, '0'); }).join('');
+  }
+
+  function explain(err) {
+    var code = String((err && (err.code || err.message)) || '');
+    if (/permission/i.test(code)) return 'The database refused it. The Firebase rules need the blog section — see the changelog.';
+    if (/timeout|network|unavailable/i.test(code)) return 'No connection yet. Keep this page open and it goes out when you\u2019re back online \u2014 or press the button again. It won\u2019t post twice.';
+    return 'That didn’t save' + (code ? ' (' + code + ')' : '') + '. Your text is still here.';
+  }
+
+  function publish(e) {
+    e.preventDefault();
+    if (!owner || saving) return;
+    var title = $('f-title').value.trim();
+    var body = $('f-body').value.replace(/\s+$/, '');
+    if (!title) { say('Give it a title first.', true); $('f-title').focus(); return; }
+    if (!body.trim()) { say('Write something in the body first.', true); $('f-body').focus(); return; }
+
+    var now = Date.now();
+    var id = editing || pendingId || (pendingId = newId());
+    var before = editing ? posts.filter(function (p) { return p.id === editing; })[0] : null;
+    if (editing && !before) { say('That post was deleted elsewhere. Copy your text before cancelling.', true); return; }
+    var data = { title: title, body: body, createdAt: before ? before.createdAt : now, updatedAt: now };
+
+    saving = true;
+    $('b-publish').disabled = true;
+    say(editing ? 'Saving…' : 'Publishing…');
+    withTimeout(fb.f.set(fb.f.ref(fb.db, PATH + '/' + id), data), 12000).then(function () {
+      var was = editing;
+      if (!was) pendingId = null;
+      $('f-title').value = '';
+      $('f-body').value = '';
+      if (!was) store(DRAFT_KEY, null);   // an edit leaves the parked new-post draft alone
+      setMode(null);
+      restoreDraft();
+      say(was ? 'Saved. The change is live.' : 'Published. It’s live now.');
+      var el = document.getElementById(id);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, function (err) {
+      say(explain(err), true);
+    }).then(function () {
+      saving = false;
+      $('b-publish').disabled = false;
+    });
+  }
+
+  function startEdit(id) {
+    var p = posts.filter(function (x) { return x.id === id; })[0];
+    if (!p) return;
+    if (!editing) saveDraft();   // park a half-written new post; it comes back after
+    setMode(id);
+    $('f-title').value = p.title;
+    $('f-body').value = p.body;
+    say('Editing “' + p.title + '”. Saving updates it in place.');
+    $('desk').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    $('f-title').focus({ preventScroll: true });
+  }
+  function cancelEdit() {
+    setMode(null);
+    $('f-title').value = '';
+    $('f-body').value = '';
+    say('');
+    restoreDraft();
+  }
+
+  function remove(id) {
+    var p = posts.filter(function (x) { return x.id === id; })[0];
+    if (!p) return;
+    if (!confirm('Delete “' + p.title + '”? It disappears from the site for everyone. This can’t be undone.')) return;
+    withTimeout(fb.f.remove(fb.f.ref(fb.db, PATH + '/' + id)), 12000).then(function () {
+      if (editing === id) cancelEdit();
+      say('Deleted.');
+    }, function (err) {
+      alert(explain(err).replace(' Your text is still here.', ''));
+    });
+  }
+
+  /* ---- wiring ---- */
+  $('compose').addEventListener('submit', publish);
+  $('f-title').addEventListener('input', saveDraft);
+  $('f-body').addEventListener('input', saveDraft);
+  $('b-cancel').addEventListener('click', cancelEdit);
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-act]');
+    if (!b) return;
+    var act = b.dataset.act;
+    if (act === 'author') signIn();
+    else if (act === 'signout') signOut();
+    else if (act === 'edit' && owner) startEdit(b.parentNode.dataset.id);
+    else if (act === 'delete' && owner) remove(b.parentNode.dataset.id);
+  });
+
+  loadCore().then(function () {
+    watch();
+    if (recall(AUTHOR_KEY)) loadAuth();
+  }).catch(function () {
+    showState('Can&rsquo;t <em>load</em>', 'The posts didn&rsquo;t load. Check your connection and refresh.');
+  });
+})();
+</script>
+
+</body>
+</html>

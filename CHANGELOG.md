@@ -5,6 +5,77 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v48 — 2026-09-22
+
+**What's new** · Food for Thought · [food-for-thought.html]
+### Food for<br>Thought
+A new page for writing. Short pieces on what I'm reading, watching, building
+and arguing with, newest first, each with its own link.
+
+New posts show up for anyone who has the page open, without a refresh.
+
+**New page — `food-for-thought.html`**
+- Public blog: title and body per post, newest first, numbered, dated, with a
+  reading time and a permanent link (`food-for-thought.html#<post id>`).
+- Body is plain text: blank line = new paragraph, single line break kept,
+  `http(s)` links made clickable. Nothing typed is ever treated as HTML.
+- Writing: "Write" in the footer signs in with Google. Xavier's account gets a
+  composer above the posts (title, body, Publish) and Edit / Delete on every
+  post. Any other account is told it can only read. Publishing, editing and
+  deleting are live for every reader at once.
+- The draft of a new post is kept on the device until it publishes, and
+  survives an edit of another post in between. If the connection drops, the
+  text stays, and retrying can't post the same thing twice (the post keeps
+  its id until it lands).
+- Stored in the existing Firebase Realtime Database (`xdb-tools`) at
+  `blog/posts/{id}` = `{title, body, createdAt, updatedAt}`. Anyone can read;
+  only Xavier's account can write — enforced by the rules, not the page.
+
+**Site**
+- "Food for Thought" added to the top navigation and footers of every page,
+  the map's shortcut bar and the text index. The map's Personal → Food for
+  Thought node now opens the page; the old `soon.html#food-for-thought` link
+  forwards to it.
+- Map: the shortcut bar now hides below 900px (was 820px). With five buttons
+  it covered the name between 821 and ~850px.
+
+**Outstanding — Xavier publishes the rules**
+- The page shows "not open to readers yet" until the Firebase rules gain a
+  `blog` section. Add this inside `"rules"`, beside `users` and `shares`:
+
+      "blog": {
+        ".read": true,
+        "posts": {
+          "$post": {
+            ".write": "auth != null && auth.uid === 'jGJdt3h4EeaOL3mYWUHA4yMZsRx2'",
+            ".validate": "newData.hasChildren(['title', 'body', 'createdAt'])",
+            "title": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 200" },
+            "body": { ".validate": "newData.isString() && newData.val().length <= 50000" },
+            "createdAt": { ".validate": "newData.isNumber()" },
+            "updatedAt": { ".validate": "newData.isNumber()" },
+            "$other": { ".validate": false }
+          }
+        }
+      }
+
+**Verified locally (mock database, never the live one)**
+- Two browser origins as two devices: publish from the author, reader sees it
+  live; edit keeps `createdAt` and updates in place; delete asks first
+  (declining keeps it); HTML in a body renders as text; link trailing
+  punctuation excluded; draft restored after reload and after an edit;
+  offline publish keeps the text and a retry lands exactly once; another
+  Google account sees no composer or edit buttons and its forced write is
+  refused; sign-out clears the author state; `#<id>` scrolls to the post;
+  refused reads show "not open to readers yet".
+- Found and fixed during testing: saving an edit threw away a parked new-post
+  draft; "Cancel edit" showed when nothing was being edited; phone post
+  details overflowed the screen.
+- Against the real Firebase library (read only): the page loads, the read is
+  refused as expected before the rules exist, no console errors.
+- Desktop, 860–905px map and 375px phone layouts checked.
+
+---
+
 ## v47 — 2026-09-22
 
 **What's new** · Liquid Silver · [tools.html#art]
