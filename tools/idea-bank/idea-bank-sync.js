@@ -1,6 +1,6 @@
 /* Cloud sync — local first, optional, live while signed in.
    Ported unchanged in behaviour from Idea Bank v3 (shared with Project Phases
-   and Budget Tracker). Everything tool-specific lives in the adapter passed in;
+   and Budget Tracker), including membership: sync is by invitation. Everything tool-specific lives in the adapter passed in;
    the UI is painted through adapter.paint(view) instead of touching the DOM. */
 (function () {
   'use strict';
@@ -14,13 +14,14 @@
   };
   var SDK = 'https://www.gstatic.com/firebasejs/10.12.2/';
   var OWNER = 'jGJdt3h4EeaOL3mYWUHA4yMZsRx2';
+  var ACCESS_URL = '../access.html';   // where requests are approved; tools live in tools/
 
   function createCloudSync(SYNC) {
     var META_KEY = SYNC.storageKey + '.meta';
     var cloud = {
       on: !!FIREBASE.databaseURL, status: 'signedout', uid: null, authed: false, listening: false,
       at: 0, msg: '', fb: null, timer: null, busy: false, again: false, pending: null,
-      print: null, outgoing: 0, unwatch: null
+      print: null, outgoing: 0, unwatch: null, unmember: null, asked: false
     };
 
     function explain(code) {
@@ -160,6 +161,38 @@
       });
     }
     function stopWatching() { if (cloud.unwatch) { cloud.unwatch(); cloud.unwatch = null; } }
+    /* Membership — same rules as the classic core: Xavier always syncs;
+       anyone else is watched live at members/{uid}, and signing in files an
+       access request that he approves on the Access page. */
+    function admit(uid) {
+      if (cloud.uid === uid) return;
+      cloud.uid = uid;
+      syncNow();
+      watch();
+    }
+    function stopMembership() { if (cloud.unmember) { cloud.unmember(); cloud.unmember = null; } }
+    function askForAccess(user) {
+      if (cloud.asked) { setStatus('pending'); return; }
+      cloud.asked = true;
+      cloud.fb.f.set(cloud.fb.f.ref(cloud.fb.db, 'requests/' + user.uid), {
+        email: user.email || '', name: (user.displayName || '').slice(0, 120), at: Date.now(), tool: SYNC.doc
+      }).then(function () { if (!cloud.uid) setStatus('pending'); },
+              function () { if (!cloud.uid) setStatus('private'); });
+    }
+    function checkMembership(user) {
+      if (user.uid === OWNER) { admit(user.uid); return; }
+      setStatus('working');
+      cloud.unmember = cloud.fb.f.onValue(cloud.fb.f.ref(cloud.fb.db, 'members/' + user.uid), function (snap) {
+        if (!cloud.on) return;
+        if (snap.exists()) { admit(user.uid); return; }
+        if (cloud.uid) { cloud.uid = null; stopWatching(); clearTimeout(cloud.timer); }
+        askForAccess(user);
+      }, function () {
+        cloud.uid = null;
+        stopWatching();
+        setStatus('private');
+      });
+    }
     function listen(fb) {
       if (cloud.listening) return;
       cloud.listening = true;
@@ -168,11 +201,11 @@
         cloud.authed = !!user;
         setMeta({ signedIn: !!user });
         stopWatching();
-        if (!user) { cloud.uid = null; setStatus('signedout'); return; }
-        if (OWNER && user.uid !== OWNER) { cloud.uid = null; setStatus('private'); return; }
-        cloud.uid = user.uid;
-        syncNow();
-        watch();
+        stopMembership();
+        cloud.uid = null;
+        cloud.asked = false;
+        if (!user) { setStatus('signedout'); return; }
+        checkMembership(user);
       });
     }
     function signIn() {
@@ -224,15 +257,19 @@
         case 'working':  v.label = 'Syncing…'; v.title = 'Talking to the cloud'; break;
         case 'synced':   v.label = 'Live · ' + hhmm(cloud.at); v.title = 'Signed in. Changes on your other devices appear here as they happen'; break;
         case 'conflict': v.label = 'Both changed'; v.title = 'This device and the cloud disagree'; break;
-        case 'private':  v.label = 'Sync is private'; v.title = 'This sync belongs to one account'; break;
+        case 'pending':  v.label = 'Access requested'; v.title = 'Waiting for Xavier to approve this account'; break;
+        case 'private':  v.label = 'No access'; v.title = 'This account is not on the invitation list'; break;
         case 'error':    v.label = 'Sync failed'; v.title = explain(cloud.msg); break;
         default:         v.label = 'Sign in to sync'; v.title = 'Keep this in step across your devices';
       }
-      if (cloud.status === 'private' || cloud.status === 'error') {
+      if (cloud.status === 'pending' || cloud.status === 'private' || cloud.status === 'error') {
         v.barOn = true;
-        v.barText = cloud.status === 'private'
-          ? 'Sync on this site is private to one account. Your ' + SYNC.noun + ' still save in this browser exactly as before, and nothing is sent anywhere.'
+        v.barText = cloud.status === 'pending'
+          ? 'Sync is by invitation, and your request is in. Once Xavier approves it, syncing starts here on its own. Until then everything keeps saving in this browser as usual.'
+          : cloud.status === 'private'
+          ? 'Sync on this site is by invitation, and this account isn\u2019t on the list. Everything still saves in this browser exactly as before, and nothing is sent anywhere.'
           : explain(cloud.msg);
+        if (cloud.status !== 'error') v.link = { href: ACCESS_URL, text: 'About access \u2192' };
       } else if (cloud.status === 'conflict' && cloud.pending) {
         v.barOn = true; v.showKeep = true;
         v.barText = 'This ' + deviceName() + ' and the cloud copy have both changed since they last agreed. The cloud copy was last written ' +
@@ -263,6 +300,7 @@
       cloud.uid = null;
       if (cloud.unauth) { cloud.unauth(); cloud.unauth = null; }
       stopWatching();
+      stopMembership();
       clearTimeout(cloud.timer);
       document.removeEventListener('visibilitychange', onVis);
       window.removeEventListener('focus', onWake);

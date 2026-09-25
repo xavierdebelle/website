@@ -11,6 +11,7 @@ browser tools I've built. Plain HTML/CSS/JS, no build step, no dependencies.
     tools.html      the tool hub, five categories, search + filter
     work.html       portfolio: de Belle Photography, 333 Photo, real estate
     food-for-thought.html   the blog — posts live in Firebase, public read, owner write
+    access.html     sync by invitation — request access; Xavier approves here
     assets/         logo + shared design system
     tools/          the tools themselves, one self-contained file each
     versions/       local-only archive of past versions (not deployed)

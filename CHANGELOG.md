@@ -5,6 +5,94 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v51 — 2026-09-25
+
+**What's new** · Tools · [access.html]
+### Bring Your<br>Own Account
+Project Phases, Budget Tracker and Idea Bank can now sync for friends and
+family too — by invitation. Sign in with Google in any of them (or on the
+new Access page) and your request comes to me; once it's approved, your own
+data follows you between phone and computer, live.
+
+Every tool now starts clean, too: a fresh budget with the usual lines at
+zero, a blank starter project, neutral idea areas. And anyone approved can
+make client links in Project Phases.
+
+**Sync by invitation**
+- New `access.html`. Signed out: what sync is, sign in to ask. A signed-in
+  friend: waiting / approved (with links to the three tools) / not
+  approved. Xavier: live lists of requests (Approve, Decline), members
+  (Remove) and declined accounts (Allow again). Approve and decline are one
+  atomic write each. Not in the main nav; linked from the tools page intro,
+  its footer, and every sync message.
+- Shared sync core (all three tools; Idea Bank's component port too): after
+  sign-in, Xavier's account syncs as before; any other account is watched
+  live at `members/{uid}`. Not a member → files `requests/{uid}` once per
+  session and shows "Access requested"; refused (declined) → "No access".
+  Both keep the tool fully local. Approval starts sync without a reload;
+  removal stops it. Messages link to the Access page.
+- Each account's data stays under its own `users/{uid}`. Removing someone
+  keeps their stored data for if they come back.
+
+**Neutral starting data (new accounts and signed-out visitors)**
+- Project Phases: a fresh browser gets a generic "My project" (Discovery /
+  Design / Build / Launch) instead of the Cours à Bois plan, which is gone
+  from the file. v9, `Tools files/Tools/project_tracker_v9.html`.
+- Budget Tracker: the usual lines at $0 instead of a sample couple's budget;
+  the worked-example templates are unchanged. v14,
+  `budget_tracker_app_v14.html`.
+- Idea Bank: areas Work / Personal / Home / Money / Health, general prompts,
+  "e.g. Side project" placeholder. Areas already used on ideas still appear,
+  so an existing bank keeps its own. v5, `Tools files/Tools/ideas-v5/`.
+- Existing data is untouched everywhere; only what a fresh browser starts
+  with changed.
+
+**Client links for everyone approved**
+- Every link now records `owner`. The rules let only that account (or
+  Xavier) change or remove it, so members can make links and nobody can
+  touch another's. Xavier's existing links gain an owner the next time
+  they refresh.
+
+**Rules** — new full ruleset in
+`.claude/skills/add-cloud-sync/assets/firebase-rules.json`: `users` for
+owner + members; `members` (owner writes, each member reads their own);
+`requests` (an account may file its own, with its real email, unless
+declined or already a member); `blocked` (owner only); `shares` with
+owners; `blog` unchanged.
+
+**Outstanding — Xavier publishes the rules**
+- Paste the whole of `firebase-rules.json` into Firebase → Realtime Database
+  → Rules → Publish. Until then nothing changes for Xavier (his own sync
+  never depends on the new sections) and friends see "No access"; the
+  Access page's lists say the rules need the members section.
+- Food for Thought's `blog` section is included, so this also completes
+  that earlier outstanding item if it wasn't done.
+
+**Verified locally (mock database, never the live one)**
+- 25 rule checks over HTTP: requests only for yourself, only with your own
+  email; no self-approval; members can't read the member list or anyone
+  else's data; declined accounts can't re-ask; members can't overwrite,
+  delete or claim another's client link; removed members lose their data
+  and links; Xavier can do all of it.
+- Two devices, end to end: a fresh visitor sees the neutral budget; the
+  brother signs in → "Access requested", request lands, his edit stays
+  local; Xavier approves on the Access page → the brother's open tool goes
+  live with no reload and uploads to his own space only; his Project Phases
+  starts as "My project", makes a client link owned by him that opens
+  read-only elsewhere; his Idea Bank shows neutral areas and goes live;
+  Remove → his tool drops to "Access requested" with the link, local data
+  kept; Decline → "No access" in the tools and "Not approved" on the Access
+  page; Allow again + Approve → back live with his data, no conflict.
+- Xavier's own sync unchanged: edit and push, and a fresh device takes his
+  cloud copy quietly.
+- Desktop and 375px phone, no horizontal scroll; no new console errors.
+- Test harness fixes found on the way: the mock now keeps an already
+  signed-in account on sign-in (like Google), sends the account email so
+  the request rule can be checked, supports multi-path updates, and drops
+  emptied parents like the real database.
+
+---
+
 ## v50 — 2026-09-22
 
 **What's new** · Idea Bank · [tools.html#personal]

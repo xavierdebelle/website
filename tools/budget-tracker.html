@@ -619,39 +619,20 @@ function freqOf(r){ return (r && FREQ[r.freq]) ? r.freq : 'monthly'; }
 function isOnce(r){ return freqOf(r)==='once'; }
 function perMonth(r,field){ return num(r&&r[field]) * FREQ[freqOf(r)].per; }
 
+/* What a fresh browser — a visitor, a new account — starts with: the usual
+   lines at zero, ready to fill in. Nobody's real budget. The templates hold
+   worked examples for anyone who wants numbers to start from. */
 function defaultMonth(){
+  const z=(name)=>({name, planned:0, actual:0, freq:'monthly'});
   return {
-    rvPlanned:5635, rvActual:5035, rvAuto:false,
+    rvPlanned:0, rvActual:0, rvAuto:false,
     sections:{
-      income:[
-        {name:'His paycheck', planned:9200, actual:9200, freq:'monthly'},
-        {name:'My paycheck',  planned:7200, actual:7200, freq:'monthly'},
-      ],
-      expenses:[
-        {name:'Groceries',   planned:1100, actual:1100, freq:'monthly'},
-        {name:'Restaurants', planned:560,  actual:560,  freq:'monthly'},
-        {name:'His gym',     planned:210,  actual:210,  freq:'monthly'},
-        {name:'My gym',      planned:210,  actual:210,  freq:'monthly'},
-      ],
-      bills:[
-        {name:'Rent',           planned:3400, actual:3400, freq:'monthly'},
-        {name:'Utilities',      planned:310,  actual:310,  freq:'monthly'},
-        {name:'Internet',       planned:90,   actual:90,   freq:'monthly'},
-        {name:'His phone',      planned:60,   actual:80,   freq:'monthly'},
-        {name:'My phone',       planned:60,   actual:80,   freq:'monthly'},
-        {name:'Netflix',        planned:30,   actual:30,   freq:'monthly'},
-        {name:'Tactical snacks',planned:40,   actual:40,   freq:'monthly'},
-        {name:'Wedding fund',   planned:1600, actual:1800, freq:'monthly'},
-      ],
-      savings:[
-        {name:'Investments',  planned:4200, actual:4200, freq:'monthly'},
-        {name:'Retirement',   planned:2800, actual:2800, freq:'monthly'},
-        {name:'Wedding fund', planned:1600, actual:1800, freq:'monthly'},
-        {name:'Truck access.',planned:440,  actual:440,  freq:'monthly'},
-      ],
+      income:  [z('Paycheque')],
+      expenses:[z('Groceries'), z('Restaurants'), z('Transport')],
+      bills:   [z('Rent'), z('Utilities'), z('Internet'), z('Phone'), z('Subscriptions')],
+      savings: [z('Emergency fund'), z('Retirement')],
       debt:[],
     },
-    /* Correction 1: assets — money already saved, tracked as balances. */
     assets:[
       {name:'Chequing',  balance:0},
       {name:'Savings',   balance:0},
@@ -2020,8 +2001,12 @@ var SYNC = {
 /* ============================================================
    Cloud sync — local first, optional, live while signed in
 
-   Shared by Project Phases and Budget Tracker. Keep the copies identical:
-   everything tool-specific lives in the SYNC adapter just above.
+   Shared by Project Phases, Budget Tracker and Idea Bank. Keep the copies
+   identical: everything tool-specific lives in the SYNC adapter just above.
+
+   Sync is by invitation: Xavier's account, plus the people he approves on
+   the Access page (members/{uid}). Signing in is how someone asks — their
+   request appears there, and sync starts on its own once it is approved.
 
    Signed out, the tool is purely local and the Firebase SDK is never
    fetched. Signed in as the owner, the cloud copy is watched live, so a
@@ -2043,14 +2028,15 @@ var FIREBASE = {
 };
 var SDK = 'https://www.gstatic.com/firebasejs/10.12.2/';
 
-/* Sync is private to one account. Courtesy check only — the rules enforce
-   it, and would refuse anyone else even if this line were edited away. */
+/* Who may sync. Courtesy checks only — the database rules enforce all of
+   it, and would refuse anyone else even if these lines were edited away. */
 var OWNER = 'jGJdt3h4EeaOL3mYWUHA4yMZsRx2';
+var ACCESS_URL = '../access.html';   // where requests are approved; tools live in tools/
 var META_KEY = SYNC.storageKey + '.meta';   // watermarks live beside the data, not in it
 
 var cloud = {
   on: !!FIREBASE.databaseURL,
-  status: 'signedout',  // signedout | working | synced | conflict | private | error
+  status: 'signedout',  // signedout | working | synced | conflict | pending | private | error
   uid: null,            // set only when the signed-in account owns this sync
   authed: false,
   listening: false,
@@ -2063,7 +2049,9 @@ var cloud = {
   pending: null,        // a conflict waiting on a decision
   print: null,          // the synced data as last seen, to tell edits from re-saves
   outgoing: 0,          // stamp of our own latest write, so its echo is not news
-  unwatch: null
+  unwatch: null,
+  unmember: null,       // live watch on this account's membership
+  asked: false          // an access request was sent this session
 };
 
 function syncEl(id) { return document.getElementById(id); }
@@ -2278,6 +2266,47 @@ function stopWatching() {
   if (cloud.unwatch) { cloud.unwatch(); cloud.unwatch = null; }
 }
 
+/* ---- membership ----
+   Xavier always syncs. Anyone else is watched live at members/{uid}: when
+   he approves them, sync starts without a reload; if he removes them, it
+   stops and the tool carries on locally. Until then signing in files a
+   request (once per session) and the tool says so. */
+function admit(uid) {
+  if (cloud.uid === uid) return;
+  cloud.uid = uid;
+  syncNow();
+  watch();
+}
+function stopMembership() {
+  if (cloud.unmember) { cloud.unmember(); cloud.unmember = null; }
+}
+function askForAccess(user) {
+  if (cloud.asked) { setStatus('pending'); return; }
+  cloud.asked = true;
+  var ref = cloud.fb.f.ref(cloud.fb.db, 'requests/' + user.uid);
+  cloud.fb.f.set(ref, {
+    email: user.email || '', name: (user.displayName || '').slice(0, 120), at: Date.now(), tool: SYNC.doc
+  }).then(function () {
+    if (!cloud.uid) setStatus('pending');
+  }, function () {
+    // refused: this account was declined — say so, and keep working locally
+    if (!cloud.uid) setStatus('private');
+  });
+}
+function checkMembership(user) {
+  if (user.uid === OWNER) { admit(user.uid); return; }
+  setStatus('working');
+  cloud.unmember = cloud.fb.f.onValue(cloud.fb.f.ref(cloud.fb.db, 'members/' + user.uid), function (snap) {
+    if (snap.exists()) { admit(user.uid); return; }
+    if (cloud.uid) { cloud.uid = null; stopWatching(); clearTimeout(cloud.timer); }
+    askForAccess(user);
+  }, function () {
+    cloud.uid = null;
+    stopWatching();
+    setStatus('private');
+  });
+}
+
 /* ---- sign in / out ---- */
 function listen(fb) {
   if (cloud.listening) return;
@@ -2286,12 +2315,11 @@ function listen(fb) {
     cloud.authed = !!user;
     setMeta({ signedIn: !!user });
     stopWatching();
-    if (!user) { cloud.uid = null; setStatus('signedout'); return; }
-    // someone else's Google account: say so plainly, attempt no read at all
-    if (OWNER && user.uid !== OWNER) { cloud.uid = null; setStatus('private'); return; }
-    cloud.uid = user.uid;
-    syncNow();
-    watch();
+    stopMembership();
+    cloud.uid = null;
+    cloud.asked = false;
+    if (!user) { setStatus('signedout'); return; }
+    checkMembership(user);
   });
 }
 
@@ -2357,7 +2385,8 @@ function paintSync() {
     case 'working':  label = 'Syncing…';                   title = 'Talking to the cloud'; break;
     case 'synced':   label = 'Live · ' + hhmm(cloud.at);   title = 'Signed in — changes on your other devices appear here as they happen'; break;
     case 'conflict': label = 'Both changed';               title = 'This device and the cloud disagree'; break;
-    case 'private':  label = 'Sync is private';            title = 'This sync belongs to one account'; break;
+    case 'pending':  label = 'Access requested';           title = 'Waiting for Xavier to approve this account'; break;
+    case 'private':  label = 'No access';                  title = 'This account is not on the invitation list'; break;
     case 'error':    label = 'Sync failed';                title = explain(cloud.msg); break;
     default:         label = 'Sign in to sync';            title = 'Keep this in step across your devices';
   }
@@ -2368,10 +2397,20 @@ function paintSync() {
   out.style.display = cloud.authed ? '' : 'none';
 
   var what = syncEl('sync-what'), kl = syncEl('sync-keep-local'), kc = syncEl('sync-keep-cloud');
-  if (cloud.status === 'private' || cloud.status === 'error') {
-    what.textContent = cloud.status === 'private'
-      ? 'Sync on this site is private to one account. Your ' + SYNC.noun + ' still saves in this browser exactly as before, and nothing is sent anywhere.'
+  if (cloud.status === 'pending' || cloud.status === 'private' || cloud.status === 'error') {
+    what.textContent = cloud.status === 'pending'
+      ? 'Sync is by invitation, and your request is in. Once Xavier approves it, syncing starts here on its own. ' +
+        'Until then everything keeps saving in this browser as usual. '
+      : cloud.status === 'private'
+      ? 'Sync on this site is by invitation, and this account isn\u2019t on the list. ' +
+        'Everything still saves in this browser exactly as before, and nothing is sent anywhere. '
       : explain(cloud.msg);
+    if (cloud.status !== 'error') {
+      var more = document.createElement('a');
+      more.href = ACCESS_URL;
+      more.textContent = 'About access \u2192';
+      what.appendChild(more);
+    }
     kl.style.display = 'none';
     kc.style.display = 'none';
     bar.classList.add('on');

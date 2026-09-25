@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ACCESS — XAVIER DE BELLE</title>
+<meta name="description" content="Sync for Xavier de Belle's tools is by invitation. Request access here.">
+<meta name="robots" content="noindex">
+<link rel="icon" href="assets/logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/style.css?v=51">
+<style>
+  .mast {
+    padding: clamp(40px, 8vw, 96px) var(--gut) clamp(30px, 5vw, 60px);
+    border-bottom: var(--edge) solid var(--paper);
+  }
+  .mast h1 { font-size: clamp(52px, 14vw, 190px); margin: 14px 0 0; }
+  .mast h1 em { font-style: normal; color: var(--volt); }
+  .mast__sub {
+    margin: 28px 0 0;
+    font-size: clamp(16px, 2vw, 22px);
+    line-height: 1.5;
+    max-width: 46ch;
+    font-weight: 500;
+  }
+
+  .panel {
+    padding: clamp(36px, 6vw, 80px) var(--gut);
+    border-bottom: var(--edge) solid var(--paper);
+  }
+  .panel[hidden] { display: none; }
+  .panel--volt { background: var(--volt); color: var(--ink); }
+  .panel--volt .kicker { color: rgba(0,0,0,.6); }
+  .panel--volt .btn { border-color: var(--ink); color: var(--ink); }
+  .panel--volt .btn:hover { background: var(--ink); color: var(--volt); }
+  .panel--volt .btn--solid { background: var(--ink); color: var(--volt); }
+  .panel h2 { font-size: clamp(34px, 6vw, 80px); margin: 10px 0 22px; }
+  .panel p { font-size: clamp(15px, 1.8vw, 19px); line-height: 1.6; max-width: 56ch; margin: 0 0 16px; }
+  .acts { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-top: 26px; }
+  .who {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--dust);
+  }
+  .panel--volt .who { color: rgba(0,0,0,.6); }
+  .linkish {
+    background: none; border: 0; padding: 0; font: inherit; color: inherit;
+    text-decoration: underline; text-underline-offset: 3px; cursor: pointer;
+  }
+
+  .tools { list-style: none; margin: 18px 0 0; padding: 0; border-top: 2px solid var(--ash); max-width: 640px; }
+  .tools li { border-bottom: 2px solid var(--ash); }
+  .tools a {
+    display: flex; justify-content: space-between; gap: 16px;
+    padding: 16px 0; text-decoration: none; font-weight: 900;
+    text-transform: uppercase; letter-spacing: -.01em; font-size: clamp(17px, 2vw, 22px);
+  }
+  .tools a span { font-family: var(--mono); font-weight: 400; font-size: 11px; letter-spacing: .16em; color: var(--dust); align-self: center; }
+  .tools a:hover { color: var(--volt); }
+
+  /* ---------- the owner's desk ---------- */
+  .list { margin: 0 0 clamp(34px, 5vw, 56px); }
+  .list h3 {
+    font-family: var(--mono); font-size: 11px; letter-spacing: .24em; text-transform: uppercase;
+    color: var(--volt); margin: 0 0 12px; font-weight: 400;
+  }
+  .row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px 20px;
+    align-items: center;
+    padding: 16px 0;
+    border-top: 2px solid var(--ash);
+  }
+  .list .row:last-child { border-bottom: 2px solid var(--ash); }
+  .row b { display: block; font-size: 18px; letter-spacing: -.01em; overflow-wrap: anywhere; }
+  .row small {
+    display: block; margin-top: 4px;
+    font-family: var(--mono); font-size: 11px; letter-spacing: .06em; color: var(--dust); overflow-wrap: anywhere;
+  }
+  .row .acts { margin: 0; gap: 8px; }
+  .row .btn { padding: 10px 14px; font-size: 11px; }
+  .row .btn[disabled] { opacity: .45; cursor: default; transform: none; }
+  .empty { font-family: var(--mono); font-size: 12px; letter-spacing: .06em; color: var(--dust); padding: 14px 0; border-top: 2px solid var(--ash); border-bottom: 2px solid var(--ash); }
+  .msg { font-family: var(--mono); font-size: 12px; line-height: 1.6; letter-spacing: .04em; min-height: 1.6em; margin: 0 0 18px; }
+  .msg.bad { color: var(--volt); font-weight: 700; }
+
+  @media (max-width: 560px) {
+    .row { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <a class="topbar__mark" href="index.html">
+    <img src="assets/logo.svg" alt="">
+    Xavier de Belle
+  </a>
+  <nav class="topbar__nav" aria-label="Main">
+    <a href="index.html">Map</a>
+    <a href="work.html">Work</a>
+    <a href="tools.html">Tools</a>
+    <a href="food-for-thought.html">Food for Thought</a>
+    <a href="changelog.html">What&rsquo;s New</a>
+    <a href="https://www.instagram.com/xavierdebelle/" target="_blank" rel="noopener">Instagram &#8599;</a>
+  </nav>
+</header>
+
+<section class="mast">
+  <p class="kicker">Tools &mdash; Sync</p>
+  <h1 class="display">Get<br><em>Access</em></h1>
+  <p class="mast__sub">
+    Every tool here works in your browser, no account needed. Sync &mdash; your
+    data on every device, changes appearing live &mdash; is by invitation.
+  </p>
+</section>
+
+<main id="main">
+
+  <!-- signed out -->
+  <section class="panel" id="p-out" hidden>
+    <p class="kicker">How it works</p>
+    <h2 class="display">Ask once</h2>
+    <p>Sign in with Google and your request goes to Xavier. Once he approves it, the
+      <strong>Sync</strong> button in Project Phases, Budget Tracker and Idea Bank keeps
+      your work in step between your phone and computer.</p>
+    <p>Your data is yours: each account only ever sees its own. Xavier runs the
+      database, so as its administrator he could technically open it &mdash; he won&rsquo;t,
+      but you should know.</p>
+    <div class="acts">
+      <button class="btn btn--solid" type="button" data-act="signin">Sign in with Google</button>
+    </div>
+  </section>
+
+  <!-- a signed-in visitor: pending, approved or declined -->
+  <section class="panel panel--volt" id="p-me" hidden>
+    <p class="kicker" id="me-kicker"></p>
+    <h2 class="display" id="me-title"></h2>
+    <p id="me-text"></p>
+    <ul class="tools" id="me-tools" hidden>
+      <li><a href="tools/project-tracker.html">Project Phases <span>Open &#8599;</span></a></li>
+      <li><a href="tools/budget-tracker.html">Budget Tracker <span>Open &#8599;</span></a></li>
+      <li><a href="tools/idea-bank.html">Idea Bank <span>Open &#8599;</span></a></li>
+    </ul>
+    <div class="acts">
+      <span class="who" id="me-who"></span>
+      <button class="linkish" type="button" data-act="signout">Sign out</button>
+    </div>
+  </section>
+
+  <!-- Xavier -->
+  <section class="panel" id="p-admin" hidden aria-label="Manage access">
+    <div class="acts" style="margin:0 0 26px">
+      <span class="who" id="admin-who"></span>
+      <button class="linkish" type="button" data-act="signout">Sign out</button>
+    </div>
+    <p class="msg" id="admin-msg" role="status" aria-live="polite"></p>
+    <div class="list">
+      <h3 id="h-req">Waiting for you</h3>
+      <div id="l-req"></div>
+    </div>
+    <div class="list">
+      <h3 id="h-mem">Members</h3>
+      <div id="l-mem"></div>
+    </div>
+    <div class="list">
+      <h3 id="h-blk">Declined</h3>
+      <div id="l-blk"></div>
+    </div>
+    <p style="font-size:14px;color:var(--dust);max-width:60ch">
+      Removing someone stops their sync straight away; their tools carry on in their
+      browser, and whatever they synced stays stored under their account in case you
+      let them back. Declined accounts can&rsquo;t ask again until you allow them.
+    </p>
+  </section>
+
+  <section class="panel" id="p-wait">
+    <p class="kicker">Loading</p>
+  </section>
+
+</main>
+
+<footer class="foot">
+  <div>
+    <p class="kicker" style="margin-bottom:14px">Xavier de Belle &mdash; Montreal</p>
+    <div class="foot__links">
+      <a href="index.html">The Map</a>
+      <a href="work.html">Work</a>
+      <a href="tools.html">Tools</a>
+      <a href="food-for-thought.html">Food for Thought</a>
+      <a href="changelog.html">What&rsquo;s New</a>
+      <a href="mailto:xavier@debellephotography.com">Email</a>
+    </div>
+  </div>
+  <p class="foot__sig">&copy; <span id="yr"></span> Xavier de Belle &middot; v51</p>
+</footer>
+
+<script>document.getElementById('yr').textContent = new Date().getFullYear();</script>
+
+<script>
+/* ============================================================
+   ACCESS
+   Sync is by invitation. A signed-in account asks by writing
+   requests/{uid}; Xavier approves (members/{uid}) or declines
+   (blocked/{uid}) here. The database rules enforce every part of this
+   — who may ask, who may approve, who may sync — so the page only
+   decides what to show.
+   ============================================================ */
+(function () {
+  var FIREBASE = {
+    apiKey:      'AIzaSyCu0CA6eLWIkhhl-Z7jr_dDisuXDt1dKco',
+    authDomain:  'xdb-tools.firebaseapp.com',
+    databaseURL: 'https://xdb-tools-default-rtdb.firebaseio.com',
+    projectId:   'xdb-tools',
+    appId:       '1:6009567091:web:f7ee8c43ebe1bd25fcb706'
+  };
+  var SDK = 'https://www.gstatic.com/firebasejs/10.12.2/';
+  var OWNER = 'jGJdt3h4EeaOL3mYWUHA4yMZsRx2';
+
+  var fb = null;
+  var offs = [];          // live listeners to drop on sign-out
+  var data = { requests: {}, members: {}, blocked: {} };
+  var TOOLS = { 'project-tracker': 'Project Phases', 'budget-tracker': 'Budget Tracker', 'idea-bank': 'Idea Bank', 'access': 'this page' };
+
+  function $(id) { return document.getElementById(id); }
+  function show(id) {
+    ['p-out', 'p-me', 'p-admin', 'p-wait'].forEach(function (p) { $(p).hidden = p !== id; });
+  }
+  var DATE = new Intl.DateTimeFormat('en-CA', { year: 'numeric', month: 'short', day: 'numeric' });
+  function when(ms) { return ms ? DATE.format(new Date(ms)) : ''; }
+  function withTimeout(p, ms) {
+    return Promise.race([p, new Promise(function (_, no) { setTimeout(function () { no({ code: 'timeout' }); }, ms); })]);
+  }
+
+  function load() {
+    return Promise.all([
+      import(SDK + 'firebase-app.js'), import(SDK + 'firebase-auth.js'), import(SDK + 'firebase-database.js')
+    ]).then(function (m) {
+      var app = m[0].initializeApp(FIREBASE);
+      fb = { a: m[1], auth: m[1].getAuth(app), f: m[2], db: m[2].getDatabase(app) };
+      fb.a.onAuthStateChanged(fb.auth, onUser);
+    });
+  }
+  function ref(path) { return fb.f.ref(fb.db, path); }
+  function drop() { offs.forEach(function (off) { off(); }); offs = []; }
+
+  function signIn() {
+    var provider = new fb.a.GoogleAuthProvider();
+    fb.a.signInWithPopup(fb.auth, provider).catch(function (err) {
+      if (err && /popup-blocked|operation-not-supported/i.test(err.code || '')) return fb.a.signInWithRedirect(fb.auth, provider);
+      if (err && err.code !== 'auth/popup-closed-by-user') alert('Sign-in didn’t work' + (err.code ? ' (' + err.code + ')' : '') + '.');
+    });
+  }
+
+  function onUser(user) {
+    drop();
+    if (!user) { show('p-out'); return; }
+    if (user.uid === OWNER) { admin(user); return; }
+    visitor(user);
+  }
+
+  /* ---- a friend ---- */
+  function me(kicker, title, text, tools) {
+    $('me-kicker').textContent = kicker;
+    $('me-title').textContent = title;
+    $('me-text').textContent = text;
+    $('me-tools').hidden = !tools;
+    show('p-me');
+  }
+  function visitor(user) {
+    $('me-who').textContent = user.email || '';
+    show('p-wait');
+    var asked = false;
+    offs.push(fb.f.onValue(ref('members/' + user.uid), function (snap) {
+      if (snap.exists()) {
+        me('Approved', 'You’re in', 'Open any of these and press Sign in to sync with this same Google account. Your data follows you between devices from then on.', true);
+        return;
+      }
+      if (asked) return;
+      asked = true;
+      withTimeout(fb.f.set(ref('requests/' + user.uid), {
+        email: user.email || '', name: (user.displayName || '').slice(0, 120), at: Date.now(), tool: 'access'
+      }), 12000).then(function () {
+        me('Request sent', 'Waiting', 'Xavier has your request. Once he approves it, sync starts by itself in any tool you’re signed in to — no need to come back here. Meanwhile every tool works as usual in your browser.', false);
+      }, function (err) {
+        if (err && err.code === 'timeout') {
+          me('No connection', 'Try again', 'The request couldn’t be sent. Check your connection and reload this page.', false);
+        } else {
+          me('Not approved', 'No access', 'This account isn’t on the list for sync. The tools still work fully in your browser without it.', false);
+        }
+      });
+    }, function () {
+      me('Not available', 'No access', 'Access requests aren’t open right now. The tools still work fully in your browser.', false);
+    }));
+  }
+
+  /* ---- Xavier ---- */
+  function admin(user) {
+    $('admin-who').textContent = user.email || 'Signed in';
+    show('p-admin');
+    ['requests', 'members', 'blocked'].forEach(function (k) {
+      offs.push(fb.f.onValue(ref(k), function (snap) {
+        data[k] = snap.val() || {};
+        paint();
+      }, function (err) { say('Couldn’t read ' + k + ' — ' + explain(err), true); }));
+    });
+  }
+
+  function say(text, bad) {
+    $('admin-msg').textContent = text || '';
+    $('admin-msg').className = 'msg' + (bad ? ' bad' : '');
+  }
+  function explain(err) {
+    var code = String((err && (err.code || err.message)) || '');
+    if (/permission/i.test(code)) return 'the database refused it. The Firebase rules need the members section.';
+    if (/timeout|network|unavailable/i.test(code)) return 'no connection. Try again.';
+    return 'it failed' + (code ? ' (' + code + ')' : '') + '.';
+  }
+
+  function person(uid, rec) {
+    rec = rec || {};
+    return { uid: uid, email: String(rec.email || ''), name: String(rec.name || ''), at: +rec.at || 0, tool: String(rec.tool || '') };
+  }
+  function sorted(obj) {
+    return Object.keys(obj || {}).map(function (k) { return person(k, obj[k]); })
+      .sort(function (a, b) { return b.at - a.at; });
+  }
+
+  function row(p, detail, buttons) {
+    var r = document.createElement('div');
+    r.className = 'row';
+    var who = document.createElement('div');
+    var b = document.createElement('b');
+    b.textContent = p.name || p.email || p.uid;
+    var s = document.createElement('small');
+    s.textContent = [p.name ? p.email : '', detail].filter(Boolean).join(' · ');
+    who.appendChild(b); who.appendChild(s);
+    var acts = document.createElement('div');
+    acts.className = 'acts';
+    buttons.forEach(function (x) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'btn' + (x.solid ? ' btn--solid' : '');
+      btn.textContent = x.label;
+      btn.dataset.act = x.act;
+      btn.dataset.uid = p.uid;
+      acts.appendChild(btn);
+    });
+    r.appendChild(who); r.appendChild(acts);
+    return r;
+  }
+  function fill(id, head, label, people, make) {
+    var box = $(id);
+    box.textContent = '';
+    $(head).textContent = label + (people.length ? ' — ' + people.length : '');
+    if (!people.length) {
+      var e = document.createElement('div');
+      e.className = 'empty';
+      e.textContent = id === 'l-req' ? 'No one waiting.' : 'None.';
+      box.appendChild(e);
+      return;
+    }
+    people.forEach(function (p) { box.appendChild(make(p)); });
+  }
+  function paint() {
+    fill('l-req', 'h-req', 'Waiting for you', sorted(data.requests), function (p) {
+      return row(p, 'asked ' + when(p.at) + (TOOLS[p.tool] ? ' from ' + TOOLS[p.tool] : ''),
+        [{ label: 'Approve', act: 'approve', solid: true }, { label: 'Decline', act: 'decline' }]);
+    });
+    fill('l-mem', 'h-mem', 'Members', sorted(data.members), function (p) {
+      return row(p, 'since ' + when(p.at), [{ label: 'Remove', act: 'remove' }]);
+    });
+    fill('l-blk', 'h-blk', 'Declined', sorted(data.blocked), function (p) {
+      return row(p, 'declined ' + when(p.at), [{ label: 'Allow again', act: 'unblock' }]);
+    });
+  }
+
+  /* Approve and decline each move a person in one atomic write, so they can
+     never be half approved. */
+  function act(kind, uid, btn) {
+    var src = kind === 'unblock' ? data.blocked : kind === 'remove' ? data.members : data.requests;
+    var p = person(uid, src[uid]);
+    var label = p.name || p.email || 'this account';
+    var change = {};
+    var rec = { email: p.email, name: p.name, at: Date.now() };
+    if (kind === 'approve') { change['members/' + uid] = rec; change['requests/' + uid] = null; }
+    if (kind === 'decline') { change['blocked/' + uid] = rec; change['requests/' + uid] = null; }
+    if (kind === 'remove') {
+      if (!confirm('Remove ' + label + '? Their sync stops straight away; their tools keep working in their browser.')) return;
+      change['members/' + uid] = null;
+    }
+    if (kind === 'unblock') change['blocked/' + uid] = null;
+    btn.disabled = true;
+    withTimeout(fb.f.update(ref('/'), change), 12000).then(function () {
+      say({ approve: 'Approved ' + label + '. Their sync starts on its own.',
+            decline: 'Declined ' + label + '.',
+            remove: 'Removed ' + label + '.',
+            unblock: label + ' can ask again.' }[kind]);
+    }, function (err) {
+      btn.disabled = false;
+      say('That didn’t work — ' + explain(err), true);
+    });
+  }
+
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-act]');
+    if (!b || !fb) return;
+    var a = b.dataset.act;
+    if (a === 'signin') signIn();
+    else if (a === 'signout') fb.a.signOut(fb.auth);
+    else act(a, b.dataset.uid, b);
+  });
+
+  load().catch(function () {
+    $('p-wait').innerHTML = '<p class="kicker">Couldn’t load</p><p>Check your connection and reload.</p>';
+  });
+})();
+</script>
+
+</body>
+</html>

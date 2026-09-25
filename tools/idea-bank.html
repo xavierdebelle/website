@@ -84,7 +84,8 @@
   <div style="padding: 20px var(--gut) 0">
     <div role="status" style="max-width: 1240px; margin: 0 auto; background: var(--volt); color: var(--ink); display: flex; flex-wrap: wrap; align-items: center; gap: 14px 22px; padding: 18px clamp(16px,2.5vw,26px)">
       <span style="width: 12px; height: 12px; background: var(--ink); flex: none"></span>
-      <span style="flex: 1 1 320px; min-width: 0; font-family: var(--mono); font-size: 11px; letter-spacing: .06em; line-height: 1.7">{{ syncBarText }}</span>
+      <span style="flex: 1 1 320px; min-width: 0; font-family: var(--mono); font-size: 11px; letter-spacing: .06em; line-height: 1.7">{{ syncBarText }}
+        <sc-if value="{{ syncBarLink }}" hint-placeholder-val="{{ false }}"><a href="{{ syncBarHref }}" style="color: var(--ink); font-weight: 700">{{ syncBarLinkText }}</a></sc-if></span>
       <sc-if value="{{ syncShowKeep }}" hint-placeholder-val="{{ false }}">
         <span style="display: flex; flex-wrap: wrap; gap: 10px">
           <button type="button" onClick="{{ keepLocal }}" style="border: 3px solid var(--ink); background: var(--ink); color: var(--volt); font-family: var(--stack); font-weight: 900; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; padding: 11px 16px; cursor: pointer" style-hover="background: var(--paper); border-color: var(--paper); color: var(--ink)">Keep this device</button>
@@ -509,7 +510,7 @@
       <div style="padding: 22px; display: flex; flex-direction: column; gap: 10px">
         <label style="display: flex; flex-direction: column; gap: 7px">
           <span style="font-family: var(--mono); font-size: 10px; letter-spacing: .22em; text-transform: uppercase; color: #6a6a6a">Name</span>
-          <input type="text" value="{{ pdName }}" onChange="{{ onPdName }}" onKeyDown="{{ onPdKey }}" maxlength="60" placeholder="e.g. 333 Photo" autoFocus="{{ true }}" style="border: 3px solid var(--ink); padding: 11px 13px; font-family: var(--stack); font-size: 15px; font-weight: 700; color: var(--ink); background: #fff; border-radius: 0; outline: none">
+          <input type="text" value="{{ pdName }}" onChange="{{ onPdName }}" onKeyDown="{{ onPdKey }}" maxlength="60" placeholder="e.g. Side project" autoFocus="{{ true }}" style="border: 3px solid var(--ink); padding: 11px 13px; font-family: var(--stack); font-size: 15px; font-weight: 700; color: var(--ink); background: #fff; border-radius: 0; outline: none">
         </label>
         <span style="font-family: var(--mono); font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink); font-weight: 700; min-height: 1.4em">{{ pdErr }}</span>
         <div style="display: flex; gap: 10px; justify-content: flex-end">
@@ -538,12 +539,14 @@ const INK = 'var(--ink)', PAPER = 'var(--paper)', VOLT = 'var(--volt)', DUST = '
 const GREY = '#6a6a6a', HAIR = '#dcdcdc';
 const KEY = 'ideabank.v1';
 const STAGES = { inbox: 'In the pile', ranked: 'Prioritised', next: 'Next up', doing: 'In progress', done: 'Shipped', parked: 'Parked' };
-const DEFAULT_AREAS = ['De Belle Photography', '333 Photo', 'Wedding Experts', 'Marketing', 'Operations'];
+// Neutral for everyone: an area already used on an idea is suggested too,
+// so a bank that uses its own areas keeps seeing them.
+const DEFAULT_AREAS = ['Work', 'Personal', 'Home', 'Money', 'Health'];
 const PROMPTS = [
-  "What did a client ask for that we don't sell yet?",
+  "What do people keep asking you for?",
   "What took hours this month that shouldn't have?",
-  'What do we do better than anyone, that nobody knows about?',
-  'What would we build if a competitor moved in tomorrow?'
+  "What have you been meaning to try for ages?",
+  "What would make next month easier than this one?"
 ];
 
 let _n = 0;
@@ -1062,6 +1065,7 @@ class Component extends DCLogic {
       syncClick: () => this.sync && this.sync.click(),
       syncAuthed: !!(this.live && sy && sy.authed), signOut: () => this.sync && this.sync.signOut(),
       syncBarOn: !!(this.live && sy && sy.barOn), syncBarText: sy ? sy.barText : '', syncShowKeep: !!(sy && sy.showKeep),
+      syncBarLink: !!(sy && sy.link), syncBarHref: sy && sy.link ? sy.link.href : '', syncBarLinkText: sy && sy.link ? sy.link.text : '',
       keepLocal: () => this.sync && this.sync.keepLocal(), keepCloud: () => this.sync && this.sync.keepCloud(),
       navLinks: [{ label: 'The Map', href: '../index.html' }, { label: 'Work', href: '../work.html' }, { label: 'Tools', href: '../tools.html' }, { label: 'Ideas', href: '#', current: true }],
       footLinks: [{ label: 'The Map', href: '../index.html' }, { label: 'Tools', href: '../tools.html' }, { label: 'Project Tracker', href: 'project-tracker.html' }],
