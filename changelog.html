@@ -6,8 +6,9 @@
 <title>WHAT'S NEW — XAVIER DE BELLE</title>
 <meta name="description" content="What changed on this site and in the tools — new builds, rebuilds and fixes, newest first.">
 <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
-<link rel="stylesheet" href="assets/style.css?v=55">
+<link rel="stylesheet" href="assets/style.css?v=56">
 <script src="assets/account.js"></script>
+<script src="assets/site-index.js"></script>
 <style>
   /* ---------- masthead ---------- */
 
@@ -126,14 +127,9 @@
     Xavier de Belle
   </a>
   <nav class="topbar__nav" aria-label="Main">
-    <a href="index.html">Map</a>
-    <a href="work.html">Work</a>
-    <a href="tools.html">Tools</a>
-    <a href="food-for-thought.html">Food for Thought</a>
-    <a href="changelog.html" aria-current="page">What&rsquo;s New</a>
-    <a href="https://www.instagram.com/xavierdebelle/" target="_blank" rel="noopener">Instagram &#8599;</a>
+    <button class="topbar__btn" type="button" data-site-index aria-haspopup="dialog">Index</button>
+    <span class="topbar__account" data-xdb-account></span>
   </nav>
-  <span class="topbar__account" data-xdb-account></span>
 </header>
 
 <section class="mast">
@@ -148,6 +144,15 @@
 <main class="log" id="log">
 
 <!-- LOG:START — generated from CHANGELOG.md, do not edit by hand -->
+
+  <article class="entry">
+    <p class="entry__when"><b>27 Sep 2026</b>The Site</p>
+    <div>
+      <h2>Two Buttons,<br>That's It</h2>
+      <p>Every page's top bar is down to two buttons: <strong>Index</strong>, which opens the whole site as one list, and <strong>Sign in</strong> (your account, once you're signed in). The home page drops its shortcuts too — the map is the way in.</p>
+      <a class="go" href="index.html">Open the map &rarr;</a>
+    </div>
+  </article>
 
   <article class="entry">
     <p class="entry__when"><b>27 Sep 2026</b>Accounts</p>
@@ -527,7 +532,7 @@
       <a href="mailto:xavier@debellephotography.com">Email</a>
     </div>
   </div>
-  <p class="foot__sig">&copy; <span id="yr"></span> Xavier de Belle &middot; v55</p>
+  <p class="foot__sig">&copy; <span id="yr"></span> Xavier de Belle &middot; v56</p>
 </footer>
 
 <script>document.getElementById('yr').textContent = new Date().getFullYear();</script>

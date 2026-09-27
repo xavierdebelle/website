@@ -6,8 +6,9 @@
 <title>FOOD FOR THOUGHT — XAVIER DE BELLE</title>
 <meta name="description" content="Food for Thought — short writing by Xavier de Belle. Things worth chewing on.">
 <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
-<link rel="stylesheet" href="assets/style.css?v=55">
+<link rel="stylesheet" href="assets/style.css?v=56">
 <script src="assets/account.js"></script>
+<script src="assets/site-index.js"></script>
 <style>
   /* ---------- masthead ---------- */
 
@@ -225,14 +226,9 @@
     Xavier de Belle
   </a>
   <nav class="topbar__nav" aria-label="Main">
-    <a href="index.html">Map</a>
-    <a href="work.html">Work</a>
-    <a href="tools.html">Tools</a>
-    <a href="food-for-thought.html" aria-current="page">Food for Thought</a>
-    <a href="changelog.html">What&rsquo;s New</a>
-    <a href="https://www.instagram.com/xavierdebelle/" target="_blank" rel="noopener">Instagram &#8599;</a>
+    <button class="topbar__btn" type="button" data-site-index aria-haspopup="dialog">Index</button>
+    <span class="topbar__account" data-xdb-account></span>
   </nav>
-  <span class="topbar__account" data-xdb-account></span>
 </header>
 
 <section class="mast">
@@ -292,7 +288,7 @@
       <button class="linkish" type="button" id="b-author" data-act="author">Write</button>
     </div>
   </div>
-  <p class="foot__sig">&copy; <span id="yr"></span> Xavier de Belle &middot; v55</p>
+  <p class="foot__sig">&copy; <span id="yr"></span> Xavier de Belle &middot; v56</p>
 </footer>
 
 <script>document.getElementById('yr').textContent = new Date().getFullYear();</script>

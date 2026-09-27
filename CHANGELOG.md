@@ -5,6 +5,37 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v56 — 2026-09-27
+
+**What's new** · The Site · [index.html]
+### Two Buttons,<br>That's It
+Every page's top bar is down to two buttons: **Index**, which opens the
+whole site as one list, and **Sign in** (your account, once you're signed
+in). The home page drops its shortcuts too — the map is the way in.
+
+**Top bars** (work, tools, food-for-thought, changelog, access, soon, 404)
+- The link row is replaced by **Index** + the account button; the
+  wordmark stays, linking home. One row on phones too (header 61px, was
+  ~135px). Signed in on a phone, the account button shows avatar and dot
+  only, so a long status word never reaches the name.
+- **Index** (new `assets/site-index.js`) opens the same list as the map's
+  own Index button, over the page you're on, with **The Map** and **Close**
+  (Esc closes). The list is read from `index.html`, so there is one list to
+  maintain; a short fallback list shows if it can't be read.
+- The index list gains **Sync & Access**.
+
+**Home page**
+- Desktop shortcut buttons removed (Tools, Work, What's New, Instagram);
+  only the account button remains in that corner. Phones unchanged.
+
+**Verified locally**
+- Desktop and 375/360px: two buttons, one row, no sideways scroll; Index
+  opens with all four columns, root-relative links, Map and Close; a
+  signed-in "Not approved" button on a 360px phone stays clear of the
+  name; home page shows only the account button. Footers unchanged.
+
+---
+
 ## v55 — 2026-09-27
 
 **What's new** · Accounts · [access.html]
