@@ -88,8 +88,8 @@
         <sc-if value="{{ syncBarLink }}" hint-placeholder-val="{{ false }}"><a href="{{ syncBarHref }}" style="color: var(--ink); font-weight: 700">{{ syncBarLinkText }}</a></sc-if></span>
       <sc-if value="{{ syncShowKeep }}" hint-placeholder-val="{{ false }}">
         <span style="display: flex; flex-wrap: wrap; gap: 10px">
-          <button type="button" onClick="{{ keepLocal }}" style="border: 3px solid var(--ink); background: var(--ink); color: var(--volt); font-family: var(--stack); font-weight: 900; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; padding: 11px 16px; cursor: pointer" style-hover="background: var(--paper); border-color: var(--paper); color: var(--ink)">Keep this device</button>
-          <button type="button" onClick="{{ keepCloud }}" style="border: 3px solid var(--ink); background: transparent; color: var(--ink); font-family: var(--stack); font-weight: 900; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; padding: 11px 16px; cursor: pointer" style-hover="background: var(--ink); color: var(--volt)">Keep cloud copy</button>
+          <button type="button" onClick="{{ keepLocal }}" style="border: 3px solid var(--ink); background: var(--ink); color: var(--volt); font-family: var(--stack); font-weight: 900; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; padding: 11px 16px; cursor: pointer" style-hover="background: var(--paper); border-color: var(--paper); color: var(--ink)">{{ syncKeepLabel }}</button>
+          <button type="button" onClick="{{ keepCloud }}" style="border: 3px solid var(--ink); background: transparent; color: var(--ink); font-family: var(--stack); font-weight: 900; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; padding: 11px 16px; cursor: pointer" style-hover="background: var(--ink); color: var(--volt)">{{ syncCloudLabel }}</button>
         </span>
       </sc-if>
     </div>
@@ -1065,6 +1065,7 @@ class Component extends DCLogic {
       syncClick: () => this.sync && this.sync.click(),
       syncAuthed: !!(this.live && sy && sy.authed), signOut: () => this.sync && this.sync.signOut(),
       syncBarOn: !!(this.live && sy && sy.barOn), syncBarText: sy ? sy.barText : '', syncShowKeep: !!(sy && sy.showKeep),
+      syncKeepLabel: (sy && sy.keepLabel) || 'Keep this device', syncCloudLabel: (sy && sy.cloudLabel) || 'Keep cloud copy',
       syncBarLink: !!(sy && sy.link), syncBarHref: sy && sy.link ? sy.link.href : '', syncBarLinkText: sy && sy.link ? sy.link.text : '',
       keepLocal: () => this.sync && this.sync.keepLocal(), keepCloud: () => this.sync && this.sync.keepCloud(),
       navLinks: [{ label: 'The Map', href: '../index.html' }, { label: 'Work', href: '../work.html' }, { label: 'Tools', href: '../tools.html' }, { label: 'Ideas', href: '#', current: true }],

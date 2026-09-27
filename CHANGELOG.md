@@ -5,6 +5,58 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v53 — 2026-09-27
+
+**What's new** · Tools · [tools.html#personal]
+### Clearer Choices,<br>With an Undo
+When two versions of your work meet — a browser with its own data signing
+in for the first time, or two devices that both changed things before they
+could sync — Project Phases, Budget Tracker and Idea Bank now say so in
+plain words: what each side holds, when it was saved, and which is newer.
+
+Whichever version you don't pick is kept on that device for 7 days, with
+a Restore button. Restoring can itself be undone.
+
+**The choice** (shared sync code — all three tools)
+- First sign-in on a browser with its own data: "This browser already has
+  its own work (2 projects, 9 phases, 132 time entries). Your account has …,
+  last saved from your iPhone today at 13:57. Which should this browser
+  use?" — **Keep this browser's** / **Use my account's**.
+- Two devices changed things apart: "This Mac, today at 13:59: … Your
+  iPhone, today at 13:57: … (newer)." — **Keep this Mac's** / **Use the
+  iPhone's**. Two devices with the same name read "your other Mac".
+- The status button says **Pick a version** (was "Both changed").
+- Summaries: Project Phases counts projects, phases and time entries;
+  Budget Tracker months and the latest month; Idea Bank projects and ideas.
+
+**Backup and undo**
+- The version not chosen is saved on this device for 7 days
+  (`<storage key>.backup`). The bar says what was kept and offers
+  **Restore it** / **OK**; after a restore, **Switch back** / **OK**.
+  Restoring makes that version the newest edit and syncs it; the version it
+  replaced becomes the backup. The note stays until OK; older than 7 days,
+  it's gone.
+- Sources: `project_tracker_v11.html`, `budget_tracker_app_v15.html`,
+  `ideas-v6/` (Idea Bank's buttons now take their labels from the sync code).
+  Shared core still byte-identical across the classic tools and the skill.
+
+**Verified locally (mock database, never the live one)**
+- Project Phases: first-sign-in wording; Use my account's → backup →
+  Restore → Switch back → OK; two same-named devices, one offline-edited
+  while the other changed → both-changed wording with times and "(newer)";
+  Keep this Mac's → cloud takes it, the other device follows live with no
+  prompt; Restore brings the other version back everywhere.
+- Budget Tracker: first sign-in, Use my account's, Restore (synced).
+- Idea Bank: wording and relabelled buttons render in the redesigned bar;
+  Use my account's → Restore → Switch back → OK.
+- A backup older than 7 days no longer shows.
+- Found and fixed during testing: the status still read "Both changed";
+  identical counts on both sides were unhelpful (added phases, and a time
+  for this device's side); "already has budget of its own" → "its own
+  budget".
+
+---
+
 ## v52 — 2026-09-27
 
 **What's new** · Project Phases · [tools.html#personal]

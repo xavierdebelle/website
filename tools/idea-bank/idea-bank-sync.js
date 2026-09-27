@@ -227,8 +227,79 @@
     }
     function signOut() { if (cloud.fb) cloud.fb.a.signOut(cloud.fb.auth); }
     function click() { if (!cloud.uid) signIn(); else syncNow(true); }
+    /* The choice in plain words, and a week-long backup of the version not
+       chosen — same behaviour as the classic core. */
+    var BACKUP_KEY = SYNC.storageKey + '.backup', BACKUP_DAYS = 7;
+    function summary(d) {
+      var s = '';
+      try { s = String(SYNC.describe(d) || ''); } catch (e) {}
+      return s.replace(/^It holds /, '').replace(/\.$/, '') || 'a copy';
+    }
+    function whenLabel(ms) {
+      if (!ms) return '';
+      var d = new Date(ms), now = new Date();
+      var day = d.toDateString() === now.toDateString() ? 'today'
+        : new Date(now.getTime() - 864e5).toDateString() === d.toDateString() ? 'yesterday'
+        : d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+      return day + ' at ' + hhmm(ms);
+    }
+    function otherDevice(remote) {
+      var other = (remote && remote.device) || '';
+      if (!other) return 'your other device';
+      return other === deviceName() ? 'your other ' + other : 'your ' + other;
+    }
+    function choiceWords(remote) {
+      var here = deviceName(), m = meta();
+      var mine = summary(JSON.parse(syncPrint())), theirs = summary(remote.data);
+      var remoteAt = +remote.updatedAt || 0;
+      var other = otherDevice(remote), otherShort = other.replace(/^your /, 'the ');
+      if (!m.lastSyncedAt) {
+        return {
+          text: 'This browser already has its own ' + SYNC.noun + ' (' + mine + '). Your account has ' + theirs +
+            ', last saved from ' + other + ' ' + whenLabel(remoteAt) + '. Which should this browser use? ' +
+            'Whichever you don\u2019t pick is kept here as a backup for ' + BACKUP_DAYS + ' days.',
+          local: 'Keep this browser\u2019s', cloud: 'Use my account\u2019s'
+        };
+      }
+      var localNewer = m.updatedAt > remoteAt;
+      return {
+        text: 'This ' + here + ' and ' + other + ' both made changes before they could sync. ' +
+          'This ' + here + (m.updatedAt > 1e12 ? ', ' + whenLabel(m.updatedAt) : '') + ': ' + mine + (localNewer ? ' (newer)' : '') + '. ' +
+          other.charAt(0).toUpperCase() + other.slice(1) + ', ' + whenLabel(remoteAt) + ': ' + theirs + (localNewer ? '' : ' (newer)') + '. ' +
+          'Which version do you want? The other is kept here as a backup for ' + BACKUP_DAYS + ' days.',
+        local: 'Keep this ' + here + '\u2019s', cloud: 'Use ' + otherShort + '\u2019s'
+      };
+    }
+    function readBackup() {
+      try {
+        var b = JSON.parse(localStorage.getItem(BACKUP_KEY) || 'null');
+        if (b && b.data && Date.now() - (+b.at || 0) < BACKUP_DAYS * 864e5) return b;
+      } catch (e) {}
+      return null;
+    }
+    function writeBackup(b) { try { localStorage.setItem(BACKUP_KEY, JSON.stringify(b)); } catch (e) {} }
+    function keepBackup(data, label, restored) {
+      writeBackup({ data: data, at: Date.now(), label: label, summary: summary(data), shown: true, restored: !!restored });
+    }
+    function dismissBackup() {
+      var b = readBackup();
+      if (b) { b.shown = false; writeBackup(b); }
+      paint();
+    }
+    function restoreBackup() {
+      var b = readBackup(); if (!b) return;
+      var current = JSON.parse(syncPrint());
+      if (!SYNC.apply(b.data, { data: b.data, updatedAt: Date.now(), device: deviceName() })) return;
+      keepBackup(current, 'the version you just replaced', true);
+      cloud.print = syncPrint();
+      setMeta({ updatedAt: nextStamp() });
+      if (cloud.uid) syncNow(true); else paint();
+    }
+
     function keepLocal() {
-      var remote = cloud.pending; if (!remote) return;
+      var remote = cloud.pending;
+      if (!remote) { restoreBackup(); return; }
+      keepBackup(remote.data, 'the version from ' + otherDevice(remote).replace(/^your /, 'the '));
       cloud.pending = null;
       var seen = +remote.updatedAt || 0;
       setMeta({ lastSyncedAt: seen, updatedAt: Math.max(meta().updatedAt, seen + 1) });
@@ -236,7 +307,9 @@
       syncNow(true);
     }
     function keepCloud() {
-      var remote = cloud.pending; if (!remote) return;
+      var remote = cloud.pending;
+      if (!remote) { dismissBackup(); return; }
+      keepBackup(JSON.parse(syncPrint()), 'this ' + deviceName() + '\u2019s version');
       cloud.pending = null;
       adopt(remote);
       cloud.at = Date.now();
@@ -256,7 +329,7 @@
       switch (cloud.status) {
         case 'working':  v.label = 'Syncing…'; v.title = 'Talking to the cloud'; break;
         case 'synced':   v.label = 'Live · ' + hhmm(cloud.at); v.title = 'Signed in. Changes on your other devices appear here as they happen'; break;
-        case 'conflict': v.label = 'Both changed'; v.title = 'This device and the cloud disagree'; break;
+        case 'conflict': v.label = 'Pick a version'; v.title = 'Two versions to choose between \u2014 see the note below'; break;
         case 'pending':  v.label = 'Access requested'; v.title = 'Waiting for Xavier to approve this account'; break;
         case 'private':  v.label = 'No access'; v.title = 'This account is not on the invitation list'; break;
         case 'error':    v.label = 'Sync failed'; v.title = explain(cloud.msg); break;
@@ -271,9 +344,19 @@
           : explain(cloud.msg);
         if (cloud.status !== 'error') v.link = { href: ACCESS_URL, text: 'About access \u2192' };
       } else if (cloud.status === 'conflict' && cloud.pending) {
+        var w = choiceWords(cloud.pending);
         v.barOn = true; v.showKeep = true;
-        v.barText = 'This ' + deviceName() + ' and the cloud copy have both changed since they last agreed. The cloud copy was last written ' +
-          hhmm(+cloud.pending.updatedAt) + ' from ' + (cloud.pending.device || 'another device') + '. ' + SYNC.describe(cloud.pending.data);
+        v.barText = w.text; v.keepLabel = w.local; v.cloudLabel = w.cloud;
+      } else {
+        var b = readBackup();
+        if (b && b.shown) {
+          v.barOn = true; v.showKeep = true;
+          v.barText = b.restored
+            ? 'Restored. The version you replaced (' + b.summary + ') is saved here in case you want it back.'
+            : 'Done. The version you didn\u2019t keep \u2014 ' + b.label + ' (' + b.summary + ') \u2014 is saved on this device for ' + BACKUP_DAYS + ' days.';
+          v.keepLabel = b.restored ? 'Switch back' : 'Restore it';
+          v.cloudLabel = 'OK';
+        }
       }
       SYNC.paint(v);
     }

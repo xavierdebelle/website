@@ -1988,9 +1988,10 @@ var SYNC = {
 
   flush: function(){ saveNow(); },
 
-  describe: function(d){
-    const n = Object.keys((d&&d.months)||{}).length;
-    return 'It holds '+n+' month'+(n===1?'':'s')+'.';
+  describe: function(d){             // "8 months, up to September 2026" — shown when a choice is needed
+    const keys = Object.keys((d&&d.months)||{}).filter(k=>/^\d{4}-\d{2}$/.test(k)).sort();
+    const n = keys.length;
+    return n+' month'+(n===1?'':'s')+(n?', up to '+labelOf(keys[n-1]):'');
   },
 
   buttonClass: function(s){
@@ -2344,10 +2345,96 @@ function signIn() {
 function signOutNow() { if (cloud.fb) cloud.fb.a.signOut(cloud.fb.auth); }
 function syncClick() { if (!cloud.uid) signIn(); else syncNow(true); }
 
-/* ---- conflict resolution ---- */
+/* ---- the choice, in plain words ----
+   Two situations ask: a browser with work of its own signing in for the
+   first time, and two devices that both changed things before they could
+   sync. The text says which, what each side holds, and which is newer. */
+function summary(d) {
+  var s = '';
+  try { s = String(SYNC.describe(d) || ''); } catch (e) {}
+  return s.replace(/^It holds /, '').replace(/\.$/, '') || 'a copy';
+}
+function whenLabel(ms) {
+  if (!ms) return '';
+  var d = new Date(ms), now = new Date();
+  var day = d.toDateString() === now.toDateString() ? 'today'
+    : new Date(now.getTime() - 864e5).toDateString() === d.toDateString() ? 'yesterday'
+    : d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  return day + ' at ' + hhmm(ms);
+}
+function otherDevice(remote) {
+  var other = (remote && remote.device) || '';
+  if (!other) return 'your other device';
+  return other === deviceName() ? 'your other ' + other : 'your ' + other;
+}
+function choiceWords(remote) {
+  var here = deviceName(), m = meta();
+  var mine = summary(JSON.parse(syncPrint())), theirs = summary(remote.data);
+  var remoteAt = +remote.updatedAt || 0;
+  var other = otherDevice(remote), otherShort = other.replace(/^your /, 'the ');
+  if (!m.lastSyncedAt) {
+    return {
+      text: 'This browser already has its own ' + SYNC.noun + ' (' + mine + '). Your account has ' + theirs +
+        ', last saved from ' + other + ' ' + whenLabel(remoteAt) + '. Which should this browser use? ' +
+        'Whichever you don\u2019t pick is kept here as a backup for ' + BACKUP_DAYS + ' days.',
+      local: 'Keep this browser\u2019s',
+      cloud: 'Use my account\u2019s'
+    };
+  }
+  var localNewer = m.updatedAt > remoteAt;
+  return {
+    text: 'This ' + here + ' and ' + other + ' both made changes before they could sync. ' +
+      'This ' + here + (m.updatedAt > 1e12 ? ', ' + whenLabel(m.updatedAt) : '') + ': ' + mine + (localNewer ? ' (newer)' : '') + '. ' +
+      other.charAt(0).toUpperCase() + other.slice(1) + ', ' + whenLabel(remoteAt) + ': ' + theirs + (localNewer ? '' : ' (newer)') + '. ' +
+      'Which version do you want? The other is kept here as a backup for ' + BACKUP_DAYS + ' days.',
+    local: 'Keep this ' + here + '\u2019s',
+    cloud: 'Use ' + otherShort + '\u2019s'
+  };
+}
+
+/* ---- backup of the version not chosen ----
+   Whichever side loses a choice is saved on this device for a week, with
+   Restore on the bar. Restoring is itself undoable: the version it replaces
+   becomes the backup. */
+var BACKUP_KEY = SYNC.storageKey + '.backup';
+var BACKUP_DAYS = 7;
+function readBackup() {
+  try {
+    var b = JSON.parse(localStorage.getItem(BACKUP_KEY) || 'null');
+    if (b && b.data && Date.now() - (+b.at || 0) < BACKUP_DAYS * 864e5) return b;
+  } catch (e) {}
+  return null;
+}
+function writeBackup(b) {
+  try { localStorage.setItem(BACKUP_KEY, JSON.stringify(b)); } catch (e) {}
+}
+function keepBackup(data, label, restored) {
+  writeBackup({ data: data, at: Date.now(), label: label, summary: summary(data), shown: true, restored: !!restored });
+}
+function dismissBackup() {
+  var b = readBackup();
+  if (b) { b.shown = false; writeBackup(b); }
+  paintSync();
+}
+function restoreBackup() {
+  var b = readBackup();
+  if (!b) return;
+  var current = JSON.parse(syncPrint());
+  var ok = keepingFocus(function () { return SYNC.apply(b.data, { data: b.data, updatedAt: Date.now(), device: deviceName() }); });
+  if (!ok) return;
+  keepBackup(current, 'the version you just replaced', true);
+  cloud.print = syncPrint();
+  setMeta({ updatedAt: nextStamp() });   // the restored version is now the newest edit, and goes up as one
+  if (cloud.uid) syncNow(true); else paintSync();
+}
+
+/* ---- conflict resolution ----
+   The bar's two buttons also serve the backup: with no choice pending,
+   the first restores it and the second puts the note away. */
 function keepLocal() {
   var remote = cloud.pending;
-  if (!remote) return;
+  if (!remote) { restoreBackup(); return; }
+  keepBackup(remote.data, 'the version from ' + otherDevice(remote).replace(/^your /, 'the '));
   cloud.pending = null;
   var seen = +remote.updatedAt || 0;
   // acknowledge the copy we saw, and stay ahead of it so this device wins
@@ -2357,7 +2444,8 @@ function keepLocal() {
 }
 function keepCloud() {
   var remote = cloud.pending;
-  if (!remote) return;
+  if (!remote) { dismissBackup(); return; }
+  keepBackup(JSON.parse(syncPrint()), 'this ' + deviceName() + '\u2019s version');
   cloud.pending = null;
   adopt(remote);
   cloud.at = Date.now();
@@ -2384,7 +2472,7 @@ function paintSync() {
   switch (cloud.status) {
     case 'working':  label = 'Syncing…';                   title = 'Talking to the cloud'; break;
     case 'synced':   label = 'Live · ' + hhmm(cloud.at);   title = 'Signed in — changes on your other devices appear here as they happen'; break;
-    case 'conflict': label = 'Both changed';               title = 'This device and the cloud disagree'; break;
+    case 'conflict': label = 'Pick a version';             title = 'Two versions to choose between \u2014 see the note below'; break;
     case 'pending':  label = 'Access requested';           title = 'Waiting for Xavier to approve this account'; break;
     case 'private':  label = 'No access';                  title = 'This account is not on the invitation list'; break;
     case 'error':    label = 'Sync failed';                title = explain(cloud.msg); break;
@@ -2418,11 +2506,19 @@ function paintSync() {
   }
   kl.style.display = '';
   kc.style.display = '';
+  var b = readBackup();
   if (cloud.status === 'conflict' && cloud.pending) {
-    what.textContent =
-      'This ' + deviceName() + ' and the cloud copy have both changed since they last agreed. ' +
-      'The cloud copy was last written ' + hhmm(+cloud.pending.updatedAt) +
-      ' from ' + (cloud.pending.device || 'another device') + '. ' + SYNC.describe(cloud.pending.data);
+    var w = choiceWords(cloud.pending);
+    what.textContent = w.text;
+    kl.textContent = w.local;
+    kc.textContent = w.cloud;
+    bar.classList.add('on');
+  } else if (b && b.shown) {
+    what.textContent = b.restored
+      ? 'Restored. The version you replaced (' + b.summary + ') is saved here in case you want it back.'
+      : 'Done. The version you didn\u2019t keep \u2014 ' + b.label + ' (' + b.summary + ') \u2014 is saved on this device for ' + BACKUP_DAYS + ' days.';
+    kl.textContent = b.restored ? 'Switch back' : 'Restore it';
+    kc.textContent = 'OK';
     bar.classList.add('on');
   } else {
     bar.classList.remove('on');
