@@ -5,6 +5,74 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v52 — 2026-09-27
+
+**What's new** · Project Phases · [tools.html#personal]
+### Notes, Homework,<br>Real Times
+Project Phases has a new **Client** tab for each project: meeting notes,
+the points you want to raise next time, and the client's homework — what
+they owe you, with due dates that turn red when they slip. Clients see
+their homework on their client link.
+
+Logging time by hand now takes real start and end times. Type any two of
+start, end and duration and the third fills itself in.
+
+**Client tab** (per project, synced)
+- **Client homework** — quick add with an optional due date; overdue /
+  due today / due tomorrow labels; tick off to a "Done" list with the date;
+  edit, delete. The tab shows a count of what's open.
+- **To discuss** — points for the next meeting; tick as discussed, "Clear
+  discussed" removes them.
+- **Meeting notes** — dated, titled, free-text notes, newest first; long
+  notes fold with "Show all". "Insert the points to discuss" drops the open
+  points into the note.
+- Client links now include **homework only**, read-only, under a
+  "Homework" tab. Points to discuss and meeting notes never leave your
+  account.
+
+**Time entries**
+- The Log time / Edit time entry dialog has Start, End and Time spent,
+  kept in step; an end before the start means the next day; a live summary
+  line shows the result and warns when it overlaps another entry.
+- Refused: under a minute, over 24 hours, ending in the future. Only a
+  duration still works as before.
+- Editing a running timer now moves its start and **keeps it running** —
+  in v9 saving that dialog quietly stopped the timer.
+
+**Keeping older pages from losing the new items**
+- A page still on v9 (a phone not yet reloaded) saves projects without the
+  Client tab's items. v10 marks its own saves; when a copy written by an
+  older version reaches it — from the cloud or from this browser's own
+  storage — it restores the items and sends them back, and it re-fetches
+  the cloud copy once rather than trusting a stripped local one. If that
+  device also had unsynced edits it asks, and "Keep this device" carries
+  the client items across.
+- Real deletions made in v10 are respected everywhere.
+- Saved as `Tools files/Tools/project_tracker_v10.html`. Shared sync code
+  unchanged (still byte-identical to the skill's copy).
+
+**Verified locally (mock database, never the live one)**
+- Client tab: add/tick/edit/delete in all three sections, due labels,
+  counts, done list, HTML typed in shown as text, notes ordering, "Show all",
+  insert points; works on the starter project and on a project made with
+  New project (found and fixed: those two paths created projects without
+  the new lists).
+- Time dialog: start+end, start+duration, end+duration, crossing midnight,
+  overlap warning, future and zero-length refused (found and fixed: equal
+  start and end read as 24 hours), editing an entry, moving a running
+  timer's start.
+- Mixed versions, two devices: v9 edits while v10 holds notes → restored,
+  both changes kept, settles with no loop; a v9 device that had absorbed a
+  stripped copy upgrades → pulls the full copy (found and fixed during
+  testing — it initially trusted its stripped copy); offline v9 edits then
+  upgrade → asks; keep this device → offline edit + all client items; a
+  deletion on the upgraded device propagates.
+- Client link: homework present, notes/points absent, read-only.
+- Desktop and 375px phone (found and fixed: time-spent field squeezed on
+  phones); no console errors.
+
+---
+
 ## v51 — 2026-09-25
 
 **What's new** · Tools · [access.html]

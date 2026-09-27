@@ -289,6 +289,54 @@ body.view .brand .sub::after{content:' · Client view'}
 .split-row .note{font-size:13px}
 .split-add{margin-top:8px}
 body.view #running-split{display:none!important}
+
+/* ---------- client: homework, to discuss, meeting notes ---------- */
+#panel-client.on{background:var(--card);padding:32px;color:var(--ink)}
+.tab-count{display:inline-block;min-width:18px;margin-left:8px;padding:3px 5px;background:var(--ttt-red);color:var(--ttt-white);font:700 10px/1 var(--ttt-font-wide);text-align:center;vertical-align:1px}
+.client-grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:28px 40px}
+.cblock .section-title{margin-top:0}
+.cblock-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.cblock-head .section-title{margin-bottom:12px}
+.cblock-sub{margin:-4px 0 12px;font-size:13px;color:var(--muted)}
+.quick{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.quick input[type=text]{flex:1 1 200px}
+.quick input[type=date]{flex:0 0 auto}
+.clist{list-style:none;margin:0;padding:0;border-top:1px solid var(--line)}
+.citem{display:flex;align-items:flex-start;gap:10px;padding:10px 2px;border-bottom:1px solid var(--line)}
+.citem input[type=checkbox]{margin-top:4px;width:16px;height:16px;accent-color:var(--ttt-red);flex:none}
+.citem .ctext{flex:1;min-width:0;overflow-wrap:anywhere;line-height:1.45}
+.citem.done .ctext{color:var(--muted);text-decoration:line-through}
+.citem .cacts{display:flex;gap:2px;flex:none;margin-top:-4px}
+.due{display:inline-block;margin-left:8px;font:700 10px/1 var(--ttt-font-wide);letter-spacing:.05em;text-transform:uppercase;padding:4px 6px;background:var(--bg);color:var(--ttt-black);white-space:nowrap;vertical-align:1px}
+.due.soon{background:var(--ttt-yellow)}
+.due.late{background:var(--ttt-red);color:var(--ttt-white)}
+.cempty{padding:12px 2px;font-size:13px;color:var(--muted);border-bottom:1px solid var(--line)}
+.done-list{margin-top:10px;font-size:13px}
+.done-list summary{cursor:pointer;color:var(--muted);padding:4px 0}
+.done-list .when{color:var(--muted);font-size:12px;margin-left:6px;text-decoration:none;display:inline-block}
+#ag-clear{margin-top:8px}
+#nt-block{margin-top:34px}
+.note{border-top:1px solid var(--line);padding:16px 2px}
+.note:last-child{border-bottom:1px solid var(--line)}
+.note-head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.note-date{font:700 11px/1 var(--ttt-font-wide);letter-spacing:.06em;text-transform:uppercase;color:var(--ttt-red)}
+.note-title{font:700 20px/1.1 var(--ttt-font-narrow);letter-spacing:.3px;color:var(--ttt-black);flex:1;min-width:0;overflow-wrap:anywhere}
+.note-body{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.55;margin-top:8px;max-height:9.4em;overflow:hidden}
+.note.open .note-body{max-height:none}
+.note-more{margin-top:6px;padding:0;background:none;border:0;color:var(--ttt-red);font:700 11px/1 var(--ttt-font-wide);letter-spacing:.06em;text-transform:uppercase}
+.note textarea{width:100%}
+#nt-body{width:100%;min-height:260px;line-height:1.5}
+body.view .quick,body.view #ag-block,body.view #nt-block,body.view .citem .cacts,body.view #ag-clear{display:none!important}
+body.view .client-grid{grid-template-columns:1fr}
+@media (max-width:760px){.client-grid{grid-template-columns:1fr}#panel-client.on{padding:22px 16px}}
+
+/* ---------- time entry: start / end ---------- */
+.te-times{display:grid;grid-template-columns:1fr 1fr 1.2fr;gap:10px}
+.te-times label{display:block;font:700 10px/1.2 var(--ttt-font-wide);letter-spacing:.07em;text-transform:uppercase;color:var(--ttt-black);margin-bottom:6px}
+.te-times input{width:100%}
+#te-sum{min-height:1.4em;margin:-4px 0 14px;font-variant-numeric:tabular-nums}
+#te-sum.warn{color:var(--danger);font-weight:700}
+@media (max-width:480px){.te-times{grid-template-columns:1fr 1fr}.te-times>div:last-child{grid-column:1 / -1}}
 </style>
 </head>
 <body>
@@ -334,6 +382,7 @@ body.view #running-split{display:none!important}
     <button class="tab on" id="tab-board">Board</button>
     <button class="tab" id="tab-log">Time log</button>
     <button class="tab" id="tab-report">Report</button>
+    <button class="tab" id="tab-client"><span id="tab-client-label">Client</span><span class="tab-count" id="tab-client-count" hidden></span></button>
   </div>
 
   <section class="panel on" id="panel-board">
@@ -396,6 +445,41 @@ body.view #running-split{display:none!important}
     <h3 class="section-title">Last 14 days</h3>
     <div class="daily" id="daily"></div>
   </section>
+
+  <!-- Client: what they owe you, what to raise, what was said. Homework is
+       the one part a client link shows; the rest stays private. -->
+  <section class="panel" id="panel-client">
+    <div class="client-grid">
+      <div class="cblock" id="hw-block">
+        <h3 class="section-title" id="hw-title">Client homework</h3>
+        <p class="cblock-sub" id="hw-sub">What the client needs to do or send you.</p>
+        <form class="quick" id="hw-form" autocomplete="off">
+          <input type="text" id="hw-text" maxlength="300" placeholder="e.g. Send the logo files" aria-label="New homework item">
+          <input type="date" id="hw-due" title="Due date (optional)" aria-label="Due date">
+          <button class="btn primary" type="submit">Add</button>
+        </form>
+        <ul class="clist" id="hw-list"></ul>
+        <details class="done-list" id="hw-done-wrap" hidden><summary id="hw-done-sum"></summary><ul class="clist" id="hw-done"></ul></details>
+      </div>
+      <div class="cblock" id="ag-block">
+        <h3 class="section-title">To discuss</h3>
+        <p class="cblock-sub">Points to raise at the next meeting. Tick them off as you go.</p>
+        <form class="quick" id="ag-form" autocomplete="off">
+          <input type="text" id="ag-text" maxlength="300" placeholder="Add a point" aria-label="New point to discuss">
+          <button class="btn primary" type="submit">Add</button>
+        </form>
+        <ul class="clist" id="ag-list"></ul>
+        <button class="btn ghost" type="button" id="ag-clear" hidden>Clear discussed</button>
+      </div>
+    </div>
+    <div class="cblock" id="nt-block">
+      <div class="cblock-head">
+        <h3 class="section-title">Meeting notes</h3>
+        <button class="btn primary" type="button" id="nt-new">+ New note</button>
+      </div>
+      <div id="nt-list"></div>
+    </div>
+  </section>
 </div>
 
 <div id="modal-overlay" class="">
@@ -443,6 +527,7 @@ function planToProject(name, plan) {
     id: uid('p'),
     name: name,
     createdAt: Date.now(),
+    homework: [], agenda: [], notes: [],
     phases: plan.map(function (n) {
       return {
         id: uid('ph'),
@@ -494,6 +579,9 @@ function normalise(s) {
       name: String(p.name == null ? 'Untitled' : p.name),
       shareId: typeof p.shareId === 'string' && /^[\w-]{20,64}$/.test(p.shareId) ? p.shareId : null,
       createdAt: p.createdAt || Date.now(),
+      homework: normaliseHomework(p.homework),
+      agenda: normaliseAgenda(p.agenda),
+      notes: normaliseNotes(p.notes),
       phases: (p.phases || []).map(function (ph) {
         return {
           id: ph.id || uid('ph'),
@@ -526,9 +614,39 @@ function normalise(s) {
   return out;
 }
 
+/* Client items. The database may hand lists back as objects and drops empty
+   ones, so each list is rebuilt here from whatever arrives. */
+function dayKeyOk(k) { return typeof k === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(k) ? k : ''; }
+function clientList(v) { return Array.isArray(v) ? v : (v && typeof v === 'object' ? Object.keys(v).map(function (k) { return v[k]; }) : []); }
+function normaliseHomework(v) {
+  return clientList(v).filter(function (h) { return h && String(h.text || '').trim(); }).map(function (h) {
+    return { id: h.id || uid('hw'), text: String(h.text).trim(), due: dayKeyOk(h.due), done: !!h.done,
+             doneAt: h.done ? (Number(h.doneAt) || 0) : 0, at: Number(h.at) || 0 };
+  });
+}
+function normaliseAgenda(v) {
+  return clientList(v).filter(function (a) { return a && String(a.text || '').trim(); }).map(function (a) {
+    return { id: a.id || uid('ag'), text: String(a.text).trim(), done: !!a.done, at: Number(a.at) || 0 };
+  });
+}
+function normaliseNotes(v) {
+  return clientList(v).filter(function (n) { return n && (String(n.title || '').trim() || String(n.body || '').trim()); }).map(function (n) {
+    return { id: n.id || uid('nt'), date: dayKeyOk(n.date) || dateKey(Number(n.at) || Date.now()),
+             title: String(n.title || '').trim(), body: String(n.body || ''), at: Number(n.at) || 0,
+             updatedAt: Number(n.updatedAt) || 0 };
+  });
+}
+
+/* Writes this browser's copy, plus a mark recording exactly which copy
+   this version wrote — so a copy later overwritten by an older page (one
+   that drops the Client tab's items) is recognised on the next visit. */
+function storeLocal() {
+  var json = JSON.stringify(state);
+  try { localStorage.setItem(KEY, json); localStorage.setItem(KEY + '.client', String(json.length)); } catch (e) { /* private mode: keep going in memory */ }
+}
 function save() {
   if (VIEW) return;                 // a client's browser is never written to
-  try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { /* private mode: keep going in memory */ }
+  storeLocal();
   cloudTouch();
 }
 
@@ -774,6 +892,7 @@ function render() {
   renderLogFilters();
   renderLog();
   renderReport();
+  renderClient();
   paintShare();
 }
 
@@ -1422,49 +1541,130 @@ function stepOptions(selectedId) {
   return out;
 }
 
+function atTime(day, hm) {
+  var d = day.split('-'), t = hm.split(':');
+  return new Date(+d[0], +d[1] - 1, +d[2], +t[0], +t[1], 0, 0).getTime();
+}
+
+/* Start, end and time spent stay in step: type any two and the third
+   follows. An end before the start means the next day. A running
+   timer's start can be moved; it keeps running. */
 function openTimeEntry(entryId, stepId) {
   var entry = entryId ? state.log.filter(function (e) { return e.id === entryId; })[0] : null;
   if (entry) stepId = entry.stepId;
   var opts = stepOptions(stepId);
   if (!opts) { openModal('Log time', '<p class="muted" style="margin:0">Add a phase and a step first.</p>', function () { return true; }); return; }
-  var sec = entry ? entrySeconds(entry, Date.now()) : 0;
+  var running = !!entry && entry.end == null;
+  var sec = entry && !running ? entrySeconds(entry, Date.now()) : 0;
 
   openModal(entry ? 'Edit time entry' : 'Log time',
     '<div class="row"><label for="te-step">Step</label><select id="te-step">' + opts + '</select></div>' +
     '<div class="row"><label for="te-date">Date</label>' +
       '<input type="date" id="te-date" value="' + dateKey(entry ? entry.start : Date.now()) + '"></div>' +
-    '<div class="row"><label for="te-dur">Time spent</label>' +
-      '<input type="text" id="te-dur" value="' + (sec ? esc(fmtHM(sec)) : '') + '" placeholder="1h 30m">' +
-      '<div class="hint">“1h 30m”, “90”, “1:30”. A bare number counts as minutes.</div></div>' +
+    '<div class="row te-times">' +
+      '<div><label for="te-start">Start</label><input type="time" id="te-start" value="' + (entry ? fmtTime(entry.start) : '') + '"></div>' +
+      '<div><label for="te-end">End</label><input type="time" id="te-end" value="' + (entry && !running ? fmtTime(entry.end) : '') + '"' + (running ? ' disabled title="The timer is still running"' : '') + '></div>' +
+      '<div><label for="te-dur">Time spent</label><input type="text" id="te-dur" value="' + (sec ? esc(fmtHM(sec)) : '') + '" placeholder="' + (running ? 'running' : '1h 30m') + '"' + (running ? ' disabled' : '') + '></div>' +
+    '</div>' +
+    '<div class="hint" id="te-sum"></div>' +
     '<div class="row"><label for="te-note">Note</label>' +
       '<textarea id="te-note" rows="2" placeholder="What got done">' + esc(entry ? entry.note : '') + '</textarea></div>',
     function () {
-      var secs = parseDuration($('te-dur').value);
-      if (secs === null || secs <= 0) { modalError('Enter how long it took — “1h 30m”.'); return false; }
-      var dv = $('te-date').value;
-      var parts = (dv || dateKey(Date.now())).split('-');
-      var start = entry && dateKey(entry.start) === dv
-        ? entry.start
-        : new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]), 9, 0, 0, 0).getTime();
+      var t = resolveTimes(entry, running);
+      if (t.error) { modalError(t.error); return false; }
       var target = $('te-step').value;
       var ph = phaseOfStep(target);
       if (entry) {
         entry.stepId = target;
         entry.phaseId = ph ? ph.id : null;
-        entry.start = start;
-        entry.end = start + secs * 1000;
+        entry.start = t.start;
+        if (!running) entry.end = t.end;
         entry.note = $('te-note').value.trim();
       } else {
         state.log.push({
           id: uid('e'), projectId: state.currentId, phaseId: ph ? ph.id : null, stepId: target,
-          start: start, end: start + secs * 1000, note: $('te-note').value.trim(), source: 'manual'
+          start: t.start, end: t.end, note: $('te-note').value.trim(), source: 'manual'
         });
         var st = findStep(target);
         if (st && st.status === 'todo') st.status = 'doing';
       }
       save();
       return true;
-    }, 'te-dur');
+    }, entry ? 'te-start' : 'te-dur');
+
+  function follow(src) {
+    var s0 = $('te-start').value, e0 = $('te-end').value, d = parseDuration($('te-dur').value);
+    var day = $('te-date').value || dateKey(Date.now());
+    if (running) { paintSum(); return; }
+    if ((src === 'start' || src === 'end') && s0 && e0) {
+      var a = atTime(day, s0), b = atTime(day, e0);
+      if (b < a) b += 864e5;
+      $('te-dur').value = fmtHM(Math.round((b - a) / 1000));
+    } else if (src === 'dur' && d) {
+      if (s0) $('te-end').value = fmtTime(atTime(day, s0) + d * 1000);
+      else if (e0) $('te-start').value = fmtTime(atTime(day, e0) - d * 1000);
+    }
+    paintSum();
+  }
+  function paintSum() {
+    var t = resolveTimes(entry, running), el = $('te-sum');
+    if (t.error) { el.textContent = t.soft ? '' : t.error; el.className = t.soft ? 'hint' : 'hint warn'; return; }
+    var end = t.end == null ? Date.now() : t.end;
+    var txt = fmtDate(t.start) + ' · ' + fmtTime(t.start) + ' → ' + (t.end == null ? 'now (running)' : fmtTime(t.end)) +
+      ' · ' + fmtHM(Math.round((end - t.start) / 1000));
+    if (t.end != null && dateKey(t.end) !== dateKey(t.start)) txt += ' · ends the next day';
+    var clash = state.log.filter(function (o) {
+      return (!entry || o.id !== entry.id) && o.start < end && (o.end == null ? Date.now() : o.end) > t.start;
+    })[0];
+    el.className = clash ? 'hint warn' : 'hint';
+    if (clash) {
+      var cs = findStep(clash.stepId);
+      txt += ' — overlaps ' + (cs ? cs.name : 'another entry') + ' (' + fmtTime(clash.start) + '–' + (clash.end == null ? 'now' : fmtTime(clash.end)) + ')';
+    }
+    el.textContent = txt;
+  }
+  $('te-start').addEventListener('input', function () { follow('start'); });
+  $('te-end').addEventListener('input', function () { follow('end'); });
+  $('te-dur').addEventListener('input', function () { follow('dur'); });
+  $('te-date').addEventListener('input', paintSum);
+  paintSum();
+}
+
+/* What the editor's fields add up to: {start, end} or {error}. */
+function resolveTimes(entry, running) {
+  var now = Date.now();
+  var day = $('te-date').value;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return { error: 'Pick a date.' };
+  var s0 = $('te-start').value, e0 = $('te-end').value;
+  var d = running ? null : parseDuration($('te-dur').value);
+  var start, end;
+  if (running) {
+    if (!s0) return { error: 'Enter when it started.' };
+    start = atTime(day, s0);
+    if (start > now) return { error: 'A running timer can’t start in the future.' };
+    return { start: start, end: null };
+  }
+  if (s0 && e0) {
+    start = atTime(day, s0); end = atTime(day, e0);
+    if (end < start) end += 864e5;          // same time = nothing, not a whole day
+  } else if (s0 && d) {
+    start = atTime(day, s0); end = start + d * 1000;
+  } else if (e0 && d) {
+    end = atTime(day, e0); start = end - d * 1000;
+  } else if (d) {
+    // only a duration, as before: keep the entry's own start on its day,
+    // otherwise end it now (today) or start it at 9:00 (another day)
+    if (entry && dateKey(entry.start) === day) start = entry.start;
+    else if (day === dateKey(now)) start = now - d * 1000;
+    else start = atTime(day, '09:00');
+    end = start + d * 1000;
+  } else {
+    return { error: 'Enter a start and end time, or how long it took.', soft: true };
+  }
+  if (end - start < 60000) return { error: 'An entry needs at least a minute.' };
+  if (end - start > 864e5) return { error: 'An entry can’t be longer than 24 hours.' };
+  if (end > now + 60000) return { error: 'That ends in the future. Log time once it’s done.' };
+  return { start: start, end: end };
 }
 
 $('log-body').addEventListener('click', function (ev) {
@@ -1766,15 +1966,227 @@ function saveSplit() {
   return true;
 }
 
+
+/* ============================================================
+   Client — homework, points to discuss, meeting notes
+   ------------------------------------------------------------
+   All three belong to the open project and travel with it (sync,
+   export). Only homework is included in a client link: it is the
+   client's own to-do list. Points to discuss and meeting notes are
+   yours and never leave your account.
+   ============================================================ */
+function clientProject() {
+  var p = currentProject();
+  if (p) ['homework', 'agenda', 'notes'].forEach(function (k) { if (!Array.isArray(p[k])) p[k] = []; });
+  return p;
+}
+function keyToMs(k) { var p = k.split('-'); return new Date(+p[0], +p[1] - 1, +p[2]).getTime(); }
+function todayKey() { return dateKey(Date.now()); }
+function dueChip(h) {
+  if (!h.due || h.done) return '';
+  var days = Math.round((keyToMs(h.due) - keyToMs(todayKey())) / 864e5);
+  var cls = days < 0 ? 'late' : days <= 2 ? 'soon' : '';
+  var label = days < 0 ? 'Overdue · ' + fmtDate(keyToMs(h.due)) : days === 0 ? 'Due today' : days === 1 ? 'Due tomorrow' : 'Due ' + fmtDate(keyToMs(h.due));
+  return '<span class="due ' + cls + '">' + esc(label) + '</span>';
+}
+function itemActs(kind) {
+  return '<span class="cacts">' +
+    '<button type="button" class="icon" data-act="' + kind + '-edit" title="Edit">' + ICO.pencil + '</button>' +
+    '<button type="button" class="icon del" data-act="' + kind + '-del" title="Delete">' + ICO.trash + '</button></span>';
+}
+function openHomework(p) {
+  return p.homework.filter(function (h) { return !h.done; }).sort(function (a, b) {
+    if (!!a.due !== !!b.due) return a.due ? -1 : 1;           // dated first, soonest first
+    return a.due === b.due ? a.at - b.at : (a.due < b.due ? -1 : 1);
+  });
+}
+
+function renderClient() {
+  var p = clientProject();
+  var open = p ? openHomework(p) : [];
+  var late = open.filter(function (h) { return h.due && h.due < todayKey(); }).length;
+  var count = $('tab-client-count');
+  count.hidden = !open.length;
+  count.textContent = open.length;
+  count.title = open.length + ' open homework item' + (open.length === 1 ? '' : 's') + (late ? ', ' + late + ' overdue' : '');
+  $('tab-client-label').textContent = VIEW ? 'Homework' : 'Client';
+  if (VIEW) $('tab-client').hidden = !(p && p.homework.length);
+  if (!p) return;
+
+  // homework
+  if (VIEW) { $('hw-title').textContent = 'Your homework'; $('hw-sub').textContent = 'What we need from you to keep this moving.'; }
+  $('hw-list').innerHTML = open.length ? open.map(function (h) {
+    return '<li class="citem" data-id="' + esc(h.id) + '">' +
+      '<input type="checkbox" data-act="hw-toggle" aria-label="Done"' + (VIEW ? ' disabled' : '') + '>' +
+      '<span class="ctext">' + esc(h.text) + dueChip(h) + '</span>' + itemActs('hw') + '</li>';
+  }).join('') : '<li class="cempty">' + (VIEW ? 'Nothing needed from you right now.' : 'Nothing outstanding. Add what the client owes you — files, approvals, answers.') + '</li>';
+  var done = p.homework.filter(function (h) { return h.done; }).sort(function (a, b) { return b.doneAt - a.doneAt; });
+  $('hw-done-wrap').hidden = !done.length;
+  $('hw-done-sum').textContent = 'Done — ' + done.length;
+  $('hw-done').innerHTML = done.map(function (h) {
+    return '<li class="citem done" data-id="' + esc(h.id) + '">' +
+      '<input type="checkbox" data-act="hw-toggle" checked aria-label="Done"' + (VIEW ? ' disabled' : '') + '>' +
+      '<span class="ctext">' + esc(h.text) + (h.doneAt ? '<span class="when">' + esc(fmtDate(h.doneAt)) + '</span>' : '') + '</span>' +
+      itemActs('hw') + '</li>';
+  }).join('');
+  if (VIEW) return;
+
+  // to discuss
+  $('ag-list').innerHTML = p.agenda.length ? p.agenda.map(function (a) {
+    return '<li class="citem' + (a.done ? ' done' : '') + '" data-id="' + esc(a.id) + '">' +
+      '<input type="checkbox" data-act="ag-toggle" aria-label="Discussed"' + (a.done ? ' checked' : '') + '>' +
+      '<span class="ctext">' + esc(a.text) + '</span>' + itemActs('ag') + '</li>';
+  }).join('') : '<li class="cempty">Nothing to raise yet.</li>';
+  $('ag-clear').hidden = !p.agenda.some(function (a) { return a.done; });
+
+  // meeting notes, newest first
+  var notes = p.notes.slice().sort(function (a, b) { return a.date === b.date ? b.at - a.at : (a.date < b.date ? 1 : -1); });
+  $('nt-list').innerHTML = notes.length ? notes.map(function (n) {
+    return '<article class="note" data-id="' + esc(n.id) + '">' +
+      '<div class="note-head"><span class="note-date">' + esc(fmtDate(keyToMs(n.date))) + '</span>' +
+      '<span class="note-title">' + esc(n.title || 'Meeting') + '</span>' + itemActs('nt') + '</div>' +
+      (n.body.trim() ? '<div class="note-body">' + esc(n.body) + '</div><button type="button" class="note-more" data-act="nt-more" hidden>Show all</button>' : '') +
+      '</article>';
+  }).join('') : '<div class="cempty">No notes yet. Start one before or during your next meeting.</div>';
+  Array.prototype.forEach.call(document.querySelectorAll('#nt-list .note'), function (el) {
+    var b = el.querySelector('.note-body'), more = el.querySelector('.note-more');
+    if (b && more) more.hidden = !(b.scrollHeight > b.clientHeight + 2);
+  });
+}
+
+function projectItem(list, id) { return list.filter(function (x) { return x.id === id; })[0]; }
+
+$('hw-form').addEventListener('submit', function (ev) {
+  ev.preventDefault();
+  var p = clientProject(), text = $('hw-text').value.trim();
+  if (VIEW || !p || !text) return;
+  p.homework.push({ id: uid('hw'), text: text, due: dayKeyOk($('hw-due').value), done: false, doneAt: 0, at: Date.now() });
+  $('hw-text').value = ''; $('hw-due').value = '';
+  save(); render(); $('hw-text').focus();
+});
+$('ag-form').addEventListener('submit', function (ev) {
+  ev.preventDefault();
+  var p = clientProject(), text = $('ag-text').value.trim();
+  if (VIEW || !p || !text) return;
+  p.agenda.push({ id: uid('ag'), text: text, done: false, at: Date.now() });
+  $('ag-text').value = '';
+  save(); render(); $('ag-text').focus();
+});
+$('ag-clear').addEventListener('click', function () {
+  var p = clientProject();
+  if (VIEW || !p) return;
+  p.agenda = p.agenda.filter(function (a) { return !a.done; });
+  save(); render();
+});
+$('nt-new').addEventListener('click', function () { if (!VIEW) openNote(null); });
+
+$('panel-client').addEventListener('change', function (ev) {
+  var box = ev.target.closest('[data-act]');
+  if (VIEW || !box) return;
+  var p = clientProject(), id = box.closest('[data-id]').getAttribute('data-id');
+  var act = box.getAttribute('data-act');
+  if (act === 'hw-toggle') {
+    var h = projectItem(p.homework, id);
+    if (h) { h.done = box.checked; h.doneAt = box.checked ? Date.now() : 0; }
+  } else if (act === 'ag-toggle') {
+    var a = projectItem(p.agenda, id);
+    if (a) a.done = box.checked;
+  } else return;
+  save(); render();
+});
+$('panel-client').addEventListener('click', function (ev) {
+  var btn = ev.target.closest('button[data-act]');
+  if (!btn) return;
+  var act = btn.getAttribute('data-act');
+  var host = btn.closest('[data-id]');
+  if (act === 'nt-more') { host.classList.toggle('open'); btn.textContent = host.classList.contains('open') ? 'Show less' : 'Show all'; return; }
+  if (VIEW || !host) return;
+  var p = clientProject(), id = host.getAttribute('data-id');
+  resetSaveBtn();
+  if (act === 'hw-edit') return openHomeworkItem(projectItem(p.homework, id));
+  if (act === 'ag-edit') return openAgendaItem(projectItem(p.agenda, id));
+  if (act === 'nt-edit') return openNote(projectItem(p.notes, id));
+  var kind = act.slice(0, 2), list = { hw: 'homework', ag: 'agenda', nt: 'notes' }[kind];
+  var label = { hw: 'homework item', ag: 'point', nt: 'meeting note' }[kind];
+  if (!list) return;
+  confirmModal('Delete ' + label, 'Delete this ' + label + '? This can’t be undone.', function () {
+    p[list] = p[list].filter(function (x) { return x.id !== id; });
+  });
+});
+
+function openHomeworkItem(h) {
+  if (!h) return;
+  openModal('Homework',
+    '<div class="row"><label for="hw-e-text">What they need to do or send</label>' +
+      '<textarea id="hw-e-text" rows="2" maxlength="300">' + esc(h.text) + '</textarea></div>' +
+    '<div class="row"><label for="hw-e-due">Due</label><input type="date" id="hw-e-due" value="' + esc(h.due) + '">' +
+      '<div class="hint">Optional. Overdue items show in red, and on the client link.</div></div>' +
+    '<div class="row"><label><input type="checkbox" id="hw-e-done"' + (h.done ? ' checked' : '') + '> Done</label></div>',
+    function () {
+      var text = $('hw-e-text').value.trim();
+      if (!text) { modalError('Say what they need to do.'); return false; }
+      h.text = text;
+      h.due = dayKeyOk($('hw-e-due').value);
+      var d = $('hw-e-done').checked;
+      if (d !== h.done) { h.done = d; h.doneAt = d ? Date.now() : 0; }
+      save();
+      return true;
+    }, 'hw-e-text');
+}
+function openAgendaItem(a) {
+  if (!a) return;
+  openModal('Point to discuss',
+    '<div class="row"><label for="ag-e-text">Point</label><textarea id="ag-e-text" rows="2" maxlength="300">' + esc(a.text) + '</textarea></div>',
+    function () {
+      var text = $('ag-e-text').value.trim();
+      if (!text) { modalError('Write the point, or delete it.'); return false; }
+      a.text = text;
+      save();
+      return true;
+    }, 'ag-e-text');
+}
+function openNote(n) {
+  var p = clientProject();
+  if (!p) return;
+  var points = p.agenda.filter(function (a) { return !a.done; });
+  openModal(n ? 'Meeting note' : 'New meeting note',
+    '<div class="row" style="display:grid;grid-template-columns:auto 1fr;gap:10px">' +
+      '<div><label for="nt-date">Date</label><input type="date" id="nt-date" value="' + esc(n ? n.date : todayKey()) + '"></div>' +
+      '<div><label for="nt-title">Title</label><input type="text" id="nt-title" maxlength="140" style="width:100%" placeholder="Meeting with the client" value="' + esc(n ? n.title : '') + '"></div>' +
+    '</div>' +
+    '<div class="row"><label for="nt-body">Notes</label><textarea id="nt-body">' + esc(n ? n.body : '') + '</textarea>' +
+      (points.length ? '<button type="button" class="btn ghost" id="nt-insert" style="padding-left:0">Insert the ' + points.length + ' point' + (points.length === 1 ? '' : 's') + ' to discuss</button>' : '') +
+    '</div>',
+    function () {
+      var title = $('nt-title').value.trim(), body = $('nt-body').value.replace(/\s+$/, '');
+      if (!title && !body.trim()) { modalError('Write something first.'); return false; }
+      var date = dayKeyOk($('nt-date').value) || todayKey();
+      if (n) { n.title = title; n.body = body; n.date = date; n.updatedAt = Date.now(); }
+      else p.notes.push({ id: uid('nt'), date: date, title: title, body: body, at: Date.now(), updatedAt: Date.now() });
+      save();
+      return true;
+    }, n ? 'nt-body' : 'nt-title');
+  $('modal').classList.add('wide');
+  var ins = $('nt-insert');
+  if (ins) ins.addEventListener('click', function () {
+    var ta = $('nt-body');
+    var list = 'To discuss:\n' + points.map(function (a) { return '- ' + a.text; }).join('\n') + '\n\n';
+    ta.value = ta.value.trim() ? ta.value.replace(/\s+$/, '') + '\n\n' + list : list;
+    ta.focus();
+    ta.setSelectionRange(ta.value.length, ta.value.length);
+    this.hidden = true;
+  });
+}
+
 /* ============================================================
    Tabs
    ============================================================ */
-[['tab-board', 'panel-board', 'board'], ['tab-log', 'panel-log', 'log'], ['tab-report', 'panel-report', 'report']]
+[['tab-board', 'panel-board', 'board'], ['tab-log', 'panel-log', 'log'], ['tab-report', 'panel-report', 'report'], ['tab-client', 'panel-client', 'client']]
   .forEach(function (t) {
     $(t[0]).addEventListener('click', function () {
       activeTab = t[2];
-      ['tab-board', 'tab-log', 'tab-report'].forEach(function (x) { $(x).classList.remove('on'); });
-      ['panel-board', 'panel-log', 'panel-report'].forEach(function (x) { $(x).classList.remove('on'); });
+      ['tab-board', 'tab-log', 'tab-report', 'tab-client'].forEach(function (x) { $(x).classList.remove('on'); });
+      ['panel-board', 'panel-log', 'panel-report', 'panel-client'].forEach(function (x) { $(x).classList.remove('on'); });
       $(t[0]).classList.add('on');
       $(t[1]).classList.add('on');
       render();
@@ -1801,7 +2213,7 @@ $('btn-add-project').addEventListener('click', function () {
     function () {
       var name = $('pr-name').value.trim();
       if (!name) { modalError('Give the project a name.'); return false; }
-      var p = $('pr-template').checked ? starterProject() : { id: uid('p'), name: name, createdAt: Date.now(), phases: [] };
+      var p = $('pr-template').checked ? starterProject() : { id: uid('p'), name: name, createdAt: Date.now(), phases: [], homework: [], agenda: [], notes: [] };
       p.name = name;
       state.projects.push(p);
       state.currentId = p.id;
@@ -1998,7 +2410,7 @@ var SYNC = {
 
   /* Projects and the time log travel. Which project is open does not:
      switching projects on the phone is not an edit. */
-  payload: function () { return { projects: state.projects, log: state.log }; },
+  payload: function () { return { projects: state.projects, log: state.log, client: 1 }; },
 
   /* The Realtime Database drops empty arrays and objects, so a phase with
      no steps comes back without a steps key. normalise() rebuilds them. */
@@ -2006,9 +2418,25 @@ var SYNC = {
     if (!listOf(d.projects).length) return false;   // an empty copy never wipes your projects
     var next = normalise({ projects: listOf(d.projects), log: listOf(d.log), currentId: state.currentId });
     if (!next) return false;
+    /* A copy written by a version without the Client tab (an older page
+       still open on another device) has no homework, points or notes —
+       not because they were deleted, but because it never knew them. Keep
+       this device's, and send them back up. Copies from this version carry
+       `client`, so a real deletion is always respected. */
+    var restored = false;
+    if (!d.client) {
+      next.projects.forEach(function (np) {
+        var old = state.projects.filter(function (op) { return op.id === np.id; })[0];
+        if (!old) return;
+        ['homework', 'agenda', 'notes'].forEach(function (k) {
+          if (!np[k].length && old[k].length) { np[k] = old[k]; restored = true; }
+        });
+      });
+    }
+    if (restored) setTimeout(function () { setMeta({ updatedAt: nextStamp() }); syncNow(); }, 0);
     state = next;
     if (!currentProject() && state.projects.length) state.currentId = state.projects[0].id;
-    try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
+    storeLocal();
     render();
     return true;
   },
@@ -2519,6 +2947,8 @@ function sharePayload(p) {
   var ids = {};
   var project = {
     id: p.id, name: p.name, createdAt: p.createdAt,
+    // the client's own to-do list; points to discuss and notes stay private
+    homework: (p.homework || []).map(function (h) { return { id: h.id, text: h.text, due: h.due, done: h.done, doneAt: h.doneAt, at: h.at }; }),
     phases: p.phases.map(function (ph) {
       return {
         id: ph.id, name: ph.name,
@@ -2629,7 +3059,7 @@ function openShare() {
   if (!p.shareId) {
     openModal('Client link',
       '<p class="share-note">Create a read-only link to <strong>' + esc(p.name) + '</strong> for your client. ' +
-      'They will see its phases, steps, estimates, logged time and log notes, updating as you work — ' +
+      'They will see its phases, steps, estimates, logged time, log notes and their homework, updating as you work — ' +
       'and nothing they do can change it. Every project gets its own link, and you can turn it off at any time.</p>',
       function () { createShare(p); return false; });
     $('modal-save').textContent = 'Create link';
@@ -2730,7 +3160,7 @@ function bootView() {
   /* Nothing a client can press changes anything. Hidden controls are also
      refused here, before any handler sees them. Allowed: tabs, expanding a
      phase, the log filters and the CSV download. */
-  var allowedIds = /^(tab-board|tab-log|tab-report|btn-collapse-all|f-clear|btn-log-csv)$/;
+  var allowedIds = /^(tab-board|tab-log|tab-report|tab-client|btn-collapse-all|f-clear|btn-log-csv)$/;
   document.addEventListener('click', function (ev) {
     var el = ev.target.closest && ev.target.closest('button, [data-act]');
     if (!el) return;
@@ -2764,11 +3194,56 @@ function bootView() {
 $('btn-rename-project').innerHTML = ICO.pencil;
 $('btn-delete-project').innerHTML = ICO.trash;
 
+/* ---- upgrading from a version without the Client tab ----
+   An older page saves projects without homework, points or notes, and it
+   may have been the last thing to write this browser's copy while still
+   believing it was in step with the cloud. Trusting that copy would lose
+   them. So the first time this version opens a copy it didn't write, it
+   takes the cloud's copy again (or, if this browser holds edits the cloud
+   hasn't seen, asks, and keeping this device carries the cloud's client
+   items across). */
+var clientUpgrade = false;
+function upgradeClientCopy() {
+  if (!hadStoredAtBoot) return;
+  var copy = null, mark = null;
+  try { copy = localStorage.getItem(KEY); mark = localStorage.getItem(KEY + '.client'); } catch (e) { return; }
+  if (!copy || mark === String(copy.length)) return;      // this version wrote exactly this copy
+  var raw = null;
+  try { raw = localStorage.getItem(KEY + '.meta'); } catch (e) {}
+  if (!raw) return;                       // never synced: first sign-in rules apply as usual
+  var m = {};
+  try { m = JSON.parse(raw) || {}; } catch (e) {}
+  clientUpgrade = true;
+  if ((+m.updatedAt || 0) <= (+m.lastSyncedAt || 0)) { m.updatedAt = 0; m.lastSyncedAt = 0; }  // in step: take the cloud copy
+  else m.lastSyncedAt = 0;                // edits the cloud hasn't seen: ask
+  try { localStorage.setItem(KEY + '.meta', JSON.stringify(m)); } catch (e) {}
+}
+function mergeClientFrom(remoteProjects) {
+  var changed = false;
+  state.projects.forEach(function (p) {
+    if (p.homework.length || p.agenda.length || p.notes.length) return;
+    var r = remoteProjects.filter(function (x) { return x && x.id === p.id; })[0];
+    if (!r) return;
+    p.homework = normaliseHomework(r.homework);
+    p.agenda = normaliseAgenda(r.agenda);
+    p.notes = normaliseNotes(r.notes);
+    changed = changed || !!(p.homework.length || p.agenda.length || p.notes.length);
+  });
+  return changed;
+}
+var coreKeepLocal = keepLocal;
+keepLocal = function () {
+  if (clientUpgrade && cloud.pending && cloud.pending.data && mergeClientFrom(listOf(cloud.pending.data.projects))) save();
+  clientUpgrade = false;
+  coreKeepLocal();
+};
+
 if (VIEW) {
   bootView();
 } else {
   try { hadStoredAtBoot = localStorage.getItem(KEY) != null; } catch (e) {}
   load();
+  upgradeClientCopy();
   render();
   initCloud();
 }
