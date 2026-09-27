@@ -11,3 +11,10 @@
 versions/
 
 .DS_Store
+# Design-system kit for Claude's design tool (built 2026-09-16 from the site's
+# own CSS; the Idea Bank redesign came from it). Kept on this Mac, never
+# published — it isn't website content. See .design-sync/NOTES.md.
+.ds-sync/
+ds-bundle/
+.design-sync/
+ds-kit/
