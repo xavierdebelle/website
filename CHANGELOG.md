@@ -5,6 +5,35 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v54 — 2026-09-27
+
+**What's new** · The Map · [index.html]
+### The Whole Map,<br>On Your Phone
+On a phone the mind map now opens every branch as soon as it blooms, and
+frames the five main nodes at a size you can read — the smaller branches
+fan out around them, a drag away. Before, phones opened only the five main
+nodes and you had to tap each one.
+
+**Map (phones only — desktop and tablet unchanged)**
+- Every branch starts open on small screens too (`expanded: true`; was
+  collapsed below 620px).
+- New phone fit (`fitSmall`): frames the five main nodes with their labels
+  measured, leaving room for the name above and the buttons below (less
+  when the phone is sideways). Child branches may run past the edges.
+- Lowest zoom 0.42 → 0.28, so pinching out can take in the whole open map.
+
+**Verified locally**
+- The preview browser throttles the map's animation to a frame every few
+  seconds, so the map was checked through a temporary instrumented copy
+  (deleted) that reports its state and steps the real animation: map open,
+  all 5 branches open, main nodes on screen at 375×812 (zoom 1.06),
+  360×740 (0.98) and 812×375 sideways (0.86); canvas snapshots confirmed the
+  labels. Desktop code path untouched.
+- Tried and dropped along the way, at Xavier's call: fitting the entire map
+  on screen (too small to read on a phone) and stretching it vertically.
+
+---
+
 ## v53 — 2026-09-27
 
 **What's new** · Tools · [tools.html#personal]

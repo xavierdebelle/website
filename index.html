@@ -6,7 +6,7 @@
 <title>XAVIER DE BELLE</title>
 <meta name="description" content="Photographer, cinematographer, tool-builder. Montreal. A mind map of everything I make.">
 <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
-<link rel="stylesheet" href="assets/style.css?v=53">
+<link rel="stylesheet" href="assets/style.css?v=54">
 <style>
   html, body { height: 100%; overflow: hidden; }
 
@@ -194,7 +194,7 @@
 <div class="hud hud--hint" aria-hidden="true">
   <b>Tap the mark</b> to open the map &middot; twice to invert it<br>
   <b>Click</b> a node to open it &middot; <b>Drag</b> to move &middot; <b>Scroll</b> to zoom<br>
-  <span style="opacity:.5">v53</span>
+  <span style="opacity:.5">v54</span>
 </div>
 
 <div class="hud hud--ctl">
@@ -443,7 +443,7 @@ const T = {
   carveEase      : 0.040,
 
   /* camera ---------------------------------------------------------------- */
-  zoomRange      : [0.42, 3.20],
+  zoomRange      : [0.28, 3.20],   // low end lets a phone pinch out to the whole open map
   panLimit       : 900,
   tapSlop        : 7,        // px of movement still counted as a tap
 
@@ -1218,7 +1218,7 @@ function buildStructure(){
     const f = FLAT[i];
     nodes.push({ x:0, y:0, kind: f.depth===1 ? 1 : 2, depth:f.depth, label:f.label,
                  cluster:f.cluster, parent:f.parent, url:f.url, external:f.external,
-                 hasKids: KIDS[i].length > 0, expanded:!isSmall,
+                 hasKids: KIDS[i].length > 0, expanded:true,   // every branch opens, phones included
                  lox:0, loy:1, labelA:0, arriveAt:0, fireAt:-99, parts:[] });
   }
   links = [];
@@ -1938,10 +1938,34 @@ function drawLogo(){
    20 · RESIZE
    ========================================================================== */
 let userZoomed = false;
+/* Phones: every branch is open, but the fit frames the five main nodes and
+   their labels, at a size that reads; the smaller branches run past the
+   edges and are a drag away. Labels keep their pixel size while the map
+   scales, so each one's real width is measured rather than guessed. */
+function fitSmall(){
+  const size = 10.5, side = 14;
+  const top = isPortrait ? 84 : 52, bottom = isPortrait ? 96 : 66;   // clear of the name above and the buttons below
+  if("letterSpacing" in ctx) ctx.letterSpacing = "0px";  // spacing is added by hand below
+  ctx.font = "600 " + size + "px " + FONT;
+  let z = 1.25;
+  for(let i=1;i<nodes.length;i++){
+    const n = nodes[i];
+    if(n.kind !== 1) continue;
+    const text = n.label.toUpperCase();
+    const half = (ctx.measureText(text).width + text.length*1.2)*0.5;   // label is centred under the node
+    const below = n.y >= 0 ? 34 : 12;
+    const ax = Math.abs(n.x), ay = Math.abs(n.y);
+    if(ax > 1) z = Math.min(z, (vw*0.5 - side - half)/ax);
+    if(ay > 1) z = Math.min(z, (vh*0.5 - (n.y < 0 ? top : bottom) - below)/ay);
+  }
+  zoom = clamp(z, T.zoomRange[0], 1.25);
+  camX = 0; camY = 0;
+}
 function fitZoom(){
-  /* With every anchor collapsed (the small-screen default) there is no reason
-     to shrink the map down to an extent nothing is occupying yet — fit closer,
-     and let the fan overrun a little when one is opened. */
+  if(isSmall){ fitSmall(); return; }
+  /* With every anchor collapsed there is no reason to shrink the map down to
+     an extent nothing is occupying yet — fit closer, and let the fan overrun
+     a little when one is opened. */
   let open = false;
   for(let i=1;i<nodes.length;i++) if(nodes[i].kind===1 && nodes[i].expanded){ open = true; break; }
   const k  = open ? 1 : 0.80;
