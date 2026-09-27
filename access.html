@@ -7,7 +7,8 @@
 <meta name="description" content="Sync for Xavier de Belle's tools is by invitation. Request access here.">
 <meta name="robots" content="noindex">
 <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
-<link rel="stylesheet" href="assets/style.css?v=54">
+<link rel="stylesheet" href="assets/style.css?v=55">
+<script src="assets/account.js"></script>
 <style>
   .mast {
     padding: clamp(40px, 8vw, 96px) var(--gut) clamp(30px, 5vw, 60px);
@@ -108,6 +109,7 @@
     <a href="changelog.html">What&rsquo;s New</a>
     <a href="https://www.instagram.com/xavierdebelle/" target="_blank" rel="noopener">Instagram &#8599;</a>
   </nav>
+  <span class="topbar__account" data-xdb-account></span>
 </header>
 
 <section class="mast">
@@ -196,7 +198,7 @@
       <a href="mailto:xavier@debellephotography.com">Email</a>
     </div>
   </div>
-  <p class="foot__sig">&copy; <span id="yr"></span> Xavier de Belle &middot; v54</p>
+  <p class="foot__sig">&copy; <span id="yr"></span> Xavier de Belle &middot; v55</p>
 </footer>
 
 <script>document.getElementById('yr').textContent = new Date().getFullYear();</script>
@@ -224,7 +226,7 @@
   var fb = null;
   var offs = [];          // live listeners to drop on sign-out
   var data = { requests: {}, members: {}, blocked: {} };
-  var TOOLS = { 'project-tracker': 'Project Phases', 'budget-tracker': 'Budget Tracker', 'idea-bank': 'Idea Bank', 'access': 'this page' };
+  var TOOLS = { 'project-phases': 'Project Phases', 'budget-tracker': 'Budget Tracker', 'idea-bank': 'Idea Bank', 'access': 'this page', 'site': 'the account panel' };
 
   function $(id) { return document.getElementById(id); }
   function show(id) {
@@ -237,6 +239,10 @@
   }
 
   function load() {
+    if (window.xdbAccount) return window.xdbAccount.sdk().then(function (s) {   // the site-wide sign-in
+      fb = { a: s.a, auth: s.auth, f: s.f, db: s.db };
+      fb.a.onAuthStateChanged(fb.auth, onUser);
+    });
     return Promise.all([
       import(SDK + 'firebase-app.js'), import(SDK + 'firebase-auth.js'), import(SDK + 'firebase-database.js')
     ]).then(function (m) {
@@ -249,7 +255,9 @@
   function drop() { offs.forEach(function (off) { off(); }); offs = []; }
 
   function signIn() {
+    if (window.xdbAccount) { window.xdbAccount.signIn().catch(function () {}); return; }
     var provider = new fb.a.GoogleAuthProvider();
+    if (provider.setCustomParameters) provider.setCustomParameters({ prompt: 'select_account' });
     fb.a.signInWithPopup(fb.auth, provider).catch(function (err) {
       if (err && /popup-blocked|operation-not-supported/i.test(err.code || '')) return fb.a.signInWithRedirect(fb.auth, provider);
       if (err && err.code !== 'auth/popup-closed-by-user') alert('Sign-in didn’t work' + (err.code ? ' (' + err.code + ')' : '') + '.');
@@ -411,7 +419,7 @@
     if (!b || !fb) return;
     var a = b.dataset.act;
     if (a === 'signin') signIn();
-    else if (a === 'signout') fb.a.signOut(fb.auth);
+    else if (a === 'signout') { if (window.xdbAccount) window.xdbAccount.signOut(); else fb.a.signOut(fb.auth); }
     else act(a, b.dataset.uid, b);
   });
 

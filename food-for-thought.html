@@ -6,7 +6,8 @@
 <title>FOOD FOR THOUGHT — XAVIER DE BELLE</title>
 <meta name="description" content="Food for Thought — short writing by Xavier de Belle. Things worth chewing on.">
 <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
-<link rel="stylesheet" href="assets/style.css?v=54">
+<link rel="stylesheet" href="assets/style.css?v=55">
+<script src="assets/account.js"></script>
 <style>
   /* ---------- masthead ---------- */
 
@@ -231,6 +232,7 @@
     <a href="changelog.html">What&rsquo;s New</a>
     <a href="https://www.instagram.com/xavierdebelle/" target="_blank" rel="noopener">Instagram &#8599;</a>
   </nav>
+  <span class="topbar__account" data-xdb-account></span>
 </header>
 
 <section class="mast">
@@ -290,7 +292,7 @@
       <button class="linkish" type="button" id="b-author" data-act="author">Write</button>
     </div>
   </div>
-  <p class="foot__sig">&copy; <span id="yr"></span> Xavier de Belle &middot; v54</p>
+  <p class="foot__sig">&copy; <span id="yr"></span> Xavier de Belle &middot; v55</p>
 </footer>
 
 <script>document.getElementById('yr').textContent = new Date().getFullYear();</script>
@@ -349,6 +351,12 @@
   }
   function loadAuth() {
     if (fb.a) return Promise.resolve(fb);
+    if (window.xdbAccount) return window.xdbAccount.sdk().then(function (s) {   // the site-wide sign-in
+      fb.a = s.a;
+      fb.auth = s.auth;
+      s.a.onAuthStateChanged(s.auth, onUser);
+      return fb;
+    });
     return import(SDK + 'firebase-auth.js').then(function (a) {
       fb.a = a;
       fb.auth = a.getAuth(fb.app);
@@ -513,8 +521,14 @@
 
   function signIn() {
     store(AUTHOR_KEY, '1');   // so a redirect sign-in is picked up when the page comes back
+    if (window.xdbAccount) {
+      (fb ? Promise.resolve(fb) : loadCore()).then(loadAuth).then(function () { return window.xdbAccount.signIn(); })
+        .catch(function () { if (!(fb && fb.auth && fb.auth.currentUser)) store(AUTHOR_KEY, null); });
+      return;
+    }
     (fb ? Promise.resolve(fb) : loadCore()).then(loadAuth).then(function () {
       var provider = new fb.a.GoogleAuthProvider();
+      if (provider.setCustomParameters) provider.setCustomParameters({ prompt: 'select_account' });
       return fb.a.signInWithPopup(fb.auth, provider).catch(function (err) {
         // iOS and locked-down browsers block popups; a redirect always works
         if (err && /popup-blocked|operation-not-supported/i.test(err.code || '')) return fb.a.signInWithRedirect(fb.auth, provider);
@@ -527,6 +541,7 @@
     });
   }
   function signOut() {
+    if (window.xdbAccount) { window.xdbAccount.signOut(); return; }   // signs out of the whole site
     if (fb && fb.a) fb.a.signOut(fb.auth);
   }
 
@@ -655,7 +670,9 @@
 
   loadCore().then(function () {
     watch();
-    if (recall(AUTHOR_KEY)) loadAuth();
+    var acct = window.xdbAccount;
+    if (recall(AUTHOR_KEY) || (acct && acct.wanted())) loadAuth();
+    if (acct) acct.on(function (st) { if (st.user && !fb.a) loadAuth(); });   // signed in from the account panel
   }).catch(function () {
     showState('Can&rsquo;t <em>load</em>', 'The posts didn&rsquo;t load. Check your connection and refresh.');
   });

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
+<script src="../assets/account.js"></script>   <!-- site-wide account; the tool falls back to its own sign-in without it -->
 
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Project Phases · 333 Photo</title>
@@ -2583,8 +2584,16 @@ function seedMeta() {
 }
 
 /* ---- SDK, loaded once and only on demand ---- */
+/* With the site-wide account (assets/account.js) present, the tool shares
+   its one Firebase connection and its sign-in; opened on its own, it runs
+   its own. */
+function account() { return window.xdbAccount || null; }
 function loadSDK() {
   if (cloud.fb) return Promise.resolve(cloud.fb);
+  if (account()) return account().sdk().then(function (s) {
+    cloud.fb = { auth: s.auth, db: s.db, a: s.a, f: s.f };
+    return cloud.fb;
+  });
   return Promise.all([
     import(SDK + 'firebase-app.js'),
     import(SDK + 'firebase-auth.js'),
@@ -2786,9 +2795,19 @@ function signIn() {
   if (!cloud.on) return;
   setMeta({ signedIn: true });   // so a redirect sign-in is picked up when the page comes back
   setStatus('working');
+  if (account()) {
+    loadSDK().then(listen).catch(function () {});
+    account().signIn().catch(function (err) {
+      if (err && err.code === 'auth/popup-closed-by-user') { if (!cloud.authed) setStatus('signedout'); return; }
+      cloud.msg = (err && err.code) || 'failed';
+      setStatus('error');
+    });
+    return;
+  }
   loadSDK().then(function (fb) {
     listen(fb);
     var provider = new fb.a.GoogleAuthProvider();
+    if (provider.setCustomParameters) provider.setCustomParameters({ prompt: 'select_account' });   // always offer the account picker
     return fb.a.signInWithPopup(fb.auth, provider).catch(function (err) {
       // iOS and locked-down browsers block popups; a redirect always works
       if (err && /popup-blocked|operation-not-supported/i.test(err.code || '')) return fb.a.signInWithRedirect(fb.auth, provider);
@@ -2800,8 +2819,14 @@ function signIn() {
     setStatus('error');
   });
 }
-function signOutNow() { if (cloud.fb) cloud.fb.a.signOut(cloud.fb.auth); }
-function syncClick() { if (!cloud.uid) signIn(); else syncNow(true); }
+function signOutNow() {
+  if (account()) { account().signOut(); return; }
+  if (cloud.fb) cloud.fb.a.signOut(cloud.fb.auth);
+}
+function syncClick() {
+  if (account() && cloud.authed) { account().openPanel(); return; }   // signed in: the account panel has it all
+  if (!cloud.uid) signIn(); else syncNow(true);
+}
 
 /* ---- the choice, in plain words ----
    Two situations ask: a browser with work of its own signing in for the
@@ -2936,11 +2961,17 @@ function paintSync() {
     case 'error':    label = 'Sync failed';                title = explain(cloud.msg); break;
     default:         label = 'Sign in to sync';            title = 'Keep this in step across your devices';
   }
-  btn.textContent = label;
+  var acct = account();
+  if (acct && cloud.authed) {
+    btn.innerHTML = acct.badgeHTML() + ' <span>' + label.replace(/[&<>]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]; }) + '</span>';
+    title += ' \u2014 open your account';
+  } else {
+    btn.textContent = label;
+  }
   btn.title = title;
   btn.className = SYNC.buttonClass(cloud.status);
   btn.style.display = '';
-  out.style.display = cloud.authed ? '' : 'none';
+  out.style.display = cloud.authed && !acct ? '' : 'none';   // with the site account, signing out lives in its panel
 
   var what = syncEl('sync-what'), kl = syncEl('sync-keep-local'), kc = syncEl('sync-keep-cloud');
   if (cloud.status === 'pending' || cloud.status === 'private' || cloud.status === 'error') {
@@ -2989,8 +3020,17 @@ function initCloud() {
   if (!cloud.on) return;
 
   /* Only someone who has signed in here before gets the SDK on load; a
-     visitor who never touches the button never fetches it. */
-  if (meta().signedIn) {
+     visitor who never touches the button never fetches it. Signed in
+     anywhere on the site counts. */
+  var acct = account();
+  if (acct) {
+    acct.registerTool({ doc: SYNC.doc, syncNow: function () { syncNow(true); } });
+    acct.on(function (st) {
+      if (st.user && !cloud.listening) loadSDK().then(listen).catch(function () {});   // signed in from the panel
+      paintSync();
+    });
+  }
+  if (meta().signedIn || (acct && acct.wanted())) {
     setStatus('working');
     loadSDK().then(listen).catch(function (err) { cloud.msg = (err && err.code) || 'failed'; setStatus('error'); });
   }

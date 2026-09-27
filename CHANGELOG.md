@@ -5,6 +5,72 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v55 — 2026-09-27
+
+**What's new** · Accounts · [access.html]
+### One Sign-In<br>For Everything
+Sign in once and you're signed in everywhere — every page, and Project
+Phases, Budget Tracker and Idea Bank all connect by themselves. An account
+button in every page's top bar (and on each tool's sync button) shows
+who's signed in and whether sync is on; tap it for your account panel:
+your status, your synced tools and when each last synced, and Sign out.
+
+**Site-wide account** (new `assets/account.js`, loaded by every page and
+the three synced tools)
+- One sign-in for the whole site: a site-wide note (`xdb.account`) tells
+  every page and tool this device is signed in, and Google's session does
+  the rest — no second popup. Sign out anywhere signs out everywhere on the
+  device, other open tabs included.
+- Google's account picker is always shown (`prompt: select_account`), so
+  switching or adding an account works on shared computers.
+- Account button: initial (or Google photo) with a status dot — yellow
+  filled = synced, yellow ring = waiting for approval, grey ring = not
+  approved — plus a word (Owner / Synced / Waiting / Not approved). In the
+  top bar of every page, at the end of the map's shortcuts, and in the
+  map's corner on phones (avatar only, clear of the name). Xavier's shows
+  a count of requests waiting.
+- Account panel: sign in (with a line on what sync is), or name, email,
+  status explained, the three tools with "synced 2 min ago" / "syncing —
+  nothing saved yet" / "not opened on this device yet", **Sync now** for the
+  tool you're in, Sign out ("signs you out of the whole site on this
+  device"). Xavier also gets "N waiting → Manage access". Phones: a sheet
+  from the bottom.
+- A one-time welcome when an account is approved: "You're in. …"
+- Food for Thought and the Access page use the same sign-in; Food for
+  Thought's desk appears without pressing Write when you're signed in.
+
+**Synced tools** (Project Phases v12, Budget Tracker v16, Idea Bank v7)
+- Shared sync code: uses the site account's connection and sign-in when
+  it's there, connects automatically when the device is signed in, starts
+  syncing when someone signs in from the panel, and its button shows the
+  account avatar and opens the panel. Without `account.js` (a tool opened
+  on its own) it signs in by itself as before, account picker included.
+- Access page: requests from Project Phases now say so (the label map
+  used the wrong name).
+
+**Verified locally (mock database)**
+- Two devices: a guest signs in from the panel (picker requested) → request
+  filed, button "Waiting"; opens Budget Tracker → connected with no tap;
+  Xavier signs in from the button → "1 waiting" → Manage access → Approve
+  → the guest's open tool goes live with the welcome message; Project
+  Phases and Idea Bank connect by themselves; the panel lists the tools
+  with Sync now; Sign out in Idea Bank → Project Phases in another tab
+  signs out; signing in from a tool's button signs the other tab in.
+- Xavier's Food for Thought desk shows without Write; the button appears
+  on every page, the map (desktop bar, phone corner); 375/360px phones
+  fit with no sideways scroll; a tool without the account file still
+  signs in alone; no console errors.
+- Found and fixed: tool list said "not synced here yet" for tools that
+  were live but had nothing saved; the phone map button could reach the
+  name with a long status word (now avatar only there).
+- Testing slip, no effect: one test copy of the account file briefly
+  pointed at the real Firebase library in the test browser. With no one
+  signed in to the real service there, it only reported "signed out" — no
+  database reads or writes happen without a signed-in user. Test copies
+  are now refreshed only through the mock rewrite.
+
+---
+
 ## v54 — 2026-09-27
 
 **What's new** · The Map · [index.html]

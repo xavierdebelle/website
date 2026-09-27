@@ -5,6 +5,7 @@
 <title>Idea Bank — capture, prioritise, ship</title>
 <link rel="icon" href="../assets/logo.svg" type="image/svg+xml">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="../assets/account.js"></script>
 <script src="idea-bank/support.js"></script>
 </head>
 <body>
@@ -55,7 +56,7 @@
         <button type="button" class="btn" onClick="{{ deleteProject }}" disabled="{{ cantDelete }}" style="padding: 11px 15px; font-size: 11px; opacity: {{ delOpacity }}">Delete</button>
         <button type="button" class="btn" onClick="{{ doExport }}" style="padding: 11px 15px; font-size: 11px">Export</button>
         <button type="button" class="btn" onClick="{{ pickImport }}" style="padding: 11px 15px; font-size: 11px">Import</button>
-        <button type="button" class="{{ syncClass }}" onClick="{{ syncClick }}" title="{{ syncTitle }}" disabled="{{ syncOff }}" style="padding: 11px 15px; font-size: 11px">{{ syncLabel }}</button>
+        <button type="button" class="{{ syncClass }}" onClick="{{ syncClick }}" title="{{ syncTitle }}" disabled="{{ syncOff }}" style="padding: 11px 15px; font-size: 11px; display: inline-flex; align-items: center; gap: 8px"><sc-if value="{{ syncHasInitial }}" hint-placeholder-val="{{ false }}"><span style="position: relative; display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; background: var(--volt); color: var(--ink); font-weight: 900; font-size: 11px">{{ syncInitial }}<span style="position: absolute; right: -4px; bottom: -4px; width: 8px; height: 8px; border: 2px solid var(--ink); background: {{ syncDotBg }}; box-shadow: {{ syncDotRing }}"></span></span></sc-if>{{ syncLabel }}</button>
         <sc-if value="{{ syncAuthed }}" hint-placeholder-val="{{ false }}">
           <button type="button" class="btn" onClick="{{ signOut }}" style="padding: 11px 15px; font-size: 11px">Sign out</button>
         </sc-if>
@@ -1063,8 +1064,11 @@ class Component extends DCLogic {
       syncTitle: !this.live ? 'Switch Tweaks → dataset to live to use your saved ideas' : sy ? sy.title : '',
       syncClass: sy && sy.status === 'synced' ? 'btn' : 'btn btn--solid',
       syncClick: () => this.sync && this.sync.click(),
-      syncAuthed: !!(this.live && sy && sy.authed), signOut: () => this.sync && this.sync.signOut(),
+      syncAuthed: !!(this.live && sy && sy.authed && !sy.siteAccount), signOut: () => this.sync && this.sync.signOut(),
       syncBarOn: !!(this.live && sy && sy.barOn), syncBarText: sy ? sy.barText : '', syncShowKeep: !!(sy && sy.showKeep),
+      syncHasInitial: !!(this.live && sy && sy.initial), syncInitial: (sy && sy.initial) || '',
+      syncDotBg: sy && sy.accountDot === 'live' ? 'var(--volt)' : 'var(--ink)',
+      syncDotRing: sy && sy.accountDot === 'wait' ? 'inset 0 0 0 2px var(--volt)' : sy && sy.accountDot === 'no' ? 'inset 0 0 0 2px var(--dust)' : 'none',
       syncKeepLabel: (sy && sy.keepLabel) || 'Keep this device', syncCloudLabel: (sy && sy.cloudLabel) || 'Keep cloud copy',
       syncBarLink: !!(sy && sy.link), syncBarHref: sy && sy.link ? sy.link.href : '', syncBarLinkText: sy && sy.link ? sy.link.text : '',
       keepLocal: () => this.sync && this.sync.keepLocal(), keepCloud: () => this.sync && this.sync.keepCloud(),

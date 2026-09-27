@@ -65,8 +65,15 @@
       if (noWatermark && !SYNC.untouched()) setMeta({ updatedAt: 1 });
       cloud.print = syncPrint();
     }
+    /* With the site-wide account (assets/account.js) present, share its
+       Firebase connection and its sign-in — same as the classic core. */
+    function account() { return window.xdbAccount || null; }
     function loadSDK() {
       if (cloud.fb) return Promise.resolve(cloud.fb);
+      if (account()) return account().sdk().then(function (s) {
+        cloud.fb = { auth: s.auth, db: s.db, a: s.a, f: s.f };
+        return cloud.fb;
+      });
       if (window.__xdbFirebase) return window.__xdbFirebase.then(function (fb) { cloud.fb = fb; return fb; });
       return (window.__xdbFirebase = Promise.all([
         import(SDK + 'firebase-app.js'), import(SDK + 'firebase-auth.js'), import(SDK + 'firebase-database.js')
@@ -212,9 +219,19 @@
       if (!cloud.on) return;
       setMeta({ signedIn: true });
       setStatus('working');
+      if (account()) {
+        loadSDK().then(listen).catch(function () {});
+        account().signIn().catch(function (err) {
+          if (err && err.code === 'auth/popup-closed-by-user') { if (!cloud.authed) setStatus('signedout'); return; }
+          cloud.msg = (err && err.code) || 'failed';
+          setStatus('error');
+        });
+        return;
+      }
       loadSDK().then(function (fb) {
         listen(fb);
         var provider = new fb.a.GoogleAuthProvider();
+        if (provider.setCustomParameters) provider.setCustomParameters({ prompt: 'select_account' });
         return fb.a.signInWithPopup(fb.auth, provider).catch(function (err) {
           if (err && /popup-blocked|operation-not-supported/i.test(err.code || '')) return fb.a.signInWithRedirect(fb.auth, provider);
           throw err;
@@ -225,8 +242,14 @@
         setStatus('error');
       });
     }
-    function signOut() { if (cloud.fb) cloud.fb.a.signOut(cloud.fb.auth); }
-    function click() { if (!cloud.uid) signIn(); else syncNow(true); }
+    function signOut() {
+      if (account()) { account().signOut(); return; }
+      if (cloud.fb) cloud.fb.a.signOut(cloud.fb.auth);
+    }
+    function click() {
+      if (account() && cloud.authed) { account().openPanel(); return; }
+      if (!cloud.uid) signIn(); else syncNow(true);
+    }
     /* The choice in plain words, and a week-long backup of the version not
        chosen — same behaviour as the classic core. */
     var BACKUP_KEY = SYNC.storageKey + '.backup', BACKUP_DAYS = 7;
@@ -326,6 +349,13 @@
     }
     function paint() {
       var v = { status: cloud.status, authed: cloud.authed, barOn: false, barText: '', showKeep: false };
+      var acct = account();
+      if (acct && cloud.authed) {
+        var st = acct.state(), u = st.user;
+        v.initial = u ? ((u.name || u.email || '?').trim().charAt(0).toUpperCase() || '?') : '';
+        v.accountDot = st.status === 'owner' || st.status === 'member' ? 'live' : st.status === 'pending' || st.status === 'checking' ? 'wait' : 'no';
+        v.siteAccount = true;              // signing out lives in the account panel
+      }
       switch (cloud.status) {
         case 'working':  v.label = 'Syncing…'; v.title = 'Talking to the cloud'; break;
         case 'synced':   v.label = 'Live · ' + hhmm(cloud.at); v.title = 'Signed in. Changes on your other devices appear here as they happen'; break;
@@ -370,7 +400,16 @@
       seedMeta();
       paint();
       if (!cloud.on) return;
-      if (meta().signedIn) {
+      var acct = account();
+      if (acct) {
+        acct.registerTool({ doc: SYNC.doc, syncNow: function () { syncNow(true); } });
+        cloud.unacct = acct.on(function (st) {
+          if (!cloud.on) return;
+          if (st.user && !cloud.listening) loadSDK().then(listen).catch(function () {});
+          paint();
+        });
+      }
+      if (meta().signedIn || (acct && acct.wanted())) {
         setStatus('working');
         loadSDK().then(listen).catch(function (err) { cloud.msg = (err && err.code) || 'failed'; setStatus('error'); });
       }
@@ -382,6 +421,7 @@
       cloud.on = false;
       cloud.uid = null;
       if (cloud.unauth) { cloud.unauth(); cloud.unauth = null; }
+      if (cloud.unacct) { cloud.unacct(); cloud.unacct = null; }
       stopWatching();
       stopMembership();
       clearTimeout(cloud.timer);

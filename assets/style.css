@@ -242,6 +242,15 @@ a { color: inherit; }
   }
 }
 
+/* ---------- account button (filled in by assets/account.js) ---------- */
+.topbar__account { display: flex; align-items: center; }
+.topbar__account:empty { display: none; }
+.hud-account { display: none; }
+@media (max-width: 820px) { .hud-account { display: block; } }
+@media (max-width: 760px) {
+  .topbar__account { position: absolute; top: 9px; right: var(--gut); }
+}
+
 /* Short viewports (landscape phones, small panes): the map needs the height
    more than the strapline does. */
 @media (max-height: 620px) {
