@@ -5,6 +5,27 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v58 — 2026-09-27
+
+**What's new** · What Is This Website? · [what-is-this.html]
+### What Is This<br>Website?
+An experiment, a lab, a digital mind map, a place for the tools — and a
+page that says so. On the map (About → What is this website?) and in the
+Index.
+
+**New page — `what-is-this.html`**
+- Built from `who-am-i.html` (the editable-page recipe): same look and
+  editor, saves to `pages/what-is-this`. No Firebase change — the `pages`
+  rule covers every editable page.
+- Map node repointed (was `soon.html#what-is-this`, which now forwards
+  here); Index list gains "What Is This Website?".
+
+**Verified locally (mock database)**
+- Visitor sees the text, no Edit; Xavier gets Edit, saves to
+  `pages/what-is-this` (separate from Who Am I?); 360px phone fits.
+
+---
+
 ## v57 — 2026-09-27
 
 **What's new** · Who Am I? · [who-am-i.html]

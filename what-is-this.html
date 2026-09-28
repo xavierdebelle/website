@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>WHO AM I? — XAVIER DE BELLE</title>
-<meta name="description" content="Who am I? — Xavier de Belle, photographer, cinematographer, professional fun maker, Montreal.">
+<title>WHAT IS THIS WEBSITE? — XAVIER DE BELLE</title>
+<meta name="description" content="What is this website? An experiment, a lab, a digital mind map and a home for the tools Xavier de Belle builds.">
 <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
 <link rel="stylesheet" href="assets/style.css?v=58">
 <script src="assets/account.js"></script>
@@ -100,7 +100,7 @@
 <main id="main">
   <section class="mast">
     <p class="kicker">About &mdash; Xavier de Belle</p>
-    <h1 class="display" id="page-title">Who am I<span class="q">?</span></h1>
+    <h1 class="display" id="page-title">What is this website<span class="q">?</span></h1>
   </section>
 
   <!-- Xavier's: an Edit button, and the editor it opens. The database rules
@@ -127,7 +127,7 @@
 
   <section class="page-body">
     <div class="page-body__text" id="page-body">
-      <p>It&rsquo;s a question we often ask ourselves. But can we truly answer it? We are ever-evolving beings, becoming a new version of ourselves every day, every hour, every minute, every second. In all of this, only one thing is certain: change.</p>
+      <p>This website started as an experiment, a lab, a research, a solution to my problems, an answer to curiosity. A way to discover the power of ai, the power of creativity. A website that helps me organize my thoughts in a digital mind map. A place to create tools that help me in my everyday life. A place to share these tools with friends, family and strangers. A place to work, play and discover. Welcome into a part of my brain.</p>
     </div>
   </section>
 </main>
@@ -152,8 +152,8 @@
 
 <script>
 /* ============================================================
-   WHO AM I? — an editable page
-   The words live at pages/who-am-i = {title, body, updatedAt} in the same
+   WHAT IS THIS WEBSITE? — an editable page (built from who-am-i.html)
+   The words live at pages/what-is-this = {title, body, updatedAt} in the same
    Firebase database as the blog: anyone can read, only Xavier's account
    can write (the rules enforce it). Until something has been saved there
    — or if the database can't be reached — the page shows the words built
@@ -168,10 +168,10 @@
     appId:       '1:6009567091:web:f7ee8c43ebe1bd25fcb706'
   };
   var SDK = 'https://www.gstatic.com/firebasejs/10.12.2/';
-  var PATH = 'pages/who-am-i';
+  var PATH = 'pages/what-is-this';
 
   function $(id) { return document.getElementById(id); }
-  var DEFAULT = { title: 'Who am I?', body: $('page-body').innerText.trim() };
+  var DEFAULT = { title: 'What is this website?', body: $('page-body').innerText.trim() };
   var page = { title: DEFAULT.title, body: DEFAULT.body };
   var owner = false, editing = false, saving = false;
 
