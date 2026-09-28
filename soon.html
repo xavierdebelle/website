@@ -7,7 +7,7 @@
 <meta name="description" content="Something that isn't here yet.">
 <meta name="robots" content="noindex">
 <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
-<link rel="stylesheet" href="assets/style.css?v=56">
+<link rel="stylesheet" href="assets/style.css?v=57">
 <script src="assets/account.js"></script>
 <script src="assets/site-index.js"></script>
 <style>
@@ -90,7 +90,7 @@
       <a href="mailto:xavier@debellephotography.com">Email</a>
     </div>
   </div>
-  <p class="foot__sig">&copy; <span id="yr"></span> Xavier de Belle &middot; v56</p>
+  <p class="foot__sig">&copy; <span id="yr"></span> Xavier de Belle &middot; v57</p>
 </footer>
 
 <script>
@@ -140,6 +140,7 @@
 
   var key = (location.hash || '').replace('#', '').toLowerCase();
   if (key === 'food-for-thought') { location.replace('food-for-thought.html'); return; }   // it exists now
+  if (key === 'who-am-i') { location.replace('who-am-i.html'); return; }
   var d = PLANNED[key];
   if (!d) return;
 

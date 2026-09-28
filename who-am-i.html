@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WHO AM I? — XAVIER DE BELLE</title>
+<meta name="description" content="Who am I? — Xavier de Belle, photographer, cinematographer, professional fun maker, Montreal.">
+<link rel="icon" href="assets/logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/style.css?v=57">
+<script src="assets/account.js"></script>
+<script src="assets/site-index.js"></script>
+<style>
+  .mast {
+    padding: clamp(40px, 8vw, 96px) var(--gut) clamp(30px, 5vw, 60px);
+    border-bottom: var(--edge) solid var(--paper);
+  }
+  .mast h1 {
+    font-size: clamp(52px, 13vw, 180px);
+    margin: 14px 0 0;
+    overflow-wrap: anywhere;
+  }
+  .mast h1 .q { color: var(--volt); }
+
+  .page-body {
+    padding: clamp(40px, 7vw, 96px) var(--gut);
+    border-bottom: var(--edge) solid var(--paper);
+  }
+  .page-body__text { max-width: 1100px; }
+  .page-body__text p {
+    font-size: clamp(22px, 3.2vw, 40px);
+    line-height: 1.3;
+    font-weight: 700;
+    letter-spacing: -.02em;
+    margin: 0 0 .9em;
+    max-width: 30ch;               /* measured against the big type itself */
+    overflow-wrap: anywhere;
+  }
+  .page-body__text p:last-child { margin-bottom: 0; }
+  .page-body__text p + p {
+    font-size: clamp(17px, 2vw, 22px);
+    line-height: 1.6;
+    font-weight: 400;
+    letter-spacing: 0;
+    max-width: 58ch;
+  }
+  .page-body__text a { color: var(--volt); text-underline-offset: 4px; }
+
+  /* ---------- the editor: only ever shown to Xavier ---------- */
+  .editbar {
+    padding: 18px var(--gut);
+    border-bottom: var(--edge) solid var(--paper);
+    display: flex; flex-wrap: wrap; gap: 12px; align-items: center;
+    font-family: var(--mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--dust);
+  }
+  .editbar[hidden], .desk[hidden] { display: none; }
+  .desk {
+    background: var(--volt);
+    color: var(--ink);
+    border-bottom: var(--edge) solid var(--paper);
+    padding: clamp(28px, 5vw, 56px) var(--gut);
+  }
+  .desk .kicker { color: rgba(0,0,0,.6); }
+  .desk label {
+    display: block; font-family: var(--mono); font-size: 10px; letter-spacing: .22em;
+    text-transform: uppercase; color: rgba(0,0,0,.65); margin: 18px 0 8px;
+  }
+  .desk input, .desk textarea {
+    width: 100%; display: block; border: var(--edge) solid var(--ink); background: var(--paper);
+    color: var(--ink); font-family: var(--stack); padding: 14px 16px; border-radius: 0; -webkit-appearance: none;
+  }
+  .desk input { font-size: clamp(20px, 2.6vw, 28px); font-weight: 900; letter-spacing: -.02em; }
+  .desk textarea { font-size: 17px; line-height: 1.6; min-height: 300px; resize: vertical; }
+  .desk input:focus-visible, .desk textarea:focus-visible { outline: var(--edge) solid var(--ink); outline-offset: 3px; }
+  .desk__hint { font-family: var(--mono); font-size: 11px; letter-spacing: .06em; color: rgba(0,0,0,.6); margin: 10px 0 0; }
+  .desk__acts { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-top: 22px; }
+  .desk .btn { border-color: var(--ink); color: var(--ink); }
+  .desk .btn:hover { background: var(--ink); border-color: var(--ink); color: var(--volt); }
+  .desk .btn--solid { background: var(--ink); color: var(--volt); }
+  .desk .btn--solid:hover { background: var(--paper); color: var(--ink); }
+  .desk .btn[disabled] { opacity: .45; cursor: default; transform: none; }
+  .desk__msg { font-family: var(--mono); font-size: 12px; letter-spacing: .04em; line-height: 1.5; margin: 0; flex: 1 1 220px; }
+  .desk__msg.bad { font-weight: 700; }
+</style>
+</head>
+<body>
+
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <a class="topbar__mark" href="index.html">
+    <img src="assets/logo.svg" alt="">
+    Xavier de Belle
+  </a>
+  <nav class="topbar__nav" aria-label="Main">
+    <button class="topbar__btn" type="button" data-site-index aria-haspopup="dialog">Index</button>
+    <span class="topbar__account" data-xdb-account></span>
+  </nav>
+</header>
+
+<main id="main">
+  <section class="mast">
+    <p class="kicker">About &mdash; Xavier de Belle</p>
+    <h1 class="display" id="page-title">Who am I<span class="q">?</span></h1>
+  </section>
+
+  <!-- Xavier's: an Edit button, and the editor it opens. The database rules
+       are what stop anyone else from saving. -->
+  <div class="editbar" id="editbar" hidden>
+    <span>This page is yours to edit</span>
+    <button class="topbar__btn" type="button" id="b-edit">Edit page</button>
+  </div>
+  <section class="desk" id="desk" hidden aria-label="Edit this page">
+    <p class="kicker">Editing &mdash; live for everyone when you save</p>
+    <form id="edit-form" autocomplete="off">
+      <label for="f-title">Title</label>
+      <input id="f-title" maxlength="200" required>
+      <label for="f-body">Text</label>
+      <textarea id="f-body" maxlength="50000"></textarea>
+      <p class="desk__hint">Leave a blank line between paragraphs. Links starting with http are made clickable. The first paragraph is set large.</p>
+      <div class="desk__acts">
+        <button class="btn btn--solid" id="b-save" type="submit">Save</button>
+        <button class="btn" id="b-cancel" type="button">Cancel</button>
+        <p class="desk__msg" id="desk-msg" role="status" aria-live="polite"></p>
+      </div>
+    </form>
+  </section>
+
+  <section class="page-body">
+    <div class="page-body__text" id="page-body">
+      <p>It&rsquo;s a question we often ask ourselves. But can we truly answer it? We are ever-evolving beings, becoming a new version of ourselves every day, every hour, every minute, every second. In all of this, only one thing is certain: change.</p>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <div>
+    <p class="kicker" style="margin-bottom:14px">Xavier de Belle &mdash; Montreal</p>
+    <div class="foot__links">
+      <a href="index.html">The Map</a>
+      <a href="work.html">Work</a>
+      <a href="tools.html">Tools</a>
+      <a href="food-for-thought.html">Food for Thought</a>
+      <a href="changelog.html">What&rsquo;s New</a>
+      <a href="https://www.instagram.com/xavierdebelle/" target="_blank" rel="noopener">Instagram &#8599;</a>
+      <a href="mailto:xavier@debellephotography.com">Email</a>
+    </div>
+  </div>
+  <p class="foot__sig">&copy; <span id="yr"></span> Xavier de Belle &middot; v57</p>
+</footer>
+
+<script>document.getElementById('yr').textContent = new Date().getFullYear();</script>
+
+<script>
+/* ============================================================
+   WHO AM I? — an editable page
+   The words live at pages/who-am-i = {title, body, updatedAt} in the same
+   Firebase database as the blog: anyone can read, only Xavier's account
+   can write (the rules enforce it). Until something has been saved there
+   — or if the database can't be reached — the page shows the words built
+   into it above, so it always has something to say.
+   ============================================================ */
+(function () {
+  var FIREBASE = {
+    apiKey:      'AIzaSyCu0CA6eLWIkhhl-Z7jr_dDisuXDt1dKco',
+    authDomain:  'xdb-tools.firebaseapp.com',
+    databaseURL: 'https://xdb-tools-default-rtdb.firebaseio.com',
+    projectId:   'xdb-tools',
+    appId:       '1:6009567091:web:f7ee8c43ebe1bd25fcb706'
+  };
+  var SDK = 'https://www.gstatic.com/firebasejs/10.12.2/';
+  var PATH = 'pages/who-am-i';
+
+  function $(id) { return document.getElementById(id); }
+  var DEFAULT = { title: 'Who am I?', body: $('page-body').innerText.trim() };
+  var page = { title: DEFAULT.title, body: DEFAULT.body };
+  var owner = false, editing = false, saving = false;
+
+  function withTimeout(p, ms) {
+    return Promise.race([p, new Promise(function (_, no) { setTimeout(function () { no({ code: 'timeout' }); }, ms); })]);
+  }
+
+  /* ---- showing it ---- */
+  function renderTitle(t) {
+    var h = $('page-title');
+    h.textContent = '';
+    var m = /^(.*?)([?!.]+)$/.exec(t);          // the closing mark in volt, as designed
+    if (m && m[1]) {
+      h.appendChild(document.createTextNode(m[1]));
+      var q = document.createElement('span');
+      q.className = 'q';
+      q.textContent = m[2];
+      h.appendChild(q);
+    } else h.textContent = t;
+    document.title = t.toUpperCase() + ' — XAVIER DE BELLE';
+  }
+  /* plain text in, safe nodes out — nothing is ever parsed as HTML */
+  function renderBody(text) {
+    var wrap = $('page-body');
+    wrap.textContent = '';
+    text.replace(/\r\n?/g, '\n').split(/\n\s*\n/).forEach(function (para) {
+      if (!para.trim()) return;
+      var p = document.createElement('p');
+      para.trim().split('\n').forEach(function (line, i) {
+        if (i) p.appendChild(document.createElement('br'));
+        line.split(/(https?:\/\/[^\s<>"]+[^\s<>".,;:!?)\]])/).forEach(function (bit, j) {
+          if (!bit) return;
+          if (j % 2) {
+            var a = document.createElement('a');
+            a.href = bit; a.textContent = bit; a.target = '_blank'; a.rel = 'noopener nofollow';
+            p.appendChild(a);
+          } else p.appendChild(document.createTextNode(bit));
+        });
+      });
+      wrap.appendChild(p);
+    });
+  }
+  function render() { renderTitle(page.title); renderBody(page.body); }
+
+  /* ---- reading: public, live ---- */
+  function readLive() {
+    Promise.all([import(SDK + 'firebase-app.js'), import(SDK + 'firebase-database.js')]).then(function (m) {
+      var db = m[1].getDatabase(m[0].initializeApp(FIREBASE));
+      m[1].onValue(m[1].ref(db, PATH), function (snap) {
+        var v = snap.val();
+        if (v && typeof v.title === 'string' && v.title.trim()) {
+          page = { title: v.title, body: typeof v.body === 'string' ? v.body : '' };
+        } else {
+          page = { title: DEFAULT.title, body: DEFAULT.body };
+        }
+        render();
+      }, function () { /* not readable yet: the built-in words stay */ });
+    }).catch(function () {});
+  }
+
+  /* ---- editing: Xavier only ---- */
+  function say(t, bad) { $('desk-msg').textContent = t || ''; $('desk-msg').className = 'desk__msg' + (bad ? ' bad' : ''); }
+  function setOwner(on) {
+    owner = on;
+    $('editbar').hidden = !owner || editing;
+    if (!owner && editing) closeEditor();
+  }
+  function openEditor() {
+    if (!owner) return;
+    editing = true;
+    $('f-title').value = page.title;
+    $('f-body').value = page.body;
+    say('');
+    $('editbar').hidden = true;
+    $('desk').hidden = false;
+    $('f-body').focus();
+  }
+  function closeEditor() {
+    editing = false;
+    $('desk').hidden = true;
+    $('editbar').hidden = !owner;
+  }
+  function explain(err) {
+    var code = String((err && (err.code || err.message)) || '');
+    if (/permission/i.test(code)) return 'The database refused it. The Firebase rules need the pages section — see the changelog.';
+    if (/timeout|network|unavailable/i.test(code)) return 'No connection — not saved. Your text is still here; try again.';
+    return 'That didn’t save' + (code ? ' (' + code + ')' : '') + '. Your text is still here.';
+  }
+  $('edit-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (!owner || saving || !window.xdbAccount) return;
+    var title = $('f-title').value.trim(), body = $('f-body').value.replace(/\s+$/, '');
+    if (!title) { say('Give the page a title.', true); $('f-title').focus(); return; }
+    saving = true;
+    $('b-save').disabled = true;
+    say('Saving…');
+    window.xdbAccount.sdk().then(function (fb) {
+      return withTimeout(fb.f.set(fb.f.ref(fb.db, PATH), { title: title, body: body, updatedAt: Date.now() }), 12000);
+    }).then(function () {
+      page = { title: title, body: body };
+      render();
+      closeEditor();
+    }, function (err) {
+      say(explain(err), true);
+    }).then(function () {
+      saving = false;
+      $('b-save').disabled = false;
+    });
+  });
+  $('b-edit').addEventListener('click', openEditor);
+  $('b-cancel').addEventListener('click', closeEditor);
+
+  if (window.xdbAccount) {
+    setOwner(window.xdbAccount.state().status === 'owner');
+    window.xdbAccount.on(function (st) { setOwner(st.status === 'owner'); });
+  }
+  readLive();
+})();
+</script>
+
+</body>
+</html>

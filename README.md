@@ -12,6 +12,7 @@ browser tools I've built. Plain HTML/CSS/JS, no build step, no dependencies.
     work.html       portfolio: de Belle Photography, 333 Photo, real estate
     food-for-thought.html   the blog — posts live in Firebase, public read, owner write
     access.html     sync by invitation — request access; Xavier approves here
+    who-am-i.html   about page — text editable by Xavier, stored at pages/who-am-i
     assets/         logo + shared design system
     assets/account.js   site-wide sign-in: account button, panel, used by every page and synced tool
     tools/          the tools themselves, one self-contained file each

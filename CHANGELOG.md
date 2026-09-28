@@ -5,6 +5,44 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v57 — 2026-09-27
+
+**What's new** · Who Am I? · [who-am-i.html]
+### Who<br>Am I?
+A new page, and a short answer to a long question. It's on the map
+(About → Who am I?) and in the Index.
+
+**New page — `who-am-i.html`**
+- Title and text, set large; no date. The first paragraph is the big one,
+  any after it read as body text. Plain text in: blank line = paragraph,
+  links made clickable, nothing parsed as HTML.
+- Editable by Xavier: signed in, an **Edit page** bar appears; the editor
+  (Title, Text, Save, Cancel) saves to `pages/who-am-i` = `{title, body,
+  updatedAt}` in Firebase and the page updates live for anyone reading.
+  Nobody else sees Edit, and the rules refuse anyone else's save.
+- The words are also built into the page, so it reads correctly before
+  anything is saved, if the database can't be reached, or before the rules
+  below are published.
+- Linked from the map node (was `soon.html#who-am-i`, which now forwards
+  here) and the Index list (The Site → Who Am I?).
+
+**Outstanding — Xavier publishes the rules**
+- Firebase → Realtime Database → Rules: paste the whole of
+  `.claude/skills/add-cloud-sync/assets/firebase-rules.json` (adds a
+  `pages` section: public read, owner write) → Publish. Until then the page
+  shows its built-in words and Save reports the rules are missing.
+
+**Verified locally (mock database)**
+- Visitor: built-in title and text, no Edit. Xavier: Edit → prefilled →
+  save → page, tab title and database updated; another device showed the
+  change live; a visitor there saw no Edit; with reads refused the page
+  keeps its built-in words; HTML typed in shows as text; links clickable.
+- Found and fixed: the text column was measured against the small base
+  size and came out a few words wide.
+- Desktop and 375px phone, page and editor, no sideways scroll.
+
+---
+
 ## v56 — 2026-09-27
 
 **What's new** · The Site · [index.html]
