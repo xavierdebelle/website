@@ -5,6 +5,55 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v59 — 2026-09-28
+
+**What's new** · Idea Bank · [tools/idea-bank.html]
+### Idea Bank,<br>tightened up
+Scoring an idea no longer throws it somewhere down the list: it stays put
+until you press Re-sort, then takes you to it. Build gets a timer on every
+card, a box to add a project straight to Next up, and a way back to
+Prioritise. Plan steps can be moved up and down, and long descriptions
+show in full.
+
+**Idea Bank v8 — `tools/idea-bank.html`, source `Tools files/Tools/ideas-v8/`**
+- Ranking: the old "hold still for 1.4 s" froze the order *after* the new
+  score was applied, so the idea jumped at once. Now the order is taken
+  before the change and held until **Re-sort by score** (a yellow bar that
+  sticks to the bottom of the list); the idea you scored is outlined and
+  scrolled into view after re-sorting. Changing tab or area filter re-sorts.
+- Build: **Add to build** box (title + area → Next up); ← on a Next-up
+  card sends it back to Prioritise; drawer gains **Back to Prioritise** for
+  Next up, In progress and Shipped.
+- Timer: ▶ Timer on every Next-up / In-progress card, Start/Stop plus
+  −15 / +15 min in the drawer. One timer at a time (starting one stops the
+  other); starting on Next up moves the card to In progress; shipping,
+  parking or sending an idea back stops it. Stored per idea as `spent` (ms)
+  and `timerStart` (ms, 0 when stopped), so a running timer carries on
+  across reloads and devices. Totals show on cards and in Copy as text.
+- Plan steps: ↑ / ↓ to reorder.
+- "What it actually is" and Notes grow to fit their text (CSS
+  `field-sizing`, with a measured fallback for Safari and Firefox).
+- "Copy plan" → **Copy as text**: it copied only when the browser allowed
+  the clipboard and said "Plan copied" either way. Now it falls back to the
+  older copy method and says plainly when it couldn't.
+- Parked: "Not now. Not never." removed.
+- Sync: payload carries `ideaBank: 8`. A save from an older page (no
+  marker, no time fields) keeps this device's time on those ideas instead
+  of wiping it. Same doc (`idea-bank`), same storage key — nothing to migrate.
+
+**Verified locally (mock database)**
+- Scoring held the order, bar appeared, Re-sort moved the idea and
+  outlined it; quick add → Next up; ← → Prioritised; timer moved a card to
+  In progress, switching timers banked the first; steps reordered; ±15 min;
+  Copy as text with a real click; long description shown in full; 375 px
+  phone, no sideways scroll; synced with the marker and times; a simulated
+  v7 save came through with its edit and the times kept.
+
+**Parked, remind Xavier later:** linking Idea Bank to Project Phases for
+big projects.
+
+---
+
 ## v58 — 2026-09-27
 
 **What's new** · What Is This Website? · [what-is-this.html]

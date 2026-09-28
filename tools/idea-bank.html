@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Idea Bank — capture, prioritise, ship</title>
 <link rel="icon" href="../assets/logo.svg" type="image/svg+xml">
-<meta name="viewport" content="width=device-width, initial-scale=1">
 <script src="../assets/account.js"></script>
 <script src="idea-bank/support.js"></script>
 </head>
@@ -20,6 +20,8 @@
   a { color: var(--volt); text-decoration: none; }
   a:hover { color: var(--paper); }
   input::placeholder, textarea::placeholder { color: #9a9a9a; }
+  /* long text grows the box instead of hiding behind a scrollbar */
+  textarea.grow { field-sizing: content; overflow: hidden; }
 </style>
 </helmet>
 
@@ -232,13 +234,13 @@
 
         <div style="display: flex; flex-wrap: wrap; gap: 8px 20px; align-items: baseline; margin: 34px 0 14px">
           <span style="font-weight: 900; text-transform: uppercase; letter-spacing: -.03em; font-size: 22px">Ranked by score</span>
-          <span style="font-family: var(--mono); font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: var(--dust); line-height: 1.7">Impact × confidence × ease. Commit the top, not the loudest.</span>
+          <span style="font-family: var(--mono); font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: var(--dust); line-height: 1.7">{{ rankHint }}</span>
         </div>
 
         <sc-if value="{{ rankHas }}" hint-placeholder-val="{{ true }}">
           <div style="display: flex; flex-direction: column; gap: 14px">
             <sc-for list="{{ rankItems }}" as="it" hint-placeholder-count="3">
-              <div style="background: var(--paper); color: var(--ink); display: flex; flex-wrap: wrap; gap: 20px 32px; padding: clamp(16px,2.2vw,24px)">
+              <div id="{{ it.domId }}" style="background: var(--paper); color: var(--ink); display: flex; flex-wrap: wrap; gap: 20px 32px; padding: clamp(16px,2.2vw,24px); outline: 4px solid {{ it.hl }}; outline-offset: 3px; scroll-margin: 90px">
                 <div style="flex: 1 1 380px; min-width: 0">
                   <div style="display: flex; gap: 14px; align-items: flex-start">
                     <span style="font-family: var(--mono); font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; min-width: 52px; box-sizing: border-box; text-align: center; padding: 8px 6px; background: {{ it.badgeBg }}; color: {{ it.badgeInk }}; border: 3px solid {{ it.badgeEdge }}; flex: none">{{ it.score }}</span>
@@ -273,6 +275,12 @@
                 </div>
               </div>
             </sc-for>
+            <sc-if value="{{ sortStale }}" hint-placeholder-val="{{ false }}">
+              <div role="status" style="position: sticky; bottom: 16px; z-index: 5; background: var(--volt); color: var(--ink); display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; padding: 12px clamp(14px,2vw,20px); border: 3px solid var(--ink)">
+                <span style="flex: 1 1 220px; min-width: 0; font-family: var(--mono); font-size: 11px; letter-spacing: .08em; line-height: 1.6">Scores changed. The list holds still until you re-sort.</span>
+                <button type="button" onClick="{{ resort }}" style="border: 3px solid var(--ink); background: var(--ink); color: var(--volt); font-family: var(--stack); font-weight: 900; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; padding: 10px 16px; cursor: pointer; white-space: nowrap" style-hover="background: var(--paper); border-color: var(--paper); color: var(--ink)">Re-sort by score</button>
+              </div>
+            </sc-if>
           </div>
         </sc-if>
         <sc-if value="{{ rankEmpty }}" hint-placeholder-val="{{ false }}">
@@ -290,6 +298,12 @@
         <div style="display: flex; flex-wrap: wrap; gap: 16px 24px; align-items: flex-end; justify-content: space-between; margin-bottom: 26px">
           <h2 style="font-weight: 900; text-transform: uppercase; letter-spacing: -.04em; line-height: .88; font-size: clamp(26px,3.6vw,46px); margin: 0">Build <span style="color: var(--volt)">it</span></h2>
           <span style="font-family: var(--mono); font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: var(--dust)">Finishing beats starting</span>
+        </div>
+
+        <div style="background: var(--paper); color: var(--ink); display: flex; flex-wrap: wrap; gap: 10px 12px; align-items: center; padding: 14px clamp(14px,2vw,20px); margin-bottom: 22px">
+          <input type="text" value="{{ bText }}" onChange="{{ onBText }}" onKeyDown="{{ onBKey }}" placeholder="Add a project straight to Next up" aria-label="New project for Next up" style="flex: 3 1 260px; min-width: 0; border: 2px solid #dcdcdc; padding: 12px 13px; font-family: var(--stack); font-size: 15px; font-weight: 700; color: var(--ink); background: #fff; border-radius: 0; outline: none" style-focus="border-color: var(--ink)">
+          <input type="text" list="xdb-areas" value="{{ bArea }}" onChange="{{ onBArea }}" onKeyDown="{{ onBKey }}" placeholder="Area" aria-label="Area" style="flex: 1 1 140px; min-width: 0; border: 2px solid #dcdcdc; padding: 12px 13px; font-family: var(--stack); font-size: 14px; font-weight: 700; color: var(--ink); background: #fff; border-radius: 0; outline: none" style-focus="border-color: var(--ink)">
+          <button type="button" onClick="{{ addBuild }}" style="border: 3px solid var(--ink); background: var(--ink); color: var(--volt); font-family: var(--stack); font-weight: 900; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; padding: 12px 18px; cursor: pointer; white-space: nowrap" style-hover="background: var(--volt); color: var(--ink)">Add to build</button>
         </div>
 
         <sc-if value="{{ wipOver }}" hint-placeholder-val="{{ false }}">
@@ -320,12 +334,15 @@
                     <sc-if value="{{ cd.hasBar }}" hint-placeholder-val="{{ false }}">
                       <span style="display: block; height: 12px; border: 2px solid var(--ink); margin-top: 12px"><i style="display: block; height: 100%; background: var(--volt); width: {{ cd.pct }}"></i></span>
                     </sc-if>
-                    <div style="display: flex; gap: 8px; align-items: center; margin-top: 12px">
+                    <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 12px">
                       <sc-if value="{{ cd.canLeft }}" hint-placeholder-val="{{ false }}">
-                        <button type="button" onClick="{{ cd.left }}" title="Move left" style="background: transparent; border: 2px solid #dcdcdc; color: var(--ink); font-family: var(--mono); font-size: 12px; font-weight: 700; padding: 5px 11px; cursor: pointer" style-hover="border-color: var(--ink)">←</button>
+                        <button type="button" onClick="{{ cd.left }}" title="{{ cd.leftTip }}" aria-label="{{ cd.leftTip }}" style="background: transparent; border: 2px solid #dcdcdc; color: var(--ink); font-family: var(--mono); font-size: 12px; font-weight: 700; padding: 5px 11px; cursor: pointer" style-hover="border-color: var(--ink)">←</button>
                       </sc-if>
                       <sc-if value="{{ cd.canRight }}" hint-placeholder-val="{{ true }}">
-                        <button type="button" onClick="{{ cd.right }}" title="{{ cd.rightTip }}" style="background: transparent; border: 2px solid #dcdcdc; color: var(--ink); font-family: var(--mono); font-size: 12px; font-weight: 700; padding: 5px 11px; cursor: pointer" style-hover="border-color: var(--ink)">→</button>
+                        <button type="button" onClick="{{ cd.right }}" title="{{ cd.rightTip }}" aria-label="{{ cd.rightTip }}" style="background: transparent; border: 2px solid #dcdcdc; color: var(--ink); font-family: var(--mono); font-size: 12px; font-weight: 700; padding: 5px 11px; cursor: pointer" style-hover="border-color: var(--ink)">→</button>
+                      </sc-if>
+                      <sc-if value="{{ cd.canTime }}" hint-placeholder-val="{{ false }}">
+                        <button type="button" onClick="{{ cd.timer }}" aria-pressed="{{ cd.running }}" style="background: {{ cd.timerBg }}; border: 2px solid {{ cd.timerEdge }}; color: var(--ink); font-family: var(--mono); font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; padding: 6px 10px; cursor: pointer; font-variant-numeric: tabular-nums; white-space: nowrap" style-hover="border-color: var(--ink)">{{ cd.timerLabel }}</button>
                       </sc-if>
                       <button type="button" onClick="{{ cd.open }}" style="margin-left: auto; background: transparent; border: 0; color: #6a6a6a; font-family: var(--mono); font-size: 9px; letter-spacing: .16em; text-transform: uppercase; padding: 7px 4px; cursor: pointer" style-hover="color: var(--ink)">Open</button>
                     </div>
@@ -414,7 +431,7 @@
         </label>
         <label style="display: flex; flex-direction: column; gap: 7px">
           <span style="font-family: var(--mono); font-size: 10px; letter-spacing: .22em; text-transform: uppercase; color: #6a6a6a">What it actually is</span>
-          <textarea value="{{ d.detail }}" onChange="{{ d.setDetail }}" placeholder="The problem it solves, who it's for, what done looks like." style="border: 2px solid #dcdcdc; padding: 12px 13px; font-family: var(--stack); font-size: 14px; line-height: 1.55; color: var(--ink); background: #fff; min-height: 84px; resize: vertical; border-radius: 0; outline: none" style-focus="border-color: var(--ink)"></textarea>
+          <textarea class="grow" value="{{ d.detail }}" onChange="{{ d.setDetail }}" placeholder="The problem it solves, who it's for, what done looks like." style="border: 2px solid #dcdcdc; padding: 12px 13px; font-family: var(--stack); font-size: 14px; line-height: 1.55; color: var(--ink); background: #fff; min-height: 84px; resize: vertical; border-radius: 0; outline: none" style-focus="border-color: var(--ink)"></textarea>
         </label>
         <div style="display: flex; gap: 14px; flex-wrap: wrap">
           <label style="display: flex; flex-direction: column; gap: 7px; flex: 1 1 180px">
@@ -446,6 +463,19 @@
         </div>
 
         <div style="border-top: 3px solid var(--ink); padding-top: 16px">
+          <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 12px">
+            <span style="font-family: var(--mono); font-size: 10px; letter-spacing: .22em; text-transform: uppercase; color: #6a6a6a">Time spent</span>
+            <span style="font-family: var(--mono); font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums">{{ d.timeTotal }}</span>
+          </div>
+          <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center">
+            <button type="button" onClick="{{ d.timer }}" aria-pressed="{{ d.running }}" style="border: 3px solid var(--ink); background: {{ d.timerBg }}; color: {{ d.timerInk }}; font-family: var(--stack); font-weight: 900; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; padding: 11px 16px; cursor: pointer; white-space: nowrap" style-hover="background: var(--volt); color: var(--ink); border-color: var(--volt)">{{ d.timerLabel }}</button>
+            <button type="button" onClick="{{ d.less }}" disabled="{{ d.cantLess }}" style="background: transparent; border: 2px solid #dcdcdc; color: var(--ink); font-family: var(--mono); font-size: 11px; font-weight: 700; padding: 9px 11px; cursor: pointer; opacity: {{ d.lessOp }}" style-hover="border-color: var(--ink)">−15 min</button>
+            <button type="button" onClick="{{ d.more }}" style="background: transparent; border: 2px solid #dcdcdc; color: var(--ink); font-family: var(--mono); font-size: 11px; font-weight: 700; padding: 9px 11px; cursor: pointer" style-hover="border-color: var(--ink)">+15 min</button>
+          </div>
+          <p style="font-size: 13px; line-height: 1.5; color: #6a6a6a; margin: 10px 0 0">{{ d.timeNote }}</p>
+        </div>
+
+        <div style="border-top: 3px solid var(--ink); padding-top: 16px">
           <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 14px">
             <span style="font-family: var(--mono); font-size: 10px; letter-spacing: .22em; text-transform: uppercase; color: #6a6a6a">Score · {{ d.quadrant }}</span>
             <span style="font-family: var(--mono); font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums">{{ d.score }}<span style="font-size: 11px; color: #6a6a6a"> / 100</span></span>
@@ -474,6 +504,10 @@
             <div style="display: flex; align-items: center; gap: 12px; padding: 11px 0; border-bottom: 2px solid #e2e2e2">
               <button type="button" onClick="{{ s.toggle }}" aria-label="{{ s.aria }}" style="width: 20px; height: 20px; box-sizing: border-box; padding: 0; border: 3px solid var(--ink); background: {{ s.box }}; cursor: pointer; flex: none"></button>
               <span style="flex: 1; min-width: 0; font-size: 15px; font-weight: 700; line-height: 1.4; color: {{ s.ink }}; text-decoration: {{ s.line }}">{{ s.text }}</span>
+              <span style="display: flex; gap: 4px; flex: none">
+                <button type="button" onClick="{{ s.up }}" disabled="{{ s.first }}" aria-label="{{ s.upAria }}" title="Move up" style="width: 30px; height: 30px; padding: 0; background: transparent; border: 2px solid #dcdcdc; color: var(--ink); font-family: var(--mono); font-size: 13px; font-weight: 700; cursor: pointer; opacity: {{ s.upOp }}" style-hover="border-color: var(--ink)">↑</button>
+                <button type="button" onClick="{{ s.down }}" disabled="{{ s.last }}" aria-label="{{ s.downAria }}" title="Move down" style="width: 30px; height: 30px; padding: 0; background: transparent; border: 2px solid #dcdcdc; color: var(--ink); font-family: var(--mono); font-size: 13px; font-weight: 700; cursor: pointer; opacity: {{ s.downOp }}" style-hover="border-color: var(--ink)">↓</button>
+              </span>
               <button type="button" onClick="{{ s.del }}" style="background: transparent; border: 0; color: #6a6a6a; font-family: var(--mono); font-size: 9px; letter-spacing: .16em; text-transform: uppercase; padding: 6px 2px; cursor: pointer" style-hover="color: var(--ink)">Del</button>
             </div>
           </sc-for>
@@ -488,7 +522,7 @@
 
         <label style="display: flex; flex-direction: column; gap: 7px; border-top: 3px solid var(--ink); padding-top: 16px">
           <span style="font-family: var(--mono); font-size: 10px; letter-spacing: .22em; text-transform: uppercase; color: #6a6a6a">Notes</span>
-          <textarea value="{{ d.notes }}" onChange="{{ d.setNotes }}" placeholder="Links, numbers, what you learned." style="border: 2px solid #dcdcdc; padding: 12px 13px; font-family: var(--stack); font-size: 14px; line-height: 1.55; color: var(--ink); background: #fff; min-height: 84px; resize: vertical; border-radius: 0; outline: none" style-focus="border-color: var(--ink)"></textarea>
+          <textarea class="grow" value="{{ d.notes }}" onChange="{{ d.setNotes }}" placeholder="Links, numbers, what you learned." style="border: 2px solid #dcdcdc; padding: 12px 13px; font-family: var(--stack); font-size: 14px; line-height: 1.55; color: var(--ink); background: #fff; min-height: 84px; resize: vertical; border-radius: 0; outline: none" style-focus="border-color: var(--ink)"></textarea>
         </label>
         <span style="font-family: var(--mono); font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: #6a6a6a">{{ d.captured }}</span>
       </div>
@@ -564,6 +598,10 @@ const quadrant = (i) => {
 };
 const clip = (s, n) => (s.length > n ? s.slice(0, n - 1) + '…' : s);
 const tagsOf = (s) => s.split(',').map(t => t.trim()).filter(Boolean);
+// Time on an idea: what's banked plus the timer that's running, if any.
+const timeOn = (i) => i.spent + (i.timerStart ? Math.max(0, Date.now() - i.timerStart) : 0);
+const fmtTime = (ms) => { const m = Math.floor(ms / 6e4); return m < 60 ? m + 'm' : Math.floor(m / 60) + 'h ' + pad(m % 60) + 'm'; };
+const fmtClock = (ms) => { const t = Math.floor(ms / 1000); return Math.floor(t / 3600) + ':' + pad(Math.floor(t / 60) % 60) + ':' + pad(t % 60); };
 
 const listOf = (v) => Array.isArray(v) ? v : (!v || typeof v !== 'object') ? [] : Object.keys(v).map(k => v[k]);
 const clampN = (v, lo, hi, d) => { v = Number(v); return isFinite(v) ? Math.min(hi, Math.max(lo, Math.round(v))) : d; };
@@ -575,6 +613,7 @@ function normaliseIdea(i) {
     stage: STAGES[i.stage] ? i.stage : 'inbox',
     steps: listOf(i.steps).map(s => { s = s || {}; return { id: s.id || uid(), text: s.text || '', done: !!s.done }; }),
     owner: i.owner || '', due: i.due || '', notes: i.notes || '',
+    spent: Math.max(0, Math.round(Number(i.spent) || 0)), timerStart: Math.max(0, Math.round(Number(i.timerStart) || 0)),
     createdAt: i.createdAt || new Date().toISOString(), shippedAt: i.shippedAt || ''
   };
 }
@@ -634,7 +673,7 @@ function badge(s) {
 
 class Component extends DCLogic {
   state = { projects: normaliseProjects([]), cur: 'p-main', tab: null, q: '', openId: null, capText: '', capArea: '', capTags: '', capSplit: false,
-    prioArea: '', toast: null, pd: null, stepText: '', frozen: null, rev: 0, tagsDraft: null, dragId: null, dragOver: null, sync: null };
+    prioArea: '', toast: null, pd: null, stepText: '', frozen: null, lastScored: null, bText: '', bArea: '', now: 0, rev: 0, tagsDraft: null, dragId: null, dragOver: null, sync: null };
   fileRef = React.createRef();
 
   get mode() { return this.props.dataset || 'live'; }
@@ -643,6 +682,8 @@ class Component extends DCLogic {
   componentDidMount() {
     this.onKey = (e) => { if (e.key === 'Escape') this.setState({ openId: null, pd: null }); };
     document.addEventListener('keydown', this.onKey);
+    // a running timer repaints once a second; nothing runs when none is on
+    this.ticker = setInterval(() => { if (this.running()) this.setState({ now: Date.now() }); }, 1000);
     this.applyDataset();
   }
   componentDidUpdate(prev) {
@@ -654,10 +695,19 @@ class Component extends DCLogic {
       this._savedCur = this.state.cur;
       this.save();
     }
+    this.growBoxes();
+  }
+  // Safari and Firefox don't size a textarea to its text yet; do it by hand there.
+  growBoxes() {
+    if (window.CSS && CSS.supports && CSS.supports('field-sizing', 'content')) return;
+    document.querySelectorAll('textarea.grow').forEach(t => {
+      if (t._grown === t.value) return;
+      t._grown = t.value; t.style.height = 'auto'; t.style.height = (t.scrollHeight + 4) + 'px';
+    });
   }
   componentWillUnmount() {
     document.removeEventListener('keydown', this.onKey);
-    clearTimeout(this.tt); clearTimeout(this.ft);
+    clearTimeout(this.tt); clearInterval(this.ticker);
     this.stopSync();
   }
 
@@ -702,9 +752,16 @@ class Component extends DCLogic {
   adapter() {
     return {
       doc: 'idea-bank', storageKey: KEY, noun: 'ideas',
-      payload: () => ({ projects: this.state.projects }),
+      payload: () => ({ projects: this.state.projects, ideaBank: 8 }),
       apply: (d) => {
         let ps = listOf(d.projects);
+        // A page from before timers (v7 and older) drops the time fields when it
+        // saves. Keep this device's time on those ideas rather than lose it.
+        if (!d.ideaBank && ps.length) {
+          const had = {};
+          this.state.projects.forEach(p => p.ideas.forEach(i => { if (i.spent || i.timerStart) had[i.id] = i; }));
+          if (Object.keys(had).length) ps = ps.map(p => Object.assign({}, p, { ideas: listOf(p && p.ideas).map(i => i && had[i.id] && i.spent == null ? Object.assign({}, i, { spent: had[i.id].spent, timerStart: had[i.id].timerStart }) : i) }));
+        }
         if (!ps.length) {
           if (!listOf(d.ideas).length || this.state.projects.length > 1) return false;
           const p0 = this.state.projects[0];
@@ -744,6 +801,7 @@ class Component extends DCLogic {
   setStage(id, stage) {
     const i = this.byId(id); if (!i) return;
     const from = i.stage, was = i.shippedAt;
+    if ((stage === 'done' || stage === 'parked' || stage === 'inbox' || stage === 'ranked') && i.timerStart) this.stopTimer(i, true);
     i.stage = stage;
     if (stage === 'done' && !i.shippedAt) i.shippedAt = today();
     if (stage !== 'done') i.shippedAt = '';
@@ -756,12 +814,60 @@ class Component extends DCLogic {
     this.touch({ openId: this.state.openId === id ? null : this.state.openId });
     this.toast('Deleted “' + clip(gone.title, 34) + '”', () => { list.splice(idx, 0, gone); this.touch(); });
   }
+  // Scoring holds the list still: the idea stays where your finger is, and
+  // "Re-sort by score" moves it once you're done, then takes you to it.
   setScore(i, k, n) {
-    i[k] = n;
     const order = this.state.frozen || this.ranked().map(x => x.id);
-    clearTimeout(this.ft);
-    this.ft = setTimeout(() => this.setState({ frozen: null }), 1400);
-    this.touch({ frozen: order });
+    i[k] = n;
+    this.touch({ frozen: order, lastScored: i.id });
+  }
+  resort() {
+    const id = this.state.lastScored;
+    this.setState({ frozen: null }, () => {
+      const el = id && document.getElementById('rk-' + id);
+      if (el && el.scrollIntoView) el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    });
+  }
+  allIdeas() { return this.state.projects.reduce((a, p) => a.concat(p.ideas), []); }
+  running() { return this.allIdeas().find(i => i.timerStart); }
+  stopTimer(i, quiet) {
+    if (!i.timerStart) return;
+    i.spent += Math.max(0, Date.now() - i.timerStart);
+    i.timerStart = 0;
+    if (!quiet) { this.touch(); this.toast('Timer stopped · ' + fmtTime(i.spent) + ' on “' + clip(i.title, 26) + '”'); }
+  }
+  // One timer at a time, across every project: starting one stops the other.
+  toggleTimer(i) {
+    if (i.timerStart) return this.stopTimer(i);
+    const other = this.running();
+    if (other) this.stopTimer(other, true);
+    i.timerStart = Date.now();
+    if (i.stage === 'next') i.stage = 'doing';
+    this.touch({ now: Date.now() });
+    this.toast(other ? 'Timer moved from “' + clip(other.title, 20) + '”' : 'Timer started' + (i.stage === 'doing' ? ' · in progress' : ''));
+  }
+  nudgeTime(i, mins) {
+    i.spent = Math.max(0, i.spent + mins * 6e4);
+    this.touch();
+  }
+  addBuild() {
+    const t = this.state.bText.trim(); if (!t) return;
+    this.ideas().unshift(idea({ title: t, area: this.state.bArea.trim(), stage: 'next', createdAt: new Date().toISOString() }));
+    this.touch({ bText: '' });
+    this.toast('Added to Next up');
+  }
+  copyText(text) {
+    const ok = () => this.toast('Copied as text · paste it into a note, email or message');
+    const fallback = () => {
+      const ta = document.createElement('textarea');
+      ta.value = text; ta.setAttribute('readonly', ''); ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0';
+      document.body.appendChild(ta); ta.select();
+      let done = false; try { done = document.execCommand('copy'); } catch (e) {}
+      ta.remove();
+      if (done) ok(); else this.toast("This browser wouldn't copy. Try again from Chrome or Safari");
+    };
+    if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(text).then(ok, fallback);
+    else fallback();
   }
   capture() {
     const raw = this.state.capText, split = this.state.capSplit;
@@ -900,7 +1006,7 @@ class Component extends DCLogic {
     const tabs = [['dump', 'Brain dump'], ['prio', 'Prioritise'], ['build', 'Build'], ['arch', 'Shipped & parked']].map(([k, label]) => ({
       label, count: counts[k] || '',
       ink: tab === k ? PAPER : DUST, countInk: tab === k ? VOLT : DUST, edge: tab === k ? VOLT : 'transparent',
-      go: () => this.setState({ tab: k, frozen: null })
+      go: () => this.setState({ tab: k, frozen: null, lastScored: null })
     }));
     const open = (id) => () => this.setState({ openId: id, stepText: '' });
 
@@ -928,11 +1034,13 @@ class Component extends DCLogic {
       const sc = score(i), b = badge(sc);
       return {
         title: i.title, detail: i.detail, hasDetail: !!i.detail, score: sc, badgeBg: b.bg, badgeInk: b.ink, badgeEdge: b.edge,
+        domId: 'rk-' + i.id, hl: s.lastScored === i.id ? VOLT : 'transparent',
         chips: this.chipsFor(i, [chip(quadrant(i), 'plain')]), sliders: this.sliders(i),
         open: open(i.id), park: () => this.setStage(i.id, 'parked'),
         commit: () => { this.setStage(i.id, 'next'); this.setState({ tab: 'build', openId: i.steps.length ? null : i.id }); }
       };
     });
+    const sortStale = !!s.frozen && rankList.some((x, k) => x !== rankedAll[k]);
     const f = s.prioArea;
     const pool = this.ideas().filter(i => ['ranked', 'next', 'doing'].includes(i.stage) && this.match(i) && (!f || i.area === f));
     const cells = {};
@@ -970,7 +1078,7 @@ class Component extends DCLogic {
           this.setState({ dragOver: null, dragId: null });
           if (id && this.byId(id)) this.setStage(id, stage);
         },
-        emptyMsg: stage === 'next' ? 'Commit an idea in Prioritise and it lands here.' : stage === 'doing' ? 'Nothing started. Pull one across.' : 'Nothing shipped yet.',
+        emptyMsg: stage === 'next' ? 'Commit an idea in Prioritise, or add one above.' : stage === 'doing' ? 'Nothing started. Pull one across.' : 'Nothing shipped yet.',
         cards: items.map(i => {
           const total = i.steps.length, dn = i.steps.filter(x => x.done).length, sc = score(i), b = badge(sc);
           const extra = [];
@@ -978,14 +1086,20 @@ class Component extends DCLogic {
           extra.push(...this.dueChip(i));
           if (stage === 'done' && i.shippedAt) extra.push(chip('Shipped ' + i.shippedAt, 'done'));
           if (total) extra.push(chip(dn + '/' + total + ' steps', 'plain')); else if (stage !== 'done') extra.push(chip('No plan yet', 'plain'));
+          if (!i.timerStart && i.spent >= 6e4) extra.push(chip(fmtTime(i.spent) + ' spent', 'plain'));
           const idx = order.indexOf(stage);
           return {
             title: i.title, titleInk: stage === 'done' ? GREY : INK, rail: stage === 'doing' ? VOLT : 'transparent',
             score: sc, badgeBg: b.bg, badgeInk: b.ink, badgeEdge: b.edge,
             chips: (i.area ? [chip(i.area, 'area')] : []).concat(extra),
             hasBar: !!total, pct: total ? Math.round(dn / total * 100) + '%' : '0%',
-            canLeft: idx > 0, canRight: idx < 2, rightTip: idx === 0 ? 'Start it' : 'Mark shipped',
-            left: () => this.setStage(i.id, order[idx - 1]), right: () => this.setStage(i.id, order[idx + 1]),
+            canLeft: true, leftTip: idx === 0 ? 'Back to Prioritise' : idx === 1 ? 'Back to Next up' : 'Reopen',
+            canRight: idx < 2, rightTip: idx === 0 ? 'Start it' : 'Mark shipped',
+            left: () => this.setStage(i.id, idx === 0 ? 'ranked' : order[idx - 1]), right: () => this.setStage(i.id, order[idx + 1]),
+            canTime: stage !== 'done', running: !!i.timerStart,
+            timerLabel: i.timerStart ? '■ ' + fmtClock(timeOn(i)) : '▶ Timer',
+            timerBg: i.timerStart ? VOLT : 'transparent', timerEdge: i.timerStart ? INK : HAIR,
+            timer: () => this.toggleTimer(i),
             open: open(i.id), op: s.dragId === i.id ? .4 : 1,
             dragStart: (e) => { if (e.dataTransfer) { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', i.id); } this.setState({ dragId: i.id }); },
             dragEnd: () => this.setState({ dragId: null, dragOver: null })
@@ -1020,19 +1134,20 @@ class Component extends DCLogic {
       if (di.stage === 'next') acts.push(mv('Start it', 'doing', true));
       if (di.stage === 'doing') acts.push(mv('Mark shipped', 'done', true));
       if (di.stage === 'done') acts.push(mv('Reopen', 'doing'));
+      if (di.stage === 'next' || di.stage === 'doing' || di.stage === 'done') acts.push(mv('Back to Prioritise', 'ranked'));
       if (di.stage === 'parked') acts.push(mv('Un-park', 'ranked', true));
       if (di.stage !== 'parked') acts.push(mv('Park', 'parked'));
-      acts.push({ label: 'Copy plan', bg: 'transparent', ink: INK, fn: () => {
+      acts.push({ label: 'Copy as text', bg: 'transparent', ink: INK, fn: () => {
         const L = [di.title];
         if (di.area) L.push('Area: ' + di.area);
         L.push('Score: ' + score(di) + '/100 (impact ' + di.impact + ', confidence ' + di.confidence + ', ease ' + di.ease + ') — ' + quadrant(di));
         if (di.owner) L.push('Owner: ' + di.owner);
         if (di.due) L.push('Target: ' + di.due);
+        if (timeOn(di) >= 6e4) L.push('Time spent: ' + fmtTime(timeOn(di)));
         if (di.detail) L.push('', di.detail);
         if (di.steps.length) { L.push('', 'Plan:'); di.steps.forEach(x => L.push('- [' + (x.done ? 'x' : ' ') + '] ' + x.text)); }
         if (di.notes) L.push('', 'Notes:', di.notes);
-        if (navigator.clipboard) navigator.clipboard.writeText(L.join('\n'));
-        this.toast('Plan copied');
+        this.copyText(L.join('\n'));
       } });
       const dn = di.steps.filter(x => x.done).length;
       d = {
@@ -1043,8 +1158,18 @@ class Component extends DCLogic {
         multiProject: s.projects.length > 1, move: (e) => this.moveIdea(di.id, e.target.value),
         score: score(di), quadrant: quadrant(di), sliders: this.sliders(di),
         stepCount: dn + ' of ' + di.steps.length + ' done', noSteps: !di.steps.length,
-        steps: di.steps.map(x => ({
-          text: x.text, box: x.done ? VOLT : 'transparent', ink: x.done ? GREY : INK, line: x.done ? 'line-through' : 'none',
+        timeTotal: di.timerStart ? fmtClock(timeOn(di)) : fmtTime(di.spent), running: !!di.timerStart,
+        timerLabel: di.timerStart ? 'Stop timer' : 'Start timer', timerBg: di.timerStart ? VOLT : INK, timerInk: di.timerStart ? INK : VOLT,
+        timer: () => this.toggleTimer(di), more: () => this.nudgeTime(di, 15), less: () => this.nudgeTime(di, -15),
+        cantLess: di.spent <= 0, lessOp: di.spent <= 0 ? .4 : 1,
+        timeNote: di.timerStart ? 'Running since ' + new Date(di.timerStart).toTimeString().slice(0, 5) + '. Keeps going if you close the page.'
+          : di.stage === 'next' ? 'Starting the timer moves it to In progress. One timer runs at a time.' : 'One timer runs at a time. Use ±15 min to fix a forgotten one.',
+        steps: di.steps.map((x, k, all) => ({
+          text: x.text,
+          first: k === 0, last: k === all.length - 1, upOp: k === 0 ? .3 : 1, downOp: k === all.length - 1 ? .3 : 1,
+          upAria: 'Move up: ' + x.text, downAria: 'Move down: ' + x.text,
+          up: () => { if (k > 0) { all.splice(k - 1, 0, all.splice(k, 1)[0]); this.touch(); } },
+          down: () => { if (k < all.length - 1) { all.splice(k + 1, 0, all.splice(k, 1)[0]); this.touch(); } }, box: x.done ? VOLT : 'transparent', ink: x.done ? GREY : INK, line: x.done ? 'line-through' : 'none',
           aria: (x.done ? 'Undo ' : 'Done: ') + x.text,
           toggle: () => { x.done = !x.done; this.touch(); },
           del: () => { di.steps = di.steps.filter(y => y !== x); this.touch(); }
@@ -1108,10 +1233,15 @@ class Component extends DCLogic {
       stats: this.stats(),
 
       prioArea: s.prioArea, onPrioArea: (e) => this.setState({ prioArea: e.target.value, frozen: null }),
+      sortStale, resort: () => this.resort(),
+      rankHint: sortStale ? 'Scores changed · re-sort when you\'re done' : 'Impact × confidence × ease. Commit the top, not the loudest.',
       dots, matrixEmpty: !pool.length, rankItems, rankHas: rankItems.length > 0, rankEmpty: !rankItems.length,
 
+      bText: s.bText, bArea: s.bArea,
+      onBText: (e) => this.setState({ bText: e.target.value }), onBArea: (e) => this.setState({ bArea: e.target.value }),
+      onBKey: (e) => { if (e.key === 'Enter') { e.preventDefault(); this.addBuild(); } }, addBuild: () => this.addBuild(),
       cols, wipOver: doing > 3, wipTitle: doing + ' ideas in progress',
-      archive: [arch('done', 'Shipped', 'Proof the system works', 'Nothing shipped yet. Commit something small and finish it.'), arch('parked', 'Parked', 'Not now. Not never.', 'Nothing parked.')],
+      archive: [arch('done', 'Shipped', 'Proof the system works', 'Nothing shipped yet. Commit something small and finish it.'), arch('parked', 'Parked', '', 'Nothing parked.')],
 
       drawerOn: !!di, d, closeDrawer: () => this.setState({ openId: null }),
       stepText: s.stepText, onStepText: (e) => this.setState({ stepText: e.target.value }),
