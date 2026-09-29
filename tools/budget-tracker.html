@@ -376,6 +376,71 @@
   .tpl-line span:last-child{font-family:'DM Mono',monospace;text-align:right;color:var(--text)}
   .tpl-badge{display:inline-block;font-family:'DM Mono',monospace;font-size:9px;padding:1px 5px;border-radius:3px;background:var(--surface3);color:var(--text3);margin-left:6px;vertical-align:middle}
   .divider{height:1px;background:var(--border);margin:2px 0}
+
+  /* DROPDOWNS — Export and Save session */
+  .dd{position:relative;display:flex}
+  .dd>.io-btn{width:100%}
+  .dd-menu{display:none;position:absolute;top:calc(100% + 6px);right:0;z-index:60;min-width:250px;
+           background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);
+           box-shadow:0 16px 40px rgba(0,0,0,.5);padding:6px;flex-direction:column;gap:2px}
+  .dd.open .dd-menu{display:flex}
+  .dd-item{background:transparent;border:none;border-radius:var(--radius-sm);color:var(--text);text-align:left;
+           font-family:inherit;font-size:13px;font-weight:600;padding:9px 10px;cursor:pointer;line-height:1.3}
+  .dd-item:hover,.dd-item:focus-visible{background:var(--surface3);outline:none}
+  .dd-item small{display:block;font-weight:400;font-size:11px;color:var(--text3);margin-top:2px}
+  .dd-note{font-size:11px;color:var(--text3);line-height:1.45;padding:6px 10px 8px;border-bottom:1px solid var(--border);margin-bottom:4px}
+  .invest-btn{border-color:#1a5a3a;background:var(--green-dim);color:var(--green-text)}
+  .invest-btn:hover{background:#12402a;border-color:var(--green)}
+  .sim-btn{border-color:#6b4a12;background:var(--amber-dim);color:var(--amber)}
+  .sim-btn:hover{background:#443000;border-color:var(--amber)}
+  .sim-btn.on{background:var(--amber);color:#1a1200;border-color:var(--amber)}
+
+  /* SIMULATION — a scratch copy of the budget; nothing in it is saved */
+  body.sim .app{outline:2px dashed var(--amber);outline-offset:-2px;border-radius:var(--radius)}
+  #sim-bar{display:none;background:var(--amber-dim);border:1px solid #6b4a12;border-radius:var(--radius);
+           padding:12px 14px;margin-bottom:16px;gap:12px;align-items:center;flex-wrap:wrap}
+  body.sim #sim-bar{display:flex}
+  .sim-tag{font-size:10px;font-weight:800;letter-spacing:1.6px;text-transform:uppercase;color:#1a1200;background:var(--amber);border-radius:4px;padding:3px 7px;flex:none}
+  .sim-text{flex:1;min-width:220px;font-size:12px;line-height:1.5;color:var(--text2)}
+  .sim-text b{color:var(--text)}
+  .sim-cmp{display:grid;grid-template-columns:auto repeat(3,minmax(70px,auto));gap:2px 14px;font-family:'DM Mono',monospace;font-size:12px;align-items:baseline}
+  .sim-cmp span.h{font-family:'Syne',sans-serif;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);text-align:right}
+  .sim-cmp span.l{font-family:'Syne',sans-serif;font-size:11px;color:var(--text2)}
+  .sim-cmp span.v{text-align:right}
+  .sim-cmp .pos{color:var(--green-text)} .sim-cmp .neg{color:var(--red)}
+
+  /* INVESTMENT CALCULATOR */
+  .inv-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .inv-use{background:none;border:none;color:var(--blue-text);font-family:inherit;font-size:11px;cursor:pointer;padding:0;text-align:left;text-decoration:underline;text-underline-offset:2px}
+  .inv-use:hover{color:var(--blue)}
+  .inv-result{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .inv-result .hero-stat b{font-size:17px}
+  .inv-result .hero-stat b.big{color:var(--green-text)}
+  .inv-chart{position:relative;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 10px 4px}
+  .inv-chart svg{display:block;width:100%;height:auto;overflow:visible}
+  .inv-legend{display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--text2);padding:0 2px 8px}
+  .inv-legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+  .inv-tip{position:absolute;pointer-events:none;background:var(--bg);border:1px solid var(--border2);border-radius:var(--radius-sm);
+           padding:7px 9px;font-size:11px;line-height:1.5;color:var(--text2);white-space:nowrap;display:none;z-index:3;box-shadow:0 8px 20px rgba(0,0,0,.4)}
+  .inv-tip b{color:var(--text);font-family:'DM Mono',monospace;font-weight:500}
+  .inv-table{width:100%;border-collapse:collapse;font-size:12px}
+  .inv-table th{font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);text-align:right;padding:6px 8px;border-bottom:1px solid var(--border)}
+  .inv-table th:first-child,.inv-table td:first-child{text-align:left}
+  .inv-table td{font-family:'DM Mono',monospace;text-align:right;padding:5px 8px;border-bottom:1px solid var(--border);color:var(--text2)}
+  .inv-table td:last-child{color:var(--text)}
+  .inv-table-wrap{max-height:220px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius-sm)}
+  details.inv-more summary{cursor:pointer;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);padding:4px 0}
+  details.inv-more[open] summary{margin-bottom:8px}
+
+  @media (max-width:640px){
+    .io-group .dd{grid-column:span 1}
+    .dd-menu{position:fixed;left:10px;right:10px;top:auto;bottom:10px;min-width:0}
+    .inv-grid{grid-template-columns:1fr}
+    .inv-result{grid-template-columns:1fr 1fr}
+    .inv-result .hero-stat:first-child{grid-column:1/-1}
+    .sim-cmp{grid-template-columns:auto repeat(3,1fr);gap:2px 8px;width:100%}
+    #sim-bar .io-btn{width:100%;padding:10px}
+  }
 </style>
 </head>
 <body>
@@ -394,8 +459,24 @@
         <button class="io-btn goals-btn" onclick="openGoals()" title="Plan a savings goal">Goals</button>
         <button class="io-btn tpl-btn" onclick="openTemplates()" title="Start from a ready-made budget">Templates</button>
         <button class="io-btn copy-btn" onclick="openCopy()" title="Copy this month into other months">Copy month</button>
-        <button class="io-btn" onclick="exportData()" title="Download every month as a .json file">Export</button>
-        <button class="io-btn" onclick="document.getElementById('import-file').click()" title="Load a previously exported .json file">Import</button>
+        <button class="io-btn invest-btn" onclick="openInvest()" title="See what money in the stock market could grow to">Invest</button>
+        <button class="io-btn sim-btn" id="btn-sim" onclick="toggleSim()" title="Try a big change — a move, a new rent — without touching your real budget">Simulate</button>
+        <div class="dd" id="dd-export">
+          <button class="io-btn" onclick="toggleDd('dd-export',event)" aria-haspopup="true" title="Every saved month, as a spreadsheet or a PDF">Export &#9662;</button>
+          <div class="dd-menu" role="menu">
+            <div class="dd-note" id="export-note">Every saved month, from the first to the last.</div>
+            <button class="dd-item" role="menuitem" onclick="closeDd();exportSpreadsheet()">Spreadsheet (.csv)<small>Opens in Excel, Numbers or Google Sheets</small></button>
+            <button class="dd-item" role="menuitem" onclick="closeDd();exportPDF()">PDF<small>A printable report — choose “Save as PDF”</small></button>
+          </div>
+        </div>
+        <div class="dd" id="dd-session">
+          <button class="io-btn" onclick="toggleDd('dd-session',event)" aria-haspopup="true" title="Keep your budget in a file, and load it back later">Save session &#9662;</button>
+          <div class="dd-menu" role="menu">
+            <div class="dd-note">Not signed in to sync? Your budget lives in this browser only. Save it as a file to keep it safe, or to carry it to another device.</div>
+            <button class="dd-item" role="menuitem" onclick="closeDd();exportData()">Save to a file<small>Downloads every month as a .json file</small></button>
+            <button class="dd-item" role="menuitem" onclick="closeDd();document.getElementById('import-file').click()">Load a saved file<small>Replaces what is in this browser</small></button>
+          </div>
+        </div>
         <input type="file" id="import-file" accept="application/json,.json" style="display:none" onchange="importData(this)">
         <button class="io-btn sync-btn" id="btn-sync" onclick="syncClick()" style="display:none">Sign in to sync</button>
         <button class="io-btn" id="btn-signout" onclick="signOutNow()" style="display:none" title="Sign out of sync">Sign out</button>
@@ -413,6 +494,13 @@
     <span id="sync-what"></span>
     <button class="io-btn" id="sync-keep-local" onclick="keepLocal()">Keep this device</button>
     <button class="io-btn" id="sync-keep-cloud" onclick="keepCloud()">Keep cloud copy</button>
+  </div>
+
+  <div id="sim-bar" role="status">
+    <span class="sim-tag">Simulation</span>
+    <div class="sim-text">Change anything — rent, income, a whole new line — and see what it does. <b>Nothing here is saved or synced</b>; your real budget is untouched. Ending the simulation, or closing the page, throws it away.</div>
+    <div class="sim-cmp" id="sim-cmp"></div>
+    <button class="io-btn sim-btn on" onclick="toggleSim()">End simulation</button>
   </div>
 
   <!-- Correction 3: remaining per month, its own box, independent of rollover -->
@@ -589,6 +677,49 @@
       </div>
     </div>
   </div>
+
+  <!-- INVESTMENT CALCULATOR -->
+  <div class="modal-overlay" id="invest-overlay" onmousedown="closeOnOverlay(event,'invest-overlay')">
+    <div class="modal-panel wide" onmousedown="event.stopPropagation()">
+      <div class="modal-header">
+        <div class="modal-header-text">
+          <div class="modal-title">Investment calculator</div>
+          <div class="modal-subtitle">What money left in the stock market could grow to</div>
+        </div>
+        <button class="modal-close" onclick="closeModal('invest-overlay')" title="Close">&#215;</button>
+      </div>
+      <div class="modal-body">
+        <div class="inv-grid">
+          <div class="rv-field">
+            <label for="inv-start">Amount invested now</label>
+            <input class="rv-input" type="number" id="inv-start" min="0" step="100" placeholder="0" oninput="calcInvest()">
+            <button class="inv-use" id="inv-use-assets" onclick="investUse('start')"></button>
+          </div>
+          <div class="rv-field">
+            <label for="inv-monthly">Added every month</label>
+            <input class="rv-input" type="number" id="inv-monthly" min="0" step="10" placeholder="0" oninput="calcInvest()">
+            <button class="inv-use" id="inv-use-savings" onclick="investUse('monthly')"></button>
+          </div>
+          <div class="rv-field">
+            <label for="inv-rate">Yearly return (%)</label>
+            <input class="rv-input" type="number" id="inv-rate" step="0.5" value="7" oninput="calcInvest()">
+            <span class="goal-hint">Broad stock-market funds have averaged roughly 7% a year after inflation over long stretches. Some years lose money.</span>
+          </div>
+          <div class="rv-field">
+            <label for="inv-years">Years in the market</label>
+            <input class="rv-input" type="number" id="inv-years" min="1" max="70" step="1" value="20" oninput="calcInvest()">
+          </div>
+        </div>
+        <div class="inv-result" id="inv-result"></div>
+        <div class="inv-chart" id="inv-chart"></div>
+        <details class="inv-more">
+          <summary>Year by year</summary>
+          <div class="inv-table-wrap" id="inv-table"></div>
+        </details>
+        <div class="goal-hint">Grows monthly, with each month's money added at the end of the month. Before tax and fees, and not a promise — markets go down as well as up. A planning aid, not financial advice.</div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -643,6 +774,8 @@ function defaultMonth(){
 }
 
 let state = null;   // {current:'YYYY-MM', months:{...}}
+let simBase = null; // while a simulation runs: the real budget, held aside. `state` is then a scratch copy.
+function realState(){ return simBase||state; }
 let SECTIONS = [];  // live view of the current month: [{key,label,color,rows}]
 let customTemplates = [];
 
@@ -740,9 +873,9 @@ function save(){
 function saveNow(){
   clearTimeout(saveTimer);
   try{
-    localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
+    localStorage.setItem(STORAGE_KEY,JSON.stringify(realState()));   // a simulation is never written
     const t=new Date().toLocaleTimeString('en-CA',{hour:'2-digit',minute:'2-digit'});
-    status('Saved '+t);
+    status(simBase?'Simulation — not saved':'Saved '+t);
   }catch(e){
     status('Not saved — storage blocked',true);
   }
@@ -1502,6 +1635,7 @@ function recalc(){
   ovContainer.appendChild(remDiv);
 
   updateRollover(rvP,rvA,flowP,flowA,closeP,closeA);
+  updateSim(flowP,flowA,closeA);
   save();
 }
 
@@ -1780,7 +1914,9 @@ function importTemplate(input){
 
 /* ---------- export / import ---------- */
 function downloadJSON(payload,filename){
-  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+  downloadBlob(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),filename);
+}
+function downloadBlob(blob,filename){
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');
   a.href=url; a.download=filename;
@@ -1791,9 +1927,9 @@ function exportData(){
   downloadJSON({
     app:'budget-tracker', version:3,
     exported:new Date().toISOString(),
-    current:state.current, months:state.months
+    current:realState().current, months:realState().months     // never the simulation
   },'budget-tracker-'+new Date().toISOString().slice(0,10)+'.json');
-  const n=Object.keys(state.months).length;
+  const n=Object.keys(realState().months).length;
   status('Exported '+n+' month'+(n===1?'':'s'));
 }
 function importData(input){
@@ -1823,6 +1959,7 @@ function importData(input){
     const n=Object.keys(parsed.months).length;
     const ok=confirm('Import '+n+' month'+(n===1?'':'s')+' from "'+file.name+'"?\n\nThis replaces everything currently saved in this tool.');
     if(!ok){ input.value=''; return; }
+    endSim();
     state=parsed;
     propStatus(0);
     bind();
@@ -1928,6 +2065,280 @@ function calcContribution(){
     (tight?' That is more than the '+fmt(cap)+' a month you currently have spare.':'');
 }
 
+/* ---------- simulation ----------
+   A scratch copy of the whole budget. Edits, new months, templates and copies
+   all work as usual inside it, but save() writes the real budget and sync only
+   ever sees the real one — so ending it, or closing the page, leaves no trace. */
+function withState(s,fn){
+  const keep=state; state=s; clearRvMemo();
+  try{ return fn(); } finally{ state=keep; clearRvMemo(); }
+}
+function toggleSim(){
+  if(simBase){ endSim(); bind(); renderAll(); saveNow(); status('Simulation ended — nothing kept'); return; }
+  saveNow();                                            // anything pending goes into the real budget first
+  simBase=state;
+  state=JSON.parse(JSON.stringify(state));
+  document.body.classList.add('sim');
+  paintSimUI();
+  propStatus(0);
+  bind(); renderAll();
+  status('Simulation — not saved');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function endSim(){
+  if(!simBase) return;
+  state=simBase; simBase=null;
+  document.body.classList.remove('sim');
+  paintSimUI();
+}
+function paintSimUI(){
+  const b=document.getElementById('btn-sim');
+  b.textContent=simBase?'End simulation':'Simulate';
+  b.classList.toggle('on',!!simBase);
+  document.getElementById('export-note').textContent=simBase
+    ? 'Your real budget, every saved month — not the simulation.'
+    : 'Every saved month, from the first to the last.';
+}
+function updateSim(flowP,flowA,closeA){
+  if(!simBase) return;
+  const k=state.current, rm=simBase.months[k];
+  const real = rm ? withState(simBase,()=>({p:netFlow(rm,'planned'),a:netFlow(rm,'actual'),c:closingFor(k,'actual')})) : null;
+  const line=(label,r,v)=>{
+    const d=r==null?null:v-r;
+    return '<span class="l">'+label+'</span><span class="v">'+(r==null?'—':fmt(r))+'</span><span class="v">'+fmt(v)+'</span>'+
+      '<span class="v '+(d==null?'':d>0?'pos':d<0?'neg':'')+'">'+(d==null?'new':d===0?'—':fmtSigned(d))+'</span>';
+  };
+  document.getElementById('sim-cmp').innerHTML=
+    '<span></span><span class="h">Real</span><span class="h">Simulated</span><span class="h">Change</span>'+
+    line('Planned left / mo',real&&real.p,flowP)+
+    line('Actual left / mo',real&&real.a,flowA)+
+    line('Closing balance',real&&real.c,closeA);
+}
+
+/* ---------- dropdowns ---------- */
+function toggleDd(id,e){
+  if(e) e.stopPropagation();
+  const el=document.getElementById(id);
+  const open=!el.classList.contains('open');
+  closeDd();
+  if(open) el.classList.add('open');
+}
+function closeDd(){ document.querySelectorAll('.dd.open').forEach(d=>d.classList.remove('open')); }
+document.addEventListener('click',e=>{ if(!e.target.closest('.dd')) closeDd(); });
+
+/* ---------- export: spreadsheet and PDF, every saved month ---------- */
+function round2(n){ return Math.round(num(n)*100)/100; }
+function csvCell(v,isText){
+  let s=String(v==null?'':v);
+  if(isText && /^[=+\-@\t\r]/.test(s)) s="'"+s;          // a name must never run as a formula
+  return /[",\r\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;
+}
+function monthFigures(k){                               // call inside withState(real, …)
+  const m=state.months[k], f={};
+  ['planned','actual'].forEach(field=>{
+    const o={open:rolloverFor(k,field)};
+    SECTION_META.forEach(meta=>{ o[meta.key]=sectionSum(m,meta.key,field); });
+    o.out=o.expenses+o.bills+o.savings+o.debt;
+    o.flow=o.income-o.out;
+    o.close=o.open+o.flow;
+    f[field]=o;
+  });
+  f.assets=assetsTotal(m);
+  return f;
+}
+function exportSpreadsheet(){
+  const real=realState();
+  const keys=Object.keys(real.months).sort();
+  const lines=[['Month','Section','Item','Frequency','Planned','Actual','Planned per month','Actual per month']];
+  withState(real,()=>{
+    keys.forEach(k=>{
+      const m=state.months[k], f=monthFigures(k);
+      SECTION_META.forEach(meta=>{
+        (m.sections[meta.key]||[]).forEach(r=>{
+          lines.push([k,meta.label,[r.name],FREQ[freqOf(r)].label,round2(r.planned),round2(r.actual),round2(perMonth(r,'planned')),round2(perMonth(r,'actual'))]);
+        });
+      });
+      (m.assets||[]).forEach(a=>{ lines.push([k,'Assets',[a.name],'','',round2(a.balance),'','']); });
+      [['Opening balance','open'],['Income','income'],['Expenses','expenses'],['Bills','bills'],['Savings','savings'],['Debt','debt'],
+       ['Remaining this month','flow'],['Closing balance','close']].forEach(([label,key])=>{
+        const p=round2(f.planned[key]), a=round2(f.actual[key]);
+        lines.push([k,'Summary',[label],'Monthly',p,a,p,a]);
+      });
+    });
+  });
+  const csv='﻿'+lines.map(row=>row.map(c=>Array.isArray(c)?csvCell(c[0],true):csvCell(c)).join(',')).join('\r\n');
+  downloadBlob(new Blob([csv],{type:'text/csv;charset=utf-8'}),'budget-tracker-'+new Date().toISOString().slice(0,10)+'.csv');
+  status('Spreadsheet saved — '+keys.length+' month'+(keys.length===1?'':'s'));
+}
+function exportPDF(){
+  const real=realState();
+  const keys=Object.keys(real.months).sort();
+  const money=n=>esc(fmt(n));
+  let overview='', pages='';
+  withState(real,()=>{
+    keys.forEach(k=>{
+      const m=state.months[k], f=monthFigures(k), a=f.actual, p=f.planned;
+      overview+='<tr><td>'+esc(labelOf(k))+'</td><td>'+money(a.income)+'</td><td>'+money(a.out)+'</td>'+
+        '<td class="'+(a.flow<0?'neg':'')+'">'+money(a.flow)+'</td><td>'+money(a.close)+'</td><td>'+money(f.assets)+'</td></tr>';
+      let body='<table class="sum"><tr><th></th><th>Opening</th><th>Income</th><th>Going out</th><th>Remaining</th><th>Closing</th></tr>'+
+        ['planned','actual'].map(field=>{ const o=f[field];
+          return '<tr><td>'+(field==='planned'?'Planned':'Actual')+'</td><td>'+money(o.open)+'</td><td>'+money(o.income)+'</td><td>'+money(o.out)+
+                 '</td><td class="'+(o.flow<0?'neg':'')+'">'+money(o.flow)+'</td><td>'+money(o.close)+'</td></tr>'; }).join('')+'</table>';
+      SECTION_META.forEach(meta=>{
+        const rows=m.sections[meta.key]||[];
+        if(!rows.length) return;
+        body+='<table class="sec"><tr><th>'+esc(meta.label)+'</th><th>How often</th><th>Planned</th><th>Actual</th></tr>'+
+          rows.map(r=>'<tr><td>'+esc(r.name||'—')+'</td><td>'+esc(FREQ[freqOf(r)].label)+'</td><td>'+money(r.planned)+'</td><td>'+money(r.actual)+'</td></tr>').join('')+
+          '<tr class="tot"><td>Total per month</td><td></td><td>'+money(p[meta.key])+'</td><td>'+money(a[meta.key])+'</td></tr></table>';
+      });
+      if((m.assets||[]).length){
+        body+='<table class="sec"><tr><th>Assets</th><th></th><th></th><th>Balance</th></tr>'+
+          m.assets.map(x=>'<tr><td>'+esc(x.name||'—')+'</td><td></td><td></td><td>'+money(x.balance)+'</td></tr>').join('')+
+          '<tr class="tot"><td>Total saved</td><td></td><td></td><td>'+money(f.assets)+'</td></tr></table>';
+      }
+      pages+='<section><h2>'+esc(labelOf(k))+'</h2>'+body+'</section>';
+    });
+  });
+  const range=keys.length>1?labelOf(keys[0])+' – '+labelOf(keys[keys.length-1]):labelOf(keys[0]);
+  const doc='<!doctype html><html><head><meta charset="utf-8"><title>Budget — '+esc(range)+'</title><style>'+
+    '@page{margin:14mm}*{box-sizing:border-box}body{font:11px/1.45 -apple-system,"Helvetica Neue",Arial,sans-serif;color:#111;margin:0}'+
+    'h1{font-size:22px;margin:0 0 2px}h2{font-size:16px;margin:0 0 10px}.meta{color:#666;margin-bottom:16px}'+
+    'section{break-before:page}table{width:100%;border-collapse:collapse;margin-bottom:14px;break-inside:avoid}'+
+    'th,td{padding:4px 6px;border-bottom:1px solid #ddd;text-align:right}th:first-child,td:first-child{text-align:left}'+
+    'th{font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:#666;border-bottom:1.5px solid #111}'+
+    'table.sec th:first-child{color:#111;font-size:11px}tr.tot td{font-weight:700;border-bottom:none}'+
+    'table.sum td:first-child{font-weight:700}.neg{color:#b00020}td{font-variant-numeric:tabular-nums}'+
+    '</style></head><body><h1>Budget</h1><div class="meta">'+esc(range)+' · '+keys.length+' month'+(keys.length===1?'':'s')+
+    ' · exported '+esc(new Date().toLocaleDateString('en-CA',{year:'numeric',month:'long',day:'numeric'}))+'</div>'+
+    '<table><tr><th>Month</th><th>Income</th><th>Going out</th><th>Remaining</th><th>Closing</th><th>Assets</th></tr>'+overview+'</table>'+
+    '<div class="meta">Actual figures, per month. Frequencies are converted to a monthly amount; one-offs count in their own month.</div>'+
+    pages+'</body></html>';
+
+  const old=document.getElementById('print-frame');
+  if(old) old.remove();
+  const fr=document.createElement('iframe');
+  fr.id='print-frame';
+  fr.setAttribute('aria-hidden','true');
+  fr.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden';
+  document.body.appendChild(fr);
+  const d=fr.contentWindow.document;
+  d.open(); d.write(doc); d.close();
+  setTimeout(()=>{
+    try{ fr.contentWindow.focus(); fr.contentWindow.print(); status('PDF ready — choose “Save as PDF”'); }
+    catch(e){ alert('Printing is blocked in this browser.'); }
+  },250);
+}
+
+/* ---------- investment calculator ---------- */
+function openInvest(){
+  const assets=assetsTotal(month()), sav=sectionSum(month(),'savings','planned');
+  const ua=document.getElementById('inv-use-assets'), us=document.getElementById('inv-use-savings');
+  ua.textContent='Use what I have saved ('+fmt(assets)+')'; ua.style.display=assets>0?'':'none';
+  us.textContent='Use my planned savings ('+fmt(sav)+' / mo)'; us.style.display=sav>0?'':'none';
+  showModal('invest-overlay');
+  calcInvest();
+  document.getElementById('inv-start').focus();
+}
+function investUse(which){
+  if(which==='start') document.getElementById('inv-start').value=Math.round(assetsTotal(month()));
+  else document.getElementById('inv-monthly').value=Math.round(sectionSum(month(),'savings','planned'));
+  calcInvest();
+}
+/* Monthly compounding, each month's money added at the end of that month. */
+function investSeries(start,monthly,ratePct,years){
+  const i=ratePct/100/12, n=years*12;
+  let bal=start, put=start;
+  const pts=[{y:0,bal:bal,put:put}];
+  for(let mo=1;mo<=n;mo++){
+    bal=bal*(1+i)+monthly;
+    put+=monthly;
+    if(mo%12===0) pts.push({y:mo/12,bal:bal,put:put});
+  }
+  return pts;
+}
+let invPts=[];
+function calcInvest(){
+  const start=Math.max(0,num(document.getElementById('inv-start').value));
+  const monthly=Math.max(0,num(document.getElementById('inv-monthly').value));
+  const rate=Math.max(-50,Math.min(50,num(document.getElementById('inv-rate').value)));
+  const years=Math.max(1,Math.min(70,Math.round(num(document.getElementById('inv-years').value))||1));
+  invPts=investSeries(start,monthly,rate,years);
+  const last=invPts[invPts.length-1], growth=last.bal-last.put;
+  document.getElementById('inv-result').innerHTML=
+    '<div class="hero-stat"><span>After '+years+' year'+(years===1?'':'s')+'</span><b class="big">'+fmt(last.bal)+'</b></div>'+
+    '<div class="hero-stat"><span>You put in</span><b class="plan">'+fmt(last.put)+'</b></div>'+
+    '<div class="hero-stat"><span>Growth</span><b class="'+(growth<0?'neg':'')+'" style="color:'+(growth<0?'var(--red)':'var(--amber)')+'">'+fmtSigned(growth)+'</b></div>';
+  document.getElementById('inv-table').innerHTML=
+    '<table class="inv-table"><tr><th>Year</th><th>Put in</th><th>Growth</th><th>Value</th></tr>'+
+    invPts.slice(1).map(p=>'<tr><td>'+p.y+'</td><td>'+fmt(p.put)+'</td><td>'+fmtSigned(p.bal-p.put)+'</td><td>'+fmt(p.bal)+'</td></tr>').join('')+'</table>';
+  drawInvestChart();
+}
+function niceStep(max,ticks){
+  const raw=max/ticks, mag=Math.pow(10,Math.floor(Math.log10(raw))), f=raw/mag;
+  return (f<=1?1:f<=2?2:f<=2.5?2.5:f<=5?5:10)*mag;
+}
+function fmtShort(n){
+  const a=Math.abs(n);
+  if(a>=1e6) return '$'+(n/1e6).toFixed(a>=1e7?0:1).replace(/\.0$/,'')+'M';
+  if(a>=1e3) return '$'+Math.round(n/1e3)+'k';
+  return '$'+Math.round(n);
+}
+function drawInvestChart(){
+  const box=document.getElementById('inv-chart');
+  const pts=invPts, W=Math.max(300,Math.min(640,(box.clientWidth||640)-20)), H=W<450?200:230, L=48, R=12, T=12, B=26;   // drawn at its real width, so the labels stay readable on a phone
+  const top=Math.max(1,...pts.map(p=>Math.max(p.bal,p.put)));
+  const step=niceStep(top,4), ymax=Math.ceil(top/step)*step;
+  const maxY=pts[pts.length-1].y;
+  const X=y=>L+(W-L-R)*(maxY?y/maxY:0), Y=v=>T+(H-T-B)*(1-v/ymax);
+  const path=(arr)=>arr.map((p,i)=>(i?'L':'M')+X(p[0]).toFixed(1)+' '+Y(p[1]).toFixed(1)).join(' ');
+  const putLine=pts.map(p=>[p.y,p.put]);
+  const valLine=pts.map(p=>[p.y,Math.max(p.bal,p.put)]);
+  const putArea=path(putLine)+' L'+X(maxY)+' '+Y(0)+' L'+X(0)+' '+Y(0)+' Z';
+  const growArea=path(valLine)+' '+putLine.slice().reverse().map(p=>'L'+X(p[0]).toFixed(1)+' '+Y(p[1]).toFixed(1)).join(' ')+' Z';
+  let grid='';
+  for(let v=0;v<=ymax+1e-9;v+=step){
+    grid+='<line x1="'+L+'" x2="'+(W-R)+'" y1="'+Y(v)+'" y2="'+Y(v)+'" stroke="var(--border)" stroke-width="1"/>'+
+          '<text x="'+(L-8)+'" y="'+(Y(v)+4)+'" text-anchor="end" font-size="10" fill="var(--text3)" font-family="DM Mono,monospace">'+fmtShort(v)+'</text>';
+  }
+  const every=Math.max(1,Math.ceil(maxY/(W<450?4:8)));
+  let xt='';
+  pts.forEach(p=>{ if(p.y%every===0||p.y===maxY) xt+='<text x="'+X(p.y)+'" y="'+(H-8)+'" text-anchor="middle" font-size="10" fill="var(--text3)" font-family="DM Mono,monospace">'+(p.y===0?'Now':'Yr '+p.y)+'</text>'; });
+  box.innerHTML=
+    '<div class="inv-legend"><span><i style="background:#4fc3f7"></i>What you put in</span><span><i style="background:#ffb74d"></i>Growth</span></div>'+
+    '<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Value over '+maxY+' years: '+esc(fmt(pts[pts.length-1].bal))+' at the end">'+
+      grid+
+      '<path d="'+growArea+'" fill="#ffb74d" fill-opacity=".85"/>'+
+      '<path d="'+putArea+'" fill="#4fc3f7" fill-opacity=".85"/>'+
+      '<path d="'+path(putLine)+'" fill="none" stroke="var(--surface2)" stroke-width="2"/>'+
+      '<path d="'+path(pts.map(p=>[p.y,p.bal]))+'" fill="none" stroke="var(--text)" stroke-width="2" stroke-linejoin="round"/>'+
+      xt+
+      '<line id="inv-cross" x1="0" x2="0" y1="'+T+'" y2="'+(H-B)+'" stroke="var(--text2)" stroke-width="1" style="display:none"/>'+
+      '<circle id="inv-dot" r="4.5" fill="var(--text)" stroke="var(--surface2)" stroke-width="2" style="display:none"/>'+
+      '<rect id="inv-hit" x="'+L+'" y="0" width="'+(W-L-R)+'" height="'+(H-B)+'" fill="transparent" style="touch-action:pan-y"/>'+
+    '</svg><div class="inv-tip" id="inv-tip"></div>';
+  const svg=box.querySelector('svg'), hit=box.querySelector('#inv-hit'), tip=box.querySelector('#inv-tip');
+  const cross=box.querySelector('#inv-cross'), dot=box.querySelector('#inv-dot');
+  function show(ev){
+    const r=svg.getBoundingClientRect();
+    const sx=(ev.clientX-r.left)*W/r.width;
+    const y=Math.max(0,Math.min(maxY,Math.round((sx-L)/(W-L-R)*maxY)));
+    const p=pts.find(q=>q.y===y)||pts[pts.length-1];
+    cross.setAttribute('x1',X(p.y)); cross.setAttribute('x2',X(p.y)); cross.style.display='';
+    dot.setAttribute('cx',X(p.y)); dot.setAttribute('cy',Y(p.bal)); dot.style.display='';
+    tip.innerHTML=(p.y===0?'Now':'Year '+p.y)+'<br>Value <b>'+fmt(p.bal)+'</b><br>Put in <b>'+fmt(p.put)+'</b><br>Growth <b>'+fmtSigned(p.bal-p.put)+'</b>';
+    tip.style.display='block';
+    const px=X(p.y)*r.width/W+10, bw=box.clientWidth;
+    tip.style.left=(px+tip.offsetWidth+12>bw?px-tip.offsetWidth-20:px)+'px';
+    tip.style.top='34px';
+  }
+  function hide(){ tip.style.display='none'; cross.style.display='none'; dot.style.display='none'; }
+  hit.addEventListener('pointermove',show);
+  hit.addEventListener('pointerdown',show);
+  hit.addEventListener('pointerleave',hide);
+}
+
+window.addEventListener('resize',()=>{ if(document.getElementById('invest-overlay').classList.contains('show')) drawInvestChart(); });
+
 /* ---------- modals ---------- */
 function showModal(id){ document.getElementById(id).classList.add('show'); }
 function closeModal(id){ document.getElementById(id).classList.remove('show'); }
@@ -1940,7 +2351,8 @@ function openGoals(){
 }
 document.addEventListener('keydown',e=>{
   if(e.key!=='Escape') return;
-  ['goals-overlay','copy-overlay','tpl-overlay'].forEach(id=>{
+  closeDd();
+  ['goals-overlay','copy-overlay','tpl-overlay','invest-overlay'].forEach(id=>{
     const el=document.getElementById(id);
     if(el.classList.contains('show')) el.classList.remove('show');
   });
@@ -1956,20 +2368,28 @@ var SYNC = {
 
   /* The months and the saved templates travel together. Which month is on
      screen does not: flipping to another month is not an edit. */
-  payload: function(){ return { months: state.months, templates: customTemplates }; },
+  payload: function(){ return { months: realState().months, templates: customTemplates }; },   // never a simulation
 
   /* The Realtime Database drops empty arrays and objects, so a month with no
      debt rows comes back without a debt key. normalize() rebuilds every
      missing section, which is why it is the only way in. */
   apply: function(d, remote){
-    const next = normalize({ months: d.months, current: state.current });
+    const next = normalize({ months: d.months, current: realState().current });
     if(!next) return false;                 // an empty copy never wipes a budget
-    state = next;
     customTemplates = listOf(d.templates).map(normalizeTemplate).filter(Boolean);
     try{
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
       localStorage.setItem(TPL_KEY, JSON.stringify(customTemplates));
     }catch(e){}
+    if(simBase){
+      // mid-simulation: the real budget moves underneath; the scratch copy on screen stays
+      simBase = next;
+      recalc();
+      clearTimeout(saveTimer);
+      status('Real budget updated from '+(remote.device||'the cloud')+' '+hhmm(Date.now())+' — simulation carries on');
+      return true;
+    }
+    state = next;
     propStatus(0);
     bind();
     renderAll();
@@ -1982,9 +2402,10 @@ var SYNC = {
   /* The sample budget a first visit starts with. A device holding only that
      has nothing worth protecting, so it takes the cloud copy quietly. */
   untouched: function(){
-    const keys = Object.keys(state.months);
+    const real = realState();
+    const keys = Object.keys(real.months);
     return keys.length===1 && !customTemplates.length &&
-           JSON.stringify(state.months[keys[0]])===JSON.stringify(defaultMonth());
+           JSON.stringify(real.months[keys[0]])===JSON.stringify(defaultMonth());
   },
 
   flush: function(){ saveNow(); },

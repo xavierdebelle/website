@@ -5,6 +5,62 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v62 — 2026-09-29
+
+**What's new** · Budget Tracker · [tools/budget-tracker.html]
+### Try It Before<br>You Move
+The Budget Tracker has a **Simulate** button. It makes a scratch copy of
+your budget: change the rent, add a mortgage, drop an income, and it shows
+what that does to each month next to the real numbers. Nothing in it is
+saved. End it and your real budget is exactly where you left it.
+
+Also new: an **investment calculator** — what you have now, what you add each
+month, a yearly return and a number of years, drawn as a chart. **Export**
+now makes a spreadsheet or a printable PDF of every saved month. The old
+Import and Export buttons live under **Save session**, for anyone not
+signed in to sync.
+
+**Budget Tracker v17 — `tools/budget-tracker.html`, source `Tools files/Tools/budget_tracker_app_v17.html`**
+- **Simulate / End simulation:** `simBase` holds the real budget while
+  `state` is a deep copy. Every edit, month, template and Copy month works
+  inside it. `saveNow()` writes `realState()` only; the sync payload,
+  `untouched()` and the Save session file read the real budget too, so a
+  simulation never reaches localStorage or Firebase. A change arriving from
+  another device mid-simulation updates the real budget underneath and the
+  simulation carries on. Loading a saved file ends it. Dashed amber outline
+  and a bar comparing real vs simulated: planned left / mo, actual left /
+  mo, closing balance (a month only in the simulation shows "new").
+- **Investment calculator (Invest):** starting amount, monthly addition,
+  yearly return (default 7%), years (default 20). Monthly compounding,
+  money added at the end of each month. Final value, total put in, growth;
+  stacked area chart (put in / growth) with hover or tap readout; year-by-
+  year table. Shortcuts fill in the current month's assets total and
+  planned savings. Says plainly it is not a promise or advice.
+- **Export ▾:** Spreadsheet (.csv, UTF-8 with BOM) — one row per line,
+  asset and monthly summary (opening, each section, remaining, closing),
+  planned and actual plus per-month equivalents; names that start with
+  = + - @ are prefixed with ' so they can't run as formulas. PDF — a print
+  view (overview table, then one page per month with planned vs actual,
+  every section and assets) through the browser's Save as PDF.
+- **Save session ▾:** Save to a file / Load a saved file — the same .json
+  export and import as before, with a note on why you'd want it.
+- Storage key, saved shape and sync doc unchanged.
+
+**Verified locally (scratch copy, not signed in — no live database)**
+- Simulation: stored budget byte-identical after edits, a new month and a
+  save inside it; sync payload kept the real figures; comparison bar
+  correct (rent +$600 → −$600 left); ending restored the real month; a
+  simulated remote update during a simulation landed in the real budget
+  and localStorage while the screen kept the simulation.
+- Investment: $10,000 + $500/mo at 7% for 20 years = $300,851, matching
+  the closed-form formula; $130,000 put in. Tooltip on hover.
+- CSV rows and summary checked; a `=SUM(A1)` name exported as `'=SUM(A1)`.
+  PDF document built with overview and a page per month; print called.
+- Desktop and phone layouts (menus open as a sheet on phones); no console
+  errors. Scan: Firebase and template figures, both already live.
+
+---
+
 ## v61 — 2026-09-29
 
 **What's new** · Project Phases · [tools/project-tracker.html]
