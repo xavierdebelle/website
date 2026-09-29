@@ -49,20 +49,24 @@
           <sc-for list="{{ projOpts }}" as="p" hint-placeholder-count="2">
             <option value="{{ p.id }}">{{ p.label }}</option>
           </sc-for>
+          <option value="__new">+ New project…</option>
         </select>
         <span style="position: absolute; right: 18px; top: 50%; width: 8px; height: 8px; margin-top: -7px; border-right: 3px solid var(--volt); border-bottom: 3px solid var(--volt); transform: rotate(45deg); pointer-events: none"></span>
       </div>
-      <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px">
-        <button type="button" class="btn" onClick="{{ newProject }}" style="padding: 11px 15px; font-size: 11px">New</button>
-        <button type="button" class="btn" onClick="{{ renameProject }}" style="padding: 11px 15px; font-size: 11px">Rename</button>
-        <button type="button" class="btn" onClick="{{ deleteProject }}" disabled="{{ cantDelete }}" style="padding: 11px 15px; font-size: 11px; opacity: {{ delOpacity }}">Delete</button>
-        <button type="button" class="btn" onClick="{{ doExport }}" style="padding: 11px 15px; font-size: 11px">Export</button>
-        <button type="button" class="btn" onClick="{{ pickImport }}" style="padding: 11px 15px; font-size: 11px">Import</button>
-        <button type="button" class="{{ syncClass }}" onClick="{{ syncClick }}" title="{{ syncTitle }}" disabled="{{ syncOff }}" style="padding: 11px 15px; font-size: 11px; display: inline-flex; align-items: center; gap: 8px"><sc-if value="{{ syncHasInitial }}" hint-placeholder-val="{{ false }}"><span style="position: relative; display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; background: var(--volt); color: var(--ink); font-weight: 900; font-size: 11px">{{ syncInitial }}<span style="position: absolute; right: -4px; bottom: -4px; width: 8px; height: 8px; border: 2px solid var(--ink); background: {{ syncDotBg }}; box-shadow: {{ syncDotRing }}"></span></span></sc-if>{{ syncLabel }}</button>
-        <sc-if value="{{ syncAuthed }}" hint-placeholder-val="{{ false }}">
-          <button type="button" class="btn" onClick="{{ signOut }}" style="padding: 11px 15px; font-size: 11px">Sign out</button>
-        </sc-if>
+      <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; position: relative">
+        <button type="button" class="{{ syncClass }}" onClick="{{ syncClick }}" title="{{ syncTitle }}" disabled="{{ syncOff }}" style="flex: 1 1 auto; justify-content: center; padding: 11px 15px; font-size: 11px; display: inline-flex; align-items: center; gap: 8px"><sc-if value="{{ syncHasInitial }}" hint-placeholder-val="{{ false }}"><span style="position: relative; display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; background: var(--volt); color: var(--ink); font-weight: 900; font-size: 11px">{{ syncInitial }}<span style="position: absolute; right: -4px; bottom: -4px; width: 8px; height: 8px; border: 2px solid var(--ink); background: {{ syncDotBg }}; box-shadow: {{ syncDotRing }}"></span></span></sc-if>{{ syncLabel }}</button>
+        <button type="button" class="btn" onClick="{{ toggleMenu }}" aria-haspopup="menu" aria-expanded="{{ menuOn }}" style="flex: 0 0 auto; padding: 11px 15px; font-size: 11px">Manage <span style="color: var(--volt)">{{ menuCaret }}</span></button>
         <input type="file" accept="application/json" ref="{{ fileRef }}" onChange="{{ onImport }}" style="display: none">
+        <sc-if value="{{ menuOn }}" hint-placeholder-val="{{ false }}">
+          <div>
+            <div onClick="{{ closeMenu }}" style="position: fixed; inset: 0; z-index: 40"></div>
+            <div role="menu" style="position: absolute; z-index: 41; right: 0; top: calc(100% + 8px); width: min(280px, 100%); background: var(--paper); color: var(--ink); border: 3px solid var(--ink); outline: 3px solid var(--volt); display: flex; flex-direction: column">
+              <sc-for list="{{ menuItems }}" as="m" hint-placeholder-count="5">
+                <button type="button" role="menuitem" onClick="{{ m.fn }}" disabled="{{ m.off }}" style="text-align: left; background: transparent; border: 0; border-top: {{ m.rule }}; padding: 14px 16px; cursor: pointer; font-family: var(--stack); font-weight: 900; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink); opacity: {{ m.op }}" style-hover="background: var(--volt)">{{ m.label }}<span style="display: block; margin-top: 4px; font-family: var(--mono); font-weight: 400; font-size: 10px; letter-spacing: .08em; text-transform: none; color: #6a6a6a">{{ m.hint }}</span></button>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
       </div>
     </div>
   </div>
@@ -673,14 +677,14 @@ function badge(s) {
 
 class Component extends DCLogic {
   state = { projects: normaliseProjects([]), cur: 'p-main', tab: null, q: '', openId: null, capText: '', capArea: '', capTags: '', capSplit: false,
-    prioArea: '', toast: null, pd: null, stepText: '', frozen: null, lastScored: null, bText: '', bArea: '', now: 0, rev: 0, tagsDraft: null, dragId: null, dragOver: null, sync: null };
+    prioArea: '', menu: false, toast: null, pd: null, stepText: '', frozen: null, lastScored: null, bText: '', bArea: '', now: 0, rev: 0, tagsDraft: null, dragId: null, dragOver: null, sync: null };
   fileRef = React.createRef();
 
   get mode() { return this.props.dataset || 'live'; }
   get live() { return this.mode === 'live'; }
 
   componentDidMount() {
-    this.onKey = (e) => { if (e.key === 'Escape') this.setState({ openId: null, pd: null }); };
+    this.onKey = (e) => { if (e.key === 'Escape') this.setState({ openId: null, pd: null, menu: false }); };
     document.addEventListener('keydown', this.onKey);
     // a running timer repaints once a second; nothing runs when none is on
     this.ticker = setInterval(() => { if (this.running()) this.setState({ now: Date.now() }); }, 1000);
@@ -1205,7 +1209,18 @@ class Component extends DCLogic {
       heroLive: counts.build + ' in flight',
       curId: s.cur,
       projOpts: s.projects.map(p => ({ id: p.id, name: p.name, label: p.name + ' (' + p.ideas.length + ')' })),
-      onProject: (e) => this.setState({ cur: e.target.value, openId: null, frozen: null }),
+      onProject: (e) => e.target.value === '__new' ? this.openPd('new') : this.setState({ cur: e.target.value, openId: null, frozen: null }),
+      menuOn: !!s.menu, menuCaret: s.menu ? '▴' : '▾',
+      toggleMenu: () => this.setState({ menu: !s.menu }), closeMenu: () => this.setState({ menu: false }),
+      menuItems: [
+        ['New project', 'Start a separate list of ideas', () => this.openPd('new')],
+        ['Rename', 'Rename “' + clip(proj.name, 24) + '”', () => this.openPd('rename')],
+        ['Delete', s.projects.length < 2 ? 'Your only project can’t be deleted' : 'Delete “' + clip(proj.name, 24) + '” and its ideas', () => this.deleteProject(), s.projects.length < 2],
+        ['Export', 'Save every project to a file', () => this.doExport(), false, true],
+        ['Import', 'Load a file saved with Export', () => this.fileRef.current && this.fileRef.current.click()]
+      ].concat(this.live && sy && sy.authed && !sy.siteAccount ? [['Sign out', 'Stop syncing on this device', () => this.sync && this.sync.signOut(), false, true]] : [])
+        .map(([label, hint, fn, off, gap], k) => ({ label, hint, off: !!off, op: off ? .4 : 1, rule: k && gap ? '3px solid var(--ink)' : k ? '2px solid #e2e2e2' : '0',
+          fn: () => { this.setState({ menu: false }); if (!off) fn(); } })),
       newProject: () => this.openPd('new'), renameProject: () => this.openPd('rename'),
       deleteProject: () => this.deleteProject(), cantDelete: s.projects.length < 2, delOpacity: s.projects.length < 2 ? .4 : 1,
       doExport: () => this.doExport(), pickImport: () => this.fileRef.current && this.fileRef.current.click(),

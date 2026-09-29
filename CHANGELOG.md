@@ -5,6 +5,30 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v60 — 2026-09-29
+
+**What's new** · Idea Bank · [tools/idea-bank.html]
+### Fewer buttons
+The six buttons under the project picker are down to two: your sync
+status and **Manage**, which holds New project, Rename, Delete, Export
+and Import. A new project can also be started from the picker itself.
+
+**Idea Bank v9 — `tools/idea-bank.html`, source `Tools files/Tools/ideas-v9/`**
+- Row under the project picker: sync button (unchanged, now stretches) +
+  **Manage ▾** menu (New project, Rename, Delete — greyed with a reason when
+  it's the only project — then Export, Import; Sign out appears there only
+  when a tool runs without the site-wide account). Each item has a one-line
+  hint. Closes on a choice, a tap outside, or Escape.
+- Project picker ends with "+ New project…", which opens the same dialog.
+- No data or sync change.
+
+**Verified locally (mock database)**
+- Menu opens/closes; New project from the menu and from the picker; Delete
+  disabled with one project, enabled with two; 375 px phone and desktop,
+  no sideways scroll.
+
+---
+
 ## v59 — 2026-09-28
 
 **What's new** · Idea Bank · [tools/idea-bank.html]
