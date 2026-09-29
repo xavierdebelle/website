@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>Neural Mind Map</title>
+<meta name="description" content="Answer a few questions and a particle field grows them into your own mind map.">
 <style>
   :root{--ui:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Helvetica,Arial,sans-serif}
   html,body{margin:0;padding:0;height:100%;width:100%;background:#000;overflow:hidden;
@@ -14,19 +15,58 @@
 
   /* Edit mode chrome. Deliberately plain: it belongs to the editor, not to
      the piece, and only ever appears while editing. */
-  #gate{position:fixed;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;
-        background:rgba(10,10,12,.72);backdrop-filter:blur(3px)}
-  /* an id selector outranks the UA's [hidden] rule, so say it explicitly */
-  #gate[hidden],#ed[hidden]{display:none}
-  #gateForm{background:#f6f6f4;color:#16171a;padding:20px 20px 16px;border-radius:4px;
-            width:min(300px,86vw);box-shadow:0 18px 50px rgba(0,0,0,.5)}
-  .gtt{font:600 10px/1 var(--ui);letter-spacing:.18em;opacity:.55;margin-bottom:12px}
-  #gatePass{width:100%;box-sizing:border-box;font:400 13px/1 var(--ui);padding:8px 9px;
-            border:1px solid #cfcfc9;border-radius:3px;background:#fff;color:#16171a}
-  .gtr{display:flex;gap:7px;margin-top:11px}
-  .gtm{font:400 11px/1.4 var(--ui);color:#a8383a;margin-top:9px;min-height:15px}
+  [hidden]{display:none!important}
 
-  #ed{position:fixed;z-index:19;left:14px;top:14px;width:212px;
+  /* the owner's name, top left. Follows the theme: white on the dark piece,
+     near-black once edit mode has turned everything light. */
+  #who{position:fixed;z-index:15;left:18px;top:16px;margin:0;max-width:calc(100vw - 120px);
+       font:800 15px/1.1 var(--ui);letter-spacing:.14em;text-transform:uppercase;
+       color:#eceef2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+       pointer-events:none;transition:color .5s}
+  #who::after{content:"";display:inline-block;width:7px;height:7px;margin-left:9px;
+              vertical-align:2px;background:var(--acc,#f3c93f)}
+  #gear{position:fixed;z-index:15;right:14px;top:12px;padding:6px 8px;border:0;background:none;
+        font:700 10px/1 var(--ui);letter-spacing:.18em;color:#b0b4be;cursor:pointer;transition:color .5s}
+  #gear:hover{color:#fff}
+  body.light #who{color:#101114}
+  body.light #gear{color:#60646c}
+  body.light #gear:hover{color:#101114}
+
+  /* first-run questions and settings share one sheet style */
+  .sheet{position:fixed;inset:0;z-index:30;display:flex;align-items:flex-start;justify-content:center;
+         overflow-y:auto;background:rgba(0,0,0,.62);backdrop-filter:blur(4px);
+         -webkit-backdrop-filter:blur(4px);padding:6vh 16px 40px;box-sizing:border-box}
+  .sheet form{background:#f6f6f4;color:#16171a;width:min(460px,100%);padding:26px 24px 22px;
+              border-radius:4px;box-shadow:0 18px 50px rgba(0,0,0,.5);font:400 13px/1.45 var(--ui)}
+  .sheet h2{font:800 22px/1.1 var(--ui);letter-spacing:.02em;margin:0 0 6px;text-transform:uppercase}
+  .sheet .lede{opacity:.62;margin:0 0 20px}
+  .q{display:block;margin-bottom:16px}
+  .q b{display:block;font-weight:700;font-size:13px;margin-bottom:2px}
+  .q small{display:block;font-size:11px;opacity:.55;margin-bottom:6px}
+  .q input[type=text],.q textarea{display:block;width:100%;box-sizing:border-box;
+       font:400 14px/1.4 var(--ui);padding:8px 9px;border:1px solid #cfcfc9;border-radius:3px;
+       background:#fff;color:#16171a;resize:vertical}
+  .q textarea{min-height:62px}
+  .q input:focus,.q textarea:focus{outline:2px solid var(--acc,#f3c93f);outline-offset:0;border-color:#16171a}
+  .sw{display:flex;flex-wrap:wrap;gap:7px;align-items:center}
+  .sw button{width:30px;height:30px;border-radius:50%;border:2px solid transparent;padding:0;cursor:pointer;
+             box-shadow:inset 0 0 0 1px rgba(0,0,0,.18)}
+  .sw button[aria-pressed=true]{border-color:#16171a;box-shadow:inset 0 0 0 3px #f6f6f4}
+  .sw label{display:flex;align-items:center;gap:6px;font-size:11px;opacity:.7;margin-left:4px;cursor:pointer}
+  .sw input[type=color]{width:30px;height:30px;padding:0;border:1px solid #cfcfc9;border-radius:3px;background:#fff;cursor:pointer}
+  .row{display:flex;gap:8px;margin-top:6px}
+  .sheet button.go,.sheet button.alt{flex:1;font:700 12px/1 var(--ui);letter-spacing:.1em;text-transform:uppercase;
+       padding:12px 8px;border-radius:3px;cursor:pointer;border:1px solid #16171a}
+  .sheet button.go{background:#16171a;color:#fff}
+  .sheet button.alt{background:#fff;color:#16171a;border-color:#cfcfc9}
+  .sheet button.go:hover{background:#000}
+  .sheet button.alt:hover{background:#ebebe6}
+  .sheet button.warn{color:#a8383a}
+  .msg{font-size:12px;color:#a8383a;min-height:16px;margin-top:8px}
+  .sheet hr{border:0;border-top:1px solid #dcdcd6;margin:18px 0}
+  .note{font-size:11px;opacity:.5;margin-top:12px}
+
+  #ed{position:fixed;z-index:19;left:14px;top:48px;width:212px;
       background:#f6f6f4;color:#16171a;border-radius:4px;padding:13px 13px 11px;
       box-shadow:0 12px 34px rgba(0,0,0,.28);font:400 11px/1.45 var(--ui)}
   .edhd{font-weight:600;font-size:9.5px;letter-spacing:.18em;opacity:.5;margin-bottom:9px}
@@ -38,25 +78,63 @@
   .edck{display:flex;align-items:center;gap:6px;font-size:11px;opacity:.8;margin-bottom:11px}
   .edck input{margin:0}
   .edrow{display:flex;gap:6px;margin-bottom:7px}
-  #ed button,.gtr button{flex:1;font:500 10.5px/1 var(--ui);padding:7px 4px;cursor:pointer;
+  #ed button{flex:1;font:500 10.5px/1 var(--ui);padding:7px 4px;cursor:pointer;
           border:1px solid #cfcfc9;border-radius:3px;background:#fff;color:#16171a;white-space:nowrap}
-  #ed button:hover:not(:disabled),.gtr button:hover{background:#ebebe6}
+  #ed button:hover:not(:disabled){background:#ebebe6}
   #ed button:disabled{opacity:.38;cursor:default}
   #edDel:not(:disabled){color:#a8383a}
   .edst{font-size:10px;opacity:.62;min-height:14px;margin-top:4px}
   .edhint{font-size:9.5px;opacity:.4;margin-top:5px}
-  @media (max-width:460px){ #ed{width:178px;left:9px;top:9px;padding:11px} }
+  @media (max-width:460px){ #ed{width:178px;left:9px;top:42px;padding:11px} #who{font-size:13px;left:14px;top:14px} }
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
 
-<div id="gate" hidden>
-  <form id="gateForm" autocomplete="off">
-    <div class="gtt">EDIT MODE</div>
-    <input id="gatePass" type="password" placeholder="password" spellcheck="false" autocomplete="off">
-    <div class="gtr"><button type="submit">Enter</button><button type="button" id="gateCancel">Cancel</button></div>
-    <div class="gtm" id="gateMsg"></div>
+<h1 id="who" hidden></h1>
+<button id="gear" type="button" hidden>SETTINGS</button>
+
+<!-- first run: a few questions, and the map grows out of the answers -->
+<div class="sheet" id="setup" hidden>
+  <form id="setupForm" autocomplete="off">
+    <h2>Grow your map</h2>
+    <p class="lede">A few questions. Your answers become the branches. One thing per line &mdash; add detail after a colon and it grows its own twigs: <i>Photography: weddings, portraits</i>. Skip anything you like.</p>
+    <label class="q"><b>What&rsquo;s your name?</b>
+      <input id="qName" type="text" maxlength="40" spellcheck="false" placeholder="Your name"></label>
+    <label class="q"><b>What do you do for work?</b><small>Jobs, roles, clients.</small>
+      <textarea id="q0" rows="2" placeholder="Photography: weddings, portraits&#10;Teaching"></textarea></label>
+    <label class="q"><b>What are you making right now?</b><small>Projects, big or small.</small>
+      <textarea id="q1" rows="2" placeholder="A website&#10;A garden"></textarea></label>
+    <label class="q"><b>What do you do when nobody&rsquo;s paying you?</b><small>Hobbies, sports, the things you lose hours to.</small>
+      <textarea id="q2" rows="2" placeholder="Volleyball&#10;Cooking: bread, curries"></textarea></label>
+    <label class="q"><b>Who are your people?</b><small>Family, friends, teams.</small>
+      <textarea id="q3" rows="2" placeholder="Family&#10;Friends: the Tuesday crew"></textarea></label>
+    <label class="q"><b>What do you want to get better at?</b>
+      <textarea id="q4" rows="2" placeholder="Spanish&#10;Piano"></textarea></label>
+    <label class="q"><b>Where do you want to be in a few years?</b>
+      <textarea id="q5" rows="2" placeholder="Own studio&#10;Live by the sea"></textarea></label>
+    <div class="q"><b>Pick an accent colour</b><small>It lights up whatever fires.</small>
+      <div class="sw" id="setupSw"></div></div>
+    <div class="msg" id="setupMsg"></div>
+    <div class="row"><button class="go" type="submit">Grow my map</button></div>
+    <p class="note">Your map lives in this browser only. Nobody else sees it.</p>
+  </form>
+</div>
+
+<div class="sheet" id="settings" hidden>
+  <form id="setForm" autocomplete="off">
+    <h2>Settings</h2>
+    <label class="q"><b>Name</b>
+      <input id="sName" type="text" maxlength="40" spellcheck="false"></label>
+    <div class="q"><b>Accent colour</b>
+      <div class="sw" id="setSw"></div></div>
+    <div class="row"><button class="go" type="submit">Done</button></div>
+    <hr>
+    <div class="row">
+      <button class="alt" type="button" id="sRedo">Answer the questions again</button>
+      <button class="alt warn" type="button" id="sReset">Start over</button>
+    </div>
+    <p class="note">Double-tap the letter in the middle to edit the map itself.</p>
   </form>
 </div>
 
@@ -71,12 +149,8 @@
     <button id="edAddBranch">+ Branch</button>
     <button id="edDel" disabled>Delete</button>
   </div>
-  <div class="edrow">
-    <button id="edExport">Bake &amp; export</button>
-    <button id="edRevert">Revert</button>
-  </div>
   <div class="edst" id="edStatus"></div>
-  <div class="edhint">double-click the mark to save &amp; leave</div>
+  <div class="edhint">double-tap the letter to save &amp; leave</div>
 </div>
 <script>
 "use strict";
@@ -898,6 +972,13 @@ function subdivideWarp(ax, ay, bx, by){     // a straight run, bent by the field
   return out;
 }
 
+/* nodes in one cluster — a fan of eight needs more room to grow than a pair */
+function clusterSize(c){
+  let n = 0;
+  for(let i=1;i<FLAT.length;i++) if(FLAT[i].cluster === c) n++;
+  return n;
+}
+
 /* ---- grow one arrangement ------------------------------------------------ */
 function growLayout(ref, LCfg, ringCfg, seedBase, only, reuse){
   const Sx = Math.min(ref[0]*LCfg.sx, LCfg.cx);
@@ -966,7 +1047,8 @@ function growLayout(ref, LCfg, ringCfg, seedBase, only, reuse){
 
   for(let c=0;c<MAP.length;c++){
     if(kept[c]) continue;
-    const nAtt = GROW.attractors[c] !== undefined ? GROW.attractors[c] : GROW.attractorDefault;
+    const nAtt = GROW.attractors[c] !== undefined ? GROW.attractors[c]
+               : clamp(18 + 5*clusterSize(c), GROW.attractorDefault, 72);
     const t = growSkeleton(crnd[c], anc[c], dir[c], nAtt);
     trees[c] = t;
     hangCluster(t, CLUSTER_ROOT[c], pos, bidx, placed, crnd[c]);
@@ -1838,7 +1920,7 @@ function drawLabels(now, dts){
    never blurs, never scales with zoom. Soft cloud, hard mark.
    Size is a fixed screen height in CSS px; the tap target follows it.
    ========================================================================== */
-let logoX = 0, logoY = 0, logoR = 0;
+let logoX = 0, logoY = 0, logoR = 0, letter = "";
 function drawLogo(){
   const Zd = zoom*dpr;
   const size = (isSmall ? 70 : 86)*dpr*(1 + logoPulse*0.10);
@@ -1846,6 +1928,18 @@ function drawLogo(){
   logoY = (0-camY)*Zd + ch*0.5;
   logoR = size*0.62;
   ctx.fillStyle = "rgba("+CUR.particle+",0.97)";
+  /* a personal map carries its owner's initial instead of the mark */
+  if(letter){
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.font = "800 " + (size*1.02).toFixed(1) + "px " + FONT;
+    if("letterSpacing" in ctx) ctx.letterSpacing = "0px";
+    const m = ctx.measureText(letter);
+    const off = (m.actualBoundingBoxAscent !== undefined)
+      ? (m.actualBoundingBoxAscent - m.actualBoundingBoxDescent)*0.5 : 0;
+    ctx.textBaseline = "alphabetic";
+    ctx.fillText(letter, logoX, logoY + off);
+    return;
+  }
   ctx.beginPath();
   for(let t=0;t<LOGO.length;t++){
     const tri = LOGO[t];
@@ -1863,17 +1957,18 @@ function drawLogo(){
 let hintFade = false, linkHintAt = -99, armedLink = -1, armedAt = -99;
 function drawHint(dts, now){
   const linky = (now - linkHintAt) < T.linkArm;
-  hintA += ((hintFade && !linky ? 0 : 1) - hintA)*0.045*dts;
+  hintA += ((hintFade && !linky && !editMode ? 0 : 1) - hintA)*0.045*dts;
   if(hintA < 0.02) return;
   ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
   ctx.font = "500 " + (9.5*dpr).toFixed(1) + "px " + FONT;
   if("letterSpacing" in ctx) ctx.letterSpacing = (1.6*dpr)+"px";
   ctx.fillStyle = CUR.hint + (hintA*0.75).toFixed(3) + ")";
-  /* the mark's double-click is the way into edit mode now, so the hint no
-     longer advertises it — visitors have no use for it */
+  /* everyone edits their own map now, so the hint says how */
+  const what = letter ? "THE LETTER" : "THE MARK";
   ctx.fillText(linky ? "TAP AGAIN TO OPEN  \u2197"
-             : isSmall ? "TAP THE MARK  ·  DRAG  ·  PINCH TO ZOOM"
-                       : "TAP THE MARK  ·  DRAG TO PAN  ·  SCROLL TO ZOOM",
+             : editMode ? "DOUBLE-TAP " + what + " TO SAVE & LEAVE"
+             : isSmall ? "TAP " + what + "  ·  DOUBLE-TAP TO EDIT"
+                       : "TAP " + what + "  ·  DOUBLE-TAP TO EDIT  ·  DRAG  ·  SCROLL TO ZOOM",
                cw*0.5, ch - 22*dpr);
   if("letterSpacing" in ctx) ctx.letterSpacing = "0px";
 }
@@ -2102,22 +2197,35 @@ window.addEventListener("orientationchange", function(){ setTimeout(resize, 120)
 
 
 /* ==========================================================================
-   24 · EDIT MODE
-   Light theme IS edit mode: double-click the mark, give the password, and the
-   whole piece inverts to say you are editing. Double-click again to save and
-   leave. Edits live in this browser's localStorage only — nothing is written
-   back to the file on disk, because a page opened from file:// cannot do that.
-   "Bake & export" is the way to make an edit permanent.
+   24 · YOUR MAP  —  profile, first-run questions, settings
+   Every visitor grows their own map. The first visit asks a few questions;
+   each answered question becomes a branch, each line a node, and anything
+   after a colon grows twigs off that node. Name, accent colour, the map and
+   its grown layout all live in this browser's localStorage — nothing leaves
+   the device.
    ========================================================================== */
-const EDIT_PASS = "xavierdebelle";
-const LS_KEY    = "neural-mind-map/v9";
+const LS_KEY = "neural-mind-map/personal/v1";
 
-let editMode = false, unlocked = false, storageOK = true;
-let elGate, elGateForm, elGatePass, elGateMsg, elEd,
-    elSel, elLabel, elUrl, elExt, elAddChild, elAddBranch, elDel,
-    elExport, elRevert, elStatus;
+const QUESTIONS = [                        // branch label ← the question's answer
+  { branch:"Work",     id:"q0" },
+  { branch:"Projects", id:"q1" },
+  { branch:"Play",     id:"q2" },
+  { branch:"People",   id:"q3" },
+  { branch:"Learning", id:"q4" },
+  { branch:"Goals",    id:"q5" }
+];
+const ACCENTS = [                          // [label, rgb]
+  ["Gold",   [243,201,63]], ["Yellow", [255,232,0]], ["Orange", [255,138,40]],
+  ["Red",    [240,72,72]],  ["Pink",   [246,110,184]], ["Violet", [160,120,255]],
+  ["Blue",   [70,150,255]], ["Cyan",   [40,212,220]], ["Green",  [70,214,120]],
+  ["White",  [255,255,255]]
+];
+const DEFAULT_ACCENT = ACCENTS[0][1];
 
-try{ unlocked = sessionStorage.getItem(LS_KEY+"/unlocked") === "1"; }catch(e){}
+let profile = null;                        // { name, accent:[r,g,b], answers:{} }
+let editMode = false, storageOK = true;
+let elEd, elSel, elLabel, elUrl, elExt, elAddChild, elAddBranch, elDel, elStatus;
+let elWho, elGear, elSetup, elSettings;
 
 /* ---- persistence ---------------------------------------------------------
    MAP is mutated in place so every reference to it stays valid.            */
@@ -2128,20 +2236,24 @@ function loadLocal(){
   if(!raw) return false;
   try{
     const d = JSON.parse(raw);
-    if(!d || !Array.isArray(d.map) || !d.map.length || !d.grown) return false;
+    if(!d || !d.profile || !d.profile.name || !Array.isArray(d.map) || !d.map.length) return false;
+    profile = { name:String(d.profile.name).slice(0,40),
+                accent:validRgb(d.profile.accent) || DEFAULT_ACCENT,
+                answers:d.profile.answers || {} };
     MAP.length = 0;
     for(let i=0;i<d.map.length;i++) MAP.push(d.map[i]);
-    GROWN = d.grown;
+    GROWN = d.grown || null;               // missing or mismatched → regrown
     return true;
   }catch(e){ return false; }
 }
 function saveLocal(){
+  if(!profile) return;
   try{
-    localStorage.setItem(LS_KEY, JSON.stringify({ map:cleanMap(MAP), grown:GROWN }));
-    setStatus("saved in this browser");
+    localStorage.setItem(LS_KEY, JSON.stringify({ profile:profile, map:cleanMap(MAP), grown:GROWN }));
+    setStatus("saved");
   }catch(e){
     storageOK = false;
-    setStatus("storage unavailable — use Bake & export");
+    setStatus("this browser won't save — edits last until you close it");
   }
 }
 function clearLocal(){ try{ localStorage.removeItem(LS_KEY); }catch(e){} }
@@ -2157,43 +2269,198 @@ function cleanMap(list){
   }
   return out;
 }
+function validRgb(a){
+  if(!Array.isArray(a) || a.length !== 3) return null;
+  for(let i=0;i<3;i++) if(typeof a[i] !== "number" || !(a[i] >= 0 && a[i] <= 255)) return null;
+  return [a[0]|0, a[1]|0, a[2]|0];
+}
 
-/* ---- entering and leaving ------------------------------------------------ */
-function onMarkDouble(now){
-  if(editMode){ exitEdit(now); return; }
-  if(unlocked){ enterEdit(now); return; }
-  openGate();
-}
-function openGate(){
-  elGateMsg.textContent = "";
-  elGatePass.value = "";
-  elGate.hidden = false;
-  setTimeout(function(){ elGatePass.focus(); }, 30);
-}
-function closeGate(){ elGate.hidden = true; }
-function tryUnlock(){
-  if(elGatePass.value !== EDIT_PASS){
-    elGateMsg.textContent = "Not that one.";
-    elGatePass.value = ""; elGatePass.focus();
-    return;
+/* ---- answers → map -------------------------------------------------------
+   "Photography: weddings, portraits" → Photography with two children.      */
+function parseAnswer(text){
+  const out = [], seen = {};
+  const lines = String(text || "").split(/\n|;/);
+  for(let i=0;i<lines.length;i++){
+    const line = lines[i].trim();
+    if(!line) continue;
+    const c = line.indexOf(":");
+    const head = (c >= 0 ? line.slice(0,c) : line).trim().slice(0,40);
+    if(!head || seen[head.toLowerCase()]) continue;
+    seen[head.toLowerCase()] = 1;
+    const node = { label:head };
+    if(c >= 0){
+      const kids = line.slice(c+1).split(",").map(function(t){ return t.trim().slice(0,40); })
+                       .filter(Boolean).slice(0,8);
+      if(kids.length) node.children = kids.map(function(t){ return { label:t }; });
+    }
+    out.push(node);
+    if(out.length >= 8) break;             // past eight a cluster stops reading
   }
-  unlocked = true;
-  try{ sessionStorage.setItem(LS_KEY+"/unlocked", "1"); }catch(e){}
-  closeGate();
-  enterEdit(clock);
+  return out;
+}
+function mapFromAnswers(ans){
+  const m = [];
+  for(let i=0;i<QUESTIONS.length;i++){
+    const kids = parseAnswer(ans[QUESTIONS[i].id]);
+    if(kids.length) m.push({ label:QUESTIONS[i].branch, children:kids });
+  }
+  return m;
+}
+
+/* ---- the whole map replaced at once (setup, redo) ------------------------ */
+function rebuildAll(newMap){
+  MAP.length = 0;
+  for(let i=0;i<newMap.length;i++) MAP.push(newMap[i]);
+  GROW.attractors = [];                    // the baked sizes belong to the demo map
+  rebuildFlat();
+  GROWN = regrow();
+  GROWN_FLAT = FLAT;
+  for(let i=0;i<nodes.length;i++) releaseParts(nodes[i].parts, clock);
+  for(let i=0;i<links.length;i++) releaseParts(links[i].parts, clock);
+  geomBuilt = false;
+  selected = -1; armedLink = -1;
+  userZoomed = false;
+  resize();                                // geometry, carve, fit
+  mapOpen = false;
+  autoDone = true;
+  openMap(clock);
+  saveLocal();
+}
+
+/* ---- identity: name top left, initial in the middle, accent everywhere --- */
+function initialOf(name){
+  const m = String(name || "").trim().match(/[\p{L}\p{N}]/u);
+  return m ? m[0].toUpperCase() : "";
+}
+function applyProfile(){
+  const acc = profile ? profile.accent : DEFAULT_ACCENT;
+  THEME.dark.accent  = acc.slice();
+  /* on the light theme the same hue, darkened until it holds against white */
+  const lum = (0.2126*acc[0] + 0.7152*acc[1] + 0.0722*acc[2])/255;
+  const k = lum > 0.55 ? 0.62 : lum > 0.35 ? 0.78 : 0.9;
+  THEME.light.accent = [acc[0]*k|0, acc[1]*k|0, acc[2]*k|0];
+  if(acc[0] > 240 && acc[1] > 240 && acc[2] > 240) THEME.light.accent = [40,40,44];
+  themeBuilt = -1;                         // rebuild the palette next frame
+  document.documentElement.style.setProperty("--acc", "rgb("+acc.join(",")+")");
+  letter = profile ? initialOf(profile.name) : "";
+  if(profile){
+    elWho.textContent = profile.name;
+    elWho.hidden = false; elGear.hidden = false;
+    document.title = profile.name + " — Neural Mind Map";
+  } else {
+    elWho.hidden = true; elGear.hidden = true;
+    document.title = "Neural Mind Map";
+  }
+}
+
+/* ---- colour swatches, shared by setup and settings ----------------------- */
+function toHex(c){ return "#" + c.map(function(v){ return (v|0).toString(16).padStart(2,"0"); }).join(""); }
+function fromHex(h){
+  const m = /^#?([0-9a-f]{6})$/i.exec(h || ""); if(!m) return null;
+  const n = parseInt(m[1],16); return [n>>16&255, n>>8&255, n&255];
+}
+function buildSwatches(box, current, onPick){
+  box.innerHTML = "";
+  let chosen = current.slice();
+  const btns = [];
+  const mark = function(){
+    const hx = toHex(chosen);
+    btns.forEach(function(b){ b.setAttribute("aria-pressed", b.dataset.hex === hx ? "true" : "false"); });
+    custom.value = hx;
+  };
+  ACCENTS.forEach(function(a){
+    const b = document.createElement("button");
+    b.type = "button"; b.dataset.hex = toHex(a[1]);
+    b.style.background = b.dataset.hex;
+    b.title = a[0]; b.setAttribute("aria-label", a[0]);
+    b.addEventListener("click", function(){ chosen = a[1].slice(); mark(); onPick(chosen); });
+    box.appendChild(b); btns.push(b);
+  });
+  const lab = document.createElement("label");
+  const custom = document.createElement("input");
+  custom.type = "color";
+  custom.addEventListener("input", function(){ const c = fromHex(custom.value); if(c){ chosen = c; mark(); onPick(chosen); } });
+  lab.appendChild(custom); lab.appendChild(document.createTextNode("Any colour"));
+  box.appendChild(lab);
+  mark();
+  return function(){ return chosen.slice(); };
+}
+
+/* ---- first run ----------------------------------------------------------- */
+let setupAccent = null;
+function openSetup(prefill){
+  const a = (prefill && prefill.answers) || {};
+  document.getElementById("qName").value = prefill ? prefill.name : "";
+  for(let i=0;i<QUESTIONS.length;i++) document.getElementById(QUESTIONS[i].id).value = a[QUESTIONS[i].id] || "";
+  document.getElementById("setupMsg").textContent = "";
+  setupAccent = buildSwatches(document.getElementById("setupSw"),
+                              prefill ? prefill.accent : DEFAULT_ACCENT, function(){});
+  elSetup.hidden = false;
+  if(!prefill) setTimeout(function(){ document.getElementById("qName").focus(); }, 60);
+}
+function submitSetup(){
+  const msg = document.getElementById("setupMsg");
+  const name = document.getElementById("qName").value.trim().replace(/\s+/g," ");
+  if(!name){ msg.textContent = "Your name first — it goes in the corner and the middle."; return; }
+  const answers = {};
+  for(let i=0;i<QUESTIONS.length;i++) answers[QUESTIONS[i].id] = document.getElementById(QUESTIONS[i].id).value;
+  const m = mapFromAnswers(answers);
+  if(!m.length){ msg.textContent = "Answer at least one question, so there’s something to grow."; return; }
+  if(editMode) exitEdit(clock);
+  profile = { name:name.slice(0,40), accent:setupAccent(), answers:answers };
+  applyProfile();
+  elSetup.hidden = true;
+  rebuildAll(m);
+}
+
+/* ---- settings ------------------------------------------------------------ */
+let settingsAccent = null, settingsWas = null;
+function openSettings(){
+  if(!profile) return;
+  settingsWas = { name:profile.name, accent:profile.accent.slice() };
+  document.getElementById("sName").value = profile.name;
+  settingsAccent = buildSwatches(document.getElementById("setSw"), profile.accent,
+    function(c){ profile.accent = c; applyProfile(); });      // live preview
+  elSettings.hidden = false;
+}
+function closeSettings(keep){
+  if(!keep && settingsWas){ profile.name = settingsWas.name; profile.accent = settingsWas.accent; }
+  else {
+    const n = document.getElementById("sName").value.trim().replace(/\s+/g," ");
+    if(n) profile.name = n.slice(0,40);
+    profile.accent = settingsAccent();
+  }
+  settingsWas = null;
+  applyProfile();
+  saveLocal();
+  elSettings.hidden = true;
+}
+
+/* ==========================================================================
+   25 · EDIT MODE
+   Light theme IS edit mode: double-tap the letter and the whole piece
+   inverts to say you are editing. Double-tap again to save and leave. It is
+   your map in your browser, so there is no password.
+   ========================================================================== */
+function onMarkDouble(now){
+  if(!profile) return;
+  if(editMode) exitEdit(now); else enterEdit(now);
 }
 function enterEdit(now){
   editMode = true;
   themeTarget = 1;                                  // white = editing
+  document.body.classList.add("light");
+  if(!mapOpen){ mapOpen = true; mapOpenAt = now; }
   for(let i=1;i<nodes.length;i++) if(nodes[i].kind===1) nodes[i].expanded = true;
   reconcile(now);                                   // everything on show
   elEd.hidden = false;
-  setStatus(storageOK ? "" : "storage unavailable — use Bake & export");
+  setStatus(storageOK ? "" : "this browser won't save — edits last until you close it");
   syncPanel();
 }
 function exitEdit(now){
   editMode = false;
   themeTarget = 0;
+  document.body.classList.remove("light");
   elEd.hidden = true;
   selected = -1; armedLink = -1;        // never leave a link primed to open
   saveLocal();
@@ -2264,7 +2531,7 @@ function deleteSelected(){
   if(!window.confirm(msg)) return;
   if(f.depth === 1){
     MAP.splice(f.cluster, 1);
-    if(!MAP.length){ MAP.push({ label:"About" }); }     // never leave it empty
+    if(!MAP.length){ MAP.push({ label:"New branch" }); }  // never leave it empty
     applyStructuralEdit(null, null, "branch removed — whole map regrown");
   } else {
     const ps = FLAT[f.parent].src;
@@ -2303,112 +2570,8 @@ function applyStructuralEdit(only, focus, msg){
   syncPanel();
 }
 
-function revertToBaked(){
-  if(!window.confirm("Throw away every local edit and go back to the baked map?")) return;
-  clearLocal();
-  location.reload();
-}
-
-/* ---- bake & export -------------------------------------------------------
-   Served over http(s) the page can read its own source and hand back a whole
-   updated HTML file. Opened from file:// that read is blocked, so it falls
-   back to the two data blocks for you to paste between the markers.        */
-function fmtNums(a){
-  let out = "", line = "";
-  for(let i=0;i<a.length;i++){
-    const t = String(Math.round(a[i]*1000)/1000);
-    if(line.length + t.length + 1 > 96){ out += line + "\n"; line = ""; }
-    line += t + ",";
-  }
-  out += line;
-  return out.replace(/,$/, "");
-}
-function compactGrown(g){
-  let o = "{\ncross:[" + g.cross.join(",") + "],\n";
-  const one = function(k){
-    return k + ":{\np:[\n" + fmtNums(g[k].p) + "],\nq:[\n" + fmtNums(g[k].q) + "]}";
-  };
-  return o + one("portrait") + ",\n" + one("landscape") + "\n}";
-}
-function download(text, name, type){
-  const b = new Blob([text], { type:type });
-  const u = URL.createObjectURL(b);
-  const a = document.createElement("a");
-  a.href = u; a.download = name;
-  document.body.appendChild(a); a.click();
-  setTimeout(function(){ URL.revokeObjectURL(u); a.remove(); }, 1200);
-}
-/* The page cannot read its own file from file://, so the source is rebuilt
-   from the live DOM instead: the inline <script> and <style> are text nodes
-   that never change at runtime, so they come back verbatim. Only the chrome
-   the editor touched has to be wound back to its at-rest state. */
-function sourceFromDOM(){
-  const el = document.documentElement.cloneNode(true);
-  el.removeAttribute("style");                     // theme background, set live
-
-  const cv2 = el.querySelector("#c");
-  if(cv2){ cv2.removeAttribute("width"); cv2.removeAttribute("height");
-           cv2.removeAttribute("style"); cv2.removeAttribute("class"); }
-
-  const g = el.querySelector("#gate"), e = el.querySelector("#ed");
-  if(g) g.setAttribute("hidden", "");
-  if(e) e.setAttribute("hidden", "");
-
-  const dis = ["#edLabel","#edUrl","#edExt","#edAddChild","#edDel"];
-  for(let i=0;i<dis.length;i++){ const q = el.querySelector(dis[i]); if(q) q.setAttribute("disabled",""); }
-  const und = ["#edAddBranch","#edExport","#edRevert"];
-  for(let i=0;i<und.length;i++){ const q = el.querySelector(und[i]); if(q) q.removeAttribute("disabled"); }
-
-  const pw = el.querySelector("#gatePass"); if(pw) pw.removeAttribute("value");
-  const lb = el.querySelector("#edLabel");  if(lb) lb.removeAttribute("value");
-  const ur = el.querySelector("#edUrl");    if(ur) ur.removeAttribute("value");
-  const ck = el.querySelector("#edExt");    if(ck) ck.removeAttribute("checked");
-
-  const sel = el.querySelector("#edSel");    if(sel) sel.textContent = "tap a node to select it";
-  const st  = el.querySelector("#edStatus"); if(st)  st.textContent  = "";
-  const gm  = el.querySelector("#gateMsg");  if(gm)  gm.textContent  = "";
-
-  return "<!DOCTYPE html>\n" + el.outerHTML + "\n";
-}
-
-function spliceData(html){
-  const mapSrc   = "/* <<<MAP>>> */\nconst MAP = " + JSON.stringify(cleanMap(MAP), null, 2)
-                 + ";\n/* <<</MAP>>> */";
-  const grownSrc = "/* <<<GROWN>>> */\nconst GROWN_BAKED = " + compactGrown(GROWN)
-                 + ";\n/* <<</GROWN>>> */";
-  return html.replace(/\/\* <<<MAP>>> \*\/[\s\S]*?\/\* <<<\/MAP>>> \*\//,     function(){ return mapSrc; })
-             .replace(/\/\* <<<GROWN>>> \*\/[\s\S]*?\/\* <<<\/GROWN>>> \*\//, function(){ return grownSrc; });
-}
-
-/* Always hands back a complete, runnable HTML file. Over http(s) it prefers
-   the served source, which is byte-exact; from file:// it uses the DOM. */
-function exportBake(){
-  setStatus("baking…");
-  const finish = function(html, how){
-    if(!html || html.indexOf("/* <<<MAP>>> */") < 0){
-      setStatus("could not rebuild the file — nothing written");
-      return;
-    }
-    download(spliceData(html), "neural_mind_map_baked.html", "text/html");
-    setStatus("downloaded a full HTML file (" + how + ")");
-  };
-  let p;
-  try{ p = fetch(location.href, { cache:"no-store" })
-             .then(function(r){ return r.ok ? r.text() : null; })
-             .catch(function(){ return null; }); }
-  catch(err){ p = Promise.resolve(null); }
-  p.then(function(src){
-    if(src && src.indexOf("/* <<<MAP>>> */") >= 0) finish(src, "from source");
-    else finish(sourceFromDOM(), "rebuilt from the page");
-  });
-}
-
 /* ---- wiring -------------------------------------------------------------- */
 function initEditor(){
-  elGate = document.getElementById("gate");
-  elGateForm = document.getElementById("gateForm");
-  elGatePass = document.getElementById("gatePass");
-  elGateMsg  = document.getElementById("gateMsg");
   elEd       = document.getElementById("ed");
   elSel      = document.getElementById("edSel");
   elLabel    = document.getElementById("edLabel");
@@ -2417,16 +2580,11 @@ function initEditor(){
   elAddChild = document.getElementById("edAddChild");
   elAddBranch= document.getElementById("edAddBranch");
   elDel      = document.getElementById("edDel");
-  elExport   = document.getElementById("edExport");
-  elRevert   = document.getElementById("edRevert");
   elStatus   = document.getElementById("edStatus");
-
-  elGateForm.addEventListener("submit", function(e){ e.preventDefault(); tryUnlock(); });
-  document.getElementById("gateCancel").addEventListener("click", closeGate);
-  elGate.addEventListener("pointerdown", function(e){ if(e.target === elGate) closeGate(); });
-  document.addEventListener("keydown", function(e){
-    if(e.key === "Escape" && !elGate.hidden) closeGate();
-  });
+  elWho      = document.getElementById("who");
+  elGear     = document.getElementById("gear");
+  elSetup    = document.getElementById("setup");
+  elSettings = document.getElementById("settings");
 
   elLabel.addEventListener("input",  function(){ editLabel(elLabel.value); });
   elUrl  .addEventListener("input",  function(){ editLink(elUrl.value, elExt.checked); });
@@ -2434,27 +2592,48 @@ function initEditor(){
   elAddChild .addEventListener("click", addChild);
   elAddBranch.addEventListener("click", addBranch);
   elDel      .addEventListener("click", deleteSelected);
-  elExport   .addEventListener("click", exportBake);
-  elRevert   .addEventListener("click", revertToBaked);
+
+  document.getElementById("setupForm").addEventListener("submit", function(e){ e.preventDefault(); submitSetup(); });
+  elGear.addEventListener("click", openSettings);
+  document.getElementById("setForm").addEventListener("submit", function(e){ e.preventDefault(); closeSettings(true); });
+  elSettings.addEventListener("pointerdown", function(e){ if(e.target === elSettings) closeSettings(false); });
+  document.getElementById("sRedo").addEventListener("click", function(){
+    if(!window.confirm("Rebuild the map from your answers? Edits made since will be replaced.")) return;
+    closeSettings(true);
+    openSetup(profile);
+  });
+  document.getElementById("sReset").addEventListener("click", function(){
+    if(!window.confirm("Start over? This deletes your map, name and colour from this browser.")) return;
+    clearLocal();
+    location.reload();
+  });
+  document.addEventListener("keydown", function(e){
+    if(e.key !== "Escape") return;
+    if(!elSettings.hidden) closeSettings(false);
+    else if(!elSetup.hidden && profile) elSetup.hidden = true;   // a redo can be abandoned
+  });
 }
 
 /* ==========================================================================
-   23 · BOOT
+   26 · BOOT
    ========================================================================== */
 (function boot(){
   vw = window.innerWidth; vh = window.innerHeight;
   isSmall = Math.min(vw,vh) < 620;
   densityK = isSmall ? 0.78 : 1;
-  loadLocal();                    // local edits, if this browser has any
+  initEditor();
+  if(loadLocal()) GROW.attractors = [];   // a personal map sizes its own growth
   rebuildFlat();
   allocParticles(isSmall ? T.countMobile : T.countDesktop);
   buildCloud();
   initFreeGrid();
   initBuckets();
+  applyProfile();
   applyTheme(0);
   resize();
   GROWN_FLAT = FLAT;
-  initEditor();
+  if(profile) saveLocal();                 // keeps a regrown layout, if one was needed
+  else { autoDone = true; openSetup(null); }   // the cloud waits; the map grows from the answers
   start();
 })();
 

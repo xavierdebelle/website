@@ -5,6 +5,64 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v63 — 2026-09-29
+
+**What's new** · Updated piece · [tools/neural-mind-map.html]
+### A Mind Map<br>Of Your Own
+The Neural Mind Map now grows a map for whoever opens it. The first time,
+it asks a few questions — what you do, what you're making, who your people
+are, where you're headed. Each answer becomes a branch; write
+*Photography: weddings, portraits* and it grows twigs too.
+
+- Your name sits in the top left, your initial in the middle.
+- Pick an accent colour. It lights up whatever fires.
+- Double-tap the letter and the piece turns white: that's edit mode. Add,
+  rename, delete. Double-tap again to save.
+- Settings changes your name and colour, or asks the questions again.
+- It lives in your browser. Nobody else sees it.
+
+**Neural Mind Map v11 — `tools/neural-mind-map.html`, source `Tools files/Tools/neural_mind_map_v11.html`**
+- First run: a question sheet (name + six questions + accent swatches /
+  any colour). Answers → branches Work, Projects, Play, People, Learning,
+  Goals; unanswered ones are skipped. One node per line (max 8), text after
+  a colon → comma-separated children (max 8). The map is then grown fresh
+  (`regrow()`), never laid on the baked demo layout.
+- Stored at `localStorage["neural-mind-map/personal/v1"]` as
+  `{ profile:{name, accent, answers}, map, grown }`. The old
+  `neural-mind-map/v9` key is no longer read (it only held local edits of
+  the site-structure demo).
+- Name top left (`#who`, caps, accent square), initial drawn at the centre
+  in place of the mark; both follow the light theme in edit mode. Accent
+  drives `THEME.dark.accent`; the light theme gets the same hue darkened
+  (white → near-black) so it still reads on white.
+- **Settings** (top right): name, accent with live preview (Esc/tap
+  outside reverts), Answer the questions again (prefilled, replaces the
+  map after a confirm), Start over.
+- Edit mode unchanged in feel — double-tap the centre, whole piece inverts,
+  double-tap to save and leave — but **the password gate is gone**: it is
+  each visitor's own map in their own browser. Bake & export and Revert
+  removed (they baked Xavier's demo map into the source file).
+- Growth budget per branch now scales with its size
+  (`18 + 5×nodes`, 32–72) instead of the demo map's fixed list.
+- Hint now says how to edit: "TAP THE LETTER · DOUBLE-TAP TO EDIT".
+- Card copy rewritten to match.
+
+**Disclosed**
+- Nothing new becomes public. The old edit password `xavierdebelle` is
+  removed from the current file, but stays in git history (disclosed v34).
+- `scan_tool.py` still reports "storage: none" — its pattern misses keys
+  containing `/`. Same blind spot noted in v34.
+
+**Verified**
+- Local server, desktop 800×600 and phone 375×812: form → map blooms with
+  the answered branches only; name, initial and accent correct; double-tap
+  inverts to white, + Child regrows one cluster in the accent; double-tap
+  saves; Settings rename + colour persist across reload with the same
+  layout; redo prefills and rebuilds; a crowded branch (8 nodes, 8 twigs)
+  grows and pans. No console errors. Test data cleared afterwards.
+
+---
+
 ## v62 — 2026-09-29
 
 **What's new** · Budget Tracker · [tools/budget-tracker.html]
