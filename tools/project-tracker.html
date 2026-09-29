@@ -95,6 +95,11 @@ select:focus,input:focus,textarea:focus{outline:2px solid var(--ttt-red);outline
 #running-bar .btn:hover{background:var(--ttt-black);color:var(--ttt-white);border-color:var(--ttt-black)}
 #running-bar .btn.ghost{background:transparent;color:var(--ttt-white);border-color:var(--ttt-white)}
 #running-bar .btn.ghost:hover{background:var(--ttt-white);color:var(--ttt-red)}
+#running-bar [hidden]{display:none}
+/* the timer belongs to another project: black, with the project named */
+#running-bar.elsewhere{background:var(--ttt-black);border-left:6px solid var(--ttt-yellow)}
+#running-bar.elsewhere #running-go:hover{background:var(--ttt-yellow);color:var(--ttt-black);border-color:var(--ttt-yellow)}
+#running-where{font:700 10px/1 var(--ttt-font-wide);letter-spacing:.07em;text-transform:uppercase;background:var(--ttt-yellow);color:var(--ttt-black);padding:6px 8px;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
 #sync-bar{display:none;align-items:center;gap:12px;flex-wrap:wrap;background:var(--ttt-yellow);color:var(--ttt-black);padding:12px 20px;margin-bottom:20px}
 #sync-bar.on{display:flex}
 #sync-bar .dot{width:8px;height:8px;border-radius:50%;background:var(--ttt-black);flex:none;animation:none}
@@ -299,8 +304,22 @@ body.view #running-split{display:none!important}
 .cblock-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .cblock-head .section-title{margin-bottom:12px}
 .cblock-sub{margin:-4px 0 12px;font-size:13px;color:var(--muted)}
-.quick{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
-.quick input[type=text]{flex:1 1 200px}
+.quick{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-start;margin-bottom:10px}
+.quick input[type=text],.quick textarea{flex:1 1 200px}
+.quick textarea{resize:none;overflow:hidden;line-height:1.45;font:inherit;min-height:38px}
+.quick-hint{flex:1 0 100%;margin:-2px 0 0;font-size:12px;color:var(--muted)}
+.citem .handle{margin:-2px -4px 0 -6px;color:var(--muted)}
+.citem.dragging{display:none}
+.clist .drop-ph{margin:4px 0}
+/* a point to discuss: the first line shows; a note under it opens on click */
+.ag-title{display:block;width:100%;text-align:left;background:none;border:0;padding:0;color:inherit;font:inherit;cursor:pointer;overflow-wrap:anywhere}
+.ag-title:hover .ag-tag{background:var(--ttt-red);color:var(--ttt-white)}
+.ag-tag{display:inline-block;margin-left:8px;padding:3px 5px;font:700 9px/1 var(--ttt-font-wide);letter-spacing:.06em;text-transform:uppercase;background:var(--bg);color:var(--ttt-black);vertical-align:1px;white-space:nowrap}
+.citem.open .ag-tag{background:var(--ttt-black);color:var(--ttt-white)}
+.ag-body{display:none;white-space:pre-wrap;overflow-wrap:anywhere;margin-top:6px;padding:8px 10px;border-left:3px solid var(--ttt-red);background:var(--bg);font-size:14px;line-height:1.5;color:var(--ink);text-decoration:none}
+.citem.open .ag-body{display:block}
+.found{animation:found 2.4s var(--ttt-ease)}
+@keyframes found{0%,40%{box-shadow:0 0 0 3px var(--ttt-yellow);background:color-mix(in srgb,var(--ttt-yellow) 25%,white)}100%{box-shadow:0 0 0 3px transparent}}
 .quick input[type=date]{flex:0 0 auto}
 .clist{list-style:none;margin:0;padding:0;border-top:1px solid var(--line)}
 .citem{display:flex;align-items:flex-start;gap:10px;padding:10px 2px;border-bottom:1px solid var(--line)}
@@ -331,6 +350,21 @@ body.view .quick,body.view #ag-block,body.view #nt-block,body.view .citem .cacts
 body.view .client-grid{grid-template-columns:1fr}
 @media (max-width:760px){.client-grid{grid-template-columns:1fr}#panel-client.on{padding:22px 16px}}
 
+/* ---------- search, across every project ---------- */
+.search{position:relative}
+.topbar .search input{background:var(--ttt-ink);color:var(--ttt-white);border:1px solid var(--ttt-gray-700);width:200px;font:inherit;padding:8px 10px}
+.topbar .search input::placeholder{color:#9a9a9a}
+#search-results{position:absolute;left:0;top:calc(100% + 6px);z-index:55;width:min(440px,calc(100vw - 24px));max-height:min(70vh,520px);overflow:auto;background:var(--card);color:var(--ink);box-shadow:var(--ttt-shadow-cta);border-top:4px solid var(--ttt-red)}
+#search-results[hidden]{display:none}
+.sr{display:block;width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--line);padding:10px 14px;color:inherit;font:inherit;cursor:pointer}
+.sr:hover,.sr.on{background:var(--accent-soft)}
+.sr-kind{display:block;font:700 9px/1.2 var(--ttt-font-wide);letter-spacing:.07em;text-transform:uppercase;color:var(--ttt-red);margin-bottom:3px}
+.sr-text{display:block;font-weight:600;overflow-wrap:anywhere}
+.sr-snip{display:block;font-size:13px;color:var(--muted);overflow-wrap:anywhere;margin-top:2px}
+.sr mark{background:var(--ttt-yellow);color:inherit;padding:0 1px}
+.sr-none{padding:14px;font-size:14px;color:var(--muted)}
+@media (max-width:900px){.topbar .search input{width:100%}}
+
 /* ---------- time entry: start / end ---------- */
 .te-times{display:grid;grid-template-columns:1fr 1fr 1.2fr;gap:10px}
 .te-times label{display:block;font:700 10px/1.2 var(--ttt-font-wide);letter-spacing:.07em;text-transform:uppercase;color:var(--ttt-black);margin-bottom:6px}
@@ -345,6 +379,10 @@ body.view .client-grid{grid-template-columns:1fr}
     <div class="brand"><svg class="mark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 162" role="img" aria-label="333 Photo &amp; Design"><g fill="#ED1C24"><circle cx="81" cy="81" r="81"/><circle cx="250" cy="81" r="81"/><circle cx="419" cy="81" r="81"/></g><g fill="#FFFFFF"><path d="M96.79 79.01C104.39 75.02 108.25 68.62 108.25 59.8C108.25 52.55 105.67 46.75 100.41 42.52C95.27 38.17 88.6 36 80.42 36C71.53 36 64.52 38.54 59.37 43.61C54.23 48.68 51.77 55.33 52.12 63.54L67.56 63.54C67.2 54.85 71.76 49.41 80.18 49.41C87.67 49.41 92.58 54 92.58 60.89C92.58 68.13 87.67 72.85 78.31 72.85L72.93 72.85L72.93 86.74L79.72 86.74C88.6 86.74 94.45 91.45 94.45 99.66C94.45 107.4 88.84 112.59 80.77 112.59C72.47 112.59 67.44 107.4 67.56 98.34L52 98.34C51.89 106.67 54.34 113.44 59.49 118.51C64.75 123.46 71.76 126 80.53 126C89.42 126 96.55 123.7 101.93 118.99C107.31 114.28 110 108.12 110 100.27C110 90.24 105.21 82.75 96.79 79.01Z"/><path d="M96.79 79.01C104.39 75.02 108.25 68.62 108.25 59.8C108.25 52.55 105.67 46.75 100.41 42.52C95.27 38.17 88.6 36 80.42 36C71.53 36 64.52 38.54 59.37 43.61C54.23 48.68 51.77 55.33 52.12 63.54L67.56 63.54C67.2 54.85 71.76 49.41 80.18 49.41C87.67 49.41 92.58 54 92.58 60.89C92.58 68.13 87.67 72.85 78.31 72.85L72.93 72.85L72.93 86.74L79.72 86.74C88.6 86.74 94.45 91.45 94.45 99.66C94.45 107.4 88.84 112.59 80.77 112.59C72.47 112.59 67.44 107.4 67.56 98.34L52 98.34C51.89 106.67 54.34 113.44 59.49 118.51C64.75 123.46 71.76 126 80.53 126C89.42 126 96.55 123.7 101.93 118.99C107.31 114.28 110 108.12 110 100.27C110 90.24 105.21 82.75 96.79 79.01Z" transform="translate(169 0)"/><path d="M96.79 79.01C104.39 75.02 108.25 68.62 108.25 59.8C108.25 52.55 105.67 46.75 100.41 42.52C95.27 38.17 88.6 36 80.42 36C71.53 36 64.52 38.54 59.37 43.61C54.23 48.68 51.77 55.33 52.12 63.54L67.56 63.54C67.2 54.85 71.76 49.41 80.18 49.41C87.67 49.41 92.58 54 92.58 60.89C92.58 68.13 87.67 72.85 78.31 72.85L72.93 72.85L72.93 86.74L79.72 86.74C88.6 86.74 94.45 91.45 94.45 99.66C94.45 107.4 88.84 112.59 80.77 112.59C72.47 112.59 67.44 107.4 67.56 98.34L52 98.34C51.89 106.67 54.34 113.44 59.49 118.51C64.75 123.46 71.76 126 80.53 126C89.42 126 96.55 123.7 101.93 118.99C107.31 114.28 110 108.12 110 100.27C110 90.24 105.21 82.75 96.79 79.01Z" transform="translate(338 0)"/></g></svg><div><h1>Project Phases</h1><span class="sub">333 Photo &amp; Design · Time log</span></div></div>
     <div class="field">
       <select id="project-select" aria-label="Project"></select>
+    </div>
+    <div class="field search" id="search-wrap">
+      <input type="search" id="search" placeholder="Search" aria-label="Search every project" autocomplete="off" aria-controls="search-results">
+      <div id="search-results" role="listbox" hidden></div>
     </div>
     <button class="btn" id="btn-add-project">New project</button>
     <button class="btn ghost icon" id="btn-rename-project" title="Rename project"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false"><path d="M11.9 1.9l2.2 2.2-8.4 8.4-2.9.7.7-2.9 8.4-8.4z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"></path></svg></button>
@@ -371,9 +409,11 @@ body.view .client-grid{grid-template-columns:1fr}
 
   <div id="running-bar">
     <span class="dot"></span>
+    <span id="running-where" hidden></span>
     <span id="running-what"></span>
     <span id="running-elapsed">0:00</span>
     <button class="btn ghost" id="running-split" title="Forgot to switch? Split this time between steps">Split</button>
+    <button class="btn ghost" id="running-go" hidden>Go to project</button>
     <button class="btn" id="running-stop">Stop</button>
   </div>
 
@@ -466,8 +506,9 @@ body.view .client-grid{grid-template-columns:1fr}
         <h3 class="section-title">To discuss</h3>
         <p class="cblock-sub">Points to raise at the next meeting. Tick them off as you go.</p>
         <form class="quick" id="ag-form" autocomplete="off">
-          <input type="text" id="ag-text" maxlength="300" placeholder="Add a point" aria-label="New point to discuss">
+          <textarea id="ag-text" rows="1" placeholder="Add a point" aria-label="New point to discuss" aria-describedby="ag-hint"></textarea>
           <button class="btn primary" type="submit">Add</button>
+          <p class="quick-hint" id="ag-hint">One line is a quick point. Press Return for more lines — they become a note under it. Add (or ⌘/Ctrl + Return) saves it.</p>
         </form>
         <ul class="clist" id="ag-list"></ul>
         <button class="btn ghost" type="button" id="ag-clear" hidden>Clear discussed</button>
@@ -619,15 +660,29 @@ function normalise(s) {
    ones, so each list is rebuilt here from whatever arrives. */
 function dayKeyOk(k) { return typeof k === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(k) ? k : ''; }
 function clientList(v) { return Array.isArray(v) ? v : (v && typeof v === 'object' ? Object.keys(v).map(function (k) { return v[k]; }) : []); }
+/* Homework keeps a hand-set order (`pos`, dragged). Items from before
+   there was one get the order they used to show in: dated first, soonest
+   first, then oldest first. */
 function normaliseHomework(v) {
-  return clientList(v).filter(function (h) { return h && String(h.text || '').trim(); }).map(function (h) {
+  var list = clientList(v).filter(function (h) { return h && String(h.text || '').trim(); }).map(function (h) {
     return { id: h.id || uid('hw'), text: String(h.text).trim(), due: dayKeyOk(h.due), done: !!h.done,
-             doneAt: h.done ? (Number(h.doneAt) || 0) : 0, at: Number(h.at) || 0 };
+             doneAt: h.done ? (Number(h.doneAt) || 0) : 0, at: Number(h.at) || 0,
+             pos: h.pos == null || !isFinite(+h.pos) ? null : +h.pos };
   });
+  if (list.some(function (h) { return h.pos == null; })) {
+    list.slice().sort(function (a, b) {
+      if ((a.pos == null) !== (b.pos == null)) return a.pos == null ? 1 : -1;
+      if (a.pos != null) return a.pos - b.pos;
+      if (!!a.due !== !!b.due) return a.due ? -1 : 1;
+      return a.due === b.due ? a.at - b.at : (a.due < b.due ? -1 : 1);
+    }).forEach(function (h, i) { h.pos = i; });
+  }
+  return list;
 }
 function normaliseAgenda(v) {
   return clientList(v).filter(function (a) { return a && String(a.text || '').trim(); }).map(function (a) {
-    return { id: a.id || uid('ag'), text: String(a.text).trim(), done: !!a.done, at: Number(a.at) || 0 };
+    return { id: a.id || uid('ag'), text: String(a.text).trim(), body: String(a.body || '').replace(/\s+$/, ''),
+             done: !!a.done, at: Number(a.at) || 0 };
   });
 }
 function normaliseNotes(v) {
@@ -678,6 +733,18 @@ function findStep(id) {
   for (var i = 0; i < p.phases.length; i++) {
     for (var j = 0; j < p.phases[i].steps.length; j++) {
       if (p.phases[i].steps[j].id === id) return p.phases[i].steps[j];
+    }
+  }
+  return null;
+}
+// A step in any project, not just the open one — for the running timer and search.
+function locateStep(stepId) {
+  for (var i = 0; i < state.projects.length; i++) {
+    var p = state.projects[i];
+    for (var j = 0; j < p.phases.length; j++) {
+      for (var k = 0; k < p.phases[j].steps.length; k++) {
+        if (p.phases[j].steps[k].id === stepId) return { project: p, phase: p.phases[j], step: p.phases[j].steps[k] };
+      }
     }
   }
   return null;
@@ -801,6 +868,10 @@ var modalSave = null;
 function openModal(title, bodyHTML, onSave, focusId) {
   $('modal-title').textContent = title;
   $('modal-body').innerHTML = bodyHTML;
+  // every dialog starts with a plain Save — a delete confirmation before it
+  // used to leave "Delete" on the button (first meeting note, for one)
+  resetSaveBtn();
+  $('modal-save').disabled = false;
   $('modal-error').classList.remove('on');
   $('modal-error').textContent = '';
   modalSave = onSave;
@@ -899,8 +970,10 @@ function render() {
 
 function renderProjects() {
   var sel = $('project-select');
+  var open = runningEntry(), at = open && locateStep(open.stepId);
   sel.innerHTML = state.projects.map(function (p) {
-    return '<option value="' + esc(p.id) + '"' + (p.id === state.currentId ? ' selected' : '') + '>' + esc(p.name) + '</option>';
+    var running = !!(at && at.project.id === p.id);
+    return '<option value="' + esc(p.id) + '"' + (p.id === state.currentId ? ' selected' : '') + '>' + esc(p.name) + (running ? ' — timer running' : '') + '</option>';
   }).join('');
 }
 
@@ -912,9 +985,17 @@ function renderRunning() {
     document.title = VIEW && state.projects.length ? state.projects[0].name + ' — Project Phases' : 'Project Phases & Time Log';
     return;
   }
-  var st = findStep(open.stepId), ph = phaseOfStep(open.stepId);
+  // the timer keeps running while you look at another project — say whose it is
+  var at = locateStep(open.stepId);
+  var elsewhere = !!(at && at.project.id !== state.currentId);
   bar.classList.add('on');
-  $('running-what').textContent = (ph ? ph.name + ' · ' : '') + (st ? st.name : 'step');
+  bar.classList.toggle('elsewhere', elsewhere);
+  $('running-where').hidden = !elsewhere;
+  $('running-where').textContent = elsewhere ? 'Running in ' + at.project.name : '';
+  $('running-where').title = elsewhere ? 'This timer belongs to ' + at.project.name : '';
+  $('running-what').textContent = at ? at.phase.name + ' · ' + at.step.name : 'step';
+  $('running-go').hidden = !elsewhere;
+  $('running-split').hidden = elsewhere;      // splitting works inside the timer's own project
   tick();
 }
 
@@ -1996,11 +2077,12 @@ function itemActs(kind) {
     '<button type="button" class="icon del" data-act="' + kind + '-del" title="Delete">' + ICO.trash + '</button></span>';
 }
 function openHomework(p) {
-  return p.homework.filter(function (h) { return !h.done; }).sort(function (a, b) {
-    if (!!a.due !== !!b.due) return a.due ? -1 : 1;           // dated first, soonest first
-    return a.due === b.due ? a.at - b.at : (a.due < b.due ? -1 : 1);
-  });
+  return p.homework.filter(function (h) { return !h.done; }).sort(function (a, b) { return (a.pos || 0) - (b.pos || 0) || a.at - b.at; });
 }
+function gripButton(what) {
+  return '<button type="button" class="icon handle" data-act="handle" title="Drag to reorder — or use the arrow keys" aria-label="Move ' + what + '">' + ICO.grip + '</button>';
+}
+var agOpen = {};      // points whose note is showing — per visit, not saved
 
 function renderClient() {
   var p = clientProject();
@@ -2017,7 +2099,7 @@ function renderClient() {
   // homework
   if (VIEW) { $('hw-title').textContent = 'Your homework'; $('hw-sub').textContent = 'What we need from you to keep this moving.'; }
   $('hw-list').innerHTML = open.length ? open.map(function (h) {
-    return '<li class="citem" data-id="' + esc(h.id) + '">' +
+    return '<li class="citem" data-id="' + esc(h.id) + '">' + (VIEW ? '' : gripButton('homework item')) +
       '<input type="checkbox" data-act="hw-toggle" aria-label="Done"' + (VIEW ? ' disabled' : '') + '>' +
       '<span class="ctext">' + esc(h.text) + dueChip(h) + '</span>' + itemActs('hw') + '</li>';
   }).join('') : '<li class="cempty">' + (VIEW ? 'Nothing needed from you right now.' : 'Nothing outstanding. Add what the client owes you — files, approvals, answers.') + '</li>';
@@ -2033,10 +2115,15 @@ function renderClient() {
   if (VIEW) return;
 
   // to discuss
+  // the first line shows; a point with a note opens on click
   $('ag-list').innerHTML = p.agenda.length ? p.agenda.map(function (a) {
-    return '<li class="citem' + (a.done ? ' done' : '') + '" data-id="' + esc(a.id) + '">' +
+    var open = a.body && agOpen[a.id];
+    return '<li class="citem' + (a.done ? ' done' : '') + (open ? ' open' : '') + '" data-id="' + esc(a.id) + '">' + gripButton('point') +
       '<input type="checkbox" data-act="ag-toggle" aria-label="Discussed"' + (a.done ? ' checked' : '') + '>' +
-      '<span class="ctext">' + esc(a.text) + '</span>' + itemActs('ag') + '</li>';
+      '<div class="ctext">' + (a.body
+        ? '<button type="button" class="ag-title" data-act="ag-open" aria-expanded="' + (open ? 'true' : 'false') + '">' + esc(a.text) +
+            '<span class="ag-tag">' + (open ? 'Hide note' : 'Note') + '</span></button><div class="ag-body">' + esc(a.body) + '</div>'
+        : esc(a.text)) + '</div>' + itemActs('ag') + '</li>';
   }).join('') : '<li class="cempty">Nothing to raise yet.</li>';
   $('ag-clear').hidden = !p.agenda.some(function (a) { return a.done; });
 
@@ -2061,16 +2148,30 @@ $('hw-form').addEventListener('submit', function (ev) {
   ev.preventDefault();
   var p = clientProject(), text = $('hw-text').value.trim();
   if (VIEW || !p || !text) return;
-  p.homework.push({ id: uid('hw'), text: text, due: dayKeyOk($('hw-due').value), done: false, doneAt: 0, at: Date.now() });
+  var last = p.homework.reduce(function (m, h) { return Math.max(m, h.pos || 0); }, -1);
+  p.homework.push({ id: uid('hw'), text: text, due: dayKeyOk($('hw-due').value), done: false, doneAt: 0, at: Date.now(), pos: last + 1 });
   $('hw-text').value = ''; $('hw-due').value = '';
   save(); render(); $('hw-text').focus();
 });
+/* To discuss: one box for both. A single line is a quick point; Return
+   adds lines, and everything after the first becomes its note. */
+function splitPoint(raw) {
+  var lines = String(raw || '').replace(/\r/g, '').split('\n');
+  while (lines.length && !lines[0].trim()) lines.shift();
+  return { text: (lines.shift() || '').trim(), body: lines.join('\n').replace(/^\s*\n/, '').replace(/\s+$/, '') };
+}
+function growBox(ta) { ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 2 + 'px'; }
+$('ag-text').addEventListener('input', function () { growBox(this); });
+$('ag-text').addEventListener('keydown', function (ev) {
+  if (ev.key === 'Enter' && (ev.metaKey || ev.ctrlKey)) { ev.preventDefault(); $('ag-form').requestSubmit(); }
+});
 $('ag-form').addEventListener('submit', function (ev) {
   ev.preventDefault();
-  var p = clientProject(), text = $('ag-text').value.trim();
-  if (VIEW || !p || !text) return;
-  p.agenda.push({ id: uid('ag'), text: text, done: false, at: Date.now() });
+  var p = clientProject(), pt = splitPoint($('ag-text').value);
+  if (VIEW || !p || !pt.text) return;
+  p.agenda.push({ id: uid('ag'), text: pt.text, body: pt.body, done: false, at: Date.now() });
   $('ag-text').value = '';
+  growBox($('ag-text'));
   save(); render(); $('ag-text').focus();
 });
 $('ag-clear').addEventListener('click', function () {
@@ -2101,12 +2202,13 @@ $('panel-client').addEventListener('click', function (ev) {
   var act = btn.getAttribute('data-act');
   var host = btn.closest('[data-id]');
   if (act === 'nt-more') { host.classList.toggle('open'); btn.textContent = host.classList.contains('open') ? 'Show less' : 'Show all'; return; }
-  if (VIEW || !host) return;
+  if (VIEW || !host || act === 'handle') return;
   var p = clientProject(), id = host.getAttribute('data-id');
-  resetSaveBtn();
+  if (act === 'ag-open') { agOpen[id] = !agOpen[id]; renderClient(); return; }
   if (act === 'hw-edit') return openHomeworkItem(projectItem(p.homework, id));
   if (act === 'ag-edit') return openAgendaItem(projectItem(p.agenda, id));
   if (act === 'nt-edit') return openNote(projectItem(p.notes, id));
+  if (!/-del$/.test(act)) return;
   var kind = act.slice(0, 2), list = { hw: 'homework', ag: 'agenda', nt: 'notes' }[kind];
   var label = { hw: 'homework item', ag: 'point', nt: 'meeting note' }[kind];
   if (!list) return;
@@ -2137,14 +2239,17 @@ function openHomeworkItem(h) {
 function openAgendaItem(a) {
   if (!a) return;
   openModal('Point to discuss',
-    '<div class="row"><label for="ag-e-text">Point</label><textarea id="ag-e-text" rows="2" maxlength="300">' + esc(a.text) + '</textarea></div>',
+    '<div class="row"><label for="ag-e-text">Point</label><input type="text" id="ag-e-text" maxlength="300" style="width:100%" value="' + esc(a.text) + '"></div>' +
+    '<div class="row"><label for="ag-e-body">Note</label><textarea id="ag-e-body" rows="7" style="width:100%;line-height:1.5" placeholder="Optional — background, numbers, what you want out of it">' + esc(a.body) + '</textarea>' +
+      '<div class="hint">Only the point shows in the list. The note opens when you click it.</div></div>',
     function () {
       var text = $('ag-e-text').value.trim();
       if (!text) { modalError('Write the point, or delete it.'); return false; }
       a.text = text;
+      a.body = $('ag-e-body').value.replace(/\s+$/, '');
       save();
       return true;
-    }, 'ag-e-text');
+    }, a.body ? 'ag-e-body' : 'ag-e-text');
 }
 function openNote(n) {
   var p = clientProject();
@@ -2171,7 +2276,9 @@ function openNote(n) {
   var ins = $('nt-insert');
   if (ins) ins.addEventListener('click', function () {
     var ta = $('nt-body');
-    var list = 'To discuss:\n' + points.map(function (a) { return '- ' + a.text; }).join('\n') + '\n\n';
+    var list = 'To discuss:\n' + points.map(function (a) {
+      return '- ' + a.text + (a.body ? '\n' + a.body.split('\n').map(function (l) { return '    ' + l; }).join('\n') : '');
+    }).join('\n') + '\n\n';
     ta.value = ta.value.trim() ? ta.value.replace(/\s+$/, '') + '\n\n' + list : list;
     ta.focus();
     ta.setSelectionRange(ta.value.length, ta.value.length);
@@ -2179,27 +2286,242 @@ function openNote(n) {
   });
 }
 
+/* ---------- reordering homework and points to discuss ----------
+   Same gestures as the board: drag the grip, or focus it and use the
+   arrow keys. Homework order is its `pos`; points are kept in list order. */
+function setClientOrder(kind, ids) {
+  var p = clientProject();
+  if (!p) return;
+  if (kind === 'hw') {
+    ids.forEach(function (id, i) { var h = projectItem(p.homework, id); if (h) h.pos = i; });
+  } else {
+    var byId = {};
+    p.agenda.forEach(function (a) { byId[a.id] = a; });
+    var next = ids.map(function (id) { return byId[id]; }).filter(Boolean);
+    p.agenda.forEach(function (a) { if (next.indexOf(a) === -1) next.push(a); });
+    p.agenda = next;
+  }
+  save();
+}
+function listIds(ul) {
+  return Array.prototype.map.call(ul.querySelectorAll(':scope > .citem'), function (li) { return li.getAttribute('data-id'); });
+}
+var cdrag = null;
+function cdragMove(ev) {
+  if (!cdrag) return;
+  ev.preventDefault();
+  cdrag.ghost.style.transform = 'translate(' + (ev.clientX + 14) + 'px,' + (ev.clientY - 14) + 'px)';
+  autoScroll(ev.clientY);
+  var items = cdrag.list.children, before = null;
+  for (var i = 0; i < items.length; i++) {
+    var it = items[i];
+    if (it === cdrag.el || !it.classList.contains('citem')) continue;
+    var r = it.getBoundingClientRect();
+    if (ev.clientY < r.top + r.height / 2) { before = it; break; }
+  }
+  cdrag.list.insertBefore(cdrag.holder, before);
+}
+function cdragEnd(commit) {
+  if (!cdrag) return;
+  var d = cdrag;
+  cdrag = null;
+  document.removeEventListener('pointermove', cdragMove);
+  document.removeEventListener('pointerup', cdragUp);
+  document.removeEventListener('pointercancel', cdragCancel);
+  if (d.ghost.parentNode) d.ghost.parentNode.removeChild(d.ghost);
+  document.body.classList.remove('dragging-on');
+  if (commit && d.holder.parentNode) {
+    d.list.insertBefore(d.el, d.holder);
+    setClientOrder(d.kind, listIds(d.list));
+  }
+  if (d.holder.parentNode) d.holder.parentNode.removeChild(d.holder);
+  d.el.classList.remove('dragging');
+  renderClient();
+  var g = document.querySelector('#' + d.list.id + ' [data-id="' + d.id + '"] .handle');
+  if (g) g.focus();
+}
+function cdragUp(ev) { if (cdrag && ev && ev.clientY != null) cdragMove(ev); cdragEnd(true); }
+function cdragCancel() { cdragEnd(false); }
+$('panel-client').addEventListener('pointerdown', function (ev) {
+  var handle = ev.target.closest && ev.target.closest('.citem [data-act="handle"]');
+  if (!handle || cdrag || VIEW) return;
+  if (ev.button != null && ev.button !== 0) return;
+  ev.preventDefault();
+  var li = handle.closest('.citem'), ul = li.parentNode;
+  var ghost = document.createElement('div');
+  ghost.id = 'drag-ghost';
+  ghost.textContent = (li.querySelector('.ag-title') || li.querySelector('.ctext')).firstChild.textContent;
+  document.body.appendChild(ghost);
+  var holder = document.createElement('li');
+  holder.className = 'drop-ph';
+  ul.insertBefore(holder, li.nextSibling);
+  cdrag = { el: li, list: ul, id: li.getAttribute('data-id'), kind: ul.id === 'hw-list' ? 'hw' : 'ag', ghost: ghost, holder: holder };
+  li.classList.add('dragging');
+  document.body.classList.add('dragging-on');
+  cdragMove(ev);
+  document.addEventListener('pointermove', cdragMove, { passive: false });
+  document.addEventListener('pointerup', cdragUp);
+  document.addEventListener('pointercancel', cdragCancel);
+});
+$('panel-client').addEventListener('keydown', function (ev) {
+  if (ev.key === 'Escape' && cdrag) return cdragEnd(false);
+  if (ev.key !== 'ArrowUp' && ev.key !== 'ArrowDown') return;
+  var handle = ev.target.closest && ev.target.closest('.citem [data-act="handle"]');
+  if (!handle || VIEW) return;
+  ev.preventDefault();
+  var li = handle.closest('.citem'), ul = li.parentNode, id = li.getAttribute('data-id');
+  var ids = listIds(ul), i = ids.indexOf(id), j = i + (ev.key === 'ArrowUp' ? -1 : 1);
+  if (i < 0 || j < 0 || j >= ids.length) return;
+  ids.splice(i, 1); ids.splice(j, 0, id);
+  setClientOrder(ul.id === 'hw-list' ? 'hw' : 'ag', ids);
+  renderClient();
+  var g = document.querySelector('#' + ul.id + ' [data-id="' + id + '"] .handle');
+  if (g) g.focus();
+});
+document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape' && cdrag) cdragEnd(false); });
+
+/* ============================================================
+   Search — every project: steps, phases, homework, points to
+   discuss (and their notes), meeting notes, time-log notes.
+   Picking a result opens its project and tab and points at it.
+   ============================================================ */
+function searchWords(q) { return String(q || '').toLowerCase().split(/\s+/).filter(Boolean); }
+function searchAll(q) {
+  var words = searchWords(q), out = [];
+  if (!words.length) return out;
+  function hit() {
+    var s = Array.prototype.join.call(arguments, '\n').toLowerCase();
+    return words.every(function (w) { return s.indexOf(w) !== -1; });
+  }
+  state.projects.forEach(function (p) {
+    if (hit(p.name)) out.push({ p: p, kind: 'Project', text: p.name, tab: 'board' });
+    p.phases.forEach(function (ph) {
+      if (hit(ph.name)) out.push({ p: p, kind: 'Phase', text: ph.name, tab: 'board', phase: ph, sel: '.phase[data-phase="' + ph.id + '"]' });
+      ph.steps.forEach(function (st) {
+        if (hit(st.name)) out.push({ p: p, kind: 'Step · ' + ph.name, text: st.name, tab: 'board', phase: ph, sel: '.step[data-step="' + st.id + '"]' });
+      });
+    });
+    (p.homework || []).forEach(function (h) {
+      if (hit(h.text)) out.push({ p: p, kind: 'Homework' + (h.done ? ' · done' : ''), text: h.text, tab: 'client', done: h.done, sel: '[data-id="' + h.id + '"]' });
+    });
+    (p.agenda || []).forEach(function (a) {
+      if (hit(a.text, a.body)) out.push({ p: p, kind: 'To discuss', text: a.text, snip: a.body, tab: 'client', point: a.id, sel: '#ag-list [data-id="' + a.id + '"]' });
+    });
+    (p.notes || []).forEach(function (n) {
+      if (hit(n.title, n.body)) out.push({ p: p, kind: 'Meeting note · ' + fmtDate(keyToMs(n.date)), text: n.title || 'Meeting', snip: n.body, tab: 'client', note: true, sel: '#nt-list [data-id="' + n.id + '"]' });
+    });
+  });
+  state.log.forEach(function (e) {
+    if (!e.note || !hit(e.note)) return;
+    var at = locateStep(e.stepId);
+    if (at) out.push({ p: at.project, kind: 'Time log · ' + fmtDate(e.start), text: at.step.name, snip: e.note, tab: 'log', sel: '.log-row[data-entry="' + e.id + '"]' });
+  });
+  // the open project first, then the rest in project order
+  var order = state.projects.map(function (p) { return p.id; });
+  out.forEach(function (r, i) { r.i = i; r.rank = r.p.id === state.currentId ? -1 : order.indexOf(r.p.id); });
+  return out.sort(function (a, b) { return a.rank - b.rank || a.i - b.i; }).slice(0, 50);
+}
+function markWords(text, words) {
+  var html = esc(text);
+  words.forEach(function (w) {
+    var ew = esc(w).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    html = html.replace(new RegExp('(' + ew + ')(?![^<]*>)', 'gi'), '<mark>$1</mark>');
+  });
+  return html;
+}
+// The line of a long note where the match is, rather than its opening.
+function snippet(body, words) {
+  var lines = String(body || '').split('\n').map(function (l) { return l.trim(); }).filter(Boolean);
+  if (!lines.length) return '';
+  var line = lines.filter(function (l) { var s = l.toLowerCase(); return words.some(function (w) { return s.indexOf(w) !== -1; }); })[0] || lines[0];
+  return line.length > 140 ? line.slice(0, 137) + '…' : line;
+}
+var searchHits = [], searchOn = -1;
+function paintSearch() {
+  var box = $('search-results'), q = $('search').value, words = searchWords(q);
+  if (!words.length) { box.hidden = true; box.innerHTML = ''; searchHits = []; return; }
+  searchHits = searchAll(q);
+  if (searchOn >= searchHits.length) searchOn = searchHits.length - 1;
+  var multi = state.projects.length > 1;
+  box.innerHTML = searchHits.length ? searchHits.map(function (r, i) {
+    return '<button type="button" class="sr' + (i === searchOn ? ' on' : '') + '" role="option" data-i="' + i + '">' +
+      '<span class="sr-kind">' + esc(r.kind) + (multi && r.kind !== 'Project' ? ' · ' + esc(r.p.name) : '') + '</span>' +
+      '<span class="sr-text">' + markWords(r.text, words) + '</span>' +
+      (r.snip ? '<span class="sr-snip">' + markWords(snippet(r.snip, words), words) + '</span>' : '') + '</button>';
+  }).join('') : '<div class="sr-none">Nothing matches “' + esc(q.trim()) + '”.</div>';
+  box.hidden = false;
+}
+function goToResult(r) {
+  $('search-results').hidden = true;
+  openProject(r.p.id);
+  if (r.phase) r.phase.collapsed = false;
+  if (r.point) agOpen[r.point] = true;
+  save();
+  showTab(r.tab);
+  render();
+  if (!r.sel) { window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
+  var el = document.querySelector(r.sel);
+  if (!el) return;
+  if (r.done && $('hw-done-wrap')) $('hw-done-wrap').open = true;
+  if (r.note) { el.classList.add('open'); var more = el.querySelector('.note-more'); if (more) more.textContent = 'Show less'; }
+  el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  el.classList.remove('found'); void el.offsetWidth; el.classList.add('found');
+}
+$('search').addEventListener('input', function () { searchOn = -1; paintSearch(); });
+$('search').addEventListener('focus', paintSearch);
+$('search').addEventListener('keydown', function (ev) {
+  if (ev.key === 'Escape') { this.value = ''; paintSearch(); this.blur(); return; }
+  if (ev.key === 'ArrowDown' || ev.key === 'ArrowUp') {
+    if (!searchHits.length) return;
+    ev.preventDefault();
+    searchOn = (searchOn + (ev.key === 'ArrowDown' ? 1 : -1) + searchHits.length) % searchHits.length;
+    paintSearch();
+    var on = $('search-results').querySelector('.sr.on');
+    if (on) on.scrollIntoView({ block: 'nearest' });
+  }
+  if (ev.key === 'Enter' && searchHits.length) { ev.preventDefault(); goToResult(searchHits[Math.max(0, searchOn)]); }
+});
+$('search-results').addEventListener('mousedown', function (ev) { ev.preventDefault(); });   // keep focus in the box
+$('search-results').addEventListener('click', function (ev) {
+  var b = ev.target.closest('.sr');
+  if (b) goToResult(searchHits[+b.getAttribute('data-i')]);
+});
+document.addEventListener('pointerdown', function (ev) {
+  if (!$('search-wrap').contains(ev.target)) $('search-results').hidden = true;
+});
+// "/" jumps to the search box, as on most sites
+document.addEventListener('keydown', function (ev) {
+  if (ev.key !== '/' || VIEW || ev.metaKey || ev.ctrlKey || ev.altKey) return;
+  var t = ev.target, tag = t && t.tagName;
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (t && t.isContentEditable)) return;
+  if ($('modal-overlay').classList.contains('open')) return;
+  ev.preventDefault();
+  $('search').focus();
+});
+
 /* ============================================================
    Tabs
    ============================================================ */
-[['tab-board', 'panel-board', 'board'], ['tab-log', 'panel-log', 'log'], ['tab-report', 'panel-report', 'report'], ['tab-client', 'panel-client', 'client']]
-  .forEach(function (t) {
-    $(t[0]).addEventListener('click', function () {
-      activeTab = t[2];
-      ['tab-board', 'tab-log', 'tab-report', 'tab-client'].forEach(function (x) { $(x).classList.remove('on'); });
-      ['panel-board', 'panel-log', 'panel-report', 'panel-client'].forEach(function (x) { $(x).classList.remove('on'); });
-      $(t[0]).classList.add('on');
-      $(t[1]).classList.add('on');
-      render();
-    });
+function showTab(name) {
+  activeTab = name;
+  ['board', 'log', 'report', 'client'].forEach(function (x) {
+    $('tab-' + x).classList.toggle('on', x === name);
+    $('panel-' + x).classList.toggle('on', x === name);
   });
+}
+['board', 'log', 'report', 'client'].forEach(function (x) {
+  $('tab-' + x).addEventListener('click', function () { showTab(x); render(); });
+});
 
 /* ============================================================
    Projects, import / export
    ============================================================ */
+function openProject(id) {
+  if (state.currentId !== id) filters = { phaseId: '', stepId: '', from: '', to: '' };
+  state.currentId = id;
+}
 $('project-select').addEventListener('change', function () {
-  state.currentId = this.value;
-  filters = { phaseId: '', stepId: '', from: '', to: '' };
+  openProject(this.value);
   save();
   render();
 });
@@ -2387,6 +2709,13 @@ $('btn-collapse-all').addEventListener('click', function () {
 });
 
 $('running-stop').addEventListener('click', stopTimer);
+$('running-go').addEventListener('click', function () {
+  var open = runningEntry(), at = open && locateStep(open.stepId);
+  if (!at) return;
+  openProject(at.project.id);
+  at.phase.collapsed = false;
+  save(); render();
+});
 $('running-split').addEventListener('click', function () {
   var open = runningEntry();
   if (open) openSplit(open.id);
@@ -3085,7 +3414,7 @@ function sharePayload(p) {
   var project = {
     id: p.id, name: p.name, createdAt: p.createdAt,
     // the client's own to-do list; points to discuss and notes stay private
-    homework: (p.homework || []).map(function (h) { return { id: h.id, text: h.text, due: h.due, done: h.done, doneAt: h.doneAt, at: h.at }; }),
+    homework: (p.homework || []).map(function (h) { return { id: h.id, text: h.text, due: h.due, done: h.done, doneAt: h.doneAt, at: h.at, pos: h.pos }; }),
     phases: p.phases.map(function (ph) {
       return {
         id: ph.id, name: ph.name,

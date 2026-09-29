@@ -5,6 +5,52 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v61 — 2026-09-29
+
+**What's new** · Project Phases · [tools/project-tracker.html]
+### Project Phases,<br>easier to find your way
+A timer left running in another project now says so, in black, with a
+button to jump back to it. A search box finds anything in any project.
+Points to discuss can carry a note under them, and both they and the
+client's homework can be dragged into order.
+
+**Project Phases v13 — `tools/project-tracker.html`, source `Tools files/Tools/project_tracker_v13.html`**
+- Running bar: when the timer belongs to another project it turns black
+  with a yellow "Running in <project>" tag, Split is swapped for **Go to
+  project**, and the project picker marks that project "— timer running".
+- Search box in the top bar (or press `/`): steps, phases, project names,
+  homework (open and done), points to discuss and their notes, meeting
+  notes and time-log notes, across every project. Open project first,
+  arrow keys + Enter, matches highlighted; picking one opens the project
+  and tab, expands the phase or note, and flashes the item. Hidden on
+  client links.
+- To discuss: the quick-add box is a growing text box. One line = quick
+  point; Return adds lines, which become the point's note (`body`). Add or
+  ⌘/Ctrl+Return saves. Only the first line shows, with a NOTE tag that
+  opens it in place; the edit dialog has Point + Note. "Insert the points
+  to discuss" in a meeting note brings the notes along, indented.
+- Drag to reorder (grip, or arrow keys on it) for To discuss and open
+  homework. Homework gains `pos`; items without one get the order they
+  used to show in (dated first, soonest first, then oldest), so nothing
+  moves on upgrade. New homework goes to the end. `pos` travels in the
+  client link, so the client sees the same order.
+- Fix: a dialog could open with a black **Delete** button (e.g. the first
+  meeting note after deleting something) — every dialog now starts with
+  Save.
+- Data: `agenda[].body`, `homework[].pos` added; same storage key and sync
+  doc. An older page open elsewhere would drop both if it saved — reload
+  other devices.
+
+**Verified locally (browser storage, not signed in)**
+- Timer from project A shown in black on project B; Go to project; picker
+  label. Delete → New note shows Save. Point with note: tag opens/closes;
+  mouse drag and arrow keys reorder points and homework and survive a
+  reload; old-format homework keeps its dated-first order; search jumps to
+  a step in another project and to a note. 375 px phone: no sideways
+  scroll. No console errors.
+
+---
+
 ## v60 — 2026-09-29
 
 **What's new** · Idea Bank · [tools/idea-bank.html]
