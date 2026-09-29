@@ -3425,7 +3425,8 @@ function sharePayload(p) {
       };
     })
   };
-  var log = state.log.filter(function (e) { return ids[e.stepId]; }).map(function (e) {
+  // finished entries only: a client never sees a timer running
+  var log = state.log.filter(function (e) { return ids[e.stepId] && e.end != null; }).map(function (e) {
     return { id: e.id, stepId: e.stepId, phaseId: e.phaseId, start: e.start, end: e.end, note: e.note, source: e.source };
   });
   return { project: project, log: log };
@@ -3605,7 +3606,8 @@ function showShared(d) {
   var collapsed = {};                       // the client's own expand/collapse survives updates
   var cur = currentProject();
   if (cur) cur.phases.forEach(function (ph) { collapsed[ph.id] = ph.collapsed; });
-  var next = normalise({ projects: [d.project], log: listOf(d.log), currentId: d.project.id });
+  // a link published before timers were hidden may still hold a running one
+  var next = normalise({ projects: [d.project], log: listOf(d.log).filter(function (e) { return e && e.end != null; }), currentId: d.project.id });
   if (!next || !next.projects.length) return viewGone();
   next.projects[0].shareId = null;
   next.projects[0].phases.forEach(function (ph) { ph.collapsed = !!collapsed[ph.id]; });

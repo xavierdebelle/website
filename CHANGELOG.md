@@ -5,6 +5,28 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v64 — 2026-09-29
+
+**What's new** · Project Phases · [tools/project-tracker.html]
+### Client links stay quiet while you work
+A client watching their project link no longer sees a timer ticking. Time
+shows up there once you stop it.
+
+**Project Phases v14 — `tools/project-tracker.html`, source `Tools files/Tools/project_tracker_v14.html`**
+- `sharePayload` sends only finished log entries (`end != null`), so the
+  running bar and the live step time never appear on a client link.
+- The client view also drops any open entry it receives — covers links
+  published before this; those are rewritten anyway on the next sync
+  (every share is republished once per page load).
+- Starting a timer still moves a To-do step to In progress, which the
+  client sees; that is the step status, not the timer.
+
+**Verified locally**
+- Tool loads with no console errors; own-view timer bar unchanged. The
+  share path itself was not exercised (needs the database).
+
+---
+
 ## v63 — 2026-09-29
 
 **What's new** · Updated piece · [tools/neural-mind-map.html]
