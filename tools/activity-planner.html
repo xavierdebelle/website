@@ -407,6 +407,9 @@ body.admin-mode .guest-summary-table thead th:last-child{border-top-right-radius
 #pay-info-text{font-size:0.86rem;color:var(--text-muted);line-height:1.6;white-space:pre-line;overflow-wrap:anywhere}
 .demo-note{font-size:0.82rem;line-height:1.5;color:var(--text-muted);background:var(--white);border:0.5px dashed var(--olive-light);border-radius:var(--radius);padding:0.8rem 1rem;margin-bottom:1.25rem}
 .demo-note strong{color:var(--olive-dark);font-weight:500}
+.find-toggle{display:inline-flex;align-items:center;margin-top:0.85rem;padding:0.4rem 0.85rem;background:none;border:0.5px solid var(--sand-dark);border-radius:20px;font-family:'DM Sans',sans-serif;font-size:0.8rem;color:var(--text-muted);cursor:pointer;text-decoration:none;transition:all 0.15s}
+.find-toggle:hover,.find-toggle.open{border-color:var(--olive-light);color:var(--olive)}
+.find-box{margin-top:0.75rem}
 .acct-row{display:flex;justify-content:flex-end;align-items:center;gap:0.5rem;font-size:0.78rem;color:var(--text-muted);margin:-0.5rem 0 1rem}
 .acct-link{background:none;border:none;padding:0;font:inherit;color:var(--olive);text-decoration:underline;cursor:pointer}
 .gate p{font-size:0.86rem;color:var(--text-muted);line-height:1.55;margin-bottom:1rem;text-align:center}
@@ -481,18 +484,7 @@ input::placeholder,textarea::placeholder{color:#b3ada2;opacity:1}
 <!-- GUEST PAGE -->
 <div id="view-guest">
 
-<!-- Existing reservations first — guests coming back to check or change something land here -->
-<div class="lookup-card">
-<h3>View and modify your reservation</h3>
-<p>Already registered? Enter your email to view and update your existing booking.</p>
-<div class="lookup-row">
-<input type="email" id="lookup-email" placeholder="your@email.com" inputmode="email" onkeydown="if(event.key==='Enter')lookupGuest()"/>
-<button class="lookup-btn" onclick="lookupGuest()">Find</button>
-</div>
-<div id="lookup-error" class="error-msg" style="display:none"></div>
-</div>
-
-<div id="edit-reservation" style="display:none;margin-top:1.5rem">
+<div id="edit-reservation" style="display:none;margin-bottom:1.5rem">
 <div class="form-card">
 <div class="form-intro">
 <h2 id="edit-title">View and modify your reservation</h2>
@@ -502,17 +494,24 @@ input::placeholder,textarea::placeholder{color:#b3ada2;opacity:1}
 </div>
 </div>
 
-<div id="edit-success" style="display:none;margin-top:1.5rem" class="success-msg">
+<div id="edit-success" style="display:none;margin-bottom:1.5rem" class="success-msg">
 <h3>Reservation updated!</h3>
 <p>Your changes have been saved. <span class="signoff"></span></p>
 </div>
-
-<div class="divider">new here?</div>
 
 <div class="form-card">
 <div class="form-intro">
 <h2>Join an activity</h2>
 <p id="form-intro-text"></p>
+<!-- Coming back to an existing booking: a quiet button that opens the email lookup -->
+<button type="button" class="find-toggle" id="find-toggle" onclick="toggleFind()">Already registered? View or change your booking</button>
+<div id="find-box" class="find-box" style="display:none">
+<div class="lookup-row">
+<input type="email" id="lookup-email" placeholder="The email you booked with" inputmode="email" onkeydown="if(event.key==='Enter')lookupGuest()"/>
+<button class="lookup-btn" onclick="lookupGuest()">Find</button>
+</div>
+<div id="lookup-error" class="error-msg" style="display:none"></div>
+</div>
 </div>
 <div id="guest-form">
 <div class="row">
@@ -548,6 +547,7 @@ input::placeholder,textarea::placeholder{color:#b3ada2;opacity:1}
 <div class="form-intro">
 <h2 id="rsvp-title">RSVP</h2>
 <p id="rsvp-intro"></p>
+<a class="find-toggle" id="rsvp-find" href="#">Already registered? View or change your booking</a>
 </div>
 <div id="rsvp-form">
 <div class="row">
@@ -881,6 +881,9 @@ if (!isAdmin) { rebuildGuests(); refreshViews(); }
 finishLoading();
 if (rsvpActId) renderRsvp(); else renderGuestActivities();
 if (!rsvpActId && PARAMS.has('admin')) showAdminView();
+// The activity page's "View or change your booking" lands here with the lookup open.
+document.getElementById('rsvp-find').href = '?e=' + encodeURIComponent(EID) + '&find=1';
+if (!rsvpActId && PARAMS.has('find')) toggleFind(true);
 onAccount();
 } catch(e) {
 document.getElementById('loading-overlay').innerHTML = `
@@ -929,6 +932,13 @@ el.innerHTML = `<p>You're signed in as <strong>${esc(s.user.email)}</strong>, wh
 <button class="submit-btn" onclick="switchAccount()">Use another account</button>`;
 }
 }
+window.toggleFind = function(open) {
+const box = document.getElementById('find-box');
+const show = open === undefined ? box.style.display === 'none' : open;
+box.style.display = show ? 'block' : 'none';
+document.getElementById('find-toggle').classList.toggle('open', show);
+if (show) document.getElementById('lookup-email').focus();
+};
 window.signInNow = function() { window.xdbAccount.signIn().catch(() => {}); };
 window.switchAccount = async function() { try { await window.xdbAccount.signOut(); } catch(e) {} window.xdbAccount.signIn().catch(() => {}); };
 window.openAccount = function() { window.xdbAccount.openPanel(); };
@@ -1283,13 +1293,14 @@ let g = null;
 try { g = await loadMine(await emailKey(email)); }
 catch(e) { errEl.textContent='Could not reach the server. Check your connection and try again.'; errEl.style.display='block'; return; }
 if (!g) {
-errEl.textContent="We couldn't find a reservation with that email. Check the spelling or register above.";
+errEl.textContent="We couldn't find a reservation with that email. Check the spelling, or sign up below.";
 errEl.style.display='block';
 document.getElementById('edit-reservation').style.display='none';
 return;
 }
 errEl.style.display='none';
 editingGuestId = g.id;
+toggleFind(false);
 openEditReservation(g);
 };
 

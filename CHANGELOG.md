@@ -5,6 +5,27 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v70 — 2026-10-02
+
+**What's new** · Activity Planner · [tools/activity-planner.html]
+### A quieter way back to your booking
+The big "View and modify your reservation" box is now a small button inside
+"Join an activity". Each activity's own page has it too.
+
+**Activity Planner v3 — `tools/activity-planner.html`, source `Tools files/Events/activity_planner_v3.html`**
+- Lookup card and "new here?" divider removed; "Already registered? View or
+  change your booking" pill in the Join card opens the email field (Enter or
+  Find), closes again once the booking opens.
+- Activity pages (`&a=`) carry the same pill as a link to `?e=<id>&find=1`,
+  which opens the main page with the field open and focused.
+- Booking edit / "updated" messages now sit above the Join card.
+
+**Tested on the mock** (signed-out guest, real clicks): pill opens field,
+email + Enter opens the booking; activity page pill lands on the main page
+with the field focused.
+
+---
+
 ## v69 — 2026-10-02
 
 **What's new** · Potluck · [tools/potluck.html]
