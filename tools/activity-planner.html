@@ -1,0 +1,2511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<title>Activity Planner</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=DM+Sans:wght@300;400;500&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+--olive:#2b2a27;--olive-light:#8c8577;--olive-pale:#efece6;--olive-dark:#1b1a18;
+--sand:#f6f4f0;--sand-dark:#e4e0d8;--text:#262522;--text-muted:#6e6a62;
+--accent:#c4703a;--accent-light:#f0d5c0;--white:#fff;
+--radius:10px;--shadow:0 2px 12px rgba(27,26,24,0.10);
+}
+body{font-family:'DM Sans',sans-serif;background:var(--sand);color:var(--text);min-height:100vh}
+h1,h2,h3,h4{font-family:'Cormorant Garamond',serif}
+.app{max-width:880px;margin:0 auto;padding:1rem}
+@media(min-width:600px){.app{padding:1.5rem}}
+
+/* ── Header ── */
+.header{text-align:center;padding:2.5rem 1rem 2rem;margin-bottom:1.5rem;position:relative;overflow:hidden}
+.header-inner{position:relative;z-index:1}
+.header-eyebrow{font-size:0.72rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--olive-light);margin-bottom:0.6rem;font-family:'DM Sans',sans-serif;font-weight:500}
+.header-ampersand{color:var(--olive-light);font-style:italic}
+.header-divider{display:flex;align-items:center;gap:0.75rem;margin:0.75rem auto;max-width:320px}
+.header-divider::before,.header-divider::after{content:'';flex:1;height:0.5px;background:var(--sand-dark)}
+.header-divider span{font-size:0.6rem;color:var(--olive-light);letter-spacing:0.1em}
+.header-meta{display:flex;align-items:center;justify-content:center;gap:0.5rem;flex-wrap:wrap}
+.header-meta-item{font-size:0.78rem;color:var(--text-muted);letter-spacing:0.04em;font-family:'DM Sans',sans-serif}
+.header-meta-dot{color:var(--olive-light);font-size:0.5rem}
+/* No tabs — single page */
+.view{display:block}
+
+
+/* ── Cards ── */
+.form-card{background:var(--white);border-radius:var(--radius);border:0.5px solid var(--sand-dark);padding:1.25rem;box-shadow:var(--shadow)}
+@media(min-width:500px){.form-card{padding:2rem}}
+.form-intro{margin-bottom:1.25rem;padding-bottom:1.25rem;border-bottom:0.5px solid var(--sand-dark)}
+.form-intro h2{font-size:1.4rem;color:var(--olive-dark);margin-bottom:0.3rem}
+.form-intro p{font-size:0.86rem;color:var(--text-muted);line-height:1.6}
+
+/* ── Fields ── */
+.field{margin-bottom:1.1rem}
+.field label{display:block;font-size:0.78rem;font-weight:500;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);margin-bottom:0.4rem}
+.field input,.field select,.field textarea{width:100%;padding:0.7rem 0.85rem;border:0.5px solid var(--sand-dark);border-radius:var(--radius);font-family:'DM Sans',sans-serif;font-size:1rem;background:var(--white);color:var(--text);outline:none;transition:border-color 0.15s;-webkit-appearance:none}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--olive-light)}
+.field textarea{resize:vertical;min-height:60px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:0.75rem}
+
+/* ── Activity cards ── */
+.activity-check{display:flex;align-items:flex-start;gap:0.85rem;padding:0.85rem 1rem;border:0.5px solid var(--sand-dark);border-radius:var(--radius);margin-bottom:0.6rem;transition:all 0.15s;background:var(--white);cursor:pointer;-webkit-tap-highlight-color:transparent;user-select:none}
+.activity-check:hover{border-color:var(--olive-light);background:var(--olive-pale)}
+.activity-check.selected{border-color:var(--olive);background:var(--olive-pale)}
+.activity-check input[type=checkbox]{position:absolute;opacity:0;width:0;height:0;pointer-events:none}
+.cb-box{width:22px;height:22px;min-width:22px;border:2px solid #ccc;border-radius:5px;background:#fff;display:flex;align-items:center;justify-content:center;transition:all 0.15s;margin-top:1px;flex-shrink:0}
+.activity-check.selected .cb-box{background:var(--olive);border-color:var(--olive)}
+.activity-check.selected .cb-box::after{content:'';display:block;width:13px;height:10px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 13 10'%3E%3Cpath d='M1 5l3.5 3.5L12 1' stroke='white' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-size:contain}
+.activity-label{font-size:0.9rem;font-weight:500;color:var(--text)}
+.activity-meta{font-size:0.78rem;color:var(--text-muted);margin-top:2px}
+.activity-price{font-size:0.82rem;font-weight:500;color:var(--olive)}
+.capacity-bar{height:3px;background:var(--sand-dark);border-radius:2px;margin-top:7px}
+.capacity-fill{height:100%;border-radius:2px;background:var(--olive);transition:width 0.3s}
+.capacity-fill.warn{background:var(--accent)}
+/* Paid-and-locked activity (edit screen) — selected, cannot be removed */
+.activity-check.locked{cursor:default;background:var(--olive-pale);border-color:var(--olive)}
+.activity-check.locked:hover{background:var(--olive-pale)}
+.paid-lock{display:inline-block;font-size:0.66rem;font-weight:600;color:#2b2a27;background:#e3efe5;border:0.5px solid #8c8577;border-radius:12px;padding:1px 7px;vertical-align:middle;margin-left:4px}
+/* Full / fully-booked activity — cannot be selected */
+.activity-check.full{opacity:0.6;cursor:not-allowed;background:var(--sand)}
+.activity-check.full:hover{background:var(--sand);border-color:var(--sand-dark)}
+.activity-check.full .cb-box{border-color:#ddd;background:#f3f3ef}
+.full-badge{display:inline-block;font-size:0.66rem;font-weight:600;color:#8a3030;background:#fdecea;border:0.5px solid #d08080;border-radius:12px;padding:1px 7px;vertical-align:middle;margin-left:4px}
+
+/* ── Counter ── */
+.counter-row{display:flex;align-items:center;gap:0.6rem;margin-top:0.65rem}
+.counter-btn{width:32px;height:32px;border-radius:50%;border:0.5px solid var(--olive-light);background:var(--white);font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--olive);line-height:1;transition:all 0.15s;flex-shrink:0;-webkit-tap-highlight-color:transparent}
+.counter-btn:hover{background:var(--olive);color:var(--white)}
+.counter-val{font-size:0.9rem;font-weight:500;min-width:22px;text-align:center;color:var(--text)}
+.counter-lbl{font-size:0.78rem;color:var(--text-muted)}
+
+/* ── Subtotal ── */
+.subtotal-box{background:var(--olive-pale);border:0.5px solid var(--olive-light);border-radius:var(--radius);padding:1rem 1.25rem;margin-bottom:1.25rem}
+.sub-row{display:flex;justify-content:space-between;font-size:0.85rem;padding:3px 0;color:var(--text-muted)}
+.sub-total{display:flex;justify-content:space-between;font-size:0.95rem;font-weight:500;color:var(--olive-dark);border-top:0.5px solid var(--olive-light);margin-top:6px;padding-top:8px}
+
+/* ── Buttons ── */
+.submit-btn{width:100%;padding:1rem;background:var(--olive);color:var(--white);border:none;border-radius:var(--radius);font-family:'DM Sans',sans-serif;font-size:1rem;font-weight:500;cursor:pointer;letter-spacing:0.03em;transition:background 0.15s;margin-top:0.5rem;-webkit-tap-highlight-color:transparent}
+.submit-btn:hover{background:var(--olive-dark)}
+.submit-btn:disabled{opacity:0.6;cursor:not-allowed}
+.secondary-btn{width:100%;padding:1rem;background:none;color:var(--olive);border:0.5px solid var(--olive);border-radius:var(--radius);font-family:'DM Sans',sans-serif;font-size:1rem;font-weight:500;cursor:pointer;letter-spacing:0.03em;transition:all 0.15s;margin-top:0.75rem}
+.secondary-btn:hover{background:var(--olive-pale)}
+
+/* ── Messages ── */
+.success-msg{background:var(--olive-pale);border:0.5px solid var(--olive-light);border-radius:var(--radius);padding:1.5rem;text-align:center}
+.success-msg h3{font-size:1.3rem;color:var(--olive-dark);margin-bottom:0.3rem}
+.success-msg p{font-size:0.88rem;color:var(--text-muted)}
+.locked-banner{background:#fdecea;border:0.5px solid #d08080;border-radius:var(--radius);padding:1rem 1.25rem;font-size:0.88rem;color:#8a3030;text-align:center}
+.locked-banner strong{display:block;font-size:1rem;margin-bottom:0.25rem;font-family:'Cormorant Garamond',serif}
+.error-msg{font-size:0.82rem;color:#8a3030;margin-top:0.4rem}
+
+/* ── Divider / Lookup ── */
+.divider{display:flex;align-items:center;gap:0.75rem;margin:1.5rem 0;color:var(--text-muted);font-size:0.82rem}
+.divider::before,.divider::after{content:'';flex:1;height:0.5px;background:var(--sand-dark)}
+.lookup-card{background:var(--white);border-radius:var(--radius);border:0.5px solid var(--sand-dark);padding:1.25rem;box-shadow:var(--shadow)}
+@media(min-width:500px){.lookup-card{padding:1.5rem}}
+.lookup-card h3{font-size:1.1rem;color:var(--olive-dark);margin-bottom:0.25rem}
+.lookup-card p{font-size:0.83rem;color:var(--text-muted);margin-bottom:1rem}
+.lookup-row{display:flex;gap:0.6rem}
+.lookup-row input{flex:1;padding:0.7rem 0.85rem;border:0.5px solid var(--sand-dark);border-radius:var(--radius);font-family:'DM Sans',sans-serif;font-size:1rem;outline:none;transition:border-color 0.15s;-webkit-appearance:none}
+.lookup-row input:focus{border-color:var(--olive-light)}
+.lookup-btn{padding:0.7rem 1rem;background:var(--olive);color:var(--white);border:none;border-radius:var(--radius);font-family:'DM Sans',sans-serif;font-size:0.9rem;font-weight:500;cursor:pointer;white-space:nowrap;transition:background 0.15s}
+.lookup-btn:hover{background:var(--olive-dark)}
+
+/* ── Admin login ── */
+.admin-login{background:var(--white);border-radius:var(--radius);border:0.5px solid var(--sand-dark);padding:1.5rem;max-width:340px;margin:0 auto;box-shadow:var(--shadow)}
+.admin-login h2{font-size:1.4rem;color:var(--olive-dark);margin-bottom:1rem;text-align:center}
+
+/* ── Stats ── */
+.stats-row{display:grid;grid-template-columns:repeat(2,1fr);gap:0.6rem;margin-bottom:1.25rem}
+@media(min-width:500px){.stats-row{grid-template-columns:repeat(4,1fr)}}
+.stat{background:var(--white);border:0.5px solid var(--sand-dark);border-radius:var(--radius);padding:0.85rem 0.75rem;text-align:center}
+.stat-num{font-size:1.4rem;font-weight:500;font-family:'Cormorant Garamond',serif;color:var(--olive-dark)}
+.stat-lbl{font-size:0.68rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);margin-top:2px}
+
+/* ── Activity sections (admin by-activity) ── */
+.activity-section{background:var(--white);border:0.5px solid var(--sand-dark);border-radius:var(--radius);margin-bottom:1rem;overflow:hidden}
+.act-head{padding:0.85rem 1rem;background:var(--olive-pale);display:flex;justify-content:space-between;align-items:center;cursor:pointer;border-bottom:0.5px solid #dcd7cc}
+.act-head h4{font-size:0.95rem;color:var(--olive-dark)}
+.badges{display:flex;gap:0.4rem;align-items:center;flex-wrap:wrap}
+.badge{font-size:0.7rem;padding:2px 7px;border-radius:20px;font-weight:500}
+.badge-olive{background:var(--olive-pale);color:var(--olive-dark);border:0.5px solid var(--olive-light)}
+.badge-green{background:#efece6;color:#2b2a27;border:0.5px solid #8c8577}
+.badge-accent{background:var(--accent-light);color:var(--accent);border:0.5px solid #daa070}
+
+/* ── Scrollable table wrapper for mobile ── */
+.table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.gtable{width:100%;border-collapse:collapse;font-size:0.82rem;min-width:560px}
+.gtable th{padding:0.5rem 0.75rem;text-align:left;color:var(--text-muted);font-weight:500;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.05em;border-bottom:0.5px solid var(--sand-dark);background:var(--white);white-space:nowrap}
+.gtable td{padding:0.55rem 0.75rem;border-bottom:0.5px solid var(--sand-dark);color:var(--text);vertical-align:middle}
+.gtable tr:last-child td{border-bottom:none}
+.gtable tr:hover td{background:var(--olive-pale)}
+
+/* ── Badges ── */
+.dep-badge{font-size:0.7rem;padding:2px 7px;border-radius:12px;white-space:nowrap}
+.paid{background:#e3efe5;color:#2b2a27;border:0.5px solid #8c8577}
+.unpaid{background:#fdecea;color:#8a3030;border:0.5px solid #d08080}
+.partial{background:#fef3e2;color:#7a5010;border:0.5px solid #e0c060}
+
+/* ── Buttons small ── */
+.add-btn{padding:0.5rem 0.9rem;background:var(--olive);color:var(--white);border:none;border-radius:var(--radius);font-family:'DM Sans',sans-serif;font-size:0.82rem;cursor:pointer;font-weight:500;transition:background 0.15s}
+.add-btn:hover{background:var(--olive-dark)}
+.add-btn.sm{padding:0.35rem 0.65rem;font-size:0.75rem}
+.icon-btn{background:none;border:none;cursor:pointer;color:var(--text-muted);padding:4px 6px;font-size:0.85rem;transition:color 0.15s;line-height:1}
+.icon-btn:hover{color:var(--accent)}
+
+/* ── Modal ── */
+.modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(27,26,24,0.45);display:none;align-items:flex-end;justify-content:center;z-index:100;overflow-y:auto}
+@media(min-width:600px){.modal-overlay{align-items:flex-start;padding:60px 1rem 2rem}}
+.modal-overlay.open{display:flex}
+.modal{background:var(--white);border-radius:var(--radius) var(--radius) 0 0;border:0.5px solid var(--sand-dark);padding:1.5rem;width:100%;max-width:480px;box-shadow:0 -4px 32px rgba(27,26,24,0.15);max-height:92vh;overflow-y:auto}
+@media(min-width:600px){.modal{border-radius:var(--radius);margin:auto;box-shadow:0 8px 32px rgba(27,26,24,0.15)}}
+.modal h3{font-size:1.3rem;color:var(--olive-dark);margin-bottom:1.25rem}
+.modal-actions{display:flex;gap:0.75rem;margin-top:1.25rem;justify-content:flex-end}
+.cancel-btn{padding:0.65rem 1rem;background:none;border:0.5px solid var(--sand-dark);border-radius:var(--radius);font-family:'DM Sans',sans-serif;font-size:0.9rem;cursor:pointer;color:var(--text-muted)}
+.save-btn{padding:0.65rem 1.1rem;background:var(--olive);color:var(--white);border:none;border-radius:var(--radius);font-family:'DM Sans',sans-serif;font-size:0.9rem;cursor:pointer;font-weight:500}
+
+/* ── Admin subtabs ── */
+.admin-subtabs{display:flex;border:0.5px solid var(--sand-dark);border-radius:var(--radius);overflow:hidden;margin-bottom:1.25rem;background:var(--white)}
+.admin-subtab{flex:1;padding:0.65rem 0.4rem;text-align:center;cursor:pointer;font-size:0.8rem;font-family:'DM Sans',sans-serif;color:var(--text-muted);background:none;border:none;border-right:0.5px solid var(--sand-dark);transition:all 0.15s}
+.admin-subtab:last-child{border-right:none}
+.admin-subtab.active{background:var(--olive-pale);color:var(--olive-dark);font-weight:500}
+.admin-subtab:hover:not(.active){background:var(--sand)}
+.subview{display:none}.subview.active{display:block}
+
+/* ── Guest summary table ── */
+.guest-summary-table{width:100%;border-collapse:collapse;font-size:0.83rem;background:var(--white);border-radius:var(--radius);border:0.5px solid var(--sand-dark);overflow:hidden;min-width:560px}
+.guest-summary-table th{padding:0.55rem 0.85rem;text-align:left;color:var(--text-muted);font-weight:500;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.05em;border-bottom:0.5px solid var(--sand-dark);background:var(--olive-pale);white-space:nowrap}
+.guest-summary-table td{padding:0.65rem 0.85rem;border-bottom:0.5px solid var(--sand-dark);vertical-align:middle}
+.guest-summary-table tr:last-child td{border-bottom:none}
+.guest-summary-table tr:hover td{background:var(--olive-pale)}
+.activity-pills{display:flex;flex-wrap:wrap;gap:4px}
+.activity-pill{font-size:0.7rem;padding:2px 7px;border-radius:12px;background:var(--olive-pale);color:var(--olive-dark);border:0.5px solid var(--olive-light);white-space:nowrap}
+.balance-bar{height:5px;background:var(--sand-dark);border-radius:3px;margin-top:5px;width:100%;min-width:50px}
+.balance-fill{height:100%;border-radius:3px;background:var(--olive);transition:width 0.3s}
+.summary-footer{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem;padding:0.75rem 1rem;background:var(--olive-pale);border-top:0.5px solid #dcd7cc;font-size:0.83rem;border-radius:0 0 var(--radius) var(--radius)}
+.summary-search{width:100%;padding:0.65rem 0.85rem;border:0.5px solid var(--sand-dark);border-radius:var(--radius);font-family:'DM Sans',sans-serif;font-size:1rem;background:var(--white);color:var(--text);outline:none;margin-bottom:0.75rem;-webkit-appearance:none}
+.summary-search:focus{border-color:var(--olive-light)}
+.sort-btn{padding:0.35rem 0.7rem;border:0.5px solid var(--sand-dark);border-radius:20px;font-size:0.78rem;cursor:pointer;background:var(--white);color:var(--text-muted);font-family:'DM Sans',sans-serif;transition:all 0.15s}
+.sort-btn.active{background:var(--olive);color:var(--white);border-color:var(--olive)}
+/* A long note used to stretch its row to ~300px tall. Clamp to 3 lines; full text on hover. */
+.note-cell{max-width:170px;font-size:0.76rem;color:var(--text-muted);font-style:italic}
+.note-cell div{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;line-height:1.45}
+.dep-modal-section{border-top:0.5px solid var(--sand-dark);margin-top:1rem;padding-top:1rem}
+.dep-modal-section h4{font-size:1rem;color:var(--olive-dark);margin-bottom:0.75rem;font-family:'Cormorant Garamond',serif}
+
+/* ── Mgmt table (edit activities) ── */
+.mgmt-card{background:var(--white);border:0.5px solid var(--sand-dark);border-radius:var(--radius);padding:1rem;margin-bottom:1.5rem}
+.mgmt-row{display:grid;grid-template-columns:28px 1.8fr 1fr 60px 80px 32px;gap:0.35rem;align-items:center;padding:0.4rem 0;border-bottom:0.5px solid var(--sand-dark)}
+.mgmt-row:last-of-type{border-bottom:none}
+.mgmt-row input,.mgmt-row select{padding:0.3rem 0.45rem;border:0.5px solid var(--sand-dark);border-radius:5px;font-family:'DM Sans',sans-serif;font-size:0.82rem;outline:none;width:100%;color:var(--text);background:var(--white);-webkit-appearance:none}
+.mgmt-row input:focus,.mgmt-row select:focus{border-color:var(--olive-light)}
+.drag-handle{cursor:grab;color:var(--text-muted);font-size:1rem;text-align:center;user-select:none;padding:0 2px}
+.drag-handle:active{cursor:grabbing}
+.mgmt-row.drag-over{border-top:2px solid var(--olive-light)}
+.new-row{display:flex;gap:0.5rem;margin-top:0.75rem;flex-wrap:wrap}
+.new-row input,.new-row select{flex:1;min-width:70px;padding:0.5rem 0.65rem;border:0.5px solid var(--sand-dark);border-radius:var(--radius);font-family:'DM Sans',sans-serif;font-size:0.9rem;outline:none;color:var(--text);background:var(--white);-webkit-appearance:none}
+.new-row input:focus,.new-row select:focus{border-color:var(--olive-light)}
+.search-bar{width:100%;padding:0.65rem 0.85rem;border:0.5px solid var(--sand-dark);border-radius:var(--radius);font-family:'DM Sans',sans-serif;font-size:1rem;background:var(--white);color:var(--text);outline:none;margin-bottom:0.75rem;-webkit-appearance:none}
+.search-bar:focus{border-color:var(--olive-light)}
+.filter-row{display:flex;gap:0.4rem;margin-bottom:0.75rem;flex-wrap:wrap}
+.chip{padding:0.35rem 0.75rem;border:0.5px solid var(--sand-dark);border-radius:20px;font-size:0.78rem;cursor:pointer;background:var(--white);color:var(--text-muted);transition:all 0.15s;font-family:'DM Sans',sans-serif}
+.chip.active{background:var(--olive);color:var(--white);border-color:var(--olive)}
+.export-btn{padding:0.5rem 0.9rem;background:none;border:0.5px solid var(--sand-dark);color:var(--text-muted);border-radius:var(--radius);font-family:'DM Sans',sans-serif;font-size:0.82rem;cursor:pointer;transition:all 0.15s}
+.export-btn:hover{border-color:var(--olive-light);color:var(--olive)}
+.owing-row{background:var(--olive-pale);border-top:0.5px solid #dcd7cc;padding:0.6rem 0.85rem;display:flex;justify-content:space-between;font-size:0.82rem}
+.owing-row span{color:var(--text-muted)}
+.owing-row strong{color:var(--olive-dark)}
+
+/* ── Loading / toast ── */
+.loading-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:var(--sand);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;gap:1rem}
+.loading-overlay h2{font-size:1.5rem;color:var(--olive-dark)}
+.loading-overlay p{font-size:0.88rem;color:var(--text-muted)}
+.spinner{width:36px;height:36px;border:3px solid var(--olive-pale);border-top-color:var(--olive);border-radius:50%;animation:spin 0.8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.toast{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);background:var(--olive-dark);color:var(--white);padding:0.75rem 1.25rem;border-radius:var(--radius);font-size:0.85rem;z-index:200;opacity:0;transition:opacity 0.3s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1}
+
+/* ── Admin float button ── */
+.admin-float{text-align:center;padding:2rem 0 1rem}
+.admin-float-btn{display:inline-flex;align-items:center;gap:0.5rem;padding:0.65rem 1.25rem;background:none;border:0.5px solid var(--sand-dark);border-radius:20px;font-family:'DM Sans',sans-serif;font-size:0.82rem;color:var(--text-muted);cursor:pointer;transition:all 0.15s}
+.admin-float-btn:hover{border-color:var(--olive-light);color:var(--olive)}
+
+/* ── TBD price tag ── */
+.price-tbd{font-size:0.78rem;font-weight:500;color:var(--accent);background:var(--accent-light);border:0.5px solid #daa070;border-radius:12px;padding:1px 7px}
+
+/* ══ Mobile admin ══════════════════════════════════════════════
+The admin tables are 560px wide — on a phone that's 1.5 screens of sideways
+scrolling. Below 700px the JS renders card layouts instead (see isMobile()). */
+
+/* Guest card (Guests tab) */
+.gcard{background:var(--white);border:0.5px solid var(--sand-dark);border-radius:12px;padding:0.9rem 1rem;margin-bottom:0.6rem;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.gcard:active{background:var(--olive-pale)}
+.gcard-top{display:flex;justify-content:space-between;align-items:flex-start;gap:0.6rem}
+.gcard-name{font-size:0.95rem;font-weight:500;color:var(--text);line-height:1.25}
+.gcard-email{font-size:0.78rem;color:var(--text-muted);font-weight:400;word-break:break-all}
+.gcard .activity-pills{margin:0.6rem 0}
+.gcard-money{display:flex;justify-content:space-between;gap:0.5rem;font-size:0.8rem;color:var(--text-muted);margin-top:0.5rem}
+.gcard-money strong{font-weight:500;color:var(--olive-dark)}
+.gcard-money .owing{color:var(--accent)}
+.gcard-note{font-size:0.78rem;color:var(--text-muted);font-style:italic;margin-top:0.5rem;padding-top:0.5rem;border-top:0.5px solid var(--sand-dark);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+/* Outline, not solid — repeated 39 times a filled button turns the list into a wall of navy */
+.gcard-btn{width:100%;min-height:46px;margin-top:0.75rem;font-size:0.9rem;background:none;color:var(--olive);border:0.5px solid var(--olive)}
+.gcard-btn:hover{background:var(--olive-pale)}
+
+/* ── Amount due (top of the guest's own reservation) ───────── */
+.due-box{background:var(--olive-pale);border:0.5px solid var(--olive-light);border-radius:var(--radius);padding:1rem 1.25rem;margin-bottom:1.25rem}
+.due-row{display:flex;justify-content:space-between;gap:1rem;font-size:0.85rem;color:var(--text-muted);padding:2px 0}
+.due-row span:last-child{color:var(--text);font-weight:500;white-space:nowrap}
+.due-total{display:flex;justify-content:space-between;align-items:baseline;gap:1rem;border-top:0.5px solid var(--olive-light);margin-top:0.5rem;padding-top:0.6rem}
+.due-total-lbl{font-size:0.9rem;font-weight:500;color:var(--olive-dark)}
+.due-total-val{font-family:'Cormorant Garamond',serif;font-size:1.9rem;font-weight:600;color:var(--accent);line-height:1;white-space:nowrap}
+.due-total-val.settled{color:#1e6b3a}
+.due-note{font-size:0.78rem;color:var(--text-muted);margin-top:0.5rem;line-height:1.5}
+
+/* ── Standalone event page (?event=) ──────────────────────────
+The header becomes the event's own header so the link reads as a page about
+one thing, not the whole wedding site. */
+body.rsvp-mode #hdr-title{font-size:3.1rem!important;margin-bottom:0.9rem!important}
+body.rsvp-mode #hdr-meta .header-meta-item{font-size:1.05rem;color:var(--olive);letter-spacing:0.05em;font-weight:500}
+@media(max-width:600px){
+body.rsvp-mode #hdr-title{font-size:2.4rem!important}
+body.rsvp-mode #hdr-meta .header-meta-item{font-size:0.98rem}
+}
+
+/* Inline spot adjuster (By activity tab) */
+.spot-step{display:inline-flex;align-items:center;gap:0.35rem}
+.spot-step button{width:26px;height:26px;min-width:26px;border-radius:50%;border:0.5px solid var(--olive-light);background:var(--white);color:var(--olive);cursor:pointer;font-size:0.95rem;line-height:1;display:flex;align-items:center;justify-content:center;padding:0;transition:all 0.15s;-webkit-tap-highlight-color:transparent}
+.spot-step button:hover:not(:disabled){background:var(--olive);color:var(--white)}
+.spot-step button:disabled{opacity:0.3;cursor:not-allowed}
+.spot-step-val{min-width:18px;text-align:center;font-weight:500;font-size:0.85rem}
+.spot-step-lbl{font-size:0.76rem;color:var(--text-muted)}
+/* admin: edit which activities a guest is booked on */
+.ga-row{display:flex;align-items:center;gap:0.7rem;padding:0.6rem 0.5rem;border-bottom:0.5px solid var(--sand-dark);border-radius:6px;transition:background 0.15s}
+.ga-row.selected{background:var(--olive-pale)}
+.ga-row input[type=checkbox]{width:18px;height:18px;flex-shrink:0;cursor:pointer;accent-color:var(--olive)}
+.ga-main{flex:1;min-width:0}
+.ga-name{font-size:0.88rem;color:var(--text);font-weight:500}
+.ga-meta{font-size:0.74rem;color:var(--text-muted);margin-top:1px}
+.ga-lock{color:var(--accent);font-weight:500}
+.ga-summary{margin-top:0.9rem;padding-top:0.75rem;border-top:0.5px solid var(--sand-dark);font-size:0.84rem}
+.ga-sum-row{display:flex;justify-content:space-between;padding:3px 0;color:var(--text-muted)}
+.ga-sum-row strong{color:var(--olive-dark);font-weight:600}
+.ga-sum-total{display:flex;justify-content:space-between;padding-top:6px;margin-top:4px;border-top:0.5px solid var(--sand-dark);font-size:0.95rem;color:var(--olive-dark);font-weight:600}
+.ga-note{margin-top:0.6rem;font-size:0.76rem;line-height:1.45;color:var(--text-muted);background:var(--sand);border-left:2px solid var(--olive-light);padding:0.5rem 0.65rem;border-radius:4px}
+.ga-note.warn{border-left-color:var(--accent);color:var(--accent)}
+.gcard-btns{display:flex;gap:0.5rem}
+.gcard-btns .gcard-btn{flex:1}
+
+/* Admin needs more room than the guest form — at 880px the guest table overflows
+its wrapper by ~93px, which is the desktop sideways scroll. */
+@media(min-width:901px){
+body.admin-mode .app{max-width:1180px}
+}
+@media(min-width:901px) and (max-width:1120px){
+.guest-summary-table{font-size:0.79rem}
+.guest-summary-table th,.guest-summary-table td{padding-left:0.55rem;padding-right:0.55rem}
+.note-cell{max-width:100px}
+}
+
+/* Guest row inside an activity block (By activity tab) */
+.acard{display:flex;justify-content:space-between;align-items:flex-start;gap:0.6rem;padding:0.8rem 1rem;border-bottom:0.5px solid var(--sand-dark)}
+.acard:last-child{border-bottom:none}
+.acard-name{font-size:0.9rem;font-weight:500;color:var(--text)}
+.acard-sub{font-size:0.76rem;color:var(--text-muted);margin-top:2px;line-height:1.5}
+.acard-right{display:flex;flex-direction:column;align-items:flex-end;gap:0.45rem;flex-shrink:0}
+.acard-actions{display:flex;gap:0.3rem;align-items:center}
+.acard-actions .add-btn{background:none;color:var(--olive);border:0.5px solid var(--olive)}
+.acard-actions .add-btn:hover{background:var(--olive-pale)}
+
+/* Activity editor card (Edit activities tab) */
+.mcard{background:var(--white);border:0.5px solid var(--sand-dark);border-radius:12px;padding:1rem;margin-bottom:0.75rem}
+.mcard-head{display:flex;justify-content:space-between;align-items:center;gap:0.5rem;padding-bottom:0.75rem;margin-bottom:0.85rem;border-bottom:0.5px solid var(--sand-dark)}
+.mcard-title{font-family:'Cormorant Garamond',serif;font-size:1.1rem;color:var(--olive-dark);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mcard-ord{display:flex;gap:0.15rem;flex-shrink:0}
+.mcard-ord button{width:40px;height:40px;border:0.5px solid var(--sand-dark);background:var(--white);border-radius:8px;color:var(--text-muted);font-size:0.95rem;cursor:pointer;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent}
+.mcard-ord button:disabled{opacity:0.3}
+.mcard-ord button.danger{color:#8a3030}
+.mcard .field{margin-bottom:0.85rem}
+.mcard .field:last-child{margin-bottom:0}
+
+@media(max-width:900px){
+/* 16px minimum, or iOS zooms the whole page in on every field tap */
+input,select,textarea,.mgmt-row input,.mgmt-row select,.new-row input,.new-row select{font-size:16px!important}
+
+/* Thumb-sized targets — 44px is the accessibility floor */
+.icon-btn{padding:10px 12px;font-size:1rem}
+.add-btn.sm{padding:0.55rem 0.85rem;font-size:0.82rem}
+.counter-btn{width:42px;height:42px;font-size:1.35rem}
+.spot-step{gap:0.5rem;margin-top:0.4rem}
+.spot-step button{width:36px;height:36px;min-width:36px;font-size:1.15rem}
+.spot-step-val{font-size:0.95rem;min-width:20px}
+.sort-btn,.chip{padding:0.5rem 0.85rem;font-size:0.82rem}
+.lookup-btn{padding:0.7rem 1.1rem}
+
+/* Tab bar and search stay reachable while the list scrolls */
+.admin-subtabs{position:sticky;top:0;z-index:50;margin-bottom:0.75rem}
+.admin-subtab{padding:0.8rem 0.4rem}
+.sticky-tools{position:sticky;top:42px;z-index:49;background:var(--sand);padding:0.6rem 0 0.75rem;margin-bottom:0}
+.sticky-tools > *:last-child{margin-bottom:0}
+
+/* The full wedding header is lovely on the guest page and pure scrolling in the admin */
+body.admin-mode .header{padding:1.1rem 1rem 0.6rem;margin-bottom:0.75rem}
+body.admin-mode .header h1{font-size:1.5rem!important;margin-bottom:0!important}
+body.admin-mode .header-divider,body.admin-mode .header-meta{display:none}
+body.admin-mode .header > div:last-child{margin-top:0.9rem!important}
+.filter-row{overflow-x:auto;flex-wrap:nowrap;-webkit-overflow-scrolling:touch;padding-bottom:2px}
+.filter-row .chip{flex-shrink:0}
+
+/* Save is pinned to the bottom of the sheet instead of below the payment log */
+.modal{padding-bottom:0}
+.modal-actions{position:sticky;bottom:0;background:var(--white);border-top:0.5px solid var(--sand-dark);margin:1.25rem -1.5rem 0;padding:0.85rem 1.5rem calc(0.85rem + env(safe-area-inset-bottom))}
+.modal-actions .save-btn,.modal-actions .cancel-btn{min-height:46px;font-size:0.95rem}
+.modal-actions .save-btn{flex:1}
+
+.stats-row{gap:0.5rem}
+.app{padding:0.85rem}
+}
+
+/* Desktop admin: the guest list used to start ~590px down, so opening the dashboard
+   showed a wedding header and little else. The header, the date line and the generous
+   tool spacing are all guest-page furniture — pared back here so rows are on screen
+   the moment the dashboard opens. The guest view keeps the full header untouched. */
+@media(min-width:600px){
+body.admin-mode .header{padding:1rem 1rem 0.55rem;margin-bottom:0.6rem}
+body.admin-mode #hdr-title{font-size:1.5rem!important;margin-bottom:0!important}
+body.admin-mode .header-divider,body.admin-mode .header-meta{display:none}
+body.admin-mode .header > div:first-child{font-size:0.78rem;letter-spacing:0.18em}
+body.admin-mode .header > div:last-child{margin-top:0.75rem!important}
+body.admin-mode .stat{padding:0.5rem 0.7rem}
+body.admin-mode .stat-num{font-size:1.25rem}
+body.admin-mode .stats-row{margin-bottom:0.75rem;gap:0.5rem}
+body.admin-mode .admin-subtabs{margin-bottom:0.6rem}
+/* Search and sort sat on two rows; side by side they cost half the height. */
+body.admin-mode #subview-guests .sticky-tools{display:flex;gap:0.75rem;align-items:center;padding-bottom:0.6rem}
+body.admin-mode #subview-guests .sticky-tools > div{margin-bottom:0!important}
+body.admin-mode #subview-guests .sticky-tools > div:first-child{flex:1;min-width:200px}
+body.admin-mode #subview-guests .sticky-tools > div:last-child{flex-shrink:0}
+}
+
+/* Long lists still scroll — keep the column labels attached when they do. Sticky needs
+   the page to be the scroll container, so the horizontal-scroll wrapper and the table's
+   own corner clipping have to be released; the radius moves onto the header cells. Only
+   from 1000px, where the table is known to fit without the wrapper doing any work. */
+@media(min-width:1000px){
+body.admin-mode #subview-guests .table-scroll{overflow:visible}
+body.admin-mode .guest-summary-table{overflow:visible}
+body.admin-mode .guest-summary-table thead th{position:sticky;top:0;z-index:5}
+body.admin-mode .guest-summary-table thead th:first-child{border-top-left-radius:var(--radius)}
+body.admin-mode .guest-summary-table thead th:last-child{border-top-right-radius:var(--radius)}
+}
+
+/* ── Activity Planner additions ─────────────────────────────── */
+.pay-info{background:var(--white);border-radius:var(--radius);border:0.5px solid var(--sand-dark);padding:1.5rem;box-shadow:var(--shadow);margin-top:1.5rem}
+.pay-info h3{font-size:1.2rem;color:var(--olive-dark);margin-bottom:0.6rem}
+#pay-info-text{font-size:0.86rem;color:var(--text-muted);line-height:1.6;white-space:pre-line;overflow-wrap:anywhere}
+.demo-note{font-size:0.82rem;line-height:1.5;color:var(--text-muted);background:var(--white);border:0.5px dashed var(--olive-light);border-radius:var(--radius);padding:0.8rem 1rem;margin-bottom:1.25rem}
+.demo-note strong{color:var(--olive-dark);font-weight:500}
+.ev-list{display:flex;flex-direction:column;gap:0.6rem}
+.ev-item{display:flex;justify-content:space-between;align-items:center;gap:0.75rem;flex-wrap:wrap;padding:0.85rem 1rem;border:0.5px solid var(--sand-dark);border-radius:var(--radius);background:var(--white)}
+.ev-name{font-family:'Cormorant Garamond',serif;font-size:1.25rem;color:var(--olive-dark);font-weight:600;line-height:1.2}
+.ev-meta{font-size:0.78rem;color:var(--text-muted);margin-top:2px}
+.ev-actions{display:flex;gap:0.4rem;flex-wrap:wrap}
+.ev-actions a{text-decoration:none;display:inline-flex;align-items:center}
+/* The activity cards are <label>s inside .field, whose label style (block, small caps)
+   would otherwise win and stack the checkbox above an all-caps name. */
+.field label.activity-check{display:flex;text-transform:none;letter-spacing:normal;font-size:inherit;font-weight:400;color:var(--text);margin-bottom:0.6rem}
+.empty-acts{font-size:0.86rem;color:var(--text-muted);font-style:italic;padding:0.5rem 0}
+.field-hint{font-size:0.75rem;color:var(--text-muted);margin-top:0.35rem;line-height:1.45;text-transform:none;letter-spacing:0}
+.danger-btn{width:100%;padding:0.8rem;background:none;color:#8a3030;border:0.5px solid #d08080;border-radius:var(--radius);font-family:'DM Sans',sans-serif;font-size:0.9rem;cursor:pointer;margin-top:0.5rem}
+.danger-btn:hover{background:#fdecea}
+.link-box{display:flex;gap:0.5rem;align-items:center}
+.link-box input{flex:1;min-width:0;padding:0.6rem 0.75rem;border:0.5px solid var(--sand-dark);border-radius:var(--radius);font-size:0.82rem;color:var(--text-muted);background:var(--sand)}
+</style>
+</head>
+<body>
+
+<div class="loading-overlay" id="loading-overlay">
+<div class="spinner"></div>
+<h2>Loading</h2>
+<p>Opening your event...</p>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="app" id="app" style="display:none">
+<div class="header">
+<div class="header-inner">
+<div id="hdr-hosts" style="font-family:'DM Sans',sans-serif;font-size:0.95rem;font-weight:400;color:var(--text-muted);letter-spacing:0.08em;margin-bottom:0.5rem"></div>
+<div class="header-divider"><span>✦</span></div>
+<h1 id="hdr-title" style="font-family:'Cormorant Garamond',serif;font-size:2.6rem;font-weight:600;color:var(--olive-dark);letter-spacing:0.01em;line-height:1.1;margin-bottom:0.6rem">Activity Planner</h1>
+<div class="header-meta" id="hdr-meta"></div>
+</div>
+<div style="height:0.5px;background:linear-gradient(to right,transparent,var(--sand-dark) 20%,var(--sand-dark) 80%,transparent);margin-top:1.5rem"></div>
+</div>
+
+<!-- HOME — no ?e= in the address: create an event, or open one saved in this browser -->
+<div id="view-home" style="display:none">
+<div class="demo-note"><strong>Trial version.</strong> Everything is saved in this browser only, so guests on another phone or computer won't see your event yet. Good for trying the flow, not yet for a real event.</div>
+<div id="home-events"></div>
+<div class="form-card">
+<div class="form-intro">
+<h2>Create an event</h2>
+<p>Name it, add your activities, then share the guest link. Guests sign up, pick activities and say how many are coming; you keep track of spots and payments.</p>
+</div>
+<div class="field"><label>Event name</label><input type="text" id="ev-name" placeholder="Summer reunion"/></div>
+<div class="field"><label>Organised by</label><input type="text" id="ev-hosts" placeholder="Sam &amp; Jo"/></div>
+<div class="row">
+<div class="field"><label>Dates</label><input type="text" id="ev-dates" placeholder="June 12 – 14, 2027"/></div>
+<div class="field"><label>Place</label><input type="text" id="ev-place" placeholder="Lake Placid, NY"/></div>
+</div>
+<div class="row">
+<div class="field"><label>Currency</label><select id="ev-currency"></select></div>
+<div class="field"><label>Admin password</label><input type="password" id="ev-pw" placeholder="For your dashboard" autocomplete="new-password"/></div>
+</div>
+<button class="submit-btn" onclick="createEvent()">Create event</button>
+</div>
+</div>
+
+<!-- Link to an event this browser doesn't have -->
+<div id="view-missing" style="display:none" class="lookup-card">
+<h3>Event not found</h3>
+<p>This link doesn't match an event saved in this browser. In the trial version, an event only exists on the device it was created on.</p>
+<a class="lookup-btn" href="?" style="text-decoration:none;display:inline-block">Go to the Activity Planner</a>
+</div>
+
+<!-- GUEST PAGE -->
+<div id="view-guest">
+
+<!-- Existing reservations first — guests coming back to check or change something land here -->
+<div class="lookup-card">
+<h3>View and modify your reservation</h3>
+<p>Already registered? Enter your email to view and update your existing booking.</p>
+<div class="lookup-row">
+<input type="email" id="lookup-email" placeholder="your@email.com" inputmode="email" onkeydown="if(event.key==='Enter')lookupGuest()"/>
+<button class="lookup-btn" onclick="lookupGuest()">Find</button>
+</div>
+<div id="lookup-error" class="error-msg" style="display:none"></div>
+</div>
+
+<div id="edit-reservation" style="display:none;margin-top:1.5rem">
+<div class="form-card">
+<div class="form-intro">
+<h2 id="edit-title">View and modify your reservation</h2>
+<p>Update your activities or spot counts below.</p>
+</div>
+<div id="edit-body"></div>
+</div>
+</div>
+
+<div id="edit-success" style="display:none;margin-top:1.5rem" class="success-msg">
+<h3>Reservation updated!</h3>
+<p>Your changes have been saved. <span class="signoff"></span></p>
+</div>
+
+<div class="divider">new here?</div>
+
+<div class="form-card">
+<div class="form-intro">
+<h2>Join an activity</h2>
+<p id="form-intro-text"></p>
+</div>
+<div id="guest-form">
+<div class="row">
+<div class="field"><label>First name</label><input type="text" id="g-first" placeholder="Alex" autocomplete="given-name"/></div>
+<div class="field"><label>Last name</label><input type="text" id="g-last" placeholder="Martin" autocomplete="family-name"/></div>
+</div>
+<div class="row">
+<div class="field"><label>Email</label><input type="email" id="g-email" placeholder="alex@example.com" autocomplete="email" inputmode="email"/></div>
+<div class="field"><label>Phone</label><input type="tel" id="g-phone" placeholder="+1 555 555 0100" autocomplete="tel" inputmode="tel"/></div>
+</div>
+<div class="field"><label>Select activities</label><div id="act-grid"></div></div>
+<div id="subtotal-box" style="display:none" class="subtotal-box"></div>
+<div class="field"><label>Notes</label><textarea id="g-notes" placeholder="Anything we should know..."></textarea></div>
+<button class="submit-btn" id="submit-reg-btn" onclick="submitGuest()">Reserve my spot</button>
+</div>
+<div id="success-msg" style="display:none" class="success-msg">
+<h3>You're on the list!</h3>
+<p id="success-text"></p>
+</div>
+</div>
+
+<!-- Payment instructions — the organiser's own text, hidden when there is none -->
+<div id="pay-info" class="pay-info" style="display:none">
+<h3>Payment instructions</h3>
+<div id="pay-info-text"></div>
+</div>
+
+</div>
+
+<!-- SINGLE-ACTIVITY RSVP PAGE — replaces everything when the URL carries ?event=<activity id> -->
+<div id="view-rsvp" style="display:none">
+<div class="form-card">
+<div class="form-intro">
+<h2 id="rsvp-title">RSVP</h2>
+<p id="rsvp-intro"></p>
+</div>
+<div id="rsvp-form">
+<div class="row">
+<div class="field"><label>First name</label><input type="text" id="r-first" placeholder="Alex" autocomplete="given-name"/></div>
+<div class="field"><label>Last name</label><input type="text" id="r-last" placeholder="Martin" autocomplete="family-name"/></div>
+</div>
+<div class="row">
+<div class="field"><label>Email</label><input type="email" id="r-email" placeholder="alex@example.com" autocomplete="email" inputmode="email" onblur="rsvpLookup()"/></div>
+<div class="field"><label>Phone</label><input type="tel" id="r-phone" placeholder="+1 555 555 0100" autocomplete="tel" inputmode="tel"/></div>
+</div>
+<div class="field">
+<label>How many of you are coming?</label>
+<div class="counter-row" style="margin-top:0">
+<button class="counter-btn" onclick="chRsvpSpots(-1)">−</button>
+<span class="counter-val" id="r-spots">1</span>
+<button class="counter-btn" onclick="chRsvpSpots(1)">+</button>
+<span class="counter-lbl" id="r-spots-lbl">person</span>
+</div>
+<div id="r-capacity" style="font-size:0.78rem;color:var(--text-muted);margin-top:0.5rem"></div>
+</div>
+<div id="r-subtotal" class="subtotal-box" style="display:none"></div>
+<div id="r-known" style="display:none;font-size:0.82rem;color:var(--olive-dark);background:var(--olive-pale);border:0.5px solid var(--olive-light);border-radius:var(--radius);padding:0.7rem 0.9rem;margin-bottom:1rem"></div>
+<button class="submit-btn" id="r-submit" onclick="submitRsvp()">Count me in</button>
+</div>
+<div id="rsvp-success" style="display:none" class="success-msg">
+<h3>You're on the list!</h3>
+<p id="rsvp-success-msg"></p>
+<button class="secondary-btn" onclick="resetRsvp()">Change my RSVP</button>
+</div>
+</div>
+
+<div class="divider">who's coming</div>
+<div class="lookup-card"><div id="rsvp-list"></div></div>
+</div>
+
+<!-- Admin float button (hidden once admin is open) -->
+<div class="admin-float" id="admin-float">
+<button class="admin-float-btn" onclick="showAdminView()">
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+Admin access
+</button>
+</div>
+
+<!-- ADMIN PAGE — replaces guest view when unlocked -->
+<div id="view-admin" style="display:none">
+<div id="admin-login" class="admin-login">
+<h2>Admin access</h2>
+<div class="field"><label>Password</label><input type="password" id="admin-pw" placeholder="Enter password" onkeydown="if(event.key==='Enter')adminLogin()"/></div>
+<button class="submit-btn" onclick="adminLogin()">Sign in</button>
+</div>
+<div id="admin-panel" style="display:none">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem">
+<div style="display:flex;align-items:center;gap:0.75rem">
+<button onclick="showGuestView()" style="background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:0.82rem;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:0.3rem;padding:0">
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+Guest form
+</button>
+<h2 style="font-size:1.4rem;color:var(--olive-dark)">Dashboard</h2>
+</div>
+<div style="display:flex;gap:0.5rem">
+<button class="export-btn" onclick="exportCSV()">Export CSV</button>
+<button class="add-btn" onclick="openAddGuest()">+ Add guest</button>
+</div>
+</div>
+<div class="stats-row" id="stats-row"></div>
+<div class="admin-subtabs">
+<button class="admin-subtab active" id="asubtab-guests" onclick="switchSubtab('guests')">Guests</button>
+<button class="admin-subtab" id="asubtab-activities" onclick="switchSubtab('activities')">By activity</button>
+<button class="admin-subtab" id="asubtab-settings" onclick="switchSubtab('settings')">Edit activities</button>
+<button class="admin-subtab" id="asubtab-event" onclick="switchSubtab('event')">Event settings</button>
+</div>
+<div class="subview active" id="subview-guests">
+<div class="sticky-tools">
+<div style="display:flex;gap:0.5rem;margin-bottom:0.5rem;align-items:center;flex-wrap:wrap">
+<input class="summary-search" id="g-search" style="margin:0;flex:1;min-width:160px" placeholder="Search guests..." oninput="renderGuestSummary()"/>
+</div>
+<div style="display:flex;gap:0.4rem;flex-wrap:wrap;margin-bottom:0.75rem">
+<button class="sort-btn active" id="sort-name" onclick="setSort('name')">Name</button>
+<button class="sort-btn" id="sort-owed" onclick="setSort('owed')">Most owed</button>
+<button class="sort-btn" id="sort-unpaid" onclick="setSort('unpaid')">Unpaid first</button>
+<button class="sort-btn" id="filter-owing" onclick="toggleOwingOnly()">Still owing</button>
+</div>
+</div>
+<div class="table-scroll"><div id="guest-summary"></div></div>
+</div>
+<div class="subview" id="subview-activities">
+<div class="sticky-tools">
+<input class="search-bar" type="text" id="search-input" style="margin-bottom:0.6rem" placeholder="Search guests..." oninput="renderBlocks()"/>
+<div class="filter-row" id="filter-row"></div>
+</div>
+<div id="act-blocks"></div>
+</div>
+<div class="subview" id="subview-settings">
+<div id="mgmt-panel"></div>
+</div>
+<div class="subview" id="subview-event">
+<div id="event-panel"></div>
+</div>
+</div>
+</div>
+
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal-overlay" onclick="closeOutside(event)">
+<div class="modal" id="modal">
+<h3 id="modal-title"></h3>
+<div id="modal-body"></div>
+<div class="modal-actions">
+<button class="cancel-btn" onclick="closeModal()">Cancel</button>
+<button class="save-btn" onclick="saveModal()">Save</button>
+</div>
+</div>
+</div>
+
+<script type="module">
+// ── storage ───────────────────────────────────────────────────
+// Trial version: everything lives in this browser's localStorage, under one key.
+// The functions below copy the shape of Firebase's (ref / get / set / remove / onValue),
+// which is what the wedding version runs on — so moving to a real shared database later
+// means replacing this block, not rewriting the app.
+const STORE_KEY = 'activity-planner/v1';
+const db = null;
+const listeners = [];
+function readStore() {
+try { return JSON.parse(localStorage.getItem(STORE_KEY)) || {}; } catch(e) { return {}; }
+}
+function writeStore(tree) { localStorage.setItem(STORE_KEY, JSON.stringify(tree)); } // throws when blocked/full → callers' catch
+function splitPath(p) { return String(p).split('/').filter(Boolean); }
+function atPath(tree, parts) { return parts.reduce((n,k) => (n && typeof n === 'object') ? n[k] : undefined, tree); }
+function snapOf(v) {
+return { exists: () => v !== undefined && v !== null, val: () => v === undefined ? null : JSON.parse(JSON.stringify(v)) };
+}
+// App paths are scoped to the open event: 'guests/g1' → 'events/<id>/guests/g1'.
+function ref(_db, path) { return { path: 'events/' + EID + '/' + path }; }
+function rootRef(path) { return { path }; }
+async function get(r) { return snapOf(atPath(readStore(), splitPath(r.path))); }
+async function set(r, val) {
+const tree = readStore(), parts = splitPath(r.path);
+let n = tree;
+parts.slice(0, -1).forEach(k => { if (!n[k] || typeof n[k] !== 'object') n[k] = {}; n = n[k]; });
+n[parts[parts.length-1]] = JSON.parse(JSON.stringify(val));
+writeStore(tree); notify();
+}
+async function remove(r) {
+const tree = readStore(), parts = splitPath(r.path);
+const parent = atPath(tree, parts.slice(0, -1));
+if (parent && typeof parent === 'object') delete parent[parts[parts.length-1]];
+writeStore(tree); notify();
+}
+function onValue(r, cb) { listeners.push({ r, cb }); }
+// Synchronous, like Firebase's local events: by the time a save resolves, the app's
+// lists already hold the new data, so the code that redraws right after sees it.
+function notify() {
+const tree = readStore();
+listeners.forEach(l => l.cb(snapOf(atPath(tree, splitPath(l.r.path)))));
+}
+// The guest page open in another tab saved something — redraw this one too.
+window.addEventListener('storage', e => { if (e.key === STORE_KEY) notify(); });
+
+// ── the open event ────────────────────────────────────────────
+const PARAMS = new URLSearchParams(location.search);
+const EID = PARAMS.get('e') || '';
+let EVENT = {}; // meta: name, hosts, dates, place, currency, intro, payment, signoff, pwHash
+const CURRENCIES = { CAD:'$', USD:'$', EUR:'€', GBP:'£', AUD:'$', MXN:'$' };
+let CODE = 'CAD', SYM = '$';
+const DEFAULT_INTRO = "Reserve your spot for one or more activities. Where there's a price, the organiser will follow up with payment details once you submit.";
+const DEFAULT_SIGNOFF = 'See you there.';
+function slug(s) { return String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,''); }
+
+// Not real security: a plain hash so the password isn't stored as typed. Anyone with
+// this browser can read the data anyway. A shared version would need proper sign-in.
+function hashPw(pw) {
+const str = 'activity-planner:' + pw;
+let h1 = 0xdeadbeef, h2 = 0x41c6ce57;
+for (let i = 0; i < str.length; i++) {
+const ch = str.charCodeAt(i);
+h1 = Math.imul(h1 ^ ch, 2654435761); h2 = Math.imul(h2 ^ ch, 1597334677);
+}
+h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(36);
+}
+const ADMIN_KEY = 'activity-planner/admin/';
+function rememberAdmin(id) { try { sessionStorage.setItem(ADMIN_KEY + id, '1'); } catch(e) {} }
+function isRememberedAdmin() { try { return sessionStorage.getItem(ADMIN_KEY + EID) === '1'; } catch(e) { return false; } }
+
+
+
+let activities = [];
+let guests = [];
+let modalMode = null;
+let filterAct = 'all';
+let filterDep = 'all';
+let sortMode = 'name';
+let editingGuestId = null;
+const eSpots = {};
+const gSpots = {};
+const ePaidFloor = {};
+let paymentDraftLog = []; // working copy of the open guest's payment log
+let owingOnly = false; // Guests tab: hide anyone who's settled up
+
+// Below this width the admin renders cards instead of the tables. 900px is where the
+// compacted guest table stops fitting, and it catches iPad portrait (768px) too.
+// matchMedia only fires when the breakpoint is actually crossed, so no resize thrash.
+const MOBILE_MQ = window.matchMedia('(max-width:900px)');
+function isMobile() { return MOBILE_MQ.matches; }
+MOBILE_MQ.addEventListener('change', () => {
+if (document.getElementById('admin-panel').style.display !== 'none') {
+renderAdmin(); renderBlocks(); renderMgmt();
+}
+});
+
+// ── helpers ──────────────────────────────────────────────────
+function esc(s) {
+return String(s ?? '').replace(/[&<>"']/g, c =>
+({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function money(n) {
+const v = Math.round((parseFloat(n)||0) * 100) / 100;
+return Number.isInteger(v) ? String(v) : v.toFixed(2);
+}
+function todayISO() { return new Date().toISOString().slice(0,10); }
+
+// Firebase's set() only resolves once the *server* acknowledges the write. On a flaky
+// connection it can hang indefinitely: the local cache still updates (so the change looks
+// applied and onValue fires) while the awaiting button stays stuck on "Saving..." forever.
+// Cap the wait — past the cap we resolve with 'pending' and let Firebase sync on its own.
+const SAVE_TIMEOUT_MS = 8000;
+function saveWithTimeout(promise) {
+let timer;
+return Promise.race([
+promise.then(v => { clearTimeout(timer); return v; },
+e => { clearTimeout(timer); throw e; }),
+new Promise(res => { timer = setTimeout(() => res('pending'), SAVE_TIMEOUT_MS); })
+]);
+}
+
+function priceLabel(a) {
+if (a.priceTbd) return '<span class="price-tbd">TBD</span>';
+if (!a.price || a.price === 0) return '<span style="color:var(--text-muted);font-size:0.82rem">Free</span>';
+return `<span class="activity-price">${SYM}${a.price} ${CODE} / person</span>`;
+}
+function priceLabelPlain(a) {
+if (a.priceTbd) return 'TBD';
+if (!a.price || a.price === 0) return 'Free';
+return SYM + a.price + ' ' + CODE + ' / person';
+}
+function sortedActivities() {
+return [...activities].sort((a,b) => (a.order??999) - (b.order??999));
+}
+
+// ── toast ─────────────────────────────────────────────────────
+function toast(msg) {
+const el = document.getElementById('toast');
+el.textContent = msg;
+el.classList.add('show');
+setTimeout(() => el.classList.remove('show'), 2500);
+}
+
+// ── event header, intro and payment text ──────────────────────
+function applyEvent(meta) {
+EVENT = meta || {};
+CODE = CURRENCIES[EVENT.currency] !== undefined ? EVENT.currency : 'CAD';
+SYM = CURRENCIES[CODE];
+document.getElementById('hdr-hosts').textContent = EVENT.hosts || '';
+document.getElementById('hdr-hosts').style.display = EVENT.hosts ? '' : 'none';
+if (!rsvpActId) { // the single-activity page sets its own header
+document.getElementById('hdr-title').textContent = EVENT.name || 'Activity Planner';
+const bits = [EVENT.dates, EVENT.place].filter(Boolean);
+document.getElementById('hdr-meta').innerHTML = bits.map(t => `<span class="header-meta-item">${esc(t)}</span>`).join('<span class="header-meta-dot">●</span>');
+document.title = EVENT.name || 'Activity Planner';
+}
+document.getElementById('form-intro-text').textContent = EVENT.intro || DEFAULT_INTRO;
+document.getElementById('success-text').textContent =
+(EVENT.payment ? 'Payment details are below. ' : '') + (EVENT.signoff || '');
+document.querySelectorAll('.signoff').forEach(el => el.textContent = EVENT.signoff || '');
+document.getElementById('pay-info').style.display = EVENT.payment ? 'block' : 'none';
+document.getElementById('pay-info-text').textContent = EVENT.payment || '';
+}
+
+function finishLoading() {
+document.getElementById('loading-overlay').style.display = 'none';
+document.getElementById('app').style.display = 'block';
+}
+
+// ── bootstrap ─────────────────────────────────────────────────
+async function bootstrap() {
+try {
+if (!EID) { showHome(); finishLoading(); return; }
+const metaSnap = await get(ref(db, 'meta'));
+if (!metaSnap.exists()) { showMissing(); finishLoading(); return; }
+initRsvpMode(); // before applyEvent, so the activity page keeps its own header
+applyEvent(metaSnap.val());
+const actSnap = await get(ref(db, 'activities'));
+activities = actSnap.exists() ? Object.values(actSnap.val()) : [];
+const gSnap = await get(ref(db, 'guests'));
+guests = gSnap.exists() ? Object.values(gSnap.val()) : [];
+
+onValue(ref(db, 'meta'), snap => {
+if (!snap.exists()) { location.href = location.pathname; return; } // deleted in another tab
+applyEvent(snap.val());
+renderGuestActivities(); renderRsvp();
+if (document.getElementById('admin-panel').style.display !== 'none') {
+renderAdmin();
+if (document.getElementById('subview-event').classList.contains('active')) renderEventPanel();
+}
+});
+onValue(ref(db, 'activities'), snap => {
+activities = snap.exists() ? Object.values(snap.val()) : [];
+renderGuestActivities(); renderRsvp();
+if (document.getElementById('admin-panel').style.display !== 'none') renderAdmin();
+});
+onValue(ref(db, 'guests'), snap => {
+guests = snap.exists() ? Object.values(snap.val()) : [];
+renderGuestActivities(); renderRsvp();
+if (document.getElementById('admin-panel').style.display !== 'none') renderAdmin();
+});
+
+finishLoading();
+if (rsvpActId) renderRsvp(); else renderGuestActivities();
+// ?admin=1 is the dashboard link; a password typed in this tab session is remembered.
+if (!rsvpActId && isRememberedAdmin()) unlockPanel(); // no password needed this session
+if (!rsvpActId && PARAMS.has('admin')) showAdminView();
+} catch(e) {
+document.getElementById('loading-overlay').innerHTML = `
+<h2 style="color:#8a3030">Could not open the event</h2>
+<p style="color:#8a3030;max-width:320px;text-align:center">This browser may be blocking saved data (private mode or strict settings).</p>
+<p style="font-size:0.8rem;color:var(--text-muted);margin-top:0.5rem">${esc(e.message)}</p>`;
+}
+}
+
+// ── home: create an event, list the ones in this browser ──────
+function showHome() {
+document.getElementById('view-guest').style.display = 'none';
+document.getElementById('admin-float').style.display = 'none';
+document.getElementById('view-home').style.display = 'block';
+document.getElementById('hdr-hosts').style.display = 'none';
+document.getElementById('hdr-meta').innerHTML = '<span class="header-meta-item">Sign-ups, spots and payments for anything you organise</span>';
+document.getElementById('ev-currency').innerHTML = Object.keys(CURRENCIES).map(c => `<option value="${c}">${c} (${CURRENCIES[c]})</option>`).join('');
+renderHomeEvents();
+}
+function renderHomeEvents() {
+const evs = Object.entries(readStore().events || {})
+.filter(([, e]) => e && e.meta)
+.sort((p, q) => (q[1].meta.createdAt||'').localeCompare(p[1].meta.createdAt||''));
+const el = document.getElementById('home-events');
+if (!evs.length) { el.innerHTML = ''; return; }
+el.innerHTML = `<div class="lookup-card" style="margin-bottom:1.5rem">
+<h3>Your events</h3>
+<p>Saved in this browser.</p>
+<div class="ev-list">${evs.map(([id, e]) => {
+const nActs = Object.keys(e.activities || {}).length;
+const nGuests = Object.keys(e.guests || {}).length;
+const meta = [e.meta.dates, `${nActs} activit${nActs===1?'y':'ies'}`, `${nGuests} guest${nGuests===1?'':'s'}`].filter(Boolean).join(' · ');
+return `<div class="ev-item">
+<div style="min-width:0"><div class="ev-name">${esc(e.meta.name)}</div><div class="ev-meta">${esc(meta)}</div></div>
+<div class="ev-actions">
+<a class="export-btn" href="?e=${encodeURIComponent(id)}">Guest page</a>
+<a class="add-btn" href="?e=${encodeURIComponent(id)}&admin=1">Dashboard</a>
+</div>
+</div>`;
+}).join('')}</div>
+</div>`;
+}
+window.createEvent = async function() {
+const name = document.getElementById('ev-name').value.trim();
+const pw = document.getElementById('ev-pw').value;
+if (!name) { alert('Give your event a name.'); return; }
+if (pw.length < 4) { alert('Choose an admin password of at least 4 characters. You\'ll need it to open the dashboard.'); return; }
+const id = 'ev' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+const meta = {
+name, hosts: document.getElementById('ev-hosts').value.trim(),
+dates: document.getElementById('ev-dates').value.trim(),
+place: document.getElementById('ev-place').value.trim(),
+currency: document.getElementById('ev-currency').value,
+intro: DEFAULT_INTRO, payment: '', signoff: DEFAULT_SIGNOFF,
+pwHash: hashPw(pw), createdAt: new Date().toISOString()
+};
+try {
+await set(rootRef('events/' + id + '/meta'), meta);
+} catch(e) { alert('Could not save. This browser may be blocking saved data.'); return; }
+rememberAdmin(id);
+location.href = '?e=' + encodeURIComponent(id) + '&admin=1';
+};
+function showMissing() {
+document.getElementById('view-guest').style.display = 'none';
+document.getElementById('admin-float').style.display = 'none';
+document.getElementById('view-missing').style.display = 'block';
+document.getElementById('hdr-hosts').style.display = 'none';
+document.getElementById('hdr-meta').innerHTML = '';
+}
+
+async function saveGuest(g) { await set(ref(db, 'guests/' + g.id), g); }
+async function saveActivity(a) { await set(ref(db, 'activities/' + a.id), a); }
+async function deleteActivityFromDb(id) { await remove(ref(db, 'activities/' + id)); }
+
+// ── page switching ────────────────────────────────────────────
+window.showAdminView = function() {
+document.getElementById('view-guest').style.display = 'none';
+document.getElementById('admin-float').style.display = 'none';
+document.getElementById('view-admin').style.display = 'block';
+document.body.classList.add('admin-mode'); // shrinks the header on phones
+window.scrollTo({top:0, behavior:'smooth'});
+};
+window.showGuestView = function() {
+document.getElementById('view-admin').style.display = 'none';
+document.getElementById('view-guest').style.display = 'block';
+document.getElementById('admin-float').style.display = 'block';
+document.body.classList.remove('admin-mode');
+window.scrollTo({top:0, behavior:'smooth'});
+};
+window.switchSubtab = function(sub) {
+['guests','activities','settings','event'].forEach(s => {
+document.getElementById('asubtab-'+s).classList.toggle('active', s===sub);
+document.getElementById('subview-'+s).classList.toggle('active', s===sub);
+});
+if (sub==='guests') renderGuestSummary();
+if (sub==='activities') { renderFilters(); renderBlocks(); }
+if (sub==='settings') renderMgmt();
+if (sub==='event') renderEventPanel();
+};
+
+// ── payments ──────────────────────────────────────────────────
+// Money actually applied to one activity, regardless of whether it fully covers it.
+function actPaidAmount(g, aid) {
+const d = (g.payments||{})[aid];
+return d && d.amount ? (parseFloat(d.amount) || 0) : 0;
+}
+// "Has this activity been paid for, in whole or in part?" — used to lock it on the guest form.
+function actIsPaid(g, aid) {
+const d = (g.payments||{})[aid];
+return !!(d && (d.paid || actPaidAmount(g, aid) > 0));
+}
+function guestHasAnyPaidPayment(g) {
+return (g.activities||[]).some(r => actIsPaid(g, r.id));
+}
+function guestTotals(g) {
+const owed = (g.activities||[]).reduce((s,r) => {
+const a = activities.find(x=>x.id===r.id);
+if (!a || a.priceTbd) return s;
+return s + a.price * r.spots;
+}, 0);
+// Any recorded amount counts as money received — a partial payment isn't flagged `paid`.
+const collected = Object.values(g.payments||{}).reduce((s,d) =>
+s + (d.amount ? parseFloat(d.amount)||0 : 0), 0);
+return {owed, collected, balance: Math.round((owed - collected)*100)/100};
+}
+
+// Payment log — the running record of every instalment, so a partial payer's history is
+// visible instead of just a single rolled-up total.
+// Entry: {id, amount, date, method, notes, actId, recordedAt}. actId '' = spread over all.
+function paymentLogOf(g) {
+const raw = g.paymentLog;
+if (raw) {
+const list = Array.isArray(raw) ? raw : Object.values(raw);
+return list.filter(Boolean).map(e => ({...e}));
+}
+// No log yet — seed one entry from whatever the old per-activity fields recorded,
+// so pre-existing guests don't lose their payment info.
+const depVals = Object.values(g.payments||{});
+const legacy = depVals.reduce((s,d) => s + (d.amount ? parseFloat(d.amount)||0 : 0), 0);
+if (legacy <= 0) return [];
+const src = depVals.find(d => d.date || d.method || d.notes) || {};
+return [{
+id: 'p'+Date.now(), amount: String(legacy), date: src.date||'', method: src.method||'',
+notes: src.notes||'', actId: '', recordedAt: g.registeredAt||''
+}];
+}
+
+// Rewrite g.payments from the log so every existing view (totals, badges, CSV) stays accurate.
+// Entries tagged to an activity land on it; untagged ones spread across priced activities.
+function applyPaymentLog(g, log) {
+const actList = g.activities || [];
+if (!g.payments) g.payments = {};
+const owedFor = {};
+let totalOwed = 0;
+actList.forEach(r => {
+const a = activities.find(x=>x.id===r.id);
+owedFor[r.id] = a && !a.priceTbd && a.price > 0 ? a.price * r.spots : 0;
+totalOwed += owedFor[r.id];
+});
+const applied = {};
+actList.forEach(r => { applied[r.id] = 0; });
+
+let general = 0;
+log.forEach(e => {
+const amt = parseFloat(e.amount) || 0;
+if (amt <= 0) return;
+if (e.actId && applied[e.actId] !== undefined) applied[e.actId] += amt;
+else general += amt;
+});
+if (general > 0) {
+const priced = actList.filter(r => owedFor[r.id] > 0);
+if (priced.length && totalOwed > 0) {
+let left = general;
+priced.forEach((r, i) => {
+// Last one absorbs the rounding remainder so the shares always add back up.
+const share = i === priced.length-1 ? left
+: Math.round(owedFor[r.id] / totalOwed * general * 100) / 100;
+applied[r.id] += share; left -= share;
+});
+} else if (actList.length) {
+applied[actList[0].id] += general; // nothing is priced — park it on the first activity
+}
+}
+
+const last = log.length ? log[log.length-1] : {};
+actList.forEach(r => {
+if (!g.payments[r.id]) g.payments[r.id] = {};
+const amt = Math.round((applied[r.id]||0) * 100) / 100;
+g.payments[r.id].amount = amt > 0 ? String(amt) : '';
+g.payments[r.id].paid = owedFor[r.id] > 0 ? amt >= owedFor[r.id] - 0.005 : amt > 0;
+g.payments[r.id].date = last.date || '';
+g.payments[r.id].method = last.method || '';
+g.payments[r.id].notes = last.notes || '';
+});
+g.paymentLog = log.map(e => ({
+id: e.id || ('p'+Date.now()), amount: String(e.amount||''), date: e.date||'',
+method: e.method||'', notes: e.notes||'', actId: e.actId||'', recordedAt: e.recordedAt||''
+}));
+}
+function spotsForActivity(actId, excludeGuestId) {
+return guests.reduce((s,g) => {
+if (g.id === excludeGuestId) return s;
+const r = (g.activities||[]).find(x=>x.id===actId);
+return s + (r ? r.spots : 0);
+}, 0);
+}
+
+// ── guest form ────────────────────────────────────────────────
+function renderGuestActivities() {
+const grid = document.getElementById('act-grid');
+if (!grid) return;
+if (!activities.length) { grid.innerHTML = '<p class="empty-acts">No activities yet — check back soon.</p>'; return; }
+grid.innerHTML = sortedActivities().map(a => {
+const taken = spotsForActivity(a.id, null);
+const free = Math.max(0, a.capacity - taken);
+const full = free <= 0;
+const pct = Math.min(100, Math.round(taken / a.capacity * 100));
+if (!gSpots[a.id]) gSpots[a.id] = 1;
+return `<label class="activity-check${full?' full':''}" id="acard-${a.id}">
+<input type="checkbox" id="cb-${a.id}" ${full?'disabled':''} onchange="toggleAct('${a.id}')">
+<div class="cb-box"></div>
+<div style="flex:1">
+<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:0.5rem">
+<div class="activity-label">${a.name}${full?' <span class="full-badge">Full</span>':''}</div>
+<div style="flex-shrink:0">${priceLabel(a)}</div>
+</div>
+<div class="activity-meta">${a.date}${full?' &middot; fully booked' : ' &middot; '+free+' spot'+(free!==1?'s':'')+' left'}</div>
+<div class="capacity-bar"><div class="capacity-fill${pct>=80?' warn':''}" style="width:${pct}%"></div></div>
+<div id="ctr-${a.id}" style="display:none" class="counter-row" onclick="event.preventDefault()">
+<button class="counter-btn" onclick="event.preventDefault();chSpots('${a.id}',-1)">−</button>
+<span class="counter-val" id="sv-${a.id}">1</span>
+<button class="counter-btn" onclick="event.preventDefault();chSpots('${a.id}',1)">+</button>
+<span class="counter-lbl" id="sl-${a.id}">person</span>
+</div>
+</div>
+</label>`;
+}).join('');
+}
+
+window.toggleAct = function(id) {
+const cb = document.getElementById('cb-'+id);
+document.getElementById('acard-'+id).classList.toggle('selected', cb.checked);
+document.getElementById('ctr-'+id).style.display = cb.checked ? 'flex' : 'none';
+updateSubtotal();
+};
+window.chSpots = function(id, delta) {
+const a = activities.find(x=>x.id===id);
+const taken = spotsForActivity(id, null);
+gSpots[id] = Math.max(1, Math.min(Math.max(0, a.capacity - taken), (gSpots[id]||1)+delta));
+document.getElementById('sv-'+id).textContent = gSpots[id];
+document.getElementById('sl-'+id).textContent = gSpots[id]===1?'person':'people';
+updateSubtotal();
+};
+
+function updateSubtotal() {
+const sel = sortedActivities().filter(a => document.getElementById('cb-'+a.id)?.checked);
+const box = document.getElementById('subtotal-box');
+if (!sel.length) { box.style.display='none'; return; }
+let total = 0;
+const rows = sel.map(a => {
+const n = gSpots[a.id]||1;
+if (a.priceTbd) return `<div class="sub-row"><span>${a.name}</span><span>TBD</span></div>`;
+const sub = a.price * n; total += sub;
+return `<div class="sub-row"><span>${a.name}</span><span>${a.price>0?SYM+sub+' '+CODE+' ('+n+' × '+SYM+a.price+')':'Free'}</span></div>`;
+}).join('');
+box.style.display='block';
+box.innerHTML = rows + `<div class="sub-total"><span>Total payment</span><span>${SYM}${total} ${CODE}${sel.some(a=>a.priceTbd)?' + TBD':''}</span></div>`;
+}
+
+window.submitGuest = async function() {
+const first = document.getElementById('g-first').value.trim();
+const last = document.getElementById('g-last').value.trim();
+const email = document.getElementById('g-email').value.trim();
+const phone = document.getElementById('g-phone').value.trim();
+const notes = document.getElementById('g-notes').value.trim();
+const sel = sortedActivities().filter(a => document.getElementById('cb-'+a.id)?.checked);
+if (!first||!last||!email) { alert('Please fill in your name and email.'); return; }
+if (guests.find(x => x.email.toLowerCase()===email.toLowerCase())) {
+alert('A reservation with this email already exists. Use the "Modify your reservation" section below to make changes.'); return;
+}
+if (!sel.length) { alert('Please select at least one activity.'); return; }
+// Capacity guard — re-check against the latest live counts in case an activity filled up since the page loaded.
+const overCap = sel.map(a => {
+const free = Math.max(0, a.capacity - spotsForActivity(a.id, null));
+const want = gSpots[a.id]||1;
+return free < want ? {name:a.name, free} : null;
+}).filter(Boolean);
+if (overCap.length) {
+alert(overCap.map(o => o.free<=0
+? `“${o.name}” is now fully booked and can no longer be reserved.`
+: `“${o.name}” only has ${o.free} spot${o.free!==1?'s':''} left. Please lower your count.`).join('\n'));
+renderGuestActivities();
+return;
+}
+const btn = document.getElementById('submit-reg-btn');
+btn.disabled = true; btn.textContent = 'Saving...';
+const g = {
+id: 'g'+Date.now(), first, last, email, phone, notes,
+activities: sel.map(a => ({id:a.id, spots:gSpots[a.id]||1})),
+payments: {}, registeredAt: new Date().toISOString()
+};
+sel.forEach(a => { g.payments[a.id] = {paid:false,amount:'',method:'',date:'',notes:''}; });
+g.paymentLog = [];
+try {
+const r = await saveWithTimeout(saveGuest(g));
+document.getElementById('guest-form').style.display='none';
+document.getElementById('success-msg').style.display='block';
+toast(r==='pending' ? 'Reservation saved — syncing...' : 'Reservation saved!');
+} catch(e) {
+alert('Could not save. Check your connection and try again.');
+} finally {
+btn.disabled = false; btn.textContent = 'Reserve my spot';
+}
+};
+
+// ── lookup & edit ─────────────────────────────────────────────
+window.lookupGuest = function() {
+const email = document.getElementById('lookup-email').value.trim().toLowerCase();
+const errEl = document.getElementById('lookup-error');
+if (!email) { errEl.textContent='Please enter your email address.'; errEl.style.display='block'; return; }
+const g = guests.find(x => x.email.toLowerCase()===email);
+if (!g) {
+errEl.textContent="We couldn't find a reservation with that email. Check the spelling or register above.";
+errEl.style.display='block';
+document.getElementById('edit-reservation').style.display='none';
+return;
+}
+errEl.style.display='none';
+editingGuestId = g.id;
+openEditReservation(g);
+};
+
+function openEditReservation(g) {
+document.getElementById('edit-title').textContent = `Hi ${g.first} — your reservation`;
+document.getElementById('edit-success').style.display='none';
+document.getElementById('edit-reservation').style.display='block';
+const body = document.getElementById('edit-body');
+
+// Paid activities stay locked (can't be removed or reduced below what was paid),
+// but the guest can still add new activities or add more people.
+const hasPaid = guestHasAnyPaidPayment(g);
+
+sortedActivities().forEach(a => {
+const r = (g.activities||[]).find(x=>x.id===a.id);
+eSpots[a.id] = r ? r.spots : 1;
+const locked = !!(r && actIsPaid(g, a.id));
+ePaidFloor[a.id] = locked ? (r.spots || 1) : 1; // minimum spots the counter can go down to
+});
+const grid = sortedActivities().map(a => {
+const r = (g.activities||[]).find(x=>x.id===a.id);
+const isSelected = !!r;
+const locked = !!(r && actIsPaid(g, a.id)); // paid (even partly) → cannot be removed
+const takenByOthers = spotsForActivity(a.id, g.id);
+const free = Math.max(0, a.capacity - takenByOthers);
+const full = free <= 0 && !isSelected; // no room left and the guest isn't already in it
+const pct = Math.min(100, Math.round(takenByOthers / a.capacity * 100));
+return `<label class="activity-check${isSelected?' selected':''}${locked?' locked':''}${full?' full':''}" id="ecard-${a.id}">
+<input type="checkbox" id="ecb-${a.id}" ${isSelected?'checked':''} ${locked||full?'disabled':''} onchange="toggleEditAct('${a.id}')">
+<div class="cb-box"></div>
+<div style="flex:1">
+<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:0.5rem">
+<div class="activity-label">${a.name}${locked?' <span class="paid-lock">✓ Paid</span>':''}${full?' <span class="full-badge">Full</span>':''}</div>
+<div style="flex-shrink:0">${priceLabel(a)}</div>
+</div>
+<div class="activity-meta">${a.date} &middot; ${full?'fully booked':free+' spot'+(free!==1?'s':'')+' available'}${locked?' &middot; locked' : ''}</div>
+<div class="capacity-bar"><div class="capacity-fill${pct>=80?' warn':''}" style="width:${pct}%"></div></div>
+<div id="ectr-${a.id}" style="display:${isSelected?'flex':'none'}" class="counter-row" onclick="event.preventDefault()">
+<button class="counter-btn" onclick="event.preventDefault();chEditSpots('${a.id}',-1)">−</button>
+<span class="counter-val" id="esv-${a.id}">${eSpots[a.id]||1}</span>
+<button class="counter-btn" onclick="event.preventDefault();chEditSpots('${a.id}',1)">+</button>
+<span class="counter-lbl" id="esl-${a.id}">${(eSpots[a.id]||1)===1?'person':'people'}</span>
+</div>
+</div>
+</label>`;
+}).join('');
+body.innerHTML = `
+<div class="due-box" id="edit-due"></div>
+${hasPaid?`<div class="locked-banner" style="text-align:left">
+<strong>Some activities are locked</strong>
+The activities marked <em>✓ Paid</em> have already been paid, so they can't be removed online. You're welcome to add more activities below — to change a paid one, just contact ${esc(EVENT.hosts||'the organiser')}.
+</div>`:''}
+<div class="field"${hasPaid?' style="margin-top:1.1rem"':''}><label>Select activities</label>${grid}</div>
+<div id="edit-subtotal-box" style="display:none" class="subtotal-box"></div>
+<div class="field"><label>Notes</label><textarea id="edit-notes">${g.notes||''}</textarea></div>
+<button class="submit-btn" id="save-edit-btn" onclick="saveEdit()">Save changes</button>
+<button class="secondary-btn" onclick="cancelEdit()">Cancel</button>`;
+updateEditSubtotal();
+document.getElementById('edit-reservation').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+window.toggleEditAct = function(id) {
+const cb = document.getElementById('ecb-'+id);
+document.getElementById('ecard-'+id).classList.toggle('selected', cb.checked);
+document.getElementById('ectr-'+id).style.display = cb.checked ? 'flex' : 'none';
+updateEditSubtotal();
+};
+window.chEditSpots = function(id, delta) {
+const a = activities.find(x=>x.id===id);
+const takenByOthers = spotsForActivity(id, editingGuestId);
+const floor = ePaidFloor[id] || 1; // can't go below the number of spots already paid for
+eSpots[id] = Math.max(floor, Math.min(Math.max(0, a.capacity - takenByOthers), (eSpots[id]||1)+delta));
+document.getElementById('esv-'+id).textContent = eSpots[id];
+document.getElementById('esl-'+id).textContent = eSpots[id]===1?'person':'people';
+updateEditSubtotal();
+};
+// Headline figure at the top of the guest's reservation: what they still owe, after
+// subtracting anything already paid. Recalculates live as they tick activities on and off.
+function updateEditDue() {
+const box = document.getElementById('edit-due');
+const g = guests.find(x => x.id === editingGuestId);
+if (!box || !g) return;
+const sel = sortedActivities().filter(a => document.getElementById('ecb-'+a.id)?.checked);
+const total = sel.reduce((s,a) => s + (a.priceTbd ? 0 : (a.price||0) * (eSpots[a.id]||1)), 0);
+const paid = guestTotals(g).collected;
+const due = Math.round((total - paid) * 100) / 100;
+const tbd = sel.some(a => a.priceTbd);
+
+if (total <= 0 && !tbd) {
+box.innerHTML = `<div class="due-total" style="border-top:none;margin-top:0;padding-top:0">
+<span class="due-total-lbl">Amount due</span>
+<span class="due-total-val settled">$0</span></div>
+<div class="due-note">Nothing to pay for your current selection.</div>`;
+return;
+}
+const settled = due <= 0;
+box.innerHTML = `
+<div class="due-row"><span>Your activities</span><span>${SYM}${money(total)} ${CODE}${tbd?' + TBD':''}</span></div>
+${paid>0?`<div class="due-row"><span>Already paid</span><span style="color:#1e6b3a">− ${SYM}${money(paid)} ${CODE}</span></div>`:''}
+<div class="due-total">
+<span class="due-total-lbl">Amount due</span>
+<span class="due-total-val${settled?' settled':''}">${SYM}${money(settled?0:due)}${tbd?' + TBD':''}</span>
+</div>
+<div class="due-note">${
+settled && paid>0 ? 'You\'re all paid up — thank you!'
+: paid>0 ? 'Remaining balance.' + (EVENT.payment ? ' Payment instructions are further down this page.' : '')
+: (EVENT.payment ? 'Payment instructions are further down this page.' : 'The organiser will tell you how to pay.')
+}</div>`;
+}
+
+function updateEditSubtotal() {
+updateEditDue();
+const sel = sortedActivities().filter(a => document.getElementById('ecb-'+a.id)?.checked);
+const box = document.getElementById('edit-subtotal-box');
+if (!box) return;
+if (!sel.length) { box.style.display='none'; return; }
+let total = 0;
+const rows = sel.map(a => {
+const n = eSpots[a.id]||1;
+if (a.priceTbd) return `<div class="sub-row"><span>${a.name}</span><span>TBD</span></div>`;
+const sub = a.price*n; total += sub;
+return `<div class="sub-row"><span>${a.name}</span><span>${a.price>0?SYM+sub+' '+CODE+' ('+n+' × '+SYM+a.price+')':'Free'}</span></div>`;
+}).join('');
+box.style.display='block';
+box.innerHTML = rows + `<div class="sub-total"><span>Total payment</span><span>${SYM}${total} ${CODE}${sel.some(a=>a.priceTbd)?' + TBD':''}</span></div>`;
+}
+window.saveEdit = async function() {
+const g = guests.find(x=>x.id===editingGuestId);
+if (!g) return;
+const sel = sortedActivities().filter(a => document.getElementById('ecb-'+a.id)?.checked);
+if (!sel.length) { alert('Please select at least one activity.'); return; }
+// Capacity guard — exclude this guest's own spots, then make sure the requested count still fits.
+const overCap = sel.map(a => {
+const free = Math.max(0, a.capacity - spotsForActivity(a.id, g.id));
+const want = eSpots[a.id]||1;
+return free < want ? {name:a.name, free} : null;
+}).filter(Boolean);
+if (overCap.length) {
+alert(overCap.map(o => o.free<=0
+? `“${o.name}” is now fully booked and can no longer be reserved.`
+: `“${o.name}” only has ${o.free} spot${o.free!==1?'s':''} left. Please lower your count.`).join('\n'));
+openEditReservation(g);
+return;
+}
+const btn = document.getElementById('save-edit-btn');
+btn.disabled = true; btn.textContent = 'Saving...';
+g.activities = sel.map(a => ({id:a.id, spots:eSpots[a.id]||1}));
+const newIds = sel.map(a=>a.id);
+Object.keys(g.payments||{}).forEach(aid => { if (!newIds.includes(aid)) delete g.payments[aid]; });
+newIds.forEach(aid => { if (!g.payments[aid]) g.payments[aid]={paid:false,amount:'',method:'',date:'',notes:''}; });
+g.notes = document.getElementById('edit-notes').value.trim();
+// Spots may have changed, so re-spread the payment log over the new activity list.
+// Entries tagged to a dropped activity become general credit rather than vanishing.
+const log = paymentLogOf(g).map(e => newIds.includes(e.actId) ? e : {...e, actId:''});
+applyPaymentLog(g, log);
+try {
+const res = await saveWithTimeout(saveGuest(g));
+document.getElementById('edit-reservation').style.display='none';
+document.getElementById('edit-success').style.display='block';
+document.getElementById('lookup-email').value='';
+editingGuestId = null;
+toast(res==='pending' ? 'Reservation updated — syncing...' : 'Reservation updated!');
+} catch(e) {
+alert('Could not save. Check your connection and try again.');
+} finally {
+btn.disabled = false; btn.textContent = 'Save changes';
+}
+};
+window.cancelEdit = function() {
+document.getElementById('edit-reservation').style.display='none';
+document.getElementById('lookup-email').value='';
+document.getElementById('lookup-error').style.display='none';
+editingGuestId = null;
+};
+
+// ── single-activity RSVP page ─────────────────────────────────
+// Reached via ?event=<activity id>. Same database, same guest records — just a stripped
+// down form for one activity, so guests don't wade through the whole activity list.
+let rsvpActId = null; // activity this link is for
+let rsvpSpots = 1; // party size in the counter
+let rsvpGuestId = null; // set when the email matches someone already registered
+let rsvpAlreadyIn = false; // ...and that person already has a booking for this activity
+
+function initRsvpMode() {
+const id = PARAMS.get('a');
+if (!id) return false;
+rsvpActId = id;
+document.getElementById('view-guest').style.display = 'none';
+document.getElementById('admin-float').style.display = 'none';
+document.getElementById('view-rsvp').style.display = 'block';
+document.body.classList.add('rsvp-mode'); // the page header becomes the event header
+return true;
+}
+
+function rsvpActivity() { return activities.find(x => x.id === rsvpActId); }
+
+// Spots taken by everyone except the person currently filling in the form.
+function rsvpFreeSpots() {
+const a = rsvpActivity();
+return a ? Math.max(0, a.capacity - spotsForActivity(a.id, rsvpGuestId)) : 0;
+}
+
+function renderRsvp() {
+if (!rsvpActId) return;
+const a = rsvpActivity();
+const title = document.getElementById('rsvp-title');
+const intro = document.getElementById('rsvp-intro');
+const hdrTitle = document.getElementById('hdr-title');
+const hdrMeta = document.getElementById('hdr-meta');
+if (!a) {
+// The link points at an activity that's been deleted or renamed.
+hdrTitle.textContent = 'Event not found';
+hdrMeta.innerHTML = '';
+title.textContent = 'Event not found';
+intro.textContent = "This RSVP link doesn't match any of our activities. Please check with " + (EVENT.hosts||'the organiser') + ".";
+document.getElementById('rsvp-form').style.display = 'none';
+return;
+}
+// The page header IS the event header here — this link stands on its own in an inbox.
+hdrTitle.textContent = a.name;
+hdrMeta.innerHTML = `<span class="header-meta-item">${esc(a.date)}</span>`;
+document.title = `${a.name} — ${EVENT.name}`; // browser tab / link preview
+title.textContent = 'Reserve your spot';
+intro.textContent = "Let us know if you're coming so we can plan numbers.";
+const free = rsvpFreeSpots();
+const cap = document.getElementById('r-capacity');
+cap.textContent = free > 0
+? `${free} spot${free!==1?'s':''} still available`
+: 'This event is now fully booked.';
+cap.style.color = free > 0 ? 'var(--text-muted)' : '#8a3030';
+
+const btn = document.getElementById('r-submit');
+if (free <= 0 && !rsvpAlreadyIn) { btn.disabled = true; btn.textContent = 'Fully booked'; }
+else { btn.disabled = false; btn.textContent = rsvpAlreadyIn ? 'Update my RSVP' : 'Count me in'; }
+
+updateRsvpSpots();
+renderRsvpList();
+}
+
+function updateRsvpSpots() {
+const a = rsvpActivity();
+document.getElementById('r-spots').textContent = rsvpSpots;
+document.getElementById('r-spots-lbl').textContent = rsvpSpots===1 ? 'person' : 'people';
+const box = document.getElementById('r-subtotal');
+if (!a || a.priceTbd || !a.price || a.price <= 0) { box.style.display = 'none'; return; }
+box.style.display = 'block';
+box.innerHTML = `<div class="sub-row"><span>${esc(a.name)}</span><span>${rsvpSpots} × ${SYM}${a.price}</span></div>
+<div class="sub-total"><span>Total</span><span>${SYM}${money(a.price*rsvpSpots)} ${CODE}</span></div>`;
+}
+
+window.chRsvpSpots = function(delta) {
+rsvpSpots = Math.max(1, Math.min(Math.max(1, rsvpFreeSpots()), rsvpSpots + delta));
+updateRsvpSpots();
+};
+
+// Recognise someone who has already registered so the welcome dinner is added to their
+// existing record instead of being refused as a duplicate email.
+window.rsvpLookup = function() {
+const email = document.getElementById('r-email').value.trim().toLowerCase();
+const known = document.getElementById('r-known');
+if (!email) return;
+const g = guests.find(x => (x.email||'').toLowerCase() === email);
+if (!g) {
+rsvpGuestId = null; rsvpAlreadyIn = false; known.style.display = 'none';
+renderRsvp(); return;
+}
+rsvpGuestId = g.id;
+rsvpAlreadyIn = (g.activities||[]).some(x => x.id === rsvpActId);
+if (!document.getElementById('r-first').value.trim()) document.getElementById('r-first').value = g.first || '';
+if (!document.getElementById('r-last').value.trim()) document.getElementById('r-last').value = g.last || '';
+if (!document.getElementById('r-phone').value.trim()) document.getElementById('r-phone').value = g.phone || '';
+const r = (g.activities||[]).find(x => x.id === rsvpActId);
+if (r) {
+rsvpSpots = r.spots;
+known.innerHTML = `Welcome back, ${esc(g.first)} — you're down for <strong>${r.spots} spot${r.spots!==1?'s':''}</strong>. Change the number below and save to update it.`;
+} else {
+known.innerHTML = `Welcome back, ${esc(g.first)} — we'll add this to your existing reservation.`;
+}
+known.style.display = 'block';
+renderRsvp();
+};
+
+window.submitRsvp = async function() {
+const first = document.getElementById('r-first').value.trim();
+const last = document.getElementById('r-last').value.trim();
+const email = document.getElementById('r-email').value.trim();
+const phone = document.getElementById('r-phone').value.trim();
+const a = rsvpActivity();
+if (!a) return;
+if (!first || !last || !email) { alert('Please fill in your name and email.'); return; }
+// Re-check capacity against live numbers in case it filled up while the form was open.
+const free = rsvpFreeSpots();
+if (free < rsvpSpots) {
+alert(free <= 0
+? `"${a.name}" is now fully booked.`
+: `Only ${free} spot${free!==1?'s':''} left. Please lower your number.`);
+renderRsvp(); return;
+}
+const btn = document.getElementById('r-submit');
+btn.disabled = true; btn.textContent = 'Saving...';
+
+// Existing guest → merge into their record. New guest → create one.
+const existing = guests.find(x => (x.email||'').toLowerCase() === email.toLowerCase());
+const g = existing
+? {...existing}
+: {id:'g'+Date.now(), first, last, email, phone, notes:'',
+activities:[], payments:{}, paymentLog:[], registeredAt:new Date().toISOString()};
+if (existing) g.phone = phone || g.phone; // never overwrite notes they left elsewhere
+g.activities = [...(g.activities||[])];
+const idx = g.activities.findIndex(x => x.id === rsvpActId);
+if (idx >= 0) g.activities[idx] = {...g.activities[idx], spots: rsvpSpots};
+else g.activities.push({id: rsvpActId, spots: rsvpSpots});
+if (!g.payments) g.payments = {};
+if (!g.payments[rsvpActId]) g.payments[rsvpActId] = {paid:false,amount:'',method:'',date:'',notes:''};
+applyPaymentLog(g, paymentLogOf(g)); // keeps money split correctly across the new list
+
+try {
+const res = await saveWithTimeout(saveGuest(g));
+document.getElementById('rsvp-form').style.display = 'none';
+document.getElementById('rsvp-success').style.display = 'block';
+document.getElementById('rsvp-success-msg').textContent =
+`${rsvpSpots} spot${rsvpSpots!==1?'s':''} reserved for ${a.name}. ${EVENT.signoff||''}`.trim();
+toast(res==='pending' ? 'RSVP saved — syncing...' : 'RSVP saved!');
+} catch(e) {
+alert('Could not save. Check your connection and try again.');
+} finally {
+btn.disabled = false; btn.textContent = rsvpAlreadyIn ? 'Update my RSVP' : 'Count me in';
+}
+};
+
+window.resetRsvp = function() {
+document.getElementById('rsvp-success').style.display = 'none';
+document.getElementById('rsvp-form').style.display = 'block';
+renderRsvp();
+};
+
+// The public list below the line — names and party sizes only, no contact details.
+function renderRsvpList() {
+const el = document.getElementById('rsvp-list');
+if (!el) return;
+const going = guests
+.map(g => ({g, r: (g.activities||[]).find(x => x.id === rsvpActId)}))
+.filter(x => x.r)
+.sort((p,q) => (p.g.first+p.g.last).localeCompare(q.g.first+q.g.last));
+const heads = going.reduce((s,x) => s + (x.r.spots||0), 0);
+if (!going.length) {
+el.innerHTML = '<h3>Who\'s coming</h3><p style="margin:0">No one has RSVP\'d yet — be the first.</p>';
+return;
+}
+el.innerHTML = `<h3>Who's coming</h3>
+<p>${heads} ${heads===1?'person':'people'} across ${going.length} ${going.length===1?'booking':'bookings'}.</p>
+<div class="activity-pills" style="gap:6px">
+${going.map(x => `<span class="activity-pill" style="font-size:0.8rem;padding:4px 10px">${esc(x.g.first)} ${esc(x.g.last)}${x.r.spots>1?' +'+(x.r.spots-1):''}</span>`).join('')}
+</div>`;
+}
+
+// ── admin ─────────────────────────────────────────────────────
+window.adminLogin = function() {
+if (hashPw(document.getElementById('admin-pw').value) === EVENT.pwHash) {
+rememberAdmin(EID);
+unlockAdmin();
+} else {
+alert('Incorrect password.');
+document.getElementById('admin-pw').value='';
+}
+};
+function unlockAdmin() { unlockPanel(); showAdminView(); }
+function unlockPanel() {
+document.getElementById('admin-login').style.display='none';
+document.getElementById('admin-panel').style.display='block';
+renderAdmin();
+// A brand-new event has nothing to show yet — start where the work is.
+if (!activities.length) switchSubtab('settings');
+}
+function renderAdmin() {
+renderStats(); renderGuestSummary();
+// Keep By-activity live too — spot and payment edits happen on that tab.
+if (document.getElementById('subview-activities').classList.contains('active')) renderBlocks();
+}
+
+window.setSort = function(mode) {
+sortMode = mode;
+['name','owed','unpaid'].forEach(m => document.getElementById('sort-'+m).classList.toggle('active', m===mode));
+renderGuestSummary();
+};
+
+function renderGuestSummary() {
+const q = (document.getElementById('g-search')?.value||'').toLowerCase();
+let list = [...guests];
+if (q) list = list.filter(g => `${g.first} ${g.last} ${g.email}`.toLowerCase().includes(q));
+if (owingOnly) list = list.filter(g => guestTotals(g).balance > 0);
+list.sort((a,b) => {
+if (sortMode==='name') return (a.first+a.last).localeCompare(b.first+b.last);
+if (sortMode==='owed') return guestTotals(b).owed - guestTotals(a).owed;
+if (sortMode==='unpaid') return guestTotals(b).balance - guestTotals(a).balance;
+return 0;
+});
+const totalOwed = guests.reduce((s,g) => s+guestTotals(g).owed, 0);
+const totalColl = guests.reduce((s,g) => s+guestTotals(g).collected, 0);
+if (!list.length) {
+const empty = owingOnly ? 'Everyone has paid in full.' : q ? 'No guests match that search.' : 'No guests registered yet.';
+document.getElementById('guest-summary').innerHTML=`<p style="font-size:0.85rem;color:var(--text-muted);font-style:italic;padding:1rem 0">${empty}</p>`;
+return;
+}
+if (isMobile()) { renderGuestCards(list, totalColl, totalOwed); return; }
+const rows = list.map(g => {
+const {owed,collected,balance} = guestTotals(g);
+const pct = owed>0 ? Math.min(100, Math.round(collected/owed*100)) : 100;
+const allPaid = owed===0||(collected>=owed);
+const nonePaid = collected===0&&owed>0;
+const statusClass = allPaid?'paid':nonePaid?'unpaid':'partial';
+const statusLabel = allPaid?'Paid':nonePaid?'Unpaid':'Partial';
+const pills = (g.activities||[]).map(r => {
+const a = activities.find(x=>x.id===r.id);
+return `<span class="activity-pill">${a?a.name:r.id}${r.spots>1?' ×'+r.spots:''}</span>`;
+}).join('');
+const noteText = g.notes||'—';
+const log = paymentLogOf(g);
+const last = log.length ? log[log.length-1] : null;
+return `<tr>
+<td><div style="font-weight:500;white-space:nowrap">${g.first} ${g.last}</div><div style="font-size:0.73rem;color:var(--text-muted)">${g.email}</div></td>
+<td><div class="activity-pills">${pills}</div></td>
+<td class="note-cell"><div title="${esc(noteText)}">${noteText}</div></td>
+<td style="text-align:right;white-space:nowrap"><div style="font-weight:500;color:var(--olive-dark)">${SYM}${money(owed)}</div><div style="font-size:0.72rem;color:var(--text-muted)">owed</div></td>
+<td style="text-align:right;white-space:nowrap"><div style="font-weight:500;color:#1e6b3a">${SYM}${money(collected)}</div><div style="font-size:0.72rem;color:var(--text-muted)">${log.length>1?log.length+' payments':'paid'}</div>${last&&last.date?`<div style="font-size:0.7rem;color:var(--text-muted)">last ${esc(last.date)}</div>`:''}</td>
+<td style="text-align:right;white-space:nowrap"><div style="font-weight:500;color:${balance>0?'var(--accent)':'#1e6b3a'}">${SYM}${money(balance>0?balance:0)}</div><div style="font-size:0.72rem;color:var(--text-muted)">${balance>0?'left':'done'}</div></td>
+<td><span class="dep-badge ${statusClass}">${statusLabel}</span>${owed>0?`<div class="balance-bar"><div class="balance-fill" style="width:${pct}%"></div></div>`:''}</td>
+<td style="white-space:nowrap"><button class="add-btn sm" onclick="openGuestActivities('${g.id}')">Activities</button> <button class="add-btn sm" onclick="openGuestPayment('${g.id}')">Payment</button></td>
+</tr>`;
+}).join('');
+document.getElementById('guest-summary').innerHTML=`
+<table class="guest-summary-table">
+<thead><tr><th>Guest</th><th>Activities</th><th>Notes</th><th style="text-align:right">Owes</th><th style="text-align:right">Paid</th><th style="text-align:right">Balance</th><th>Status</th><th></th></tr></thead>
+<tbody>${rows}</tbody>
+</table>
+<div class="summary-footer">
+<span style="color:var(--text-muted)">${list.length} guest${list.length!==1?'s':''}</span>
+<span style="color:var(--text-muted)">Collected: <strong style="color:var(--olive-dark)">${SYM}${money(totalColl)}</strong> &nbsp;/&nbsp; Owed: <strong style="color:var(--olive-dark)">${SYM}${money(totalOwed)}</strong></span>
+</div>`;
+}
+// Expose to global scope so inline oninput="renderGuestSummary()" handlers (this script is a module) can reach it → enables live search.
+window.renderGuestSummary = renderGuestSummary;
+
+// Phone layout: one card per guest, everything stacked, no horizontal scroll.
+// The whole card is the tap target — the button inside just bubbles up to it.
+function renderGuestCards(list, totalColl, totalOwed) {
+const cards = list.map(g => {
+const {owed, collected, balance} = guestTotals(g);
+const pct = owed>0 ? Math.min(100, Math.round(collected/owed*100)) : 100;
+const allPaid = owed===0 || collected>=owed;
+const nonePaid = collected===0 && owed>0;
+const statusClass = allPaid?'paid':nonePaid?'unpaid':'partial';
+const statusLabel = allPaid?'Paid':nonePaid?'Unpaid':'Partial';
+const pills = (g.activities||[]).map(r => {
+const a = activities.find(x=>x.id===r.id);
+return `<span class="activity-pill">${esc(a?a.name:r.id)}${r.spots>1?' ×'+r.spots:''}</span>`;
+}).join('');
+const log = paymentLogOf(g);
+const last = log.length ? log[log.length-1] : null;
+return `<div class="gcard" onclick="openGuestPayment('${g.id}')">
+<div class="gcard-top">
+<div class="gcard-name">${esc(g.first)} ${esc(g.last)}<div class="gcard-email">${esc(g.email||'')}</div></div>
+<span class="dep-badge ${statusClass}" style="flex-shrink:0">${statusLabel}</span>
+</div>
+<div class="activity-pills">${pills}</div>
+${owed>0?`<div class="balance-bar"><div class="balance-fill" style="width:${pct}%"></div></div>`:''}
+<div class="gcard-money">
+<span><strong>${SYM}${money(owed)}</strong> owed</span>
+<span><strong style="color:#1e6b3a">${SYM}${money(collected)}</strong> paid</span>
+<span class="${balance>0?'owing':''}"><strong class="${balance>0?'owing':''}" style="${balance>0?'color:var(--accent)':'color:#1e6b3a'}">${SYM}${money(balance>0?balance:0)}</strong> ${balance>0?'left':'done'}</span>
+</div>
+${last&&last.date?`<div style="font-size:0.74rem;color:var(--text-muted);margin-top:4px">Last payment ${esc(last.date)}${log.length>1?' · '+log.length+' payments':''}</div>`:''}
+${g.notes?`<div class="gcard-note">${esc(g.notes)}</div>`:''}
+<div class="gcard-btns">
+<button class="add-btn gcard-btn" onclick="event.stopPropagation();openGuestActivities('${g.id}')">Activities</button>
+<button class="add-btn gcard-btn">${balance>0?'Take payment':'View payments'}</button>
+</div>
+</div>`;
+}).join('');
+document.getElementById('guest-summary').innerHTML = cards + `
+<div class="summary-footer" style="border-radius:12px;border-top:none;margin-top:0.5rem">
+<span style="color:var(--text-muted)">${list.length} guest${list.length!==1?'s':''}</span>
+<span style="color:var(--text-muted)">Collected: <strong style="color:var(--olive-dark)">${SYM}${money(totalColl)}</strong> / Owed: <strong style="color:var(--olive-dark)">${SYM}${money(totalOwed)}</strong></span>
+</div>`;
+}
+
+window.toggleOwingOnly = function() {
+owingOnly = !owingOnly;
+document.getElementById('filter-owing').classList.toggle('active', owingOnly);
+renderGuestSummary();
+};
+
+window.openGuestPayment = function(gid, presetActId) {
+modalMode = 'guestPayment';
+const g = guests.find(x=>x.id===gid);
+if (!g) return;
+paymentDraftLog = paymentLogOf(g); // edited in memory, committed on Save
+const modal = document.getElementById('modal');
+modal.dataset.gid = gid;
+modal.dataset.presetAct = presetActId || '';
+document.getElementById('modal-title').textContent = `Payment — ${g.first} ${g.last}`;
+
+const actRows = (g.activities||[]).map(r => {
+const a = activities.find(x=>x.id===r.id);
+const owesStr = a && !a.priceTbd ? SYM+(a.price*r.spots) : 'TBD';
+return `<div style="display:flex;justify-content:space-between;font-size:0.84rem;padding:4px 0;border-bottom:0.5px solid var(--sand-dark)">
+<span style="color:var(--text)">${esc(a?a.name:r.id)}${r.spots>1?' ×'+r.spots:''}</span>
+<span style="color:var(--olive-dark);font-weight:500">${owesStr} ${CODE}</span>
+</div>`;
+}).join('');
+const totalOwed = guestTotals(g).owed;
+
+document.getElementById('modal-body').innerHTML = `
+<div style="background:var(--olive-pale);border-radius:var(--radius);padding:0.85rem 1rem;margin-bottom:1.25rem">
+${actRows}
+<div style="display:flex;justify-content:space-between;font-size:0.9rem;font-weight:500;padding-top:8px;margin-top:2px;color:var(--olive-dark)">
+<span>Total owed</span><span>${SYM}${money(totalOwed)} ${CODE}</span>
+</div>
+</div>
+<div class="dep-modal-section" style="border-top:none;margin-top:0;padding-top:0">
+<h4>Payment history</h4>
+<div id="pay-log"></div>
+</div>
+<div class="dep-modal-section">
+<h4>Record a payment</h4>
+<button type="button" id="pay-fill-btn" class="secondary-btn" style="margin:0 0 1rem;min-height:46px" onclick="fillBalance()">Pay remaining balance</button>
+<div class="row">
+<div class="field"><label>Amount (${CODE})</label><input id="pay-amount" type="number" inputmode="decimal" placeholder="0"/></div>
+<div class="field"><label>Date received</label><input id="pay-date" type="date" value="${todayISO()}"/></div>
+</div>
+<div class="row">
+<div class="field"><label>Method</label>
+<select id="pay-method"><option value="">—</option>${['Cash','Bank transfer','e-Transfer','Card','PayPal','Other'].map(m=>`<option>${m}</option>`).join('')}</select>
+</div>
+<div class="field"><label>Applies to</label>
+<select id="pay-act"><option value="">All activities</option>${(g.activities||[]).map(r=>{
+const a = activities.find(x=>x.id===r.id);
+return `<option value="${esc(r.id)}"${presetActId===r.id?' selected':''}>${esc(a?a.name:r.id)}</option>`;
+}).join('')}</select>
+</div>
+</div>
+<div class="field"><label>Notes</label><input id="pay-notes" placeholder="Optional — e.g. first instalment"/></div>
+<p style="font-size:0.78rem;color:var(--text-muted)">Leave the amount blank to save without adding a payment.</p>
+</div>`;
+renderPayLog(g);
+resetModalSaveBtn();
+document.getElementById('modal-overlay').classList.add('open');
+};
+
+function renderPayLog(g) {
+const el = document.getElementById('pay-log');
+if (!el) return;
+const owed = guestTotals(g).owed;
+const collected = paymentDraftLog.reduce((s,e) => s + (parseFloat(e.amount)||0), 0);
+const balance = Math.round((owed - collected)*100)/100;
+const rows = paymentDraftLog.map((e,i) => {
+const a = e.actId ? activities.find(x=>x.id===e.actId) : null;
+const scope = a ? esc(a.name) : 'all activities';
+return `<div style="display:flex;align-items:flex-start;gap:0.5rem;padding:0.5rem 0;border-bottom:0.5px solid var(--sand-dark)">
+<div style="flex:1;min-width:0">
+<div style="font-size:0.86rem;font-weight:500;color:var(--text)">${SYM}${money(e.amount)} ${CODE}
+<span style="font-weight:400;color:var(--text-muted)">&middot; ${esc(e.date||'no date')}</span></div>
+<div style="font-size:0.76rem;color:var(--text-muted)">${esc(e.method||'—')} &middot; ${scope}${e.notes?' &middot; '+esc(e.notes):''}</div>
+</div>
+<button class="icon-btn" title="Delete this payment" onclick="delPayEntry(${i})">✕</button>
+</div>`;
+}).join('');
+el.innerHTML = (rows || '<p style="font-size:0.82rem;color:var(--text-muted);font-style:italic;padding:0.25rem 0 0.5rem">No payments recorded yet.</p>') + `
+<div style="display:flex;justify-content:space-between;font-size:0.85rem;padding-top:0.6rem;color:var(--text-muted)">
+<span>Collected</span><strong style="color:var(--olive-dark)">${SYM}${money(collected)} ${CODE}</strong></div>
+<div style="display:flex;justify-content:space-between;font-size:0.85rem;padding-top:2px;color:var(--text-muted)">
+<span>Balance</span><strong style="color:${balance>0?'var(--accent)':'#1e6b3a'}">${SYM}${money(balance>0?balance:0)} ${CODE}</strong></div>`;
+// Keep the one-tap button in sync with the live balance (it changes as entries are deleted).
+const fill = document.getElementById('pay-fill-btn');
+if (fill) {
+fill.textContent = balance > 0 ? `Pay remaining balance — ${SYM}${money(balance)}` : 'Nothing left to pay';
+fill.disabled = balance <= 0;
+fill.style.opacity = balance > 0 ? '1' : '0.5';
+}
+}
+// One tap to collect the rest in cash: fills the amount, you just press Save.
+window.fillBalance = function() {
+const g = guests.find(x=>x.id===document.getElementById('modal').dataset.gid);
+if (!g) return;
+const collected = paymentDraftLog.reduce((s,e) => s + (parseFloat(e.amount)||0), 0);
+const balance = Math.round((guestTotals(g).owed - collected)*100)/100;
+if (balance <= 0) return;
+document.getElementById('pay-amount').value = balance;
+document.getElementById('pay-act').value = ''; // spread across everything still outstanding
+};
+window.delPayEntry = function(i) {
+const g = guests.find(x=>x.id===document.getElementById('modal').dataset.gid);
+if (!g) return;
+paymentDraftLog.splice(i, 1);
+renderPayLog(g); // takes effect in the database once you press Save
+};
+
+function renderStats() {
+const totalG = guests.length;
+const totalS = guests.reduce((s,g) => s+(g.activities||[]).reduce((ss,a) => ss+a.spots, 0), 0);
+const owed = guests.reduce((s,g) => s+guestTotals(g).owed, 0);
+const coll = guests.reduce((s,g) => s+guestTotals(g).collected, 0);
+document.getElementById('stats-row').innerHTML=`
+<div class="stat"><div class="stat-num">${totalG}</div><div class="stat-lbl">Guests</div></div>
+<div class="stat"><div class="stat-num">${totalS}</div><div class="stat-lbl">Spots</div></div>
+<div class="stat"><div class="stat-num">${SYM}${money(coll)}</div><div class="stat-lbl">Collected</div></div>
+<div class="stat"><div class="stat-num">${SYM}${money(owed)}</div><div class="stat-lbl">Total owed</div></div>`;
+}
+
+function renderFilters() {
+const chips = [{val:'all',lbl:'All'},...sortedActivities().map(a=>({val:a.id,lbl:a.name})),{val:'unpaid',lbl:'Missing payment'}];
+document.getElementById('filter-row').innerHTML = chips.map(c => {
+const on = (c.val==='unpaid'&&filterDep==='unpaid')||(c.val!=='unpaid'&&filterAct===c.val&&filterDep!=='unpaid');
+return `<button class="chip${on?' active':''}" onclick="setFilter('${c.val}')">${c.lbl}</button>`;
+}).join('');
+}
+window.setFilter = function(val) {
+if (val==='all') { filterAct='all'; filterDep='all'; }
+else if (val==='unpaid') { filterDep='unpaid'; filterAct='all'; }
+else { filterAct=val; filterDep='all'; }
+renderFilters(); renderBlocks();
+};
+
+// Inline − / + control for a guest's spot count in one activity.
+function spotStepper(g, a, spots) {
+const free = Math.max(0, a.capacity - spotsForActivity(a.id, null));
+return `<div class="spot-step" onclick="event.stopPropagation()">
+<button onclick="chGuestSpots('${g.id}','${a.id}',-1)" ${spots<=1?'disabled':''} aria-label="Remove a spot">−</button>
+<span class="spot-step-val">${spots}</span>
+<button onclick="chGuestSpots('${g.id}','${a.id}',1)" ${free<=0?'disabled':''} aria-label="Add a spot">+</button>
+</div>`;
+}
+
+// Changing spots changes what the guest owes, so the payment log gets re-spread over the
+// new amount. Going below 1 is a removal — that stays behind the ✕ and its confirm.
+window.chGuestSpots = async function(gid, aid, delta) {
+const g = guests.find(x=>x.id===gid);
+const a = activities.find(x=>x.id===aid);
+if (!g || !a) return;
+const r = (g.activities||[]).find(x=>x.id===aid);
+if (!r) return;
+const next = r.spots + delta;
+if (next < 1) { toast('Use ✕ to remove this guest'); return; }
+const free = a.capacity - spotsForActivity(aid, gid);
+if (next > free) { toast(`Only ${Math.max(0,free)} spot${free!==1?'s':''} available`); return; }
+r.spots = next;
+applyPaymentLog(g, paymentLogOf(g));
+try {
+await saveWithTimeout(saveGuest(g));
+toast(`${g.first} — ${next} spot${next!==1?'s':''}`);
+} catch(e) {
+toast('Could not save. Check your connection.');
+}
+renderBlocks(); renderStats(); renderGuestSummary();
+};
+
+// One guest's payment state for a single activity — shared by the table and the card layout.
+function actRowState(g, a) {
+const r = (g.activities||[]).find(x=>x.id===a.id);
+const spots = r ? r.spots : 1;
+const d = (g.payments||{})[a.id] || {};
+const rowOwed = a.priceTbd ? 0 : a.price*spots;
+const amt = actPaidAmount(g, a.id);
+// Partial payments show as "Partial" rather than being rounded up to Paid.
+const cls = rowOwed<=0 ? (amt>0||d.paid?'paid':'unpaid')
+: amt<=0 ? 'unpaid' : amt>=rowOwed-0.005 ? 'paid' : 'partial';
+return {spots, d, rowOwed, amt, cls,
+owesStr: a.priceTbd ? 'TBD' : SYM+rowOwed,
+lbl: cls==='paid'?'Paid':cls==='partial'?'Partial':'Unpaid'};
+}
+
+// Phone layout for the By-activity tab: two lines per guest instead of eight columns.
+function actGuestCards(a, gl) {
+return gl.map(g => {
+const s = actRowState(g, a);
+const meta = [s.owesStr, s.d.method||null,
+s.d.date ? `<span style="white-space:nowrap">${esc(s.d.date)}</span>` : null]
+.filter(Boolean).join(' &middot; ');
+return `<div class="acard">
+<div style="min-width:0">
+<div class="acard-name">${esc(g.first)} ${esc(g.last)}</div>
+<div class="acard-sub">${meta}</div>
+${s.d.notes?`<div class="acard-sub" style="font-style:italic">${esc(s.d.notes)}</div>`:''}
+${spotStepper(g, a, s.spots)}<span class="spot-step-lbl"> spot${s.spots!==1?'s':''}</span>
+</div>
+<div class="acard-right">
+<span class="dep-badge ${s.cls}">${s.lbl}${s.amt>0?' — $'+money(s.amt):''}</span>
+<div class="acard-actions">
+<button class="add-btn sm" onclick="openGuestPayment('${g.id}','${a.id}')">Payment</button>
+<button class="icon-btn" onclick="removeFromAct('${g.id}','${a.id}')">✕</button>
+</div>
+</div>
+</div>`;
+}).join('');
+}
+
+function renderBlocks() {
+const q = (document.getElementById('search-input')?.value||'').toLowerCase();
+const show = filterAct==='all' ? sortedActivities() : sortedActivities().filter(a=>a.id===filterAct);
+document.getElementById('act-blocks').innerHTML = show.map(a => {
+const taken = spotsForActivity(a.id, null);
+const free = Math.max(0, a.capacity - taken);
+let gl = guests.filter(g => (g.activities||[]).some(x=>x.id===a.id));
+if (q) gl = gl.filter(g => `${g.first} ${g.last} ${g.email}`.toLowerCase().includes(q));
+// "Missing payment" now also catches guests who have only paid part of this activity.
+if (filterDep==='unpaid') gl = gl.filter(g => !(g.payments||{})[a.id]?.paid);
+const paidC = guests.filter(g => (g.activities||[]).some(x=>x.id===a.id) && (g.payments||{})[a.id]?.paid).length;
+const actOwed = guests.reduce((s,g) => { const r=(g.activities||[]).find(x=>x.id===a.id); return s+(r&&!a.priceTbd?a.price*r.spots:0); }, 0);
+const actColl = guests.reduce((s,g) => s + actPaidAmount(g, a.id), 0);
+return `<div class="activity-section">
+<div class="act-head" onclick="toggleSec('s-${a.id}')">
+<h4>${a.name} <span style="font-size:0.78rem;font-weight:400;color:var(--text-muted)">&middot; ${a.date}</span></h4>
+<div class="badges">
+<span class="badge badge-olive">${taken}/${a.capacity} &middot; ${free} left</span>
+<span class="badge badge-green">${paidC} paid</span>
+${!a.priceTbd&&a.price>0?`<span class="badge badge-accent">${SYM}${money(actColl)}/${SYM}${actOwed}</span>`:''}
+</div>
+</div>
+<div id="s-${a.id}"${collapsedActs.has('s-'+a.id)?' style="display:none"':''}>
+${gl.length===0?'<p style="padding:1rem;font-size:0.85rem;color:var(--text-muted);font-style:italic">No guests found.</p>'
+:(isMobile() ? actGuestCards(a, gl) : `<div class="table-scroll"><table class="gtable"><thead><tr><th>Name</th><th>Spots</th><th>Owes</th><th>Payment</th><th>Method</th><th>Date</th><th>Notes</th><th></th></tr></thead><tbody>
+${gl.map(g => {
+const s = actRowState(g, a);
+return `<tr>
+<td style="font-weight:500;white-space:nowrap">${g.first} ${g.last}</td>
+<td>${spotStepper(g, a, s.spots)}</td>
+<td style="font-weight:500;color:var(--olive-dark)">${s.owesStr}</td>
+<td><span class="dep-badge ${s.cls}">${s.lbl}${s.amt>0?' — $'+money(s.amt):''}</span></td>
+<td style="color:var(--text-muted)">${s.d.method||'—'}</td>
+<td style="color:var(--text-muted);white-space:nowrap">${s.d.date||'—'}</td>
+<td style="color:var(--text-muted);max-width:100px;font-size:0.76rem">${s.d.notes||'—'}</td>
+<td style="white-space:nowrap">
+<button class="add-btn sm" onclick="openGuestPayment('${g.id}','${a.id}')">Payment</button>
+<button class="icon-btn" onclick="removeFromAct('${g.id}','${a.id}')">✕</button>
+</td>
+</tr>`;
+}).join('')}
+</tbody></table></div>`)
++ (!a.priceTbd&&a.price>0?`<div class="owing-row"><span>Activity total</span><strong>${SYM}${money(actColl)} collected of ${SYM}${actOwed} owed</strong></div>`:'')
+}
+</div>
+</div>`;
+}).join('');
+}
+// Expose to global scope so inline oninput="renderBlocks()" handler can reach it → enables live search on the By-activity tab.
+window.renderBlocks = renderBlocks;
+// Tracked rather than read off the DOM, so collapsing survives a re-render.
+const collapsedActs = new Set();
+window.toggleSec = function(id) {
+const el = document.getElementById(id);
+const collapse = el.style.display !== 'none';
+el.style.display = collapse ? 'none' : '';
+if (collapse) collapsedActs.add(id); else collapsedActs.delete(id);
+};
+
+// ── activity management with drag-to-reorder ─────────────────
+let dragSrcId = null;
+
+// "Paid, amount not typed yet" is a UI state with no home in the data: an activity
+// stored with price 0 is indistinguishable from a free one. Without this, picking Paid
+// on a TBD activity re-rendered as Free with the price input hidden — the amount could
+// never be entered. Holding the id here keeps the input on screen until a price lands.
+const awaitingPrice = new Set();
+function isPaidMode(a) { return !a.priceTbd && ((a.price||0) > 0 || awaitingPrice.has(a.id)); }
+function isFreeMode(a) { return !a.priceTbd && !isPaidMode(a); }
+
+// Changing a price rewrites what every booked guest owes, so their payment spread and
+// paid flags have to be recomputed. Otherwise someone who put money against a TBD
+// activity keeps a "paid" flag that was set when the activity cost nothing, and any
+// untagged credit stays spread across the old prices.
+async function repriceGuests(actId) {
+const affected = guests.filter(g => (g.activities||[]).some(x => x.id === actId));
+if (!affected.length) return 0;
+await Promise.all(affected.map(g => { applyPaymentLog(g, paymentLogOf(g)); return saveGuest(g); }));
+return affected.length;
+}
+function repriceToast(n, base) {
+toast(n ? `${base} — ${n} guest${n!==1?'s':''} updated` : base);
+}
+
+// Phone layout: one card per activity with full-width labelled fields. Drag-to-reorder
+// fights the page scroll on touch, so ordering moves to ▲▼ buttons here.
+function renderMgmtCards() {
+const sorted = sortedActivities();
+const cards = sorted.map((a,i) => `<div class="mcard">
+<div class="mcard-head">
+<span class="mcard-title">${esc(a.name)}</span>
+<div class="mcard-ord">
+<button onclick="moveAct('${a.id}',-1)" ${i===0?'disabled':''} aria-label="Move up">▲</button>
+<button onclick="moveAct('${a.id}',1)" ${i===sorted.length-1?'disabled':''} aria-label="Move down">▼</button>
+<button class="danger" onclick="delAct('${a.id}')" aria-label="Delete activity">✕</button>
+</div>
+</div>
+<div class="field"><label>Name</label><input value="${esc(a.name)}" onchange="updAct('${a.id}','name',this.value)"/></div>
+<div class="field"><label>Date</label><input value="${esc(a.date)}" onchange="updAct('${a.id}','date',this.value)"/></div>
+<div class="row">
+<div class="field"><label>Capacity</label><input type="number" inputmode="numeric" value="${a.capacity}" onchange="updAct('${a.id}','capacity',parseInt(this.value)||0)"/></div>
+<div class="field"><label>Price</label>
+<select onchange="handlePriceType('${a.id}',this.value)">
+<option value="free" ${isFreeMode(a)?'selected':''}>Free</option>
+<option value="paid" ${isPaidMode(a)?'selected':''}>Paid</option>
+<option value="tbd" ${a.priceTbd?'selected':''}>TBD</option>
+</select>
+</div>
+</div>
+${isPaidMode(a)?`<div class="field"><label>Price per person (${CODE})</label>
+<input type="number" inputmode="decimal" id="price-${a.id}" value="${(a.price||0)>0?a.price:''}" placeholder="25" onchange="updAct('${a.id}','price',parseFloat(this.value)||0)"/></div>`:''}
+<button class="secondary-btn" style="margin-top:0.5rem;min-height:44px;font-size:0.85rem" onclick="copyRsvpLink('${a.id}')">Copy RSVP link</button>
+</div>`).join('');
+document.getElementById('mgmt-panel').innerHTML = cards + `<div class="mcard">
+<div class="mcard-head"><span class="mcard-title">Add new activity</span></div>
+<div class="field"><label>Name</label><input id="nn" placeholder="Sunset hike"/></div>
+<div class="field"><label>Date</label><input id="nd" placeholder="August 1"/></div>
+<div class="row">
+<div class="field"><label>Capacity</label><input id="nc" type="number" inputmode="numeric" placeholder="20"/></div>
+<div class="field"><label>Price</label>
+<select id="np-type" onchange="toggleNewPrice()">
+<option value="free">Free</option><option value="paid">Paid</option><option value="tbd">TBD</option>
+</select>
+</div>
+</div>
+<div class="field" id="np-wrap" style="display:none"><label>Price per person (${CODE})</label><input id="np" type="number" inputmode="decimal" placeholder="25"/></div>
+<button class="submit-btn" style="margin-top:0.25rem;min-height:46px" onclick="addAct()">Add activity</button>
+</div>`;
+}
+
+// Shift one activity up or down and renumber the whole list.
+window.moveAct = async function(id, dir) {
+const sorted = sortedActivities();
+const i = sorted.findIndex(a=>a.id===id);
+const j = i + dir;
+if (i<0 || j<0 || j>=sorted.length) return;
+[sorted[i], sorted[j]] = [sorted[j], sorted[i]];
+await Promise.all(sorted.map((a,k) => { a.order = k; return saveActivity(a); }));
+renderMgmt();
+toast('Order saved');
+};
+
+function renderMgmt() {
+if (isMobile()) { renderMgmtCards(); return; }
+const sorted = sortedActivities();
+document.getElementById('mgmt-panel').innerHTML=`<div class="mgmt-card">
+<div style="display:grid;grid-template-columns:28px 1.8fr 1fr 60px 80px 32px;gap:0.35rem;padding:0.25rem 0 0.5rem;font-size:0.68rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);font-weight:500;border-bottom:0.5px solid var(--sand-dark)">
+<span></span><span>Name</span><span>Date</span><span>Cap</span><span>Price</span><span></span>
+</div>
+${sorted.map(a=>`<div class="mgmt-row" id="mgmt-${a.id}" draggable="true"
+ondragstart="dragStart('${a.id}')"
+ondragover="dragOver(event,'${a.id}')"
+ondrop="dragDrop(event,'${a.id}')"
+ondragend="dragEnd()">
+<span class="drag-handle" title="Drag to reorder">⠿</span>
+<input value="${a.name}" onchange="updAct('${a.id}','name',this.value)"/>
+<input value="${a.date}" onchange="updAct('${a.id}','date',this.value)"/>
+<input type="number" value="${a.capacity}" onchange="updAct('${a.id}','capacity',parseInt(this.value)||0)"/>
+<select onchange="handlePriceType('${a.id}',this.value)">
+<option value="free" ${isFreeMode(a)?'selected':''}>Free</option>
+<option value="paid" ${isPaidMode(a)?'selected':''}>${SYM} ${(a.price||0)>0?a.price:''}</option>
+<option value="tbd" ${a.priceTbd?'selected':''}>TBD</option>
+</select>
+<button class="icon-btn" onclick="delAct('${a.id}')">✕</button>
+</div>
+${isPaidMode(a)?`<div style="padding:0.2rem 0 0.4rem;display:flex;align-items:center;gap:0.4rem;font-size:0.8rem;color:var(--text-muted)">
+<span style="padding-left:28px">Price: ${SYM}</span>
+<input type="number" id="price-${a.id}" value="${(a.price||0)>0?a.price:''}" placeholder="25" style="width:80px;padding:0.25rem 0.4rem;border:0.5px solid var(--sand-dark);border-radius:5px;font-size:0.82rem" onchange="updAct('${a.id}','price',parseFloat(this.value)||0)"/>
+<span>${CODE} / person</span>
+</div>`:''}
+<div style="padding:0.15rem 0 0.5rem 28px;border-bottom:0.5px solid var(--sand-dark)">
+<button class="export-btn" style="font-size:0.76rem;padding:0.3rem 0.7rem" onclick="copyRsvpLink('${a.id}')">Copy RSVP link</button>
+</div>
+`).join('')}
+<div style="padding-top:0.75rem;font-size:0.8rem;font-weight:500;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.4rem">Add new activity</div>
+<div class="new-row">
+<input id="nn" placeholder="Name" style="flex:2"/>
+<input id="nd" placeholder="Date"/>
+<input id="nc" type="number" placeholder="Cap" style="max-width:70px"/>
+<select id="np-type" style="max-width:90px" onchange="toggleNewPrice()">
+<option value="free">Free</option>
+<option value="paid">Paid ${SYM}</option>
+<option value="tbd">TBD</option>
+</select>
+<input id="np" type="number" placeholder="${SYM} price" style="max-width:80px;display:none"/>
+<button class="add-btn sm" onclick="addAct()">Add</button>
+</div>
+</div>`;
+}
+
+// Built from wherever this page is loaded, so there's nothing to hardcode — but that also
+// means a link copied from a local file:// copy only works on this Mac.
+function rsvpLinkFor(id) {
+return guestLink() + '&a=' + encodeURIComponent(id);
+}
+window.copyRsvpLink = async function(id) {
+const url = rsvpLinkFor(id);
+if (location.protocol === 'file:') {
+prompt('This copy is running from a local file, so the link below only works on this computer. Open the hosted version to get a shareable link.', url);
+return;
+}
+try { await navigator.clipboard.writeText(url); toast('RSVP link copied'); }
+catch(e) { prompt('Copy this RSVP link:', url); }
+};
+
+// ── event settings ────────────────────────────────────────────
+function guestLink() {
+return location.href.split(/[?#]/)[0] + '?e=' + encodeURIComponent(EID);
+}
+window.copyGuestLink = async function() {
+const url = guestLink();
+if (location.protocol === 'file:') { prompt('This copy is running from a local file, so the link only works on this computer.', url); return; }
+try { await navigator.clipboard.writeText(url); toast('Guest link copied'); }
+catch(e) { prompt('Copy this guest link:', url); }
+};
+function renderEventPanel() {
+const e = EVENT;
+document.getElementById('event-panel').innerHTML = `
+<div class="mcard">
+<div class="mcard-head"><span class="mcard-title">Share</span></div>
+<div class="field"><label>Guest link</label>
+<div class="link-box"><input readonly value="${esc(guestLink())}" onclick="this.select()"/><button class="add-btn sm" onclick="copyGuestLink()">Copy</button></div>
+<div class="field-hint">Each activity also has its own link, under Edit activities. Trial version: links only work in this browser.</div>
+</div>
+</div>
+<div class="mcard">
+<div class="mcard-head"><span class="mcard-title">Event details</span></div>
+<div class="field"><label>Event name</label><input id="es-name" value="${esc(e.name)}"/></div>
+<div class="field"><label>Organised by</label><input id="es-hosts" value="${esc(e.hosts)}" placeholder="Sam &amp; Jo"/>
+<div class="field-hint">Shown at the top, and named when guests need to contact someone.</div></div>
+<div class="row">
+<div class="field"><label>Dates</label><input id="es-dates" value="${esc(e.dates)}"/></div>
+<div class="field"><label>Place</label><input id="es-place" value="${esc(e.place)}"/></div>
+</div>
+<div class="field"><label>Currency</label><select id="es-currency">${Object.keys(CURRENCIES).map(c => `<option value="${c}"${c===CODE?' selected':''}>${c} (${CURRENCIES[c]})</option>`).join('')}</select>
+<div class="field-hint">Changes the label only — prices are not converted.</div></div>
+<div class="field"><label>Welcome text</label><textarea id="es-intro" rows="3">${esc(e.intro || DEFAULT_INTRO)}</textarea></div>
+<div class="field"><label>Payment instructions</label><textarea id="es-payment" rows="4" placeholder="e.g. Send an e-Transfer to sam@example.com with your name in the message. Cash on the day is fine too.">${esc(e.payment)}</textarea>
+<div class="field-hint">Shown under the sign-up form. Leave empty if there's nothing to pay.</div></div>
+<div class="field"><label>Closing line</label><input id="es-signoff" value="${esc(e.signoff)}" placeholder="${esc(DEFAULT_SIGNOFF)}"/>
+<div class="field-hint">Ends the confirmation messages, e.g. "See you at the lake."</div></div>
+<div class="field"><label>New admin password</label><input id="es-pw" type="password" autocomplete="new-password" placeholder="Leave empty to keep the current one"/></div>
+<button class="submit-btn" id="es-save" onclick="saveEventSettings()">Save event details</button>
+</div>
+<div class="mcard">
+<div class="mcard-head"><span class="mcard-title">More</span></div>
+<a class="secondary-btn" href="${esc(location.pathname)}" style="display:block;text-align:center;text-decoration:none;margin-top:0">All my events</a>
+<button class="danger-btn" onclick="deleteEvent()">Delete this event</button>
+</div>`;
+}
+window.saveEventSettings = async function() {
+const name = document.getElementById('es-name').value.trim();
+if (!name) { alert('The event needs a name.'); return; }
+const pw = document.getElementById('es-pw').value;
+if (pw && pw.length < 4) { alert('Choose a password of at least 4 characters.'); return; }
+const meta = {...EVENT,
+name, hosts: document.getElementById('es-hosts').value.trim(),
+dates: document.getElementById('es-dates').value.trim(),
+place: document.getElementById('es-place').value.trim(),
+currency: document.getElementById('es-currency').value,
+intro: document.getElementById('es-intro').value.trim(),
+payment: document.getElementById('es-payment').value.trim(),
+signoff: document.getElementById('es-signoff').value.trim()
+};
+if (pw) meta.pwHash = hashPw(pw);
+try { await set(ref(db, 'meta'), meta); toast('Event details saved'); }
+catch(e) { alert('Could not save. This browser may be blocking saved data.'); }
+};
+window.deleteEvent = async function() {
+const n = guests.length;
+if (!confirm(`Delete "${EVENT.name}"${n ? ` and its ${n} guest${n!==1?'s':''}` : ''}? This can't be undone.`)) return;
+try { await remove(rootRef('events/' + EID)); }
+catch(e) { alert('Could not delete. Try again.'); return; }
+location.href = location.pathname;
+};
+
+window.toggleNewPrice = function() {
+const t = document.getElementById('np-type').value;
+// Desktop shows the bare input inline; the card layout wraps it in a labelled field.
+const wrap = document.getElementById('np-wrap') || document.getElementById('np');
+wrap.style.display = t==='paid' ? 'block' : 'none';
+};
+window.handlePriceType = async function(id, val) {
+const a = activities.find(x=>x.id===id);
+if (!a) return;
+if (val==='tbd') { a.priceTbd=true; a.price=0; awaitingPrice.delete(id); }
+if (val==='free') { a.priceTbd=false; a.price=0; awaitingPrice.delete(id); }
+// Keep whatever price was there before — switching Paid → TBD → Paid shouldn't wipe it.
+if (val==='paid') { a.priceTbd=false; awaitingPrice.add(id); }
+await saveActivity(a);
+// Free and TBD both zero the price, so anyone booked on it needs their totals redone.
+const n = val==='paid' ? 0 : await repriceGuests(id);
+renderMgmt();
+// Straight to the amount field, since picking Paid is only half the job.
+if (val==='paid') {
+const input = document.getElementById('price-'+id);
+if (input) { input.focus(); input.select(); }
+}
+repriceToast(n, val==='paid' ? 'Enter the price per person' : 'Activity updated');
+if (n) renderAdmin();
+};
+
+window.dragStart = function(id) { dragSrcId = id; };
+window.dragOver = function(e, id) {
+e.preventDefault();
+document.querySelectorAll('.mgmt-row').forEach(r => r.classList.remove('drag-over'));
+if (id !== dragSrcId) document.getElementById('mgmt-'+id)?.classList.add('drag-over');
+};
+window.dragDrop = async function(e, targetId) {
+e.preventDefault();
+document.querySelectorAll('.mgmt-row').forEach(r => r.classList.remove('drag-over'));
+if (!dragSrcId || dragSrcId === targetId) return;
+const sorted = sortedActivities();
+const srcIdx = sorted.findIndex(a=>a.id===dragSrcId);
+const tgtIdx = sorted.findIndex(a=>a.id===targetId);
+const reordered = [...sorted];
+const [moved] = reordered.splice(srcIdx, 1);
+reordered.splice(tgtIdx, 0, moved);
+const saves = reordered.map((a, i) => { a.order = i; return saveActivity(a); });
+await Promise.all(saves);
+renderMgmt();
+toast('Order saved');
+};
+window.dragEnd = function() {
+document.querySelectorAll('.mgmt-row').forEach(r => r.classList.remove('drag-over'));
+dragSrcId = null;
+};
+
+window.updAct = async function(id, field, val) {
+const a = activities.find(x=>x.id===id);
+if (!a) return;
+a[field] = field==='capacity'?parseInt(val)||0:field==='price'?parseFloat(val)||0:val;
+if (field==='price') {
+// A real amount settles the pending state; 0 keeps the input up rather than silently
+// dropping back to Free, so a mistyped price can be corrected in place.
+if (a.price > 0) { a.priceTbd = false; awaitingPrice.delete(id); }
+else awaitingPrice.add(id);
+}
+await saveActivity(a);
+if (field!=='price') { toast('Saved'); return; }
+// Push the new price through to everyone already booked on this activity.
+const n = await repriceGuests(id);
+repriceToast(n, 'Price saved');
+renderMgmt();
+if (n) renderAdmin();
+};
+window.delAct = async function(id) {
+if (!confirm('Remove this activity?')) return;
+await deleteActivityFromDb(id);
+toast('Activity removed');
+};
+window.addAct = async function() {
+const name = document.getElementById('nn').value.trim();
+if (!name) return;
+const priceType = document.getElementById('np-type').value;
+const sorted = sortedActivities();
+const a = {
+id: 'a'+Date.now(), name,
+date: document.getElementById('nd').value.trim(),
+capacity: parseInt(document.getElementById('nc').value)||20,
+price: priceType==='paid' ? parseFloat(document.getElementById('np').value)||0 : 0,
+priceTbd: priceType==='tbd',
+order: sorted.length
+};
+await saveActivity(a);
+toast('Activity added');
+renderMgmt();
+};
+
+// ── admin: edit which activities a guest is booked on ─────────
+// The By-activity tab can only nudge or remove what a guest already has — this is the
+// one place an admin can put an existing guest onto a new activity. The paid-activity
+// locks from the guest-facing form are advisory here: an admin gets a warning that
+// explains where the money goes, not a disabled checkbox.
+let gaSpots = {};
+
+window.openGuestActivities = function(gid) {
+const g = guests.find(x => x.id === gid);
+if (!g) return;
+modalMode = 'guestActivities';
+const modal = document.getElementById('modal');
+modal.dataset.gid = gid;
+document.getElementById('modal-title').textContent = `Activities — ${g.first} ${g.last}`;
+// Unticked activities keep a count of 1 ready, so ticking one is a single click.
+gaSpots = {};
+sortedActivities().forEach(a => {
+const r = (g.activities||[]).find(x => x.id === a.id);
+gaSpots[a.id] = r ? r.spots : 1;
+});
+document.getElementById('modal-body').innerHTML = `
+<p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:0.75rem">Tick what this guest is taking and set the spots for each.</p>
+<div id="ga-rows">${gaRows(g)}</div>
+<div id="ga-summary"></div>`;
+updateGaSummary();
+resetModalSaveBtn();
+document.getElementById('modal-overlay').classList.add('open');
+};
+
+function gaRows(g) {
+return sortedActivities().map(a => {
+const on = (g.activities||[]).some(x => x.id === a.id);
+const free = Math.max(0, a.capacity - spotsForActivity(a.id, g.id));
+const meta = [priceLabelPlain(a), `${free} of ${a.capacity} free`,
+actIsPaid(g, a.id) ? '<span class="ga-lock">has payment</span>' : null].filter(Boolean).join(' &middot; ');
+return `<div class="ga-row${on?' selected':''}" id="ga-row-${a.id}">
+<input type="checkbox" id="ga-cb-${a.id}" ${on?'checked':''} onchange="toggleGaAct('${a.id}')" aria-label="${esc(a.name)}">
+<div class="ga-main">
+<div class="ga-name">${esc(a.name)}</div>
+<div class="ga-meta">${meta}</div>
+</div>
+<div class="spot-step" id="ga-step-${a.id}"${on?'':' style="visibility:hidden"'}>
+<button type="button" onclick="chGaSpots('${a.id}',-1)" aria-label="Fewer spots">−</button>
+<span class="spot-step-val" id="ga-val-${a.id}">${gaSpots[a.id]}</span>
+<button type="button" onclick="chGaSpots('${a.id}',1)" aria-label="More spots">+</button>
+</div>
+</div>`;
+}).join('');
+}
+
+window.toggleGaAct = function(aid) {
+const on = document.getElementById('ga-cb-'+aid).checked;
+document.getElementById('ga-row-'+aid).classList.toggle('selected', on);
+document.getElementById('ga-step-'+aid).style.visibility = on ? '' : 'hidden';
+updateGaSummary();
+};
+
+// Deliberately not clamped to capacity — an admin double-booking a table is a real
+// thing that happens. Going over is allowed but called out in the summary and confirmed
+// on save, so it can never happen silently.
+window.chGaSpots = function(aid, delta) {
+gaSpots[aid] = Math.max(1, (gaSpots[aid]||1) + delta);
+document.getElementById('ga-val-'+aid).textContent = gaSpots[aid];
+updateGaSummary();
+};
+
+// Which currently-booked activities the pending selection would drop, and of those,
+// which already have money on them. Shared by the live summary and the save guard.
+function gaDropped(g, newIds) {
+return (g.activities||[]).filter(r => !newIds.includes(r.id) && actIsPaid(g, r.id))
+.map(r => (activities.find(x => x.id === r.id)||{}).name || r.id);
+}
+function gaOverCap(g, sel) {
+return sel.filter(a => (gaSpots[a.id]||1) > Math.max(0, a.capacity - spotsForActivity(a.id, g.id)))
+.map(a => `${a.name} (${gaSpots[a.id]||1} of ${Math.max(0, a.capacity - spotsForActivity(a.id, g.id))})`);
+}
+
+function updateGaSummary() {
+const g = guests.find(x => x.id === document.getElementById('modal').dataset.gid);
+if (!g) return;
+const sel = sortedActivities().filter(a => document.getElementById('ga-cb-'+a.id)?.checked);
+const owed = sel.reduce((s,a) => s + (a.priceTbd ? 0 : (a.price||0) * (gaSpots[a.id]||1)), 0);
+const collected = guestTotals(g).collected;
+const balance = Math.round((owed - collected) * 100) / 100;
+const tbd = sel.some(a => a.priceTbd);
+const over = gaOverCap(g, sel);
+const dropped = gaDropped(g, sel.map(a => a.id));
+
+const notes = [];
+if (!sel.length) notes.push('Nothing selected. Keep at least one activity — to take this guest off the list altogether, remove them from their last activity on the By-activity tab.');
+if (over.length) notes.push(`Over capacity: ${esc(over.join(', '))}. You can still save — the activity will simply read as overbooked.`);
+if (dropped.length) notes.push(`${esc(dropped.join(', '))} already has money against it. Dropping it keeps that money on the guest as general credit, re-spread over whatever stays ticked.`);
+
+document.getElementById('ga-summary').innerHTML = `
+<div class="ga-summary">
+<div class="ga-sum-row"><span>Owed after changes</span><strong>${SYM}${money(owed)}${tbd?' + TBD':''}</strong></div>
+<div class="ga-sum-row"><span>Already collected</span><strong style="color:#1e6b3a">${SYM}${money(collected)}</strong></div>
+<div class="ga-sum-total"><span>${balance>=0?'Balance':'Credit'}</span><span style="color:${balance>0?'var(--accent)':'#1e6b3a'}">${SYM}${money(Math.abs(balance))}${tbd?' + TBD':''}</span></div>
+</div>
+${notes.map(t => `<div class="ga-note warn">${t}</div>`).join('')}`;
+}
+
+// ── modals ────────────────────────────────────────────────────
+window.openAddGuest = function() {
+modalMode = 'addGuest';
+document.getElementById('modal-title').textContent = 'Add guest manually';
+document.getElementById('modal-body').innerHTML=`
+<div class="row"><div class="field"><label>First name</label><input id="m-first"/></div><div class="field"><label>Last name</label><input id="m-last"/></div></div>
+<div class="field"><label>Email</label><input id="m-email" type="email" inputmode="email"/></div>
+<div class="field"><label>Phone</label><input id="m-phone" type="tel" inputmode="tel"/></div>
+<div class="field"><label>Activities & spots</label>
+${sortedActivities().map(a=>`<div style="display:flex;align-items:center;gap:0.75rem;padding:0.45rem 0;font-size:0.88rem;border-bottom:0.5px solid var(--sand-dark)">
+<input type="checkbox" value="${a.id}" class="m-act" id="ma-${a.id}" style="width:18px;height:18px">
+<label for="ma-${a.id}" style="flex:1">${a.name} <span style="color:var(--text-muted);font-size:0.78rem">${priceLabelPlain(a)}</span></label>
+<input type="number" min="1" value="1" id="ms-${a.id}" inputmode="numeric" style="width:55px;padding:0.3rem 0.4rem;border:0.5px solid var(--sand-dark);border-radius:5px;font-size:0.85rem">
+<span style="font-size:0.75rem;color:var(--text-muted)">spots</span>
+</div>`).join('')}
+</div>
+<div class="field"><label>Notes</label><textarea id="m-notes"></textarea></div>`;
+resetModalSaveBtn();
+document.getElementById('modal-overlay').classList.add('open');
+};
+
+// The modal's Save button lives outside the re-rendered body, so its state survives across
+// opens. Reset it every time a modal opens — a single stuck save can never strand it.
+function resetModalSaveBtn() {
+const btn = document.getElementById('modal').querySelector('.save-btn');
+if (btn) { btn.disabled = false; btn.textContent = 'Save'; }
+}
+
+window.saveModal = async function() {
+const saveBtn = document.getElementById('modal').querySelector('.save-btn');
+let pending = false;
+try {
+if (modalMode==='addGuest') {
+saveBtn.disabled = true; saveBtn.textContent = 'Saving...';
+const first = document.getElementById('m-first').value.trim();
+const last = document.getElementById('m-last').value.trim();
+if (!first||!last) { saveBtn.disabled=false; saveBtn.textContent='Save'; return; }
+const sel = Array.from(document.querySelectorAll('.m-act:checked')).map(c=>c.value);
+const g = {
+id:'g'+Date.now(), first, last,
+email: document.getElementById('m-email').value.trim(),
+phone: document.getElementById('m-phone').value.trim(),
+notes: document.getElementById('m-notes').value.trim(),
+activities: sel.map(id=>({id, spots:parseInt(document.getElementById('ms-'+id)?.value)||1})),
+payments:{}, registeredAt: new Date().toISOString()
+};
+sel.forEach(id=>{ g.payments[id]={paid:false,amount:'',method:'',date:'',notes:''}; });
+g.paymentLog = [];
+pending = (await saveWithTimeout(saveGuest(g))) === 'pending';
+toast(pending ? 'Guest added — syncing...' : 'Guest added');
+} else if (modalMode==='guestPayment') {
+saveBtn.disabled = true; saveBtn.textContent = 'Saving...';
+const g = guests.find(x=>x.id===document.getElementById('modal').dataset.gid);
+if (!g) { closeModal(); return; }
+const amount = parseFloat(document.getElementById('pay-amount').value) || 0;
+if (amount > 0) {
+paymentDraftLog.push({
+id: 'p'+Date.now(),
+amount: String(amount),
+date: document.getElementById('pay-date').value || todayISO(),
+method: document.getElementById('pay-method').value,
+notes: document.getElementById('pay-notes').value.trim(),
+actId: document.getElementById('pay-act').value,
+recordedAt: new Date().toISOString()
+});
+}
+applyPaymentLog(g, paymentDraftLog);
+pending = (await saveWithTimeout(saveGuest(g))) === 'pending';
+toast(pending ? 'Payment saved — syncing...' : 'Payment saved');
+} else if (modalMode==='guestActivities') {
+const g = guests.find(x=>x.id===document.getElementById('modal').dataset.gid);
+if (!g) { closeModal(); return; }
+const sel = sortedActivities().filter(a => document.getElementById('ga-cb-'+a.id)?.checked);
+// Clearing the list would orphan the guest, and deleting them is a different decision
+// than editing their activities — so that stays behind the ✕ on the By-activity tab.
+if (!sel.length) { alert('Keep at least one activity.\n\nTo take this guest off the list altogether, remove them from their last activity on the By-activity tab.'); return; }
+const newIds = sel.map(a => a.id);
+const dropped = gaDropped(g, newIds);
+if (dropped.length && !confirm(`${dropped.join(', ')} already has money recorded against it.\n\nDropping it keeps that money on this guest as general credit, re-spread over the activities that remain. Continue?`)) return;
+const over = gaOverCap(g, sel);
+if (over.length && !confirm(`This puts ${over.join(', ')} over capacity.\n\nSave anyway?`)) return;
+
+saveBtn.disabled = true; saveBtn.textContent = 'Saving...';
+// Read the log before touching g.payments: for a guest who predates the payment log,
+// paymentLogOf() reconstructs it from those very fields, so pruning them first would
+// throw away the money it needs to find.
+const log = paymentLogOf(g).map(e => newIds.includes(e.actId) ? e : {...e, actId:''});
+g.activities = sel.map(a => ({id:a.id, spots:gaSpots[a.id]||1}));
+if (!g.payments) g.payments = {};
+Object.keys(g.payments).forEach(aid => { if (!newIds.includes(aid)) delete g.payments[aid]; });
+newIds.forEach(aid => { if (!g.payments[aid]) g.payments[aid]={paid:false,amount:'',method:'',date:'',notes:''}; });
+applyPaymentLog(g, log);
+pending = (await saveWithTimeout(saveGuest(g))) === 'pending';
+toast(pending ? 'Activities updated — syncing...' : 'Activities updated');
+}
+closeModal(); renderAdmin();
+} catch(e) {
+alert('Could not save. Check your connection and try again.');
+} finally {
+// Always restore the button — otherwise it stays stuck on "Saving..." (disabled).
+saveBtn.disabled = false; saveBtn.textContent = 'Save';
+}
+};
+
+window.removeFromAct = async function(gid, aid) {
+if (!confirm('Remove this guest from the activity?')) return;
+const g = guests.find(x=>x.id===gid);
+g.activities = (g.activities||[]).filter(a=>a.id!==aid);
+if (g.payments) delete g.payments[aid];
+if (!g.activities.length) { await remove(ref(db,'guests/'+gid)); }
+else {
+// Money logged against the removed activity becomes general credit instead of disappearing.
+applyPaymentLog(g, paymentLogOf(g).map(e => e.actId===aid ? {...e, actId:''} : e));
+await saveWithTimeout(saveGuest(g));
+}
+toast('Removed'); renderAdmin();
+};
+
+window.closeModal = function() { document.getElementById('modal-overlay').classList.remove('open'); };
+window.closeOutside = function(e) { if (e.target===document.getElementById('modal-overlay')) closeModal(); };
+
+window.exportCSV = function() {
+const rows=[['Name','Email','Phone','Activity','Date','Spots','Owes ('+CODE+')','Payment paid','Amount received','Method','Payment date','Payment notes','Payment history','Registration notes','Registered at']];
+guests.forEach(g => {
+// Full instalment history, repeated on each of the guest's rows.
+const history = paymentLogOf(g).map(e => {
+const a = e.actId ? activities.find(x=>x.id===e.actId) : null;
+return `${e.date||'no date'}: ${SYM}${money(e.amount)}${e.method?' '+e.method:''}${a?' ('+a.name+')':''}${e.notes?' — '+e.notes:''}`;
+}).join(' | ');
+(g.activities||[]).forEach(r => {
+const a = activities.find(x=>x.id===r.id);
+const d = (g.payments||{})[r.id]||{};
+const owes = a && !a.priceTbd ? a.price*r.spots : 'TBD';
+rows.push([`${g.first} ${g.last}`,g.email,g.phone,a?a.name:r.id,a?a.date:'',r.spots,owes,d.paid?'Yes':'No',d.amount||'',d.method||'',d.date||'',d.notes||'',history,g.notes||'',g.registeredAt]);
+});
+});
+const csv = rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+const el = document.createElement('a');
+el.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+el.download = (slug(EVENT.name)||'activities') + '.csv'; el.click();
+};
+
+bootstrap();
+</script>
+</body>
+</html>

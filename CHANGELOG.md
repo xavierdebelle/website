@@ -5,6 +5,55 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v65 — 2026-10-02
+
+**What's new** · New tool · [tools.html#events]
+### Activity Planner
+The wedding activities app with the wedding taken out. Create an event, add
+its activities with dates, spots and prices, and share the link. Guests sign
+up, say how many are coming, and can come back to change it; you see who has
+paid and who still owes.
+
+- Each event has its own password, currency and payment instructions.
+- Every activity gets its own sign-up link.
+- Trial version: everything is saved in your browser only, so it is for
+  trying the flow, not yet for a real event.
+
+**Activity Planner v1 — `tools/activity-planner.html`, source `Tools files/Events/activity_planner_v1.html`**
+- Built from the embedded app in `agreco_wedding_activities_v20.html`
+  (the GoHighLevel page wrapper and Cloudflare scripts dropped). The
+  original is untouched and still runs the wedding.
+- Same logic throughout: capacity guards, find-by-email edit, paid
+  activities locked, payment log spread over activities, By activity
+  view, Edit activities, per-activity RSVP page, CSV export.
+- Storage: localStorage key `activity-planner/v1`, tree
+  `events/{id}/{meta,activities,guests}`, behind ref/get/set/remove/onValue
+  functions shaped like Firebase's so a shared database can replace them.
+  Notifications are synchronous, like Firebase's local events.
+- New: home page (create an event, list this browser's events), Event
+  settings tab (name, organiser, dates, place, currency, welcome text,
+  payment instructions, closing line, password, guest link, delete).
+  URLs: `?e=<event>`, `&admin=1` for the dashboard, `&a=<activity>`.
+- Password is hashed (non-cryptographic) per event; the session remembers
+  it after creation or sign-in. Not real security — noted in the code.
+- Fixed in the copy only: activity cards inherited `.field label` styles
+  (all caps, checkbox stacked above the name).
+- Neutral palette instead of the wedding navy; same fonts.
+
+**Scan**
+- Only placeholders flagged (example.com addresses, a 555 number). No
+  backend, no real contact or payment details.
+
+**Verified locally**
+- Created an event in EUR, added four activities (paid, free, TBD), set
+  payment text; guest sign-up with 2 spots, totals in €, find-by-email
+  with amount due; wrong password refused in a fresh session, right one
+  accepted; partial payment recorded; activity link shows correct spots
+  left; unknown event link shows "Event not found"; phone width has no
+  sideways scroll; deleting the event empties storage. No console errors.
+
+---
+
 ## v64 — 2026-09-29
 
 **What's new** · Project Phases · [tools/project-tracker.html]
