@@ -5,6 +5,54 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v68 — 2026-10-02
+
+**What's new** · Activity Planner · [tools/activity-planner.html]
+### Activity Planner goes online
+Events now live in a real database, so guests can sign up from their own
+phones. Organisers sign in with Google; guests never need an account.
+
+- Guests see the activities, the spots left and who's coming. Their email,
+  phone and payments stay private to the organiser.
+- A guest can still find and change their booking by typing their email.
+- Creating events is by invitation, like the synced tools.
+
+**Activity Planner v2 — `tools/activity-planner.html`, source `Tools files/Events/activity_planner_v2.html`**
+- Storage: Firebase xdb-tools through `assets/account.js` (site sign-in).
+  `events/{id}/meta|activities|roster|guests|pay` and `eventIndex/{uid}/{id}`.
+  Event id = 24 random hex chars; booking key = SHA-256(event id + email).
+- Public: meta, activities, roster (first, last, spots). Guests write their
+  own `guests/{k}` + `roster/{k}` (never delete, never `pay`). Organiser
+  (meta.owner) and Xavier read/write everything in the event. Paid amounts
+  per activity are derived from `pay/{k}/paymentLog` on load, never stored,
+  so guest edits can't touch money and repricing writes nothing.
+- Per-event password removed; the dashboard opens for the organiser's
+  Google account. Creating an event needs owner or member status.
+- v1 (browser-only) kept as `activity_planner_v1.html`; its browser data
+  does not carry over (it was a trial).
+
+**Rules** — `events` and `eventIndex` added to `firebase-rules.json`; mock
+mirror added to `harness/server.py`. The file also holds the potluck rules
+another session added today (v67) — the whole file is what to paste.
+
+**Tested on the mock** (two devices, real clicks for the guest side)
+- Signed out → sign-in prompt; stranger signs in → "Access requested",
+  request filed, no create form; not-organiser on a dashboard → refused.
+- Owner creates event, adds activities, sets payment text; index written.
+- Guest (signed out, other device) books → roster public, list of guests
+  and payments refused (401); organiser sees it live, records $30; guest
+  finds booking by email (any case) → paid, locked, $0 due; adds an
+  activity → saved, payment intact.
+- As a guest: fake payment, delete a booking, change event, add activity,
+  read an organiser's index → all refused.
+- Approved member creates and deletes their own event.
+
+**Outstanding**
+- Xavier: paste the full rules into Firebase → Realtime Database → Rules
+  → Publish. Until then the live planner can't create or load events.
+
+---
+
 ## v67 — 2026-10-02
 
 **What's new** · New tool · [tools.html#events]

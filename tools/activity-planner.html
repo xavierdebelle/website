@@ -4,6 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
 <title>Activity Planner</title>
+<script src="../assets/account.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=DM+Sans:wght@300;400;500&display=swap');
 *{box-sizing:border-box;margin:0;padding:0}
@@ -406,6 +407,9 @@ body.admin-mode .guest-summary-table thead th:last-child{border-top-right-radius
 #pay-info-text{font-size:0.86rem;color:var(--text-muted);line-height:1.6;white-space:pre-line;overflow-wrap:anywhere}
 .demo-note{font-size:0.82rem;line-height:1.5;color:var(--text-muted);background:var(--white);border:0.5px dashed var(--olive-light);border-radius:var(--radius);padding:0.8rem 1rem;margin-bottom:1.25rem}
 .demo-note strong{color:var(--olive-dark);font-weight:500}
+.acct-row{display:flex;justify-content:flex-end;align-items:center;gap:0.5rem;font-size:0.78rem;color:var(--text-muted);margin:-0.5rem 0 1rem}
+.acct-link{background:none;border:none;padding:0;font:inherit;color:var(--olive);text-decoration:underline;cursor:pointer}
+.gate p{font-size:0.86rem;color:var(--text-muted);line-height:1.55;margin-bottom:1rem;text-align:center}
 .ev-list{display:flex;flex-direction:column;gap:0.6rem}
 .ev-item{display:flex;justify-content:space-between;align-items:center;gap:0.75rem;flex-wrap:wrap;padding:0.85rem 1rem;border:0.5px solid var(--sand-dark);border-radius:var(--radius);background:var(--white)}
 .ev-name{font-family:'Cormorant Garamond',serif;font-size:1.25rem;color:var(--olive-dark);font-weight:600;line-height:1.2}
@@ -430,7 +434,7 @@ input::placeholder,textarea::placeholder{color:#b3ada2;opacity:1}
 <div class="loading-overlay" id="loading-overlay">
 <div class="spinner"></div>
 <h2>Loading</h2>
-<p>Opening your event...</p>
+<p>Connecting...</p>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -446,11 +450,12 @@ input::placeholder,textarea::placeholder{color:#b3ada2;opacity:1}
 <div style="height:0.5px;background:linear-gradient(to right,transparent,var(--sand-dark) 20%,var(--sand-dark) 80%,transparent);margin-top:1.5rem"></div>
 </div>
 
-<!-- HOME — no ?e= in the address: create an event, or open one saved in this browser -->
+<!-- HOME — no ?e= in the address: sign in, create an event, open your events -->
 <div id="view-home" style="display:none">
-<div class="demo-note"><strong>Trial version.</strong> Everything is saved in this browser only, so guests on another phone or computer won't see your event yet. Good for trying the flow, not yet for a real event.</div>
+<div class="acct-row" id="home-acct"></div>
+<div id="home-gate"></div>
 <div id="home-events"></div>
-<div class="form-card">
+<div class="form-card" id="home-create" style="display:none">
 <div class="form-intro">
 <h2>Create an event</h2>
 <p>Name it, add your activities, then share the guest link. Guests sign up, pick activities and say how many are coming; you keep track of spots and payments.</p>
@@ -461,10 +466,7 @@ input::placeholder,textarea::placeholder{color:#b3ada2;opacity:1}
 <div class="field"><label>Dates</label><input type="text" id="ev-dates" placeholder="e.g. June 12 – 14"/></div>
 <div class="field"><label>Place</label><input type="text" id="ev-place" placeholder="e.g. Lake Placid"/></div>
 </div>
-<div class="row">
 <div class="field"><label>Currency</label><select id="ev-currency"></select></div>
-<div class="field"><label>Admin password</label><input type="password" id="ev-pw" placeholder="For your dashboard" autocomplete="new-password"/></div>
-</div>
 <button class="submit-btn" onclick="createNewEvent()">Create event</button>
 </div>
 </div>
@@ -472,7 +474,7 @@ input::placeholder,textarea::placeholder{color:#b3ada2;opacity:1}
 <!-- Link to an event this browser doesn't have -->
 <div id="view-missing" style="display:none" class="lookup-card">
 <h3>Event not found</h3>
-<p>This link doesn't match an event saved in this browser. In the trial version, an event only exists on the device it was created on.</p>
+<p>This link doesn't match any event. It may have been deleted, or the link was cut short — check with whoever sent it.</p>
 <a class="lookup-btn" href="?" style="text-decoration:none;display:inline-block">Go to the Activity Planner</a>
 </div>
 
@@ -591,10 +593,10 @@ Admin access
 
 <!-- ADMIN PAGE — replaces guest view when unlocked -->
 <div id="view-admin" style="display:none">
-<div id="admin-login" class="admin-login">
+<div id="admin-login" class="admin-login gate">
 <h2>Admin access</h2>
-<div class="field"><label>Password</label><input type="password" id="admin-pw" placeholder="Enter password" onkeydown="if(event.key==='Enter')adminLogin()"/></div>
-<button class="submit-btn" onclick="adminLogin()">Sign in</button>
+<div id="admin-gate"></div>
+<button class="secondary-btn" onclick="showGuestView()">Back to the guest page</button>
 </div>
 <div id="admin-panel" style="display:none">
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem">
@@ -662,78 +664,82 @@ Guest form
 </div>
 
 <script type="module">
-// ── storage ───────────────────────────────────────────────────
-// Trial version: everything lives in this browser's localStorage, under one key.
-// The functions below copy the shape of Firebase's (ref / get / set / remove / onValue),
-// which is what the wedding version runs on — so moving to a real shared database later
-// means replacing this block, not rewriting the app.
-const STORE_KEY = 'activity-planner/v1';
-const db = null;
-const listeners = [];
-function readStore() {
-try { return JSON.parse(localStorage.getItem(STORE_KEY)) || {}; } catch(e) { return {}; }
-}
-function writeStore(tree) { localStorage.setItem(STORE_KEY, JSON.stringify(tree)); } // throws when blocked/full → callers' catch
-function splitPath(p) { return String(p).split('/').filter(Boolean); }
-function atPath(tree, parts) { return parts.reduce((n,k) => (n && typeof n === 'object') ? n[k] : undefined, tree); }
-function snapOf(v) {
-return { exists: () => v !== undefined && v !== null, val: () => v === undefined ? null : JSON.parse(JSON.stringify(v)) };
-}
-// App paths are scoped to the open event: 'guests/g1' → 'events/<id>/guests/g1'.
-function ref(_db, path) { return { path: 'events/' + EID + '/' + path }; }
-function rootRef(path) { return { path }; }
-async function get(r) { return snapOf(atPath(readStore(), splitPath(r.path))); }
-async function set(r, val) {
-const tree = readStore(), parts = splitPath(r.path);
-let n = tree;
-parts.slice(0, -1).forEach(k => { if (!n[k] || typeof n[k] !== 'object') n[k] = {}; n = n[k]; });
-n[parts[parts.length-1]] = JSON.parse(JSON.stringify(val));
-writeStore(tree); notify();
-}
-async function remove(r) {
-const tree = readStore(), parts = splitPath(r.path);
-const parent = atPath(tree, parts.slice(0, -1));
-if (parent && typeof parent === 'object') delete parent[parts[parts.length-1]];
-writeStore(tree); notify();
-}
-function onValue(r, cb) { listeners.push({ r, cb }); }
-// Synchronous, like Firebase's local events: by the time a save resolves, the app's
-// lists already hold the new data, so the code that redraws right after sees it.
-function notify() {
-const tree = readStore();
-listeners.forEach(l => l.cb(snapOf(atPath(tree, splitPath(l.r.path)))));
-}
-// The guest page open in another tab saved something — redraw this one too.
-window.addEventListener('storage', e => { if (e.key === STORE_KEY) notify(); });
+// ── database ──────────────────────────────────────────────────
+// Firebase (project xdb-tools) through the site-wide account script, which owns the
+// connection and Google sign-in. Layout, per event — events/{id}/:
+//   meta        name, dates, place, currency, texts, owner uid   — public
+//   activities  the activity list                                — public
+//   roster/{k}  first, last, activities+spots                    — public (capacity, who's coming)
+//   guests/{k}  full booking incl. email, phone, notes           — organiser, or anyone holding k
+//   pay/{k}     paymentLog                                       — organiser writes; read like guests/{k}
+// k = SHA-256 of event id + email, so a booking can be opened by typing its email but
+// the list of bookings can't be read. eventIndex/{uid}/{id} lists an organiser's events.
+// The rules in .claude/skills/add-cloud-sync/assets/firebase-rules.json enforce all this.
+const OWNER_UID = 'jGJdt3h4EeaOL3mYWUHA4yMZsRx2';
+let F = null, DB = null, db = null;
+// The app's paths stay relative to the open event: ref(db, 'guests/k') → events/<id>/guests/k.
+function ref(_db, path) { return F.ref(DB, 'events/' + EID + '/' + path); }
+function rootRef(path) { return F.ref(DB, path); }
+function get(r) { return F.get(r); }
+function set(r, v) { return F.set(r, v); }
+function remove(r) { return F.remove(r); }
+function onValue(r, cb, err) { return F.onValue(r, cb, err || (() => {})); }
+function listOf(v) { return Array.isArray(v) ? v.filter(Boolean) : (v && typeof v === 'object' ? Object.values(v).filter(Boolean) : []); }
 
 // ── the open event ────────────────────────────────────────────
 const PARAMS = new URLSearchParams(location.search);
 const EID = PARAMS.get('e') || '';
-let EVENT = {}; // meta: name, hosts, dates, place, currency, intro, payment, signoff, pwHash
+let EVENT = {}; // meta: name, hosts, dates, place, currency, intro, payment, signoff, owner
 const CURRENCIES = { CAD:'$', USD:'$', EUR:'€', GBP:'£', AUD:'$', MXN:'$' };
 let CODE = 'CAD', SYM = '$';
 const DEFAULT_INTRO = "Reserve your spot for one or more activities. Where there's a price, the organiser will follow up with payment details once you submit.";
 const DEFAULT_SIGNOFF = 'See you there.';
 function slug(s) { return String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,''); }
-
-// Not real security: a plain hash so the password isn't stored as typed. Anyone with
-// this browser can read the data anyway. A shared version would need proper sign-in.
-function hashPw(pw) {
-const str = 'activity-planner:' + pw;
-let h1 = 0xdeadbeef, h2 = 0x41c6ce57;
-for (let i = 0; i < str.length; i++) {
-const ch = str.charCodeAt(i);
-h1 = Math.imul(h1 ^ ch, 2654435761); h2 = Math.imul(h2 ^ ch, 1597334677);
+function randomId(bytes) {
+const a = new Uint8Array(bytes); crypto.getRandomValues(a);
+return Array.from(a, b => b.toString(16).padStart(2,'0')).join('');
 }
-h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
-h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
-return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(36);
+async function emailKey(email) {
+const data = new TextEncoder().encode(EID + ':' + String(email).trim().toLowerCase());
+const buf = await crypto.subtle.digest('SHA-256', data);
+return Array.from(new Uint8Array(buf), b => b.toString(16).padStart(2,'0')).join('');
 }
-const ADMIN_KEY = 'activity-planner/admin/';
-function rememberAdmin(id) { try { sessionStorage.setItem(ADMIN_KEY + id, '1'); } catch(e) {} }
-function isRememberedAdmin() { try { return sessionStorage.getItem(ADMIN_KEY + EID) === '1'; } catch(e) { return false; } }
 
+// ── who is looking ────────────────────────────────────────────
+function acct() { return window.xdbAccount ? window.xdbAccount.state() : {status:'signedout', user:null}; }
+function myUid() { const s = acct(); return s.user ? s.user.uid : null; }
+function canOrganise() { const st = acct().status; return st === 'owner' || st === 'member'; }
+function isOrganiserOf(meta) { const u = myUid(); return !!u && !!meta && (u === meta.owner || u === OWNER_UID); }
+let isAdmin = false;
 
+// ── guest records, assembled from the parts above ─────────────
+let rosterMap = {}, recMap = {}, payMap = {};
+const mine = {}; // bookings this visitor opened by email: key → {rec, pay}
+function fullGuest(k, rec, pay) {
+const g = {...rec, id: k, activities: listOf(rec.activities).map(r => ({id: r.id, spots: r.spots||1})),
+paymentLog: listOf(pay && pay.paymentLog), payments: {}};
+// What's paid per activity is worked out from the log every time, never stored.
+applyPaymentLog(g, paymentLogOf(g));
+return g;
+}
+function rebuildGuests() {
+if (isAdmin) {
+guests = Object.entries(recMap).map(([k, rec]) => fullGuest(k, rec, payMap[k]));
+} else {
+guests = Object.entries(rosterMap).map(([k, r]) => mine[k]
+? fullGuest(k, {...mine[k].rec, activities: r.activities}, mine[k].pay)
+: {id: k, first: r.first||'', last: r.last||'', email: '', phone: '', notes: '',
+activities: listOf(r.activities).map(x => ({id: x.id, spots: x.spots||1})), payments: {}, paymentLog: []});
+}
+}
+// Fetch one booking by its key (the guest typed their email). null if there is none.
+async function loadMine(k) {
+const [rs, ps] = await Promise.all([get(ref(db, 'guests/' + k)), get(ref(db, 'pay/' + k))]);
+if (!rs.exists()) return null;
+mine[k] = {rec: rs.val(), pay: ps.val()};
+rebuildGuests();
+return guests.find(x => x.id === k) || fullGuest(k, mine[k].rec, mine[k].pay);
+}
 
 let activities = [];
 let guests = [];
@@ -833,52 +839,102 @@ document.getElementById('app').style.display = 'block';
 }
 
 // ── bootstrap ─────────────────────────────────────────────────
+let rosterOff = null, ownerOffs = [];
 async function bootstrap() {
 try {
+if (!window.xdbAccount) throw new Error('The site account script did not load.');
+const fb = await window.xdbAccount.sdk();
+F = fb.f; DB = fb.db;
+window.xdbAccount.on(onAccount);
 if (!EID) { showHome(); finishLoading(); return; }
 const metaSnap = await get(ref(db, 'meta'));
 if (!metaSnap.exists()) { showMissing(); finishLoading(); return; }
 initRsvpMode(); // before applyEvent, so the activity page keeps its own header
 applyEvent(metaSnap.val());
 const actSnap = await get(ref(db, 'activities'));
-activities = actSnap.exists() ? Object.values(actSnap.val()) : [];
-const gSnap = await get(ref(db, 'guests'));
-guests = gSnap.exists() ? Object.values(gSnap.val()) : [];
+activities = actSnap.exists() ? listOf(actSnap.val()) : [];
+const rSnap = await get(ref(db, 'roster'));
+rosterMap = rSnap.val() || {};
+rebuildGuests();
 
 onValue(ref(db, 'meta'), snap => {
-if (!snap.exists()) { location.href = location.pathname; return; } // deleted in another tab
+if (!snap.exists()) { location.href = location.pathname; return; } // event deleted
 applyEvent(snap.val());
 renderGuestActivities(); renderRsvp();
-if (document.getElementById('admin-panel').style.display !== 'none') {
+if (isAdmin) {
 renderAdmin();
 if (document.getElementById('subview-event').classList.contains('active')) renderEventPanel();
 }
 });
 onValue(ref(db, 'activities'), snap => {
-activities = snap.exists() ? Object.values(snap.val()) : [];
-renderGuestActivities(); renderRsvp();
-if (document.getElementById('admin-panel').style.display !== 'none') renderAdmin();
+activities = listOf(snap.val());
+rebuildGuests(); refreshViews();
+// The editor redraws itself after each save; this catches changes from another device.
+if (isAdmin && document.getElementById('subview-settings').classList.contains('active')
+&& !document.getElementById('mgmt-panel').contains(document.activeElement)) renderMgmt();
 });
-onValue(ref(db, 'guests'), snap => {
-guests = snap.exists() ? Object.values(snap.val()) : [];
-renderGuestActivities(); renderRsvp();
-if (document.getElementById('admin-panel').style.display !== 'none') renderAdmin();
+rosterOff = onValue(ref(db, 'roster'), snap => {
+rosterMap = snap.val() || {};
+if (!isAdmin) { rebuildGuests(); refreshViews(); }
 });
 
 finishLoading();
 if (rsvpActId) renderRsvp(); else renderGuestActivities();
-// ?admin=1 is the dashboard link; a password typed in this tab session is remembered.
-if (!rsvpActId && isRememberedAdmin()) unlockPanel(); // no password needed this session
 if (!rsvpActId && PARAMS.has('admin')) showAdminView();
+onAccount();
 } catch(e) {
 document.getElementById('loading-overlay').innerHTML = `
-<h2 style="color:#8a3030">Could not open the event</h2>
-<p style="color:#8a3030;max-width:320px;text-align:center">This browser may be blocking saved data (private mode or strict settings).</p>
+<h2 style="color:#8a3030">Could not connect</h2>
+<p style="color:#8a3030;max-width:320px;text-align:center">Check your connection and reload the page.</p>
 <p style="font-size:0.8rem;color:var(--text-muted);margin-top:0.5rem">${esc(e.message)}</p>`;
 }
 }
+function refreshViews() {
+renderGuestActivities(); renderRsvp();
+if (isAdmin) renderAdmin();
+}
 
-// ── home: create an event, list the ones in this browser ──────
+// Sign-in changed (or the page just loaded): open or close the organiser's side.
+function onAccount() {
+if (!F) return;
+if (!EID) { renderHomeAccount(); return; }
+const should = isOrganiserOf(EVENT);
+if (should && !isAdmin) {
+isAdmin = true;
+ownerOffs.push(onValue(ref(db, 'guests'), snap => { recMap = snap.val() || {}; rebuildGuests(); refreshViews(); },
+() => toast('Could not read the bookings — check the database rules')));
+ownerOffs.push(onValue(ref(db, 'pay'), snap => { payMap = snap.val() || {}; rebuildGuests(); refreshViews(); }));
+unlockPanel();
+} else if (!should && isAdmin) {
+isAdmin = false;
+ownerOffs.forEach(off => { try { off(); } catch(e) {} }); ownerOffs = [];
+recMap = {}; payMap = {};
+document.getElementById('admin-panel').style.display = 'none';
+document.getElementById('admin-login').style.display = 'block';
+rebuildGuests(); refreshViews();
+}
+renderAdminGate();
+}
+function renderAdminGate() {
+const el = document.getElementById('admin-gate');
+if (!el) return;
+const s = acct();
+if (!s.user) {
+el.innerHTML = `<p>Sign in with the Google account that created this event.</p>
+<button class="submit-btn" onclick="signInNow()">${s.status==='checking'?'Signing in…':'Sign in with Google'}</button>`;
+} else if (s.status === 'checking') {
+el.innerHTML = '<p>Checking your account…</p>';
+} else {
+el.innerHTML = `<p>You're signed in as <strong>${esc(s.user.email)}</strong>, which isn't the organiser of this event.</p>
+<button class="submit-btn" onclick="switchAccount()">Use another account</button>`;
+}
+}
+window.signInNow = function() { window.xdbAccount.signIn().catch(() => {}); };
+window.switchAccount = async function() { try { await window.xdbAccount.signOut(); } catch(e) {} window.xdbAccount.signIn().catch(() => {}); };
+window.openAccount = function() { window.xdbAccount.openPanel(); };
+
+// ── home: sign in, create an event, list your events ─────────
+let indexOff = null;
 function showHome() {
 document.getElementById('view-guest').style.display = 'none';
 document.getElementById('admin-float').style.display = 'none';
@@ -886,49 +942,67 @@ document.getElementById('view-home').style.display = 'block';
 document.getElementById('hdr-hosts').style.display = 'none';
 document.getElementById('hdr-meta').innerHTML = '<span class="header-meta-item">Sign-ups, spots and payments for anything you organise</span>';
 document.getElementById('ev-currency').innerHTML = Object.keys(CURRENCIES).map(c => `<option value="${c}">${c} (${CURRENCIES[c]})</option>`).join('');
-renderHomeEvents();
+renderHomeAccount();
 }
-function renderHomeEvents() {
-const evs = Object.entries(readStore().events || {})
-.filter(([, e]) => e && e.meta)
-.sort((p, q) => (q[1].meta.createdAt||'').localeCompare(p[1].meta.createdAt||''));
+function renderHomeAccount() {
+const s = acct();
+const gate = document.getElementById('home-gate');
+const create = document.getElementById('home-create');
+document.getElementById('home-acct').innerHTML = s.user
+? `${esc(s.user.email)} · <button class="acct-link" onclick="openAccount()">Account</button>` : '';
+if (indexOff) { indexOff(); indexOff = null; }
+document.getElementById('home-events').innerHTML = '';
+if (canOrganise()) {
+gate.innerHTML = '';
+create.style.display = 'block';
+indexOff = onValue(rootRef('eventIndex/' + s.user.uid), snap => renderHomeEvents(snap.val() || {}));
+return;
+}
+create.style.display = 'none';
+const box = (title, body, btn) => `<div class="lookup-card gate" style="margin-bottom:1.5rem;text-align:center">
+<h3>${title}</h3><p>${body}</p>${btn||''}</div>`;
+if (!s.user) gate.innerHTML = box('Organise an event',
+'Sign in with Google to create events and manage their sign-ups. Guests never need an account — they just use your link.',
+`<button class="submit-btn" onclick="signInNow()">${s.status==='checking'?'Signing in…':'Sign in with Google'}</button>`);
+else if (s.status === 'checking') gate.innerHTML = box('Checking your account…', '');
+else if (s.status === 'pending') gate.innerHTML = box('Access requested',
+`You're signed in as ${esc(s.user.email)}. Xavier approves organisers by hand — once he has, this page opens up by itself.`);
+else gate.innerHTML = box('No access',
+`${esc(s.user.email)} can't create events here.`, `<a class="secondary-btn" href="../access.html" style="display:block;text-decoration:none">About access</a>`);
+}
+function renderHomeEvents(index) {
+const evs = Object.entries(index).sort((p, q) => (q[1].createdAt||'').localeCompare(p[1].createdAt||''));
 const el = document.getElementById('home-events');
 if (!evs.length) { el.innerHTML = ''; return; }
 el.innerHTML = `<div class="lookup-card" style="margin-bottom:1.5rem">
 <h3>Your events</h3>
-<p>Saved in this browser.</p>
-<div class="ev-list">${evs.map(([id, e]) => {
-const nActs = Object.keys(e.activities || {}).length;
-const nGuests = Object.keys(e.guests || {}).length;
-const meta = [e.meta.dates, `${nActs} activit${nActs===1?'y':'ies'}`, `${nGuests} guest${nGuests===1?'':'s'}`].filter(Boolean).join(' · ');
-return `<div class="ev-item">
-<div style="min-width:0"><div class="ev-name">${esc(e.meta.name)}</div><div class="ev-meta">${esc(meta)}</div></div>
+<div class="ev-list" style="margin-top:0.75rem">${evs.map(([id, e]) => `<div class="ev-item">
+<div style="min-width:0"><div class="ev-name">${esc(e.name)}</div><div class="ev-meta">${esc(e.dates||'')}</div></div>
 <div class="ev-actions">
 <a class="export-btn" href="?e=${encodeURIComponent(id)}">Guest page</a>
 <a class="add-btn" href="?e=${encodeURIComponent(id)}&admin=1">Dashboard</a>
 </div>
-</div>`;
-}).join('')}</div>
+</div>`).join('')}</div>
 </div>`;
 }
 window.createNewEvent = async function() {
 const name = document.getElementById('ev-name').value.trim();
-const pw = document.getElementById('ev-pw').value;
 if (!name) { alert('Give your event a name.'); return; }
-if (pw.length < 4) { alert('Choose an admin password of at least 4 characters. You\'ll need it to open the dashboard.'); return; }
-const id = 'ev' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+if (!canOrganise()) { alert('Sign in first.'); return; }
+const uid = myUid();
+const id = randomId(12); // 24 hex characters — the guest link is the only way in
 const meta = {
 name, hosts: document.getElementById('ev-hosts').value.trim(),
 dates: document.getElementById('ev-dates').value.trim(),
 place: document.getElementById('ev-place').value.trim(),
 currency: document.getElementById('ev-currency').value,
 intro: DEFAULT_INTRO, payment: '', signoff: DEFAULT_SIGNOFF,
-pwHash: hashPw(pw), createdAt: new Date().toISOString()
+owner: uid, createdAt: new Date().toISOString()
 };
 try {
 await set(rootRef('events/' + id + '/meta'), meta);
-} catch(e) { alert('Could not save. This browser may be blocking saved data.'); return; }
-rememberAdmin(id);
+await set(rootRef('eventIndex/' + uid + '/' + id), {name, dates: meta.dates, createdAt: meta.createdAt});
+} catch(e) { alert('Could not create the event. ' + (e.code || e.message || '')); return; }
 location.href = '?e=' + encodeURIComponent(id) + '&admin=1';
 };
 function showMissing() {
@@ -939,7 +1013,22 @@ document.getElementById('hdr-hosts').style.display = 'none';
 document.getElementById('hdr-meta').innerHTML = '';
 }
 
-async function saveGuest(g) { await set(ref(db, 'guests/' + g.id), g); }
+// One booking = up to three writes in one go: the full record, the public roster line,
+// and (organiser only) the payment log. Money is never written from the guest side.
+async function saveGuest(g) {
+const acts = (g.activities||[]).map(r => ({id: r.id, spots: r.spots||1}));
+const rec = {id: g.id, first: g.first||'', last: g.last||'', email: g.email||'', phone: g.phone||'',
+notes: g.notes||'', activities: acts, registeredAt: g.registeredAt||''};
+const upd = {['guests/' + g.id]: rec, ['roster/' + g.id]: {first: rec.first, last: rec.last, activities: acts}};
+if (isAdmin) upd['pay/' + g.id] = {paymentLog: (g.paymentLog||[]).map(e => ({
+id: String(e.id||''), amount: String(e.amount||''), date: e.date||'', method: e.method||'',
+notes: e.notes||'', actId: e.actId||'', recordedAt: e.recordedAt||''}))};
+else mine[g.id] = {rec, pay: mine[g.id] ? mine[g.id].pay : null};
+await F.update(rootRef('events/' + EID), upd);
+}
+async function deleteGuest(k) {
+await F.update(rootRef('events/' + EID), {['guests/'+k]: null, ['roster/'+k]: null, ['pay/'+k]: null});
+}
 async function saveActivity(a) { await set(ref(db, 'activities/' + a.id), a); }
 async function deleteActivityFromDb(id) { await remove(ref(db, 'activities/' + id)); }
 
@@ -1146,8 +1235,9 @@ const phone = document.getElementById('g-phone').value.trim();
 const notes = document.getElementById('g-notes').value.trim();
 const sel = sortedActivities().filter(a => document.getElementById('cb-'+a.id)?.checked);
 if (!first||!last||!email) { alert('Please fill in your name and email.'); return; }
-if (guests.find(x => x.email.toLowerCase()===email.toLowerCase())) {
-alert('A reservation with this email already exists. Use the "Modify your reservation" section below to make changes.'); return;
+const key = await emailKey(email);
+if (rosterMap[key] || recMap[key]) {
+alert('A reservation with this email already exists. Use "View and modify your reservation" at the top to make changes.'); return;
 }
 if (!sel.length) { alert('Please select at least one activity.'); return; }
 // Capacity guard — re-check against the latest live counts in case an activity filled up since the page loaded.
@@ -1166,7 +1256,7 @@ return;
 const btn = document.getElementById('submit-reg-btn');
 btn.disabled = true; btn.textContent = 'Saving...';
 const g = {
-id: 'g'+Date.now(), first, last, email, phone, notes,
+id: key, first, last, email, phone, notes,
 activities: sel.map(a => ({id:a.id, spots:gSpots[a.id]||1})),
 payments: {}, registeredAt: new Date().toISOString()
 };
@@ -1185,11 +1275,13 @@ btn.disabled = false; btn.textContent = 'Reserve my spot';
 };
 
 // ── lookup & edit ─────────────────────────────────────────────
-window.lookupGuest = function() {
+window.lookupGuest = async function() {
 const email = document.getElementById('lookup-email').value.trim().toLowerCase();
 const errEl = document.getElementById('lookup-error');
 if (!email) { errEl.textContent='Please enter your email address.'; errEl.style.display='block'; return; }
-const g = guests.find(x => x.email.toLowerCase()===email);
+let g = null;
+try { g = await loadMine(await emailKey(email)); }
+catch(e) { errEl.textContent='Could not reach the server. Check your connection and try again.'; errEl.style.display='block'; return; }
 if (!g) {
 errEl.textContent="We couldn't find a reservation with that email. Check the spelling or register above.";
 errEl.style.display='block';
@@ -1455,11 +1547,12 @@ updateRsvpSpots();
 
 // Recognise someone who has already registered so the welcome dinner is added to their
 // existing record instead of being refused as a duplicate email.
-window.rsvpLookup = function() {
+window.rsvpLookup = async function() {
 const email = document.getElementById('r-email').value.trim().toLowerCase();
 const known = document.getElementById('r-known');
 if (!email) return;
-const g = guests.find(x => (x.email||'').toLowerCase() === email);
+let g = null;
+try { g = await loadMine(await emailKey(email)); } catch(e) { g = null; }
 if (!g) {
 rsvpGuestId = null; rsvpAlreadyIn = false; known.style.display = 'none';
 renderRsvp(); return;
@@ -1500,10 +1593,12 @@ const btn = document.getElementById('r-submit');
 btn.disabled = true; btn.textContent = 'Saving...';
 
 // Existing guest → merge into their record. New guest → create one.
-const existing = guests.find(x => (x.email||'').toLowerCase() === email.toLowerCase());
+const key = await emailKey(email);
+let existing = null;
+try { existing = await loadMine(key); } catch(e) {}
 const g = existing
 ? {...existing}
-: {id:'g'+Date.now(), first, last, email, phone, notes:'',
+: {id:key, first, last, email, phone, notes:'',
 activities:[], payments:{}, paymentLog:[], registeredAt:new Date().toISOString()};
 if (existing) g.phone = phone || g.phone; // never overwrite notes they left elsewhere
 g.activities = [...(g.activities||[])];
@@ -1555,16 +1650,6 @@ ${going.map(x => `<span class="activity-pill" style="font-size:0.8rem;padding:4p
 }
 
 // ── admin ─────────────────────────────────────────────────────
-window.adminLogin = function() {
-if (hashPw(document.getElementById('admin-pw').value) === EVENT.pwHash) {
-rememberAdmin(EID);
-unlockAdmin();
-} else {
-alert('Incorrect password.');
-document.getElementById('admin-pw').value='';
-}
-};
-function unlockAdmin() { unlockPanel(); showAdminView(); }
 function unlockPanel() {
 document.getElementById('admin-login').style.display='none';
 document.getElementById('admin-panel').style.display='block';
@@ -1968,11 +2053,11 @@ function isFreeMode(a) { return !a.priceTbd && !isPaidMode(a); }
 // paid flags have to be recomputed. Otherwise someone who put money against a TBD
 // activity keeps a "paid" flag that was set when the activity cost nothing, and any
 // untagged credit stays spread across the old prices.
+// Paid amounts are worked out from each payment log on every load, so a price change
+// only needs the lists rebuilt — nothing is rewritten.
 async function repriceGuests(actId) {
-const affected = guests.filter(g => (g.activities||[]).some(x => x.id === actId));
-if (!affected.length) return 0;
-await Promise.all(affected.map(g => { applyPaymentLog(g, paymentLogOf(g)); return saveGuest(g); }));
-return affected.length;
+rebuildGuests();
+return guests.filter(g => (g.activities||[]).some(x => x.id === actId)).length;
 }
 function repriceToast(n, base) {
 toast(n ? `${base} — ${n} guest${n!==1?'s':''} updated` : base);
@@ -2116,7 +2201,7 @@ document.getElementById('event-panel').innerHTML = `
 <div class="mcard-head"><span class="mcard-title">Share</span></div>
 <div class="field"><label>Guest link</label>
 <div class="link-box"><input readonly value="${esc(guestLink())}" onclick="this.select()"/><button class="add-btn sm" onclick="copyGuestLink()">Copy</button></div>
-<div class="field-hint">Each activity also has its own link, under Edit activities. Trial version: links only work in this browser.</div>
+<div class="field-hint">Anyone with this link can sign up. Each activity also has its own link, under Edit activities.</div>
 </div>
 </div>
 <div class="mcard">
@@ -2135,7 +2220,6 @@ document.getElementById('event-panel').innerHTML = `
 <div class="field-hint">Shown under the sign-up form. Leave empty if there's nothing to pay.</div></div>
 <div class="field"><label>Closing line</label><input id="es-signoff" value="${esc(e.signoff)}" placeholder="${esc(DEFAULT_SIGNOFF)}"/>
 <div class="field-hint">Ends the confirmation messages, e.g. "See you at the lake."</div></div>
-<div class="field"><label>New admin password</label><input id="es-pw" type="password" autocomplete="new-password" placeholder="Leave empty to keep the current one"/></div>
 <button class="submit-btn" id="es-save" onclick="saveEventSettings()">Save event details</button>
 </div>
 <div class="mcard">
@@ -2147,8 +2231,6 @@ document.getElementById('event-panel').innerHTML = `
 window.saveEventSettings = async function() {
 const name = document.getElementById('es-name').value.trim();
 if (!name) { alert('The event needs a name.'); return; }
-const pw = document.getElementById('es-pw').value;
-if (pw && pw.length < 4) { alert('Choose a password of at least 4 characters.'); return; }
 const meta = {...EVENT,
 name, hosts: document.getElementById('es-hosts').value.trim(),
 dates: document.getElementById('es-dates').value.trim(),
@@ -2158,14 +2240,20 @@ intro: document.getElementById('es-intro').value.trim(),
 payment: document.getElementById('es-payment').value.trim(),
 signoff: document.getElementById('es-signoff').value.trim()
 };
-if (pw) meta.pwHash = hashPw(pw);
-try { await set(ref(db, 'meta'), meta); toast('Event details saved'); }
-catch(e) { alert('Could not save. This browser may be blocking saved data.'); }
+try {
+await set(ref(db, 'meta'), meta);
+if (myUid() === meta.owner) await set(rootRef('eventIndex/' + meta.owner + '/' + EID), {name: meta.name, dates: meta.dates, createdAt: meta.createdAt||''});
+toast('Event details saved');
+}
+catch(e) { alert('Could not save. ' + (e.code || e.message || '')); }
 };
 window.deleteEvent = async function() {
 const n = guests.length;
 if (!confirm(`Delete "${EVENT.name}"${n ? ` and its ${n} guest${n!==1?'s':''}` : ''}? This can't be undone.`)) return;
-try { await remove(rootRef('events/' + EID)); }
+try {
+if (EVENT.owner === myUid()) await remove(rootRef('eventIndex/' + EVENT.owner + '/' + EID));
+await remove(rootRef('events/' + EID));
+}
 catch(e) { alert('Could not delete. Try again.'); return; }
 location.href = location.pathname;
 };
@@ -2403,9 +2491,12 @@ const first = document.getElementById('m-first').value.trim();
 const last = document.getElementById('m-last').value.trim();
 if (!first||!last) { saveBtn.disabled=false; saveBtn.textContent='Save'; return; }
 const sel = Array.from(document.querySelectorAll('.m-act:checked')).map(c=>c.value);
+const mEmail = document.getElementById('m-email').value.trim();
+const key = mEmail ? await emailKey(mEmail) : 'm' + randomId(10);
+if (recMap[key]) { alert('A guest with this email is already booked.'); saveBtn.disabled=false; saveBtn.textContent='Save'; return; }
 const g = {
-id:'g'+Date.now(), first, last,
-email: document.getElementById('m-email').value.trim(),
+id:key, first, last,
+email: mEmail,
 phone: document.getElementById('m-phone').value.trim(),
 notes: document.getElementById('m-notes').value.trim(),
 activities: sel.map(id=>({id, spots:parseInt(document.getElementById('ms-'+id)?.value)||1})),
@@ -2474,7 +2565,7 @@ if (!confirm('Remove this guest from the activity?')) return;
 const g = guests.find(x=>x.id===gid);
 g.activities = (g.activities||[]).filter(a=>a.id!==aid);
 if (g.payments) delete g.payments[aid];
-if (!g.activities.length) { await remove(ref(db,'guests/'+gid)); }
+if (!g.activities.length) { await deleteGuest(gid); }
 else {
 // Money logged against the removed activity becomes general credit instead of disappearing.
 applyPaymentLog(g, paymentLogOf(g).map(e => e.actId===aid ? {...e, actId:''} : e));
