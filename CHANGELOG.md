@@ -5,6 +5,55 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v69 — 2026-10-02
+
+**What's new** · Potluck · [tools/potluck.html]
+### Potluck goes online
+Potlucks now live in a real database, so guests sign up and claim dishes
+from their own phones and everyone sees the same list, live. Organisers
+sign in with Google; guests never need an account.
+
+- Start a potluck, send the link, watch the dishes fill in.
+- Starting potlucks is by invitation, like the synced tools.
+
+**Potluck v2 — `tools/potluck.html`, source `Tools files/Events/Potluck - Zine _standalone_ v2.html`**
+- Storage: Firebase xdb-tools through `assets/account.js` (site sign-in).
+  `potlucks/{id}` (id = 32 random hex chars = the link; read by exact id
+  only, never listed) and the host's own list at `users/{uid}/potlucks/{id}`
+  (covered by the existing `users` rule).
+- Guests write only `attendees/{k}` ({name, party 1–20}) and `claims/{k}`
+  ({claimedBy}); a claimed dish can be freed but not overwritten. Settings,
+  categories, history, reset and delete belong to the host (`owner`) and
+  Xavier. Every action writes just the paths it changed (multi-path update).
+- Admin password removed: the control panel opens for the Google account
+  that started the potluck. Creating needs owner or member status;
+  unapproved accounts see "your access request is with Xavier".
+- Auto reset / repeat weekly run on the host's device only (guests can't
+  write history); guests already see the rolled-forward date.
+- v1 (browser-only trial, live since v67) kept as the source file; its
+  browser data does not carry over.
+
+**Rules** — `potlucks` added to `firebase-rules.json` (alongside v68's
+`events`/`eventIndex`); mock mirror in `harness/server.py`. Xavier
+published the combined file. Checked from outside: `potlucks.json` 401,
+`potlucks/<id>.json` 200, guest write to a non-existent potluck 401;
+`users`, `requests`, `members`, `events`, `eventIndex` still 401.
+
+**Tested on the mock** (two devices, real clicks)
+- Signed out → sign-in prompt; owner creates a potluck → control panel,
+  index written. Guest (signed out, other device) RSVPs with party size and
+  claims a dish → host sees it live; theme and a new category reach the
+  guest live; save & reset files history and clears the guest's list live;
+  delete removes the potluck and its index entry.
+- Approved member hosts their own; on Xavier's potluck the control panel
+  refuses them ("that account didn't start this potluck"), and a direct
+  write is refused. Unapproved account → request filed, no create form.
+- As a guest: edit settings, overwrite a claim, oversized party, extra
+  fields, write to a missing potluck, create, delete, list → all refused.
+- No horizontal scroll at phone width; no console errors.
+
+---
+
 ## v68 — 2026-10-02
 
 **What's new** · Activity Planner · [tools/activity-planner.html]

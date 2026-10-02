@@ -3,6 +3,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Potluck</title>
+<script src="../assets/account.js"></script>
 
 
 <style>/* latin-ext */
@@ -1122,12 +1123,17 @@
 </head>
 <body>
 
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="loading-spinner"></div>
+  <div class="loading-text">syncing the clipboard…</div>
+</div>
+
 <!-- ================= HOME (start / list potlucks) ================= -->
 <div class="view" id="homeView">
   <div class="masthead">
     <div class="masthead-bar">
       <div><span class="dot"></span>Potluck clipboard</div>
-      <div class="right"><span id="home-year">—</span></div>
+      <div class="right"><span id="home-year">—</span><span data-xdb-account></span></div>
     </div>
   </div>
   <div class="hero">
@@ -1147,7 +1153,11 @@
       <span class="section-kicker">takes a minute</span>
     </div>
     <div class="section-rule"></div>
-    <div class="paper-card">
+    <div class="paper-card" id="hostGate" style="text-align:center">
+      <div class="empty-state" id="hostGateText" style="font-style:normal;color:var(--ink-soft)">sign in with Google to start a potluck.</div>
+      <button class="btn-coming" id="hostGateBtn" style="width:100%;margin-top:18px" onclick="hostSignIn()">Sign in with Google</button>
+    </div>
+    <div class="paper-card" id="hostForm" style="display:none">
       <div class="field">
         <label class="rsvp-label" for="newTitle">What's it called?</label>
         <input class="rsvp-input" id="newTitle" type="text" maxlength="40" placeholder="e.g. Friday Potluck, Sam's Birthday…">
@@ -1155,10 +1165,6 @@
       <div class="field">
         <label class="rsvp-label" for="newHost">Presented by (optional)</label>
         <input class="rsvp-input" id="newHost" type="text" maxlength="40" placeholder="e.g. the de Belle family">
-      </div>
-      <div class="field">
-        <label class="rsvp-label" for="newPassword">Admin password (for you, the organiser)</label>
-        <input class="rsvp-input" id="newPassword" type="text" maxlength="40" placeholder="pick something you'll remember" autocomplete="off">
       </div>
       <div class="date-picker-row" style="margin-top:8px">
         <div class="date-picker-col">
@@ -1176,7 +1182,7 @@
     <div class="section-header" style="margin-top:36px">
       <span class="section-num">02.</span>
       <span class="section-title">Your potlucks</span>
-      <span class="section-kicker">on this device</span>
+      <span class="section-kicker">you're hosting</span>
     </div>
     <div class="section-rule"></div>
     <div class="home-list" id="homeList">
@@ -1190,9 +1196,10 @@
 
   <div class="masthead">
     <div class="masthead-bar">
-      <div><span class="dot"></span><span id="masthead-status">Saved on this device</span></div>
+      <div><span class="dot"></span><span id="masthead-status">Live · synced</span></div>
       <div class="right">
         <span id="masthead-date">—</span>
+        <span data-xdb-account></span>
       </div>
     </div>
   </div>
@@ -1303,10 +1310,9 @@
     <div class="login-card">
       <div class="login-icon">🔒</div>
       <div class="login-title">Admin Access</div>
-      <div class="login-sub">the organiser's password</div>
-      <input class="login-input" id="passwordInput" type="password" placeholder="••••••" autocomplete="off">
+      <div class="login-sub" id="loginSub">for whoever started this potluck</div>
       <div class="login-error" id="loginError"></div>
-      <button class="btn-login" onclick="attemptLogin()">Enter</button>
+      <button class="btn-login" id="loginBtn" onclick="attemptLogin()">Sign in with Google</button>
       <a class="admin-access-link" onclick="showView('publicView')" style="margin-top:16px">← back to event</a>
     </div>
   </div>
@@ -1321,7 +1327,7 @@
   <div class="admin-main">
     <div class="admin-nav">
       <button class="btn-back" onclick="showView('publicView')">← Event</button>
-      <span class="admin-link" onclick="logout()">log out</span>
+      <span class="admin-link" onclick="signOutAll()">sign out</span>
     </div>
 
     <div class="admin-stats" id="adminStats"></div>
@@ -1349,10 +1355,6 @@
       <div class="field">
         <label class="rsvp-label" for="detTag">Tagline</label>
         <input class="date-input" id="detTag" type="text" maxlength="60" placeholder="bring a dish, bring a friend.">
-      </div>
-      <div class="field">
-        <label class="rsvp-label" for="detPassword">Admin password</label>
-        <input class="date-input" id="detPassword" type="text" maxlength="40" autocomplete="off">
       </div>
       <label class="auto-toggle" style="margin-top:6px">
         <input type="checkbox" id="detByob">
@@ -1508,10 +1510,14 @@
 
 <script>
 // ── CONFIG ───────────────────────────────────
-// Potluck Zine — a generic take on the Monday Volley & BBQ zine.
-// Storage is this browser only (localStorage) for now. Every read/write goes
-// through `store` below, so syncing later means swapping that one object.
-const STORE_PREFIX = 'potluck-zine.v1.';
+// Potluck — a generic take on the Monday Volley & BBQ zine.
+// Lives in the xdb-tools database at potlucks/{id}, readable by exact link
+// only (the id is 32 random hex chars). Guests RSVP and claim dishes without
+// signing in; whoever started a potluck — Xavier or an approved member,
+// signed in with Google — runs it. A host's own list of potlucks sits at
+// users/{uid}/potlucks/{id}. Sign-in and the Firebase connection come from
+// the site-wide ../assets/account.js.
+const OWNER = 'jGJdt3h4EeaOL3mYWUHA4yMZsRx2';
 const DEFAULT_CATEGORIES = [
   { id:'appetizer', label:'Appetizers', icon:'🥗', ratio:0.20, min:1, desc:'starters & snacks' },
   { id:'sides',     label:'Sides',      icon:'🍚', ratio:0.25, min:1, desc:'salads, rice, etc.'},
@@ -1525,39 +1531,62 @@ const MAX_PARTY = 20;
 const uid = p => (p||'') + Date.now().toString(36) + Math.random().toString(36).slice(2,7);
 const clone = o => JSON.parse(JSON.stringify(o));
 
-const store = {
-  key: id => STORE_PREFIX + id,
-  load(id) {
-    try { const raw = localStorage.getItem(this.key(id)); return raw ? JSON.parse(raw) : null; }
-    catch (e) { return null; }
-  },
-  save(doc) {
-    try { localStorage.setItem(this.key(doc.id), JSON.stringify(doc)); return true; }
-    catch (e) { toast("couldn't save — browser storage is off or full"); return false; }
-  },
-  remove(id) { try { localStorage.removeItem(this.key(id)); } catch (e) {} },
-  list() {
-    const out = [];
-    try {
-      for (let i = 0; i < localStorage.length; i++) {
-        const k = localStorage.key(i);
-        if (k && k.startsWith(STORE_PREFIX)) { const d = this.load(k.slice(STORE_PREFIX.length)); if (d && d.id) out.push(d); }
-      }
-    } catch (e) {}
-    return out.sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
-  },
-  // another tab changed this potluck → re-render here too
-  subscribe(id, cb) {
-    window.addEventListener('storage', e => { if (e.key === this.key(id) && e.newValue) cb(JSON.parse(e.newValue)); });
-  },
-};
+// potluck ids are the share link — long and random so they can't be guessed
+const newPotluckId = () => { const b = new Uint8Array(16); crypto.getRandomValues(b); return Array.from(b, x=>x.toString(16).padStart(2,'0')).join(''); };
+const listOf = v => Array.isArray(v) ? v.filter(Boolean) : (v && typeof v==='object' ? Object.values(v) : []);
 
-const potluckId = new URLSearchParams(location.search).get('p');
-let state = null;  // the open potluck document
-let pendingClaim = null, isAdminLoggedIn = false, partySize = 1;
+let fb = null;  // { db, f } once the SDK is in
+const acct = () => window.xdbAccount;
+const acctState = () => (acct() ? acct().state() : { status:'signedout', user:null });
+const me = () => acctState().user;
+const canHost = () => ['owner','member'].includes(acctState().status);
+const isHost = () => !!(state && me() && (me().uid === state.owner || me().uid === OWNER));
+const adminOpen = () => document.getElementById('adminView').classList.contains('active');
 
-const commit = () => { if (state) store.save(state); };
+const params = new URLSearchParams(location.search);
+const potluckId = params.get('p');
+let state = null;  // the open potluck, as last read from the database
+let pendingClaim = null, partySize = 1, pendingAdmin = params.get('admin') === '1';
 const cats = () => (state && Array.isArray(state.categories) && state.categories.length) ? state.categories : DEFAULT_CATEGORIES;
+
+// the database drops empty objects and arrays — rebuild every key on the way in
+function normalise(v, id) {
+  if (!v || typeof v !== 'object' || !v.owner) return null;
+  const categories = listOf(v.categories).map(c => ({ id:String(c.id), label:c.label||'', icon:c.icon||'', desc:c.desc||'', ratio:Number(c.ratio)||0, min:Number(c.min)||0 }));
+  const history = {};
+  Object.entries(v.history||{}).forEach(([k,w]) => { if (w && typeof w==='object') history[k] = { ...w, attendees:w.attendees||{}, claims:w.claims||{} }; });
+  return {
+    id, owner: v.owner, createdAt: v.createdAt||0,
+    meta: { title:'Potluck', host:'', tagline:'', byob:true, ...(v.meta||{}) },
+    attendees: v.attendees||{}, claims: v.claims||{}, history,
+    eventDate: v.eventDate && v.eventDate.date ? v.eventDate : null,
+    eventInfo: v.eventInfo||'', potluckTheme: v.potluckTheme||'',
+    categories: categories.length ? categories : clone(DEFAULT_CATEGORIES),
+  };
+}
+
+// write just the paths an action changed (guests may only touch attendees/
+// and claims/; the rules hold the rest for the host)
+const getPath = (o, p) => p.split('/').reduce((n,k) => n==null ? undefined : n[k], o);
+function persist(paths, failMsg) {
+  if (!fb || !state) return Promise.resolve(false);
+  const change = {};
+  paths.forEach(p => { const v = getPath(state, p); change[p] = v === undefined ? null : v; });
+  return fb.f.update(fb.f.ref(fb.db, 'potlucks/' + state.id), change).then(() => true, err => {
+    console.warn('potluck write refused', err);
+    toast(failMsg || "couldn't save — check your connection");
+    resync();
+    return false;
+  });
+}
+// after a refused write, put the screen back to what the database holds
+function resync() {
+  if (!fb || !state) return;
+  fb.f.get(fb.f.ref(fb.db, 'potlucks/' + state.id)).then(snap => {
+    const next = normalise(snap.val(), state.id);
+    if (next) { state = next; renderAll(); }
+  }, () => {});
+}
 
 const getName  = d => typeof d==='object' ? d.name : d;
 const getParty = d => Math.max(1, (typeof d==='object' && Number(d.party)) || 1);
@@ -1584,17 +1613,6 @@ const historyNoDishSet = week => new Set(
     .map(n=>String(n).toLowerCase())
 );
 
-function newPotluck({ title, host, password, date, time }) {
-  return {
-    id: uid(), createdAt: Date.now(),
-    meta: { title, host: host||'', tagline: 'bring a dish, bring a friend.', password, byob: true },
-    attendees: {}, claims: {}, history: {},
-    eventDate: date ? { date, time: time||'18:00', autoAdvance:false, autoReset:false } : null,
-    eventInfo: '', potluckTheme: '',
-    categories: clone(DEFAULT_CATEGORIES),
-  };
-}
-
 // ── DATE STAMP ───────────────────────────────
 const MONTHS = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
 const DAYS = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
@@ -1603,8 +1621,17 @@ const eventDateTime = ed => {
   const [hh,mm] = (ed.time||'18:00').split(':').map(Number);
   return new Date(y, mo-1, d, hh, mm);
 };
+// with "repeat every week" on, guests see next week's date even before the
+// host's device has rolled it forward
+function shownDate(ed) {
+  if (!ed || !ed.date || !ed.autoAdvance || !hasEventPassed(ed)) return ed;
+  const today = new Date(); today.setHours(0,0,0,0);
+  const dt = eventDateAtMidnight(ed);
+  while (dt < today) dt.setDate(dt.getDate() + 7);
+  return { ...ed, date: ymd(dt) };
+}
 function paintDate() {
-  const ed = state && state.eventDate;
+  const ed = shownDate(state && state.eventDate);
   if (ed && ed.date) {
     const m = eventDateTime(ed);
     document.getElementById('stamp-dow').textContent = DAYS[m.getDay()] + ' · ' + MONTHS[m.getMonth()];
@@ -1649,19 +1676,31 @@ function renderHero() {
 
 // VIEWS
 window.showView = id => { document.querySelectorAll('.view').forEach(v=>v.classList.remove('active')); document.getElementById(id).classList.add('active'); window.scrollTo(0,0); };
-window.showLoginView = () => { showView('loginView'); document.getElementById('passwordInput').focus(); };
-window.logout = () => { isAdminLoggedIn=false; try { sessionStorage.removeItem('potluck-admin-'+state.id); } catch(e){} showView('publicView'); };
+window.showLoginView = () => {
+  if (isHost()) { showView('adminView'); renderAdmin(); return; }
+  paintLogin(); showView('loginView');
+};
+window.signOutAll = () => { showView('publicView'); if (acct()) acct().signOut(); };
 window.goHome = () => { location.href = location.pathname; };
 
-// AUTH
+// AUTH — the host is whoever started the potluck (or Xavier), by Google sign-in
+function paintLogin() {
+  const sub = document.getElementById('loginSub'), err = document.getElementById('loginError'), btn = document.getElementById('loginBtn');
+  const s = acctState();
+  err.textContent = '';
+  if (!me()) { sub.textContent = 'for whoever started this potluck'; btn.textContent = s.status==='checking' ? 'Signing in…' : 'Sign in with Google'; return; }
+  if (isHost()) { sub.textContent = 'signed in as ' + (me().email || me().name); btn.textContent = 'Open control panel'; return; }
+  sub.textContent = 'signed in as ' + (me().email || me().name);
+  err.textContent = "that account didn't start this potluck.";
+  btn.textContent = 'Use another account';
+}
 window.attemptLogin = () => {
-  if (document.getElementById('passwordInput').value===(state.meta.password||'')) {
-    isAdminLoggedIn=true; document.getElementById('passwordInput').value=''; document.getElementById('loginError').textContent='';
-    try { sessionStorage.setItem('potluck-admin-'+state.id, '1'); } catch(e){}
-    showView('adminView'); renderAdmin();
-  } else { document.getElementById('loginError').textContent='nope, try again.'; }
+  if (!acct()) return;
+  if (!me()) { acct().signIn().catch(() => {}); return; }
+  if (isHost()) { showView('adminView'); renderAdmin(); return; }
+  acct().signOut().then(() => acct().signIn()).catch(() => {});
 };
-document.getElementById('passwordInput').addEventListener('keydown', e=>{ if(e.key==='Enter') window.attemptLogin(); });
+window.hostSignIn = () => { if (acct()) acct().signIn().catch(() => {}); };
 
 // TOAST
 const toast = msg => { const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show'); setTimeout(()=>el.classList.remove('show'),2400); };
@@ -1696,8 +1735,9 @@ window.addAttendee = () => {
   const name=input.value.trim();
   if (!name) { input.focus(); return; }
   if (Object.values(state.attendees).map(d=>getName(d).toLowerCase()).includes(name.toLowerCase())) { toast('already on the list!'); input.value=''; return; }
-  state.attendees[uid('a')] = { name, party: partySize };
-  commit(); renderAll();
+  const key = uid('a');
+  state.attendees[key] = { name, party: partySize };
+  renderAll(); persist(['attendees/'+key]);
   toast(partySize>1 ? `${name} +${partySize-1} are in 🍲` : `${name} is in 🍲`);
   input.value=''; input.focus(); partySize=1; paintParty();
 };
@@ -1706,8 +1746,9 @@ window.addAttendee = () => {
 function doRemoveAttendee(key) {
   const name=getName(state.attendees[key]);
   delete state.attendees[key];
-  Object.keys(state.claims).forEach(k=>{ if(state.claims[k]?.claimedBy===name) delete state.claims[k]; });
-  commit(); renderAll();
+  const freed = Object.keys(state.claims).filter(k => state.claims[k]?.claimedBy===name);
+  freed.forEach(k => delete state.claims[k]);
+  renderAll(); persist(['attendees/'+key, ...freed.map(k=>'claims/'+k)]);
 }
 window.removeAttendee = key => {
   const data = state.attendees[key]; if (!data) return;
@@ -1739,7 +1780,9 @@ window.confirmClaim = () => {
   if (!pendingClaim) return;
   const name=document.getElementById('modalSelect').value;
   const key=`${pendingClaim.catId}_${pendingClaim.slotIdx}`;
-  state.claims[key]={claimedBy:name}; commit(); closeModal(); renderAll(); toast(`${name} is on it 🙌`);
+  if (state.claims[key]) { closeModal(); toast('someone just grabbed that one — pick another'); return; }
+  state.claims[key]={claimedBy:name}; closeModal(); renderAll();
+  persist(['claims/'+key], 'someone just grabbed that one — pick another').then(ok => { if (ok) toast(`${name} is on it 🙌`); });
 };
 function freeSlot(catId, slotIdx, adminToast) {
   const key=`${catId}_${slotIdx}`;
@@ -1747,7 +1790,7 @@ function freeSlot(catId, slotIdx, adminToast) {
   if (!claimer) return;
   const cat = cats().find(c=>c.id===catId);
   askConfirm(`Free up ${cat.label} #${slotIdx+1}?`, `${claimer} won't be bringing this anymore.`, () => {
-    delete state.claims[key]; commit(); renderAll(); if (adminToast) toast('claim removed');
+    delete state.claims[key]; renderAll(); persist(['claims/'+key]); if (adminToast) toast('claim removed');
   });
 }
 window.unclaim = (catId,slotIdx) => freeSlot(catId, slotIdx, false);
@@ -1774,14 +1817,15 @@ function performReset() {
     summary:{ people:countPeople(state.attendees), signups:countSignups(state.attendees), noDish:skippedDish.length }
   };
   const hasData = snapshot.summary.signups>0||Object.keys(state.claims).length>0;
-  if (hasData) state.history[uid('h')]=snapshot;
+  const paths = ['attendees', 'claims'];
+  if (hasData) { const hk = uid('h'); state.history[hk] = snapshot; paths.push('history/'+hk); }
   state.attendees={}; state.claims={};
-  commit();
+  return paths;
 }
 window.executeReset = () => {
   closeResetModal();
-  performReset(); renderAll();
-  toast('saved to history & reset ✓');
+  const paths = performReset(); renderAll();
+  persist(paths).then(ok => { if (ok) toast('saved to history & reset ✓'); });
 };
 document.getElementById('resetModal').addEventListener('click',e=>{ if(e.target===document.getElementById('resetModal')) closeResetModal(); });
 
@@ -1792,14 +1836,18 @@ window.deleteHistoryEntry = key => {
   if (!week) return;
   const label = week.eventDate || week.date || 'this entry';
   askConfirm(`Delete ${label}?`, 'this history entry will be removed for good. guests, dishes and tally — gone.', () => {
-    delete state.history[key]; commit(); renderAdmin(); toast('entry deleted');
+    delete state.history[key]; renderAdmin(); persist(['history/'+key]).then(ok => { if (ok) toast('entry deleted'); });
   }, 'Yes, delete');
 };
 
 // DELETE THE WHOLE POTLUCK
 window.confirmDeletePotluck = () => {
   askConfirm(`Delete "${state.meta.title}"?`, 'guests, dishes, history and the link — all gone for good.', () => {
-    store.remove(state.id); goHome();
+    const id = state.id, owner = state.owner;
+    const mine = me() && me().uid === owner;
+    fb.f.remove(fb.f.ref(fb.db, 'potlucks/' + id))
+      .then(() => mine ? fb.f.remove(fb.f.ref(fb.db, 'users/' + owner + '/potlucks/' + id)) : null)
+      .then(goHome, () => toast("couldn't delete it — check your connection"));
   }, 'Yes, delete it');
 };
 
@@ -1834,13 +1882,14 @@ function refreshDateInputs() {
 window.saveEventDate = () => {
   const date = document.getElementById('eventDateInput').value;
   const time = document.getElementById('eventTimeInput').value || '18:00';
-  if (!date) { state.eventDate = null; commit(); paintDate(); refreshDateInputs(); toast('cleared — date TBA'); return; }
+  if (!date) { state.eventDate = null; paintDate(); refreshDateInputs(); persist(['eventDate']).then(ok => { if (ok) toast('cleared — date TBA'); }); return; }
   const autoAdvance = !!document.getElementById('autoAdvanceToggle').checked;
   const autoReset   = !!document.getElementById('autoResetToggle').checked;
   const payload = { date, time, autoAdvance, autoReset };
   // keep the marker that records which event we last auto-reset, so we don't double-reset
   if (state.eventDate && state.eventDate.lastReset) payload.lastReset = state.eventDate.lastReset;
-  state.eventDate = payload; commit(); paintDate(); refreshDateInputs(); toast('date saved ✓'); runAutoTasks();
+  state.eventDate = payload; paintDate(); refreshDateInputs();
+  persist(['eventDate']).then(ok => { if (ok) toast('date saved ✓'); runAutoTasks(); });
 };
 document.getElementById('saveDateBtn').addEventListener('click', window.saveEventDate);
 
@@ -1856,14 +1905,16 @@ function hasEventPassed(ed) {
   const today = new Date(); today.setHours(0,0,0,0);
   return eventDateAtMidnight(ed) < today;
 }
+// runs on the host's device only — guests can't write history or settings
+let autoBusy = false;
 function runAutoTasks() {
-  if (!state || !state.eventDate || !state.eventDate.date) return;
+  if (autoBusy || !isHost() || !state || !state.eventDate || !state.eventDate.date) return;
   const ed = { ...state.eventDate };
-  let changed = false, didReset = false;
+  let changed = false, didReset = false, paths = [];
 
   // 1) AUTO SAVE & RESET — the day after the event (once per event)
   if (ed.autoReset && hasEventPassed(ed) && ed.lastReset !== ed.date) {
-    performReset();
+    paths = performReset();
     ed.lastReset = ed.date;
     changed = true; didReset = true;
   }
@@ -1879,9 +1930,13 @@ function runAutoTasks() {
   }
 
   if (changed) {
-    state.eventDate = ed; commit();
+    autoBusy = true;
+    state.eventDate = ed;
     renderAll();
-    if (didReset) toast('auto-filed the last one & reset ✓');
+    persist([...paths, 'eventDate']).then(ok => {
+      setTimeout(() => { autoBusy = false; }, 1500);
+      if (ok && didReset) toast('auto-filed the last one & reset ✓');
+    });
   }
 }
 // toggling a checkbox saves immediately when a date is already set
@@ -1892,23 +1947,24 @@ function onAutoToggleChange() {
 document.getElementById('autoAdvanceToggle').addEventListener('change', onAutoToggleChange);
 document.getElementById('autoResetToggle').addEventListener('change', onAutoToggleChange);
 
-// ── EVENT DETAILS (title, host, tagline, password, BYOB) ─
+// ── EVENT DETAILS (title, host, tagline, BYOB) ─
 function refreshDetailInputs() {
   const m = state.meta || {};
   const set = (id, v) => { const el = document.getElementById(id); if (document.activeElement !== el) el.value = v || ''; };
-  set('detTitle', m.title); set('detHost', m.host); set('detTag', m.tagline); set('detPassword', m.password);
+  set('detTitle', m.title); set('detHost', m.host); set('detTag', m.tagline);
   document.getElementById('detByob').checked = m.byob !== false;
 }
 window.saveDetails = () => {
   const title = document.getElementById('detTitle').value.trim();
-  const password = document.getElementById('detPassword').value;
   if (!title) { toast('the potluck needs a title'); return; }
-  if (!password) { toast('keep a password, or anyone can get in'); return; }
-  state.meta = { ...state.meta, title, password,
+  state.meta = { ...state.meta, title,
     host: document.getElementById('detHost').value.trim(),
     tagline: document.getElementById('detTag').value.trim(),
     byob: document.getElementById('detByob').checked };
-  commit(); renderAll(); toast('details saved ✓');
+  renderAll();
+  persist(['meta']).then(ok => { if (ok) toast('details saved ✓'); });
+  // keep the host's own list in step with the title
+  if (me() && me().uid === state.owner) fb.f.set(fb.f.ref(fb.db, 'users/' + state.owner + '/potlucks/' + state.id + '/title'), title).catch(() => {});
 };
 document.getElementById('saveDetailsBtn').addEventListener('click', window.saveDetails);
 
@@ -1940,7 +1996,8 @@ window.openEventInfo = () => {
 window.closeEventInfo = () => document.getElementById('eventInfoModal').classList.remove('open');
 window.saveEventInfo = () => {
   const txt = document.getElementById('eventInfoInput').value.trim();
-  state.eventInfo = txt; commit(); renderEventInfo(); toast(txt ? 'info saved ✓' : 'info cleared');
+  state.eventInfo = txt; renderEventInfo();
+  persist(['eventInfo']).then(ok => { if (ok) toast(txt ? 'info saved ✓' : 'info cleared'); });
 };
 document.getElementById('saveInfoBtn').addEventListener('click', window.saveEventInfo);
 document.getElementById('eventInfoModal').addEventListener('click', e => {
@@ -1962,7 +2019,8 @@ function renderPotluckTheme() {
 }
 window.savePotluckTheme = () => {
   const txt = document.getElementById('potluckThemeInput').value.trim();
-  state.potluckTheme = txt; commit(); renderPotluckTheme(); toast(txt ? 'theme saved ✓' : 'theme cleared');
+  state.potluckTheme = txt; renderPotluckTheme();
+  persist(['potluckTheme']).then(ok => { if (ok) toast(txt ? 'theme saved ✓' : 'theme cleared'); });
 };
 document.getElementById('saveThemeBtn').addEventListener('click', window.savePotluckTheme);
 
@@ -2004,7 +2062,8 @@ window.saveCategories = () => {
   const apply = () => {
     lost.forEach(([k]) => delete state.claims[k]);
     state.categories = clone(draft); catDraft = null;
-    commit(); renderAll(); toast('categories saved ✓');
+    renderAll();
+    persist(['categories', ...lost.map(([k]) => 'claims/'+k)]).then(ok => { if (ok) toast('categories saved ✓'); });
     document.getElementById('catHelper').textContent = '';
   };
   if (lost.length) askConfirm('Drop claimed dishes?', `${lost.length} claimed dish${lost.length>1?'es are':' is'} in a category you removed — ${lost.map(([,v])=>v.claimedBy).join(', ')} will need to pick again.`, apply, 'Yes, save');
@@ -2086,7 +2145,7 @@ function renderAdmin() {
   renderPotluckTheme();
   if (!catDraft) renderCatEditor();
   document.getElementById('shareLink').value = shareUrl();
-  document.getElementById('shareHelper').textContent = 'heads-up: sync isn\'t on yet, so this link only opens on this device & browser.';
+  document.getElementById('shareHelper').textContent = 'anyone with the link can sign up and claim a dish — no account needed.';
 
   const {attendees,claims,history}=state;
   const signups=countSignups(attendees), people=countPeople(attendees);
@@ -2130,7 +2189,7 @@ function renderAdmin() {
     const wAtt=week.attendees||{}, wClaims=week.claims||{};
     const wSign=week.summary?.signups??countSignups(wAtt);
     const wPeople=week.summary?.people??countPeople(wAtt);
-    const wCats=Array.isArray(week.categories)&&week.categories.length ? week.categories : cats();
+    const wCats=listOf(week.categories).length ? listOf(week.categories) : cats();
     const domId=`hist_${key.replace(/[^a-z0-9]/gi,'_')}`;
 
     const wNoDish=historyNoDishSet(week);
@@ -2169,69 +2228,115 @@ function renderAdmin() {
 
 function renderAll() {
   renderHero(); paintDate(); renderPublic(); renderEventInfo(); renderPotluckTheme();
-  if (isAdminLoggedIn) renderAdmin();
+  if (adminOpen()) renderAdmin();
 }
 
 // ── HOME (start a potluck / your potlucks) ───
+let homeOff = null, homeUid;
 function renderHome() {
   document.getElementById('home-year').textContent = new Date().getFullYear();
-  const all = store.list();
-  document.getElementById('homeList').innerHTML = all.length
-    ? all.map(d => {
-        const when = d.eventDate && d.eventDate.date ? fmtFriendly(d.eventDate.date, d.eventDate.time) : 'date TBA';
-        const people = countPeople(d.attendees);
-        return `<div class="home-item" onclick="location.search='?p=${encodeURIComponent(d.id)}'">
-          <div><div class="home-item-title">${esc(d.meta?.title||'Potluck')}</div>
-          <div class="home-item-meta">${esc(when)} · ${people} ${people===1?'person':'people'}</div></div>
-          <span class="home-item-go">Open →</span></div>`;
-      }).join('')
+  const s = acctState();
+  const msg = {
+    signedout: 'sign in with Google to start a potluck. guests never need an account — only hosts do.',
+    checking:  'checking your account…',
+    pending:   'your access request is with Xavier — once he approves it, you can start potlucks here.',
+    declined:  "this account isn't approved to host potlucks here. guests never need an account — only hosts do.",
+    error:     "sign-in didn't work — try again.",
+  };
+  document.getElementById('hostForm').style.display = canHost() ? '' : 'none';
+  document.getElementById('hostGate').style.display = canHost() ? 'none' : '';
+  document.getElementById('hostGateText').textContent = msg[s.status] || msg.signedout;
+  document.getElementById('hostGateBtn').style.display = (s.status==='signedout' || s.status==='error') ? '' : 'none';
+  // the host's own list, live
+  const uidNow = canHost() ? me().uid : null;
+  if (uidNow === homeUid) return;
+  if (homeOff) { homeOff(); homeOff = null; }
+  homeUid = uidNow;
+  if (!uidNow || !fb) { renderHomeList(null); return; }
+  homeOff = fb.f.onValue(fb.f.ref(fb.db, 'users/' + uidNow + '/potlucks'), snap => renderHomeList(snap.val() || {}), () => renderHomeList(null));
+}
+function renderHomeList(map) {
+  const el = document.getElementById('homeList');
+  if (!map) { el.innerHTML = '<div class="history-empty">sign in to see the potlucks you\'re hosting.</div>'; return; }
+  const all = Object.entries(map).sort((a,b) => (b[1].createdAt||0) - (a[1].createdAt||0));
+  el.innerHTML = all.length
+    ? all.map(([id,d]) => `<div class="home-item" onclick="location.search='?p=${encodeURIComponent(id)}'">
+          <div><div class="home-item-title">${esc(d.title||'Potluck')}</div>
+          <div class="home-item-meta">started ${esc(new Date(d.createdAt||0).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}))}</div></div>
+          <span class="home-item-go">Open →</span></div>`).join('')
     : '<div class="history-empty">nothing here yet — start one above.</div>';
 }
 window.createPotluck = () => {
+  if (!canHost() || !fb) { toast('sign in first'); return; }
   const title = document.getElementById('newTitle').value.trim();
-  const password = document.getElementById('newPassword').value;
   if (!title) { document.getElementById('newTitle').focus(); toast('give it a name first'); return; }
-  if (!password) { document.getElementById('newPassword').focus(); toast('pick an admin password'); return; }
-  const doc = newPotluck({
-    title, password,
-    host: document.getElementById('newHost').value.trim(),
-    date: document.getElementById('newDate').value,
-    time: document.getElementById('newTime').value,
-  });
-  if (!store.save(doc)) return;
-  // the organiser who just made it goes straight into the admin panel
-  try { sessionStorage.setItem('potluck-admin-'+doc.id, '1'); } catch(e){}
-  location.search = '?p=' + encodeURIComponent(doc.id) + '&admin=1';
+  const id = newPotluckId(), now = Date.now(), host = me().uid;
+  const date = document.getElementById('newDate').value, time = document.getElementById('newTime').value || '18:00';
+  const doc = {
+    owner: host, createdAt: now,
+    meta: { title, host: document.getElementById('newHost').value.trim(), tagline: 'bring a dish, bring a friend.', byob: true },
+    categories: clone(DEFAULT_CATEGORIES), eventInfo: '', potluckTheme: '',
+  };
+  if (date) doc.eventDate = { date, time, autoAdvance:false, autoReset:false };
+  fb.f.set(fb.f.ref(fb.db, 'potlucks/' + id), doc)
+    .then(() => fb.f.set(fb.f.ref(fb.db, 'users/' + host + '/potlucks/' + id), { title, createdAt: now }))
+    .then(() => { location.search = '?p=' + id + '&admin=1'; },
+          err => { console.warn(err); toast("couldn't create it — check your connection"); });
 };
+
+// sign-in changed (here or in another tab): move between views to match
+function onAuth() {
+  if (document.getElementById('homeView').classList.contains('active')) renderHome();
+  if (!state) return;
+  paintLogin();
+  if (pendingAdmin && isHost()) { pendingAdmin = false; showView('adminView'); renderAdmin(); toast('your potluck is ready ✓'); }
+  else if (document.getElementById('loginView').classList.contains('active') && isHost()) { showView('adminView'); renderAdmin(); }
+  else if (adminOpen() && !isHost()) showView('publicView');
+  runAutoTasks();
+}
 
 // INIT
 document.getElementById('nameInput').addEventListener('keydown', e=>{ if(e.key==='Enter') window.addAttendee(); });
 window.addEventListener('resize', () => { if (state) renderPublic(); });
 
-const localBanner = '<div class="config-banner"><strong>On this device only.</strong> Sync isn\'t switched on yet — guests on other phones won\'t see this list.</div>';
-if (!potluckId) {
-  document.getElementById('homeBanner').innerHTML = localBanner;
-  renderHome(); showView('homeView');
+function hideLoading() { const lo=document.getElementById('loadingOverlay'); lo.classList.add('hidden'); setTimeout(()=>lo.style.display='none',400); }
+function showHome(banner) {
+  hideLoading();
+  document.getElementById('homeBanner').innerHTML = banner ? `<div class="config-banner">${banner}</div>` : '';
+  showView('homeView'); renderHome();
+}
+if (!acct()) {
+  showHome("<strong>Can't connect.</strong> Open the potluck from the website — it needs the site's sign-in to reach the database.");
 } else {
-  state = store.load(potluckId);
-  if (!state) {
-    document.getElementById('homeBanner').innerHTML = '<div class="config-banner"><strong>Potluck not found.</strong> That link\'s potluck isn\'t saved in this browser — sync isn\'t on yet, so links only open on the device that made them.</div>';
-    renderHome(); showView('homeView');
-  } else {
-    state.attendees ||= {}; state.claims ||= {}; state.history ||= {}; state.meta ||= {};
-    document.getElementById('configBanner').innerHTML = localBanner;
-    try { isAdminLoggedIn = sessionStorage.getItem('potluck-admin-'+state.id) === '1'; } catch(e){}
-    paintParty();
-    runAutoTasks();
-    renderAll();
-    if (isAdminLoggedIn && new URLSearchParams(location.search).get('admin') === '1') {
-      history.replaceState(null, '', '?p=' + encodeURIComponent(state.id));
-      showView('adminView'); renderAdmin(); toast('your potluck is ready ✓');
-    } else {
-      showView('publicView');
-    }
-    store.subscribe(state.id, doc => { state = doc; renderAll(); });
-  }
+  acct().on(onAuth);
+  acct().sdk().then(s => {
+    fb = { db: s.db, f: s.f };
+    if (!potluckId) { showHome(''); return; }
+    let first = true;
+    fb.f.onValue(fb.f.ref(fb.db, 'potlucks/' + potluckId), snap => {
+      const next = normalise(snap.val(), potluckId);
+      if (!next) {
+        state = null;
+        showHome('<strong>Potluck not found.</strong> The link may be wrong, or the host deleted it.');
+        return;
+      }
+      state = next;
+      if (first) {
+        first = false; hideLoading(); paintParty();
+        if (params.has('admin')) history.replaceState(null, '', '?p=' + encodeURIComponent(potluckId));
+        if (pendingAdmin && isHost()) { pendingAdmin = false; showView('adminView'); toast('your potluck is ready ✓'); }
+        else showView('publicView');
+      }
+      renderAll();
+      runAutoTasks();
+    }, err => {
+      console.warn(err);
+      showHome("<strong>Couldn't open this potluck.</strong> Check the link and your connection.");
+    });
+  }).catch(err => {
+    console.warn(err);
+    showHome("<strong>Can't reach the database.</strong> Check your connection and reload.");
+  });
 }
 </script>
 
