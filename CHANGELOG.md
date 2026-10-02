@@ -5,6 +5,42 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v67 — 2026-10-02
+
+**What's new** · New tool · [tools.html#events]
+### Potluck
+The Volley & BBQ zine, minus the volleyball. Anyone can start a potluck
+with its own link and password. Guests sign up with how many they're
+bringing, the dish slots grow with the headcount, and whoever hasn't
+claimed a dish shows up in red. Trial version: saved in your browser only.
+
+**Potluck v1 — `tools/potluck.html`** (source
+`Tools files/Events/Potluck - Zine _standalone_ v1.html`; Volley v3 untouched)
+- Same logic as the Volley zine: RSVP list, slots scaling with headcount,
+  "no dish" list, admin panel, save & reset into history, repeat weekly,
+  auto reset, event info, theme.
+- Generic: start screen creates any number of potlucks (`?p=<id>`), each
+  with its own title, "presented by", tagline, admin password, BYOB toggle.
+- RSVP is name + party size; slots scale with total people.
+- Organiser edits categories (name, icon, hint, dishes per 10 people, min).
+- Unbundled: fonts embedded as data URIs (latin subsets only), no external
+  hosts at all. No Firebase — it does not touch the volleyball database.
+
+**Scan**
+- Clean: no hosts, endpoints, secrets or personal data. Storage is
+  `localStorage` under `potluck-zine.v1.<id>` (the scanner reports none
+  because the key is built from a prefix). Admin passwords live in the
+  visitor's own browser only.
+
+**Verified locally**
+- Real clicks: create a potluck → admin; RSVP with party size; claim and
+  free a dish; edit and save categories (incl. removing a claimed one);
+  save & reset → history; home list. Checked no inline handler name
+  clashes with a `document` property (the v66 bug). No console errors;
+  no horizontal scroll at phone width.
+
+---
+
 ## v66 — 2026-10-02
 
 **What's new** · Fix · [tools/activity-planner.html]
