@@ -415,6 +415,8 @@ body.admin-mode .guest-summary-table thead th:last-child{border-top-right-radius
 /* The activity cards are <label>s inside .field, whose label style (block, small caps)
    would otherwise win and stack the checkbox above an all-caps name. */
 .field label.activity-check{display:flex;text-transform:none;letter-spacing:normal;font-size:inherit;font-weight:400;color:var(--text);margin-bottom:0.6rem}
+/* Example text has to read as an example, not as something already filled in. */
+input::placeholder,textarea::placeholder{color:#b3ada2;opacity:1}
 .empty-acts{font-size:0.86rem;color:var(--text-muted);font-style:italic;padding:0.5rem 0}
 .field-hint{font-size:0.75rem;color:var(--text-muted);margin-top:0.35rem;line-height:1.45;text-transform:none;letter-spacing:0}
 .danger-btn{width:100%;padding:0.8rem;background:none;color:#8a3030;border:0.5px solid #d08080;border-radius:var(--radius);font-family:'DM Sans',sans-serif;font-size:0.9rem;cursor:pointer;margin-top:0.5rem}
@@ -453,17 +455,17 @@ body.admin-mode .guest-summary-table thead th:last-child{border-top-right-radius
 <h2>Create an event</h2>
 <p>Name it, add your activities, then share the guest link. Guests sign up, pick activities and say how many are coming; you keep track of spots and payments.</p>
 </div>
-<div class="field"><label>Event name</label><input type="text" id="ev-name" placeholder="Summer reunion"/></div>
-<div class="field"><label>Organised by</label><input type="text" id="ev-hosts" placeholder="Sam &amp; Jo"/></div>
+<div class="field"><label>Event name</label><input type="text" id="ev-name" placeholder="e.g. Summer reunion"/></div>
+<div class="field"><label>Organised by</label><input type="text" id="ev-hosts" placeholder="e.g. Sam &amp; Jo"/></div>
 <div class="row">
-<div class="field"><label>Dates</label><input type="text" id="ev-dates" placeholder="June 12 – 14, 2027"/></div>
-<div class="field"><label>Place</label><input type="text" id="ev-place" placeholder="Lake Placid, NY"/></div>
+<div class="field"><label>Dates</label><input type="text" id="ev-dates" placeholder="e.g. June 12 – 14"/></div>
+<div class="field"><label>Place</label><input type="text" id="ev-place" placeholder="e.g. Lake Placid"/></div>
 </div>
 <div class="row">
 <div class="field"><label>Currency</label><select id="ev-currency"></select></div>
 <div class="field"><label>Admin password</label><input type="password" id="ev-pw" placeholder="For your dashboard" autocomplete="new-password"/></div>
 </div>
-<button class="submit-btn" onclick="createEvent()">Create event</button>
+<button class="submit-btn" onclick="createNewEvent()">Create event</button>
 </div>
 </div>
 
@@ -909,7 +911,7 @@ return `<div class="ev-item">
 }).join('')}</div>
 </div>`;
 }
-window.createEvent = async function() {
+window.createNewEvent = async function() {
 const name = document.getElementById('ev-name').value.trim();
 const pw = document.getElementById('ev-pw').value;
 if (!name) { alert('Give your event a name.'); return; }

@@ -5,6 +5,29 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v66 — 2026-10-02
+
+**What's new** · Fix · [tools/activity-planner.html]
+### Create event works
+The Activity Planner's Create event button did nothing. It does now. The
+example text in the form is also lighter, so it no longer looks filled in.
+
+**Activity Planner v1 (fix) — `tools/activity-planner.html`**
+- The button's inline `onclick="createEvent()"` resolved to the browser's
+  built-in `document.createEvent` (inline handlers look on `document`
+  first), which threw. Renamed to `createNewEvent`. Checked every other
+  inline handler name against document/element properties — no other clash.
+- v65's test called the function directly, so it never went through the
+  button. This time every new button was tested with real clicks.
+- Placeholders lighter (`::placeholder`) and prefixed "e.g." on the create form.
+
+**Verified locally**
+- Real clicks: empty form → "Give your event a name."; filled → event
+  created, dashboard opens; Add activity and Save event details save.
+  No console errors.
+
+---
+
 ## v65 — 2026-10-02
 
 **What's new** · New tool · [tools.html#events]
