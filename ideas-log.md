@@ -24,3 +24,25 @@ its ID forever. Statuses: new, planned, in progress, done, dropped.
 ### IDEA-005 · Public "Tools" showcase with one-line outcomes
 - **Category:** Tool · **Effort:** M · **Impact:** ★★ · **Status:** new
 - tools.html lists 16 tools with search and filter, but tool names like Liquid Silver or Organic Loops don't say who they help. Indie-tool sites (e.g. Notion template shops) lead each card with an outcome sentence and a screenshot, and put a single "Most useful" row on top. Add a pinned row of three tools (Package Builder, Wedding Schedule, Budget Tracker) with outcome-led captions and an email capture for "new tools" updates.
+
+## 2026-10-04 — Wildcard (second pass: what the best creator and tool sites do)
+
+### IDEA-006 · Give every blog post its own crawlable page
+- **Category:** SEO · **Effort:** M · **Impact:** ★★ · **Status:** new
+- food-for-thought.html loads posts from Firebase after the page opens and opens a single post through a #hash (line ~488), so Google sees an empty page and no post has a real URL to share. Top creator blogs give each post its own address and plain HTML. Have the composer also write a static post page (or a small build step that snapshots blog/posts into /food-for-thought/<slug>.html) so every post can rank, be linked and be previewed.
+
+### IDEA-007 · "Send this package to Xavier" in the Package Builder
+- **Category:** Conversion · **Effort:** M · **Impact:** ★★★ · **Status:** new
+- tools/package-builder.html ends in exportSummary(), which only downloads a .txt file, so the most qualified couples on the site (they just priced a full wedding) leave without Xavier ever knowing. Add a "Send this to Xavier" button that posts the selections, total and the couple's name, email and date to the GoHighLevel endpoint from IDEA-004 (builds on IDEA-004), tagged "package-builder". Each export becomes a warm lead with the exact package attached.
+
+### IDEA-008 · robots.txt, sitemap.xml and structured data
+- **Category:** SEO · **Effort:** S · **Impact:** ★★ · **Status:** new
+- The site root has no robots.txt or sitemap.xml, and no page carries schema.org JSON-LD. Add a sitemap listing the public pages, a robots.txt pointing to it (and hiding access.html), and Person plus LocalBusiness/Photographer markup on work.html with the two business sites as sameAs. It helps search engines show the right name, services and area.
+
+### IDEA-009 · Make the tools installable on a phone (PWA)
+- **Category:** Feature · **Effort:** M · **Impact:** ★★ · **Status:** new
+- No page or tool has a web manifest, theme-color or home-screen icon, yet tools like Wedding Schedule, Potluck and Activity Planner get used on a phone at the event itself. Add a manifest.json, icons from assets/logo.svg and a tiny service worker so guests and couples can "Add to Home Screen" and open them offline. Creator tool sites that feel like apps get reopened, and each reopen is another brand impression.
+
+### IDEA-010 · Paid "Wedding Planner Pack" as the downsell for couples who don't book
+- **Category:** Monetization · **Effort:** M · **Impact:** ★★★ · **Status:** new
+- Wedding Schedule, Budget Tracker, Activity Planner and Potluck in tools/ are already polished but are free and unframed. Bundle them as a $29 "Wedding Planner Pack" (signed-in access plus printable PDFs) offered after a couple declines the Package Builder quote, and included free with any booking as a bonus. It turns tire-kickers into paying customers (downsell), keeps them in Xavier's world, and adds a bonus line to the main offer.
