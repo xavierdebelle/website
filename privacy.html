@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PRIVACY — XAVIER DE BELLE</title>
+<!-- social preview: link cards on Instagram, iMessage, WhatsApp, Facebook, X -->
+<meta name="description" content="How this website and its tools handle personal information, under Québec's Law 25. What is collected, why, who sees it, and your rights.">
+<link rel="canonical" href="https://xavierdebelle.github.io/website/privacy.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Xavier de Belle">
+<meta property="og:locale" content="en_CA">
+<meta property="og:locale:alternate" content="fr_CA">
+<meta property="og:title" content="Privacy — Xavier de Belle">
+<meta property="og:description" content="How this website and its tools handle personal information, under Québec's Law 25. What is collected, why, who sees it, and your rights.">
+<meta property="og:url" content="https://xavierdebelle.github.io/website/privacy.html">
+<meta property="og:image" content="https://xavierdebelle.github.io/website/assets/og/privacy.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Privacy — Xavier de Belle">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="assets/logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/style.css?v=71">
+<script src="assets/account.js"></script>
+<script src="assets/site-index.js"></script>
+<style>
+  .mast {
+    padding: clamp(40px, 8vw, 96px) var(--gut) clamp(30px, 5vw, 60px);
+    border-bottom: var(--edge) solid var(--paper);
+  }
+  .mast h1 { font-size: clamp(64px, 16vw, 220px); margin: 14px 0 0; }
+  /* "Confidentialité" is twice as long as "Privacy": its own size, so it fits a phone */
+  .mast h1 [lang="fr"] { font-size: clamp(36px, 10.5vw, 150px); }
+  .mast__sub {
+    font-size: clamp(15px, 1.8vw, 19px); line-height: 1.6; max-width: 56ch; margin: 26px 0 0;
+  }
+  .lang { display: flex; gap: 10px; margin-top: 26px; }
+  .lang .topbar__btn[aria-pressed="true"] { background: var(--paper); color: var(--ink); border-color: var(--paper); }
+
+  /* the short version: a volt panel, like the volt chapters on Work */
+  .short {
+    background: var(--volt); color: var(--ink);
+    padding: clamp(32px, 6vw, 72px) var(--gut);
+    border-bottom: var(--edge) solid var(--paper);
+  }
+  .short .kicker { color: rgba(0,0,0,.6); }
+  .short ul { list-style: none; margin: 22px 0 0; padding: 0; max-width: 64ch; border-top: var(--edge) solid var(--ink); }
+  .short li {
+    font-size: clamp(17px, 2.1vw, 23px); line-height: 1.4; font-weight: 700; letter-spacing: -.01em;
+    padding: 16px 0; border-bottom: 2px solid rgba(0,0,0,.22);
+  }
+  .short a { color: var(--ink); text-underline-offset: 4px; }
+
+  .sec {
+    display: grid; grid-template-columns: minmax(0, 380px) minmax(0, 1fr); gap: clamp(20px, 4vw, 60px);
+    padding: clamp(36px, 6vw, 72px) var(--gut);
+    border-bottom: var(--edge) solid var(--paper);
+  }
+  .sec__no { font-family: var(--mono); font-size: 11px; letter-spacing: .24em; color: var(--volt); margin: 0 0 12px; }
+  .sec h2 {
+    font-weight: 900; text-transform: uppercase; letter-spacing: -.035em; line-height: .9;
+    font-size: clamp(28px, 3.1vw, 40px); margin: 0; overflow-wrap: break-word;
+  }
+  .sec__body { max-width: 68ch; }
+  .sec__body p, .sec__body li { font-size: clamp(15px, 1.7vw, 18px); line-height: 1.65; }
+  .sec__body p { margin: 0 0 1em; }
+  .sec__body p:last-child { margin-bottom: 0; }
+  .sec__body ul { margin: 0 0 1em; padding-left: 1.2em; }
+  .sec__body li { margin: 0 0 .45em; }
+  .sec__body a { color: var(--volt); text-underline-offset: 3px; overflow-wrap: anywhere; }
+  .sec__body b { font-weight: 900; }
+
+  /* one row per tool: name on the left, what it does with your information on the right */
+  .uses { margin: 0; border-top: 2px solid var(--ash); }
+  .uses > div {
+    display: grid; grid-template-columns: minmax(0, 210px) minmax(0, 1fr); gap: 8px 24px;
+    padding: 18px 0; border-bottom: 2px solid var(--ash);
+  }
+  .uses dt {
+    font-weight: 900; text-transform: uppercase; letter-spacing: -.01em; font-size: 15px; line-height: 1.35;
+  }
+  .uses dt small {
+    display: block; margin-top: 6px; font: 400 10px/1.5 var(--mono); letter-spacing: .16em; color: var(--dust);
+  }
+  .uses dd { margin: 0; }
+  .uses dd p { margin: 0 0 .6em; }
+
+  .contact {
+    display: inline-block; margin-top: 6px; font-weight: 900; font-size: clamp(17px, 2.2vw, 24px);
+    letter-spacing: -.01em; color: var(--paper) !important; text-decoration-color: var(--volt);
+  }
+
+  @media (max-width: 860px) {
+    .sec { grid-template-columns: 1fr; }
+    .uses > div { grid-template-columns: 1fr; }
+  }
+  [lang][hidden] { display: none; }
+</style>
+</head>
+<body>
+
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <a class="topbar__mark" href="index.html">
+    <img src="assets/logo.svg" alt="">
+    Xavier de Belle
+  </a>
+  <nav class="topbar__nav" aria-label="Main">
+    <button class="topbar__btn" type="button" data-site-index aria-haspopup="dialog">Index</button>
+    <span class="topbar__account" data-xdb-account></span>
+  </nav>
+</header>
+
+<main id="main">
+
+<!-- ============================================================
+     PRIVACY — one policy for the whole site and every tool on it,
+     written for Québec's Law 25 (Act respecting the protection of
+     personal information in the private sector). English and French
+     are both here; the buttons show one at a time, #fr opens French.
+     When a tool starts collecting something new, add it to section 02
+     in BOTH languages and change the date at the top.
+     ============================================================ -->
+
+<section class="mast">
+  <p class="kicker">Law 25 &mdash; Qu&eacute;bec</p>
+  <h1 class="display"><span lang="en">Privacy</span><span lang="fr" hidden>Confidentialit&eacute;</span></h1>
+  <p class="mast__sub" lang="en">One policy for the whole site and every tool on it. Last updated October 5, 2026.</p>
+  <p class="mast__sub" lang="fr" hidden>Une seule politique pour tout le site et chacun de ses outils. Derni&egrave;re mise &agrave; jour&nbsp;: 5&nbsp;octobre&nbsp;2026.</p>
+  <div class="lang" role="group" aria-label="Language / Langue">
+    <button class="topbar__btn" type="button" data-lang="en" aria-pressed="true">English</button>
+    <button class="topbar__btn" type="button" data-lang="fr" aria-pressed="false" lang="fr">Fran&ccedil;ais</button>
+  </div>
+</section>
+
+<!-- ======================= ENGLISH ======================= -->
+<div lang="en" id="en">
+
+<section class="short">
+  <p class="kicker">The short version</p>
+  <ul>
+    <li>Most tools collect nothing. Your photos, plans, budgets and ideas stay in your browser, on your device. I never see them.</li>
+    <li>Information leaves your device only when you choose to: when you sign in, turn on sync, sign up for an event, or send a form.</li>
+    <li>No ads. Your information is never sold or rented. No tracking cookies.</li>
+    <li>You can ask to see, correct, take a copy of, or delete your information at any time: <a href="mailto:xavier@debellephotography.com">xavier@debellephotography.com</a>.</li>
+  </ul>
+</section>
+
+<section class="sec">
+  <div><p class="sec__no">01</p><h2>Who&rsquo;s responsible</h2></div>
+  <div class="sec__body">
+    <p>This website, <b>xavierdebelle.github.io/website</b>, and every tool on it are run by Xavier de Belle, in Montr&eacute;al, Qu&eacute;bec.</p>
+    <p>I am the person in charge of the protection of personal information. Questions, requests and complaints all come to me:</p>
+    <p><a class="contact" href="mailto:xavier@debellephotography.com">xavier@debellephotography.com</a></p>
+    <p>Some tools are made for de Belle Photography clients (Package Builder, Video Corrections, Wedding Day Schedule). When one of them sends information to the studio, de Belle Photography handles it under this same policy, and I answer for it.</p>
+  </div>
+</section>
+
+<section class="sec">
+  <div><p class="sec__no">02</p><h2>What&rsquo;s collected, tool by tool</h2></div>
+  <div class="sec__body">
+    <dl class="uses">
+      <div>
+        <dt>Visiting any page<small>Hosting &amp; fonts</small></dt>
+        <dd>
+          <p>The site is hosted by GitHub Pages. Like any web server, GitHub receives your IP address and browser details when a page loads, and keeps them in its logs for security. I don&rsquo;t receive those logs, and the site itself runs no analytics.</p>
+          <p>A few tools load their typefaces from Google Fonts (Activity Planner, Budget Tracker, Package Builder, Project Phases, Video Corrections, Wedding Activities) or Adobe Fonts (Project Phases). Your browser then asks Google or Adobe for the font file, which shows them your IP address.</p>
+        </dd>
+      </div>
+      <div>
+        <dt>Tools that keep everything on your device<small>Nothing sent</small></dt>
+        <dd>
+          <p>Feed Planner, Carousel Planner, Portfolio Grid, Portfolio Masonry, FreeCanvas, Package Builder, Wedding Day Schedule, Neural Mind Map, Liquid Silver and Organic Loops &mdash; and Budget Tracker, Idea Bank and Project Phases when you aren&rsquo;t signed in.</p>
+          <p>What you put in them is saved in your browser&rsquo;s own storage, on your device. It never reaches me. Clearing the tool, or your browser&rsquo;s data for this site, deletes it. The installable versions of Feed Planner and Carousel Planner work the same way, offline.</p>
+        </dd>
+      </div>
+      <div>
+        <dt>Sign in &amp; sync<small>Account &middot; Project Phases &middot; Budget Tracker &middot; Idea Bank</small></dt>
+        <dd>
+          <p>When you sign in with Google, Google shares your name, email address, profile photo and Google account ID with the site, through Firebase Authentication. Signing in sends me an access request, which I approve or decline.</p>
+          <p>If you&rsquo;re approved, Project Phases, Budget Tracker and Idea Bank save your work in a database (Firebase Realtime Database) so it follows you between devices. Only your account can read your synced data. As the database administrator I could technically open it; I don&rsquo;t, unless you ask me to fix a problem or the law requires it.</p>
+        </dd>
+      </div>
+      <div>
+        <dt>Activity Planner<small>Events</small></dt>
+        <dd>
+          <p>Organisers sign in with Google (see above). Guests give their first and last name, email, phone number, an optional note, the activities they pick and how many spots.</p>
+          <p>Anyone with the event link sees the guest list: first name, last name and spots. Email, phone, notes and payment records are visible only to the organiser, and to me as administrator. Payments are never processed on this site; the organiser records them by hand. The organiser decides how guest information is used for their event, and is responsible for that use.</p>
+        </dd>
+      </div>
+      <div>
+        <dt>Potluck<small>Events</small></dt>
+        <dd><p>Guests give their name and how many people they&rsquo;re bringing, and claim a dish. Anyone with the potluck link sees that list. Organisers sign in with Google.</p></dd>
+      </div>
+      <div>
+        <dt>Volley &amp; BBQ Zine<small>Events</small></dt>
+        <dd><p>Players give their name and claim a dish. It&rsquo;s stored in a separate database for the Monday games, and anyone with the link sees the list.</p></dd>
+      </div>
+      <div>
+        <dt>Wedding Activities<small>Xavier &amp; Maria</small></dt>
+        <dd>
+          <p>Guests give their name, email, phone number, notes and the activities they sign up for; the couple records payments. It&rsquo;s stored in a separate database for the wedding. Names and activities appear on the page for other guests. The page reads the guest list from that database as a whole, so only enter details you&rsquo;re comfortable sharing with the other guests.</p>
+          <p>This page was built with HighLevel (GoHighLevel) and loads some of its files from HighLevel&rsquo;s servers. It also uses Cloudflare Web Analytics, which counts visits without cookies.</p>
+        </dd>
+      </div>
+      <div>
+        <dt>Video Corrections<small>de Belle Photography</small></dt>
+        <dd><p>You give your name, your partner&rsquo;s name, your email, the wedding date, the link to the video, and your notes. When you send the form, it goes to de Belle Photography&rsquo;s client system (HighLevel) so the editors can make your corrections. Until then, the draft stays in your browser only.</p></dd>
+      </div>
+      <div>
+        <dt>Reading pages<small>Food for Thought &middot; About pages</small></dt>
+        <dd><p>Read-only for visitors. Nothing is collected.</p></dd>
+      </div>
+    </dl>
+  </div>
+</section>
+
+<section class="sec">
+  <div><p class="sec__no">03</p><h2>Why, and your consent</h2></div>
+  <div class="sec__body">
+    <p>Information is used only to do what you asked: keep your work in sync, run the event you signed up for, make your video corrections, answer your message.</p>
+    <p>It isn&rsquo;t used to advertise to you. It&rsquo;s never sold or rented. No profile is built about you, and no decision about you is made automatically.</p>
+    <p>Using a feature that needs information is how you consent to that use. You can withdraw your consent at any time: tell me, and I&rsquo;ll stop and delete what&rsquo;s no longer needed. Some features stop working without it; sync, for example, needs an account.</p>
+  </div>
+</section>
+
+<section class="sec">
+  <div><p class="sec__no">04</p><h2>Who else handles it</h2></div>
+  <div class="sec__body">
+    <p>A few service providers process information only to provide their service:</p>
+    <ul>
+      <li><b>Google</b> &mdash; Firebase Authentication, Firebase Realtime Database, Google Fonts</li>
+      <li><b>GitHub</b> &mdash; hosts the website</li>
+      <li><b>HighLevel</b> &mdash; de Belle Photography&rsquo;s client system (Video Corrections) and the Wedding Activities page</li>
+      <li><b>Cloudflare</b> &mdash; visit counts on the Wedding Activities page</li>
+      <li><b>Adobe Fonts</b> &mdash; typefaces in Project Phases</li>
+    </ul>
+    <p>Their servers are outside Qu&eacute;bec, mostly in the United States, so your information may be stored there and be subject to the laws of that country. I chose providers with strong security and privacy commitments.</p>
+  </div>
+</section>
+
+<section class="sec">
+  <div><p class="sec__no">05</p><h2>Cookies &amp; browser storage</h2></div>
+  <div class="sec__body">
+    <p>No advertising or tracking cookies. The site uses your browser&rsquo;s storage to:</p>
+    <ul>
+      <li>save your work in the tools;</li>
+      <li>keep you signed in;</li>
+      <li>let the installed apps open without a connection.</li>
+    </ul>
+    <p>None of it is used to identify, locate or profile you. You can clear it at any time in your browser&rsquo;s settings.</p>
+  </div>
+</section>
+
+<section class="sec">
+  <div><p class="sec__no">06</p><h2>How long it&rsquo;s kept</h2></div>
+  <div class="sec__body">
+    <ul>
+      <li><b>On your device:</b> until you delete it.</li>
+      <li><b>Your account and synced work:</b> for as long as you use them. Ask, and I&rsquo;ll delete them within 30 days. If I decline an access request, I keep that record so the account isn&rsquo;t asked about again, until I allow it.</li>
+      <li><b>Events and potlucks:</b> until the organiser deletes them. I delete any still there 12 months after their date.</li>
+      <li><b>Video correction requests:</b> in de Belle Photography&rsquo;s client file, for as long as your project and the studio&rsquo;s records need them.</li>
+    </ul>
+    <p>When information is no longer needed, it&rsquo;s destroyed or anonymized.</p>
+  </div>
+</section>
+
+<section class="sec">
+  <div><p class="sec__no">07</p><h2>Your rights</h2></div>
+  <div class="sec__body">
+    <p>Under Qu&eacute;bec law, you can:</p>
+    <ul>
+      <li>know what information I hold about you, and get a copy;</li>
+      <li>have it corrected if it&rsquo;s wrong, incomplete or out of date;</li>
+      <li>have it deleted, or have its dissemination stopped, when the law allows;</li>
+      <li>withdraw your consent;</li>
+      <li>receive the information you gave in a structured, commonly used format;</li>
+      <li>know who has access to it and how long it&rsquo;s kept.</li>
+    </ul>
+    <p>Email <a href="mailto:xavier@debellephotography.com">xavier@debellephotography.com</a>. I&rsquo;ll answer within 30 days, free of charge. I may first need to confirm it&rsquo;s really you.</p>
+    <p>If you&rsquo;re not satisfied with my answer, you can file a complaint with the Commission d&rsquo;acc&egrave;s &agrave; l&rsquo;information du Qu&eacute;bec: <a href="https://www.cai.gouv.qc.ca/" target="_blank" rel="noopener">cai.gouv.qc.ca</a>.</p>
+  </div>
+</section>
+
+<section class="sec">
+  <div><p class="sec__no">08</p><h2>Security</h2></div>
+  <div class="sec__body">
+    <ul>
+      <li>Every connection is encrypted (HTTPS).</li>
+      <li>Database rules decide who can read and write each piece of information.</li>
+      <li>Booking lookups in the Activity Planner use a scrambled key, not your email address.</li>
+      <li>No card numbers are ever entered or stored on this site.</li>
+    </ul>
+    <p>If a confidentiality incident ever creates a risk of serious harm, I&rsquo;ll notify you and the Commission d&rsquo;acc&egrave;s &agrave; l&rsquo;information, and I keep a register of incidents, as the law requires.</p>
+  </div>
+</section>
+
+<section class="sec">
+  <div><p class="sec__no">09</p><h2>Children</h2></div>
+  <div class="sec__body">
+    <p>The tools aren&rsquo;t designed for children. If you&rsquo;re under 14, ask a parent or guardian before signing up for anything here.</p>
+  </div>
+</section>
+
+<section class="sec">
+  <div><p class="sec__no">10</p><h2>Changes</h2></div>
+  <div class="sec__body">
+    <p>When this policy changes, the date at the top changes too, and important changes are announced on <a href="changelog.html">What&rsquo;s New</a>.</p>
+  </div>
+</section>
+
+</div>
+
+<!-- ======================= FRANÇAIS ======================= -->
+<div lang="fr" id="fr" hidden>
+
+<section class="short">
+  <p class="kicker">En bref</p>
+  <ul>
+    <li>La plupart des outils ne recueillent rien. Vos photos, plans, budgets et id&eacute;es restent dans votre navigateur, sur votre appareil. Je ne les vois jamais.</li>
+    <li>Vos renseignements ne quittent votre appareil que lorsque vous le choisissez&nbsp;: quand vous vous connectez, activez la synchronisation, vous inscrivez &agrave; un &eacute;v&eacute;nement ou envoyez un formulaire.</li>
+    <li>Aucune publicit&eacute;. Vos renseignements ne sont jamais vendus ni lou&eacute;s. Aucun t&eacute;moin de suivi.</li>
+    <li>Vous pouvez en tout temps demander &agrave; consulter, corriger, obtenir une copie ou faire supprimer vos renseignements&nbsp;: <a href="mailto:xavier@debellephotography.com">xavier@debellephotography.com</a>.</li>
+  </ul>
+</section>
+
+<section class="sec">
+  <div><p class="sec__no">01</p><h2>Qui est responsable</h2></div>
+  <div class="sec__body">
+    <p>Ce site, <b>xavierdebelle.github.io/website</b>, et chacun de ses outils sont exploit&eacute;s par Xavier de Belle, &agrave; Montr&eacute;al, au Qu&eacute;bec.</p>
+    <p>Je suis le responsable de la protection des renseignements personnels. Les questions, demandes et plaintes me sont toutes adress&eacute;es&nbsp;:</p>
+    <p><a class="contact" href="mailto:xavier@debellephotography.com">xavier@debellephotography.com</a></p>
+    <p>Certains outils sont con&ccedil;us pour les clients de de Belle Photography (Package Builder, Video Corrections, Wedding Day Schedule). Lorsque l&rsquo;un d&rsquo;eux transmet des renseignements au studio, de Belle Photography les traite selon cette m&ecirc;me politique, et j&rsquo;en r&eacute;ponds.</p>
+  </div>
+</section>
+
+<section class="sec">
+  <div><p class="sec__no">02</p><h2>Ce qui est recueilli, outil par outil</h2></div>
+  <div class="sec__body">
+    <dl class="uses">
+      <div>
+        <dt>Visite de toute page<small>H&eacute;bergement et polices</small></dt>
+        <dd>
+          <p>Le site est h&eacute;berg&eacute; par GitHub Pages. Comme tout serveur web, GitHub re&ccedil;oit votre adresse IP et les d&eacute;tails de votre navigateur lorsqu&rsquo;une page se charge, et les conserve dans ses journaux pour des raisons de s&eacute;curit&eacute;. Je ne re&ccedil;ois pas ces journaux, et le site lui-m&ecirc;me n&rsquo;utilise aucun outil d&rsquo;analyse.</p>
+          <p>Quelques outils chargent leurs polices de caract&egrave;res depuis Google Fonts (Activity Planner, Budget Tracker, Package Builder, Project Phases, Video Corrections, Wedding Activities) ou Adobe Fonts (Project Phases). Votre navigateur demande alors le fichier &agrave; Google ou &agrave; Adobe, qui voient ainsi votre adresse IP.</p>
+        </dd>
+      </div>
+      <div>
+        <dt>Outils qui gardent tout sur votre appareil<small>Rien n&rsquo;est transmis</small></dt>
+        <dd>
+          <p>Feed Planner, Carousel Planner, Portfolio Grid, Portfolio Masonry, FreeCanvas, Package Builder, Wedding Day Schedule, Neural Mind Map, Liquid Silver et Organic Loops &mdash; ainsi que Budget Tracker, Idea Bank et Project Phases lorsque vous n&rsquo;&ecirc;tes pas connect&eacute;.</p>
+          <p>Ce que vous y mettez est enregistr&eacute; dans le stockage de votre navigateur, sur votre appareil. Cela ne me parvient jamais. Vider l&rsquo;outil, ou les donn&eacute;es de votre navigateur pour ce site, l&rsquo;efface. Les versions installables de Feed Planner et Carousel Planner fonctionnent de la m&ecirc;me fa&ccedil;on, hors ligne.</p>
+        </dd>
+      </div>
+      <div>
+        <dt>Connexion et synchronisation<small>Compte &middot; Project Phases &middot; Budget Tracker &middot; Idea Bank</small></dt>
+        <dd>
+          <p>Lorsque vous vous connectez avec Google, Google transmet au site votre nom, votre adresse courriel, votre photo de profil et l&rsquo;identifiant de votre compte Google, par l&rsquo;entremise de Firebase Authentication. Votre connexion m&rsquo;envoie une demande d&rsquo;acc&egrave;s, que j&rsquo;accepte ou que je refuse.</p>
+          <p>Si votre demande est accept&eacute;e, Project Phases, Budget Tracker et Idea Bank enregistrent votre travail dans une base de donn&eacute;es (Firebase Realtime Database) pour qu&rsquo;il vous suive d&rsquo;un appareil &agrave; l&rsquo;autre. Seul votre compte peut lire vos donn&eacute;es synchronis&eacute;es. En tant qu&rsquo;administrateur de la base de donn&eacute;es, je pourrais techniquement les ouvrir&nbsp;; je ne le fais pas, sauf si vous me demandez de r&eacute;gler un probl&egrave;me ou si la loi l&rsquo;exige.</p>
+        </dd>
+      </div>
+      <div>
+        <dt>Activity Planner<small>&Eacute;v&eacute;nements</small></dt>
+        <dd>
+          <p>Les organisateurs se connectent avec Google (voir plus haut). Les invit&eacute;s fournissent leur pr&eacute;nom et leur nom, leur courriel, leur num&eacute;ro de t&eacute;l&eacute;phone, une note facultative, les activit&eacute;s choisies et le nombre de places.</p>
+          <p>Toute personne qui a le lien de l&rsquo;&eacute;v&eacute;nement voit la liste des invit&eacute;s&nbsp;: pr&eacute;nom, nom et nombre de places. Le courriel, le t&eacute;l&eacute;phone, les notes et les paiements ne sont visibles que par l&rsquo;organisateur, et par moi en tant qu&rsquo;administrateur. Aucun paiement n&rsquo;est trait&eacute; sur ce site&nbsp;; l&rsquo;organisateur les inscrit &agrave; la main. L&rsquo;organisateur d&eacute;cide de l&rsquo;utilisation des renseignements des invit&eacute;s pour son &eacute;v&eacute;nement et en est responsable.</p>
+        </dd>
+      </div>
+      <div>
+        <dt>Potluck<small>&Eacute;v&eacute;nements</small></dt>
+        <dd><p>Les invit&eacute;s indiquent leur nom et le nombre de personnes qui les accompagnent, et choisissent un plat. Toute personne qui a le lien du potluck voit cette liste. Les organisateurs se connectent avec Google.</p></dd>
+      </div>
+      <div>
+        <dt>Volley &amp; BBQ Zine<small>&Eacute;v&eacute;nements</small></dt>
+        <dd><p>Les joueurs indiquent leur nom et choisissent un plat. Ces renseignements sont conserv&eacute;s dans une base de donn&eacute;es distincte pour les matchs du lundi, et toute personne qui a le lien voit la liste.</p></dd>
+      </div>
+      <div>
+        <dt>Wedding Activities<small>Xavier &amp; Maria</small></dt>
+        <dd>
+          <p>Les invit&eacute;s fournissent leur nom, leur courriel, leur num&eacute;ro de t&eacute;l&eacute;phone, des notes et les activit&eacute;s auxquelles ils s&rsquo;inscrivent&nbsp;; les mari&eacute;s inscrivent les paiements. Ces renseignements sont conserv&eacute;s dans une base de donn&eacute;es distincte pour le mariage. Les noms et les activit&eacute;s s&rsquo;affichent sur la page pour les autres invit&eacute;s. La page lit la liste des invit&eacute;s de cette base de donn&eacute;es en entier&nbsp;; n&rsquo;inscrivez donc que des renseignements que vous &ecirc;tes &agrave; l&rsquo;aise de partager avec les autres invit&eacute;s.</p>
+          <p>Cette page a &eacute;t&eacute; cr&eacute;&eacute;e avec HighLevel (GoHighLevel) et charge certains fichiers depuis les serveurs de HighLevel. Elle utilise aussi Cloudflare Web Analytics, qui compte les visites sans t&eacute;moins.</p>
+        </dd>
+      </div>
+      <div>
+        <dt>Video Corrections<small>de Belle Photography</small></dt>
+        <dd><p>Vous fournissez votre nom, celui de votre partenaire, votre courriel, la date du mariage, le lien vers la vid&eacute;o et vos notes. Lorsque vous envoyez le formulaire, il est transmis au syst&egrave;me client de de Belle Photography (HighLevel) pour que les monteurs puissent faire vos corrections. D&rsquo;ici l&agrave;, le brouillon reste uniquement dans votre navigateur.</p></dd>
+      </div>
+      <div>
+        <dt>Lecture des pages<small>Food for Thought &middot; pages &laquo;&nbsp;&Agrave; propos&nbsp;&raquo;</small></dt>
+        <dd><p>En lecture seule pour les visiteurs. Rien n&rsquo;est recueilli.</p></dd>
+      </div>
+    </dl>
+  </div>
+</section>
+
+<section class="sec">
+  <div><p class="sec__no">03</p><h2>Pourquoi, et votre consentement</h2></div>
+  <div class="sec__body">
+    <p>Les renseignements servent uniquement &agrave; faire ce que vous avez demand&eacute;&nbsp;: synchroniser votre travail, g&eacute;rer l&rsquo;&eacute;v&eacute;nement auquel vous vous &ecirc;tes inscrit, faire vos corrections vid&eacute;o, r&eacute;pondre &agrave; votre message.</p>
+    <p>Ils ne servent pas &agrave; vous faire de la publicit&eacute;. Ils ne sont jamais vendus ni lou&eacute;s. Aucun profil n&rsquo;est &eacute;tabli &agrave; votre sujet, et aucune d&eacute;cision vous concernant n&rsquo;est prise de fa&ccedil;on automatis&eacute;e.</p>
+    <p>En utilisant une fonction qui a besoin de renseignements, vous consentez &agrave; cette utilisation. Vous pouvez retirer votre consentement en tout temps&nbsp;: dites-le-moi, et je cesserai l&rsquo;utilisation et supprimerai ce qui n&rsquo;est plus n&eacute;cessaire. Certaines fonctions ne fonctionnent plus sans ces renseignements&nbsp;; la synchronisation, par exemple, exige un compte.</p>
+  </div>
+</section>
+
+<section class="sec">
+  <div><p class="sec__no">04</p><h2>Qui d&rsquo;autre les traite</h2></div>
+  <div class="sec__body">
+    <p>Quelques fournisseurs de services traitent des renseignements uniquement pour offrir leur service&nbsp;:</p>
+    <ul>
+      <li><b>Google</b> &mdash; Firebase Authentication, Firebase Realtime Database, Google Fonts</li>
+      <li><b>GitHub</b> &mdash; h&eacute;berge le site</li>
+      <li><b>HighLevel</b> &mdash; syst&egrave;me client de de Belle Photography (Video Corrections) et page Wedding Activities</li>
+      <li><b>Cloudflare</b> &mdash; comptage des visites sur la page Wedding Activities</li>
+      <li><b>Adobe Fonts</b> &mdash; polices de Project Phases</li>
+    </ul>
+    <p>Leurs serveurs sont situ&eacute;s &agrave; l&rsquo;ext&eacute;rieur du Qu&eacute;bec, surtout aux &Eacute;tats-Unis&nbsp;; vos renseignements peuvent donc y &ecirc;tre conserv&eacute;s et &ecirc;tre soumis aux lois de ce pays. J&rsquo;ai choisi des fournisseurs qui ont de solides engagements en mati&egrave;re de s&eacute;curit&eacute; et de confidentialit&eacute;.</p>
+  </div>
+</section>
+
+<section class="sec">
+  <div><p class="sec__no">05</p><h2>T&eacute;moins et stockage du navigateur</h2></div>
+  <div class="sec__body">
+    <p>Aucun t&eacute;moin publicitaire ou de suivi. Le site utilise le stockage de votre navigateur pour&nbsp;:</p>
+    <ul>
+      <li>enregistrer votre travail dans les outils&nbsp;;</li>
+      <li>garder votre session ouverte&nbsp;;</li>
+      <li>permettre aux applications install&eacute;es de s&rsquo;ouvrir sans connexion.</li>
+    </ul>
+    <p>Rien de cela ne sert &agrave; vous identifier, &agrave; vous localiser ou &agrave; vous profiler. Vous pouvez tout effacer en tout temps dans les r&eacute;glages de votre navigateur.</p>
+  </div>
+</section>
+
+<section class="sec">
+  <div><p class="sec__no">06</p><h2>Dur&eacute;e de conservation</h2></div>
+  <div class="sec__body">
+    <ul>
+      <li><b>Sur votre appareil&nbsp;:</b> jusqu&rsquo;&agrave; ce que vous l&rsquo;effaciez.</li>
+      <li><b>Votre compte et votre travail synchronis&eacute;&nbsp;:</b> tant que vous les utilisez. Sur demande, je les supprime dans les 30&nbsp;jours. Si je refuse une demande d&rsquo;acc&egrave;s, je conserve cette d&eacute;cision pour que le compte ne refasse pas la demande, jusqu&rsquo;&agrave; ce que je l&rsquo;autorise.</li>
+      <li><b>&Eacute;v&eacute;nements et potlucks&nbsp;:</b> jusqu&rsquo;&agrave; ce que l&rsquo;organisateur les supprime. Je supprime ceux qui restent 12&nbsp;mois apr&egrave;s leur date.</li>
+      <li><b>Demandes de corrections vid&eacute;o&nbsp;:</b> dans le dossier client de de Belle Photography, aussi longtemps que votre projet et les dossiers du studio l&rsquo;exigent.</li>
+    </ul>
+    <p>Lorsque des renseignements ne sont plus n&eacute;cessaires, ils sont d&eacute;truits ou anonymis&eacute;s.</p>
+  </div>
+</section>
+
+<section class="sec">
+  <div><p class="sec__no">07</p><h2>Vos droits</h2></div>
+  <div class="sec__body">
+    <p>Selon la loi qu&eacute;b&eacute;coise, vous pouvez&nbsp;:</p>
+    <ul>
+      <li>savoir quels renseignements je d&eacute;tiens sur vous, et en obtenir une copie&nbsp;;</li>
+      <li>les faire corriger s&rsquo;ils sont inexacts, incomplets ou p&eacute;rim&eacute;s&nbsp;;</li>
+      <li>les faire supprimer, ou en faire cesser la diffusion, lorsque la loi le permet&nbsp;;</li>
+      <li>retirer votre consentement&nbsp;;</li>
+      <li>recevoir les renseignements que vous avez fournis dans un format structur&eacute; et couramment utilis&eacute;&nbsp;;</li>
+      <li>savoir qui y a acc&egrave;s et combien de temps ils sont conserv&eacute;s.</li>
+    </ul>
+    <p>&Eacute;crivez &agrave; <a href="mailto:xavier@debellephotography.com">xavier@debellephotography.com</a>. Je r&eacute;pondrai dans les 30&nbsp;jours, sans frais. Je pourrais d&rsquo;abord devoir confirmer votre identit&eacute;.</p>
+    <p>Si ma r&eacute;ponse ne vous satisfait pas, vous pouvez porter plainte &agrave; la Commission d&rsquo;acc&egrave;s &agrave; l&rsquo;information du Qu&eacute;bec&nbsp;: <a href="https://www.cai.gouv.qc.ca/" target="_blank" rel="noopener">cai.gouv.qc.ca</a>.</p>
+  </div>
+</section>
+
+<section class="sec">
+  <div><p class="sec__no">08</p><h2>S&eacute;curit&eacute;</h2></div>
+  <div class="sec__body">
+    <ul>
+      <li>Toutes les connexions sont chiffr&eacute;es (HTTPS).</li>
+      <li>Des r&egrave;gles de base de donn&eacute;es d&eacute;terminent qui peut lire et modifier chaque renseignement.</li>
+      <li>La recherche d&rsquo;une r&eacute;servation dans Activity Planner utilise une cl&eacute; brouill&eacute;e, et non votre adresse courriel.</li>
+      <li>Aucun num&eacute;ro de carte n&rsquo;est jamais saisi ni conserv&eacute; sur ce site.</li>
+    </ul>
+    <p>Si un incident de confidentialit&eacute; pr&eacute;sente un jour un risque de pr&eacute;judice s&eacute;rieux, je vous en aviserai, ainsi que la Commission d&rsquo;acc&egrave;s &agrave; l&rsquo;information, et je tiens un registre des incidents, comme l&rsquo;exige la loi.</p>
+  </div>
+</section>
+
+<section class="sec">
+  <div><p class="sec__no">09</p><h2>Enfants</h2></div>
+  <div class="sec__body">
+    <p>Les outils ne sont pas con&ccedil;us pour les enfants. Si vous avez moins de 14&nbsp;ans, demandez &agrave; un parent ou &agrave; un tuteur avant de vous inscrire &agrave; quoi que ce soit ici.</p>
+  </div>
+</section>
+
+<section class="sec">
+  <div><p class="sec__no">10</p><h2>Modifications</h2></div>
+  <div class="sec__body">
+    <p>Lorsque cette politique change, la date en haut de la page change aussi, et les changements importants sont annonc&eacute;s dans <a href="changelog.html">What&rsquo;s New</a>.</p>
+  </div>
+</section>
+
+</div>
+
+</main>
+
+<footer class="foot">
+  <div>
+    <p class="kicker" style="margin-bottom:14px">Xavier de Belle &mdash; Montreal</p>
+    <div class="foot__links">
+      <a href="index.html">The Map</a>
+      <a href="work.html">Work</a>
+      <a href="tools.html">Tools</a>
+      <a href="food-for-thought.html">Food for Thought</a>
+      <a href="changelog.html">What&rsquo;s New</a>
+      <a href="privacy.html" aria-current="page">Privacy</a>
+      <a href="https://www.instagram.com/xavierdebelle/" target="_blank" rel="noopener">Instagram &#8599;</a>
+      <a href="mailto:xavier@debellephotography.com">Email</a>
+    </div>
+  </div>
+  <p class="foot__sig">&copy; <span id="yr"></span> Xavier de Belle &middot; v71</p>
+</footer>
+
+<script>
+document.getElementById('yr').textContent = new Date().getFullYear();
+
+/* English / Français. The French half is hidden in the markup, so without
+   JavaScript the page reads in English. #fr in the link opens French;
+   otherwise a French browser gets French. */
+(function () {
+  var btns = document.querySelectorAll('[data-lang]');
+  function show(l) {
+    document.documentElement.lang = l;
+    Array.prototype.forEach.call(document.querySelectorAll('main [lang]'), function (el) {
+      if (el.getAttribute('lang') === 'en' || el.getAttribute('lang') === 'fr') {
+        if (el.hasAttribute('data-lang')) return;      // the Français button keeps lang="fr"
+        el.hidden = el.getAttribute('lang') !== l;
+      }
+    });
+    Array.prototype.forEach.call(btns, function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-lang') === l)); });
+  }
+  Array.prototype.forEach.call(btns, function (b) {
+    b.addEventListener('click', function () {
+      var l = b.getAttribute('data-lang');
+      show(l);
+      try { history.replaceState(null, '', l === 'fr' ? '#fr' : location.pathname + location.search); } catch (e) {}
+    });
+  });
+  var lang = location.hash === '#fr' ? 'fr'
+           : location.hash === '#en' ? 'en'
+           : (/^fr\b/i.test(navigator.language || '') ? 'fr' : 'en');
+  show(lang);
+})();
+</script>
+</body>
+</html>

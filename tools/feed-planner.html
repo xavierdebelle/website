@@ -1,5 +1,28 @@
 <meta charset="utf-8" />
 <title>Feed Planner</title>
+<!-- social preview: link cards on Instagram, iMessage, WhatsApp, Facebook, X -->
+<meta name="description" content="See the Instagram grid before it exists. Arrange the sequence, plan carousels slide by slide, then export the posts in the order you post them.">
+<link rel="canonical" href="https://xavierdebelle.github.io/website/tools/feed-planner.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Xavier de Belle">
+<meta property="og:locale" content="en_CA">
+<meta property="og:title" content="Feed Planner — Xavier de Belle">
+<meta property="og:description" content="See the Instagram grid before it exists. Arrange the sequence, plan carousels slide by slide, then export the posts in the order you post them.">
+<meta property="og:url" content="https://xavierdebelle.github.io/website/tools/feed-planner.html">
+<meta property="og:image" content="https://xavierdebelle.github.io/website/assets/og/feed-planner.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Feed Planner — Xavier de Belle">
+<meta name="twitter:card" content="summary_large_image">
+<!-- installable app: works offline once opened (pwa.js, pwa-sw.js) -->
+<link rel="manifest" href="feed-planner.webmanifest">
+<link rel="apple-touch-icon" href="icons/feed-planner-180.png">
+<link rel="icon" href="icons/feed-planner-192.png" type="image/png">
+<meta name="apple-mobile-web-app-title" content="Feed Planner">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#f3f1ec" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#18171b" media="(prefers-color-scheme: dark)">
+<script src="pwa.js" data-app="feed-planner"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <style>
   :root {
@@ -988,6 +1011,7 @@
   <div class="masthead">
     <h1>Feed Planner<span class="tagline">Arrange before you post</span></h1>
     <div class="actions">
+      <button class="ghost" id="installBtn" type="button" data-pwa-install style="display:none">Install</button>
       <div class="dropdown" id="exportDropdown">
         <button class="ghost" id="exportBtn" type="button" aria-haspopup="true" aria-expanded="false">Export</button>
         <div class="dropdown-menu" id="exportMenu" hidden>

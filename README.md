@@ -14,9 +14,12 @@ browser tools I've built. Plain HTML/CSS/JS, no build step, no dependencies.
     access.html     sync by invitation — request access; Xavier approves here
     who-am-i.html   about page — text editable by Xavier, stored at pages/who-am-i
     what-is-this.html  about the site — editable the same way, at pages/what-is-this
+    privacy.html    one privacy policy for the site and every tool (Law 25), English + French
     assets/         logo + shared design system
+    assets/og/      social preview images, one per page and tool (1200×630)
     assets/account.js   site-wide sign-in: account button, panel, used by every page and synced tool
     tools/          the tools themselves, one self-contained file each
+    tools/pwa.js, tools/pwa-sw.js   install + offline for Feed Planner and Carousel Planner
     versions/       local-only archive of past versions (not deployed)
     CHANGELOG.md    what changed, version by version
 

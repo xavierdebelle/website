@@ -256,7 +256,7 @@
         (S.status === 'error' ? '<p class="xa-status xa-s-wait"><b>Didn’t work</b>Sign-in failed' + (S.msg ? ' (' + esc(S.msg) + ')' : '') + '. Try again.</p>' : '') +
         '<div class="xa-acts"><button type="button" class="xa-btn xa-solid" data-xa="signin">' + (S.status === 'checking' ? 'Signing in…' : 'Sign in with Google') + '</button>' +
         '<a class="xa-btn" href="' + ROOT + 'access.html">About access</a></div>' +
-        '<p class="xa-note">Every tool also works without an account, saving in this browser.</p>';
+        '<p class="xa-note">Every tool also works without an account, saving in this browser. <a href="' + ROOT + 'privacy.html">Privacy</a></p>';
     } else {
       var u = S.user;
       h += '<p class="xa-k">Account</p>' +
@@ -284,7 +284,7 @@
       }).join('') + '</ul>';
       h += '<div class="xa-acts"><button type="button" class="xa-btn" data-xa="signout">Sign out</button>' +
         (S.status === 'pending' || S.status === 'declined' ? '<a class="xa-btn" href="' + ROOT + 'access.html">About access</a>' : '') + '</div>' +
-        '<p class="xa-note">Signing out here signs you out of the whole site on this device.</p>';
+        '<p class="xa-note">Signing out here signs you out of the whole site on this device. <a href="' + ROOT + 'privacy.html">Privacy</a></p>';
     }
     box.innerHTML = h;
   }

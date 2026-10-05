@@ -5,6 +5,68 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v71 — 2026-10-05
+
+**What's new** · Feed & Carousel Planner · [tools.html#portfolio]
+### Install them. Use them offline.
+Feed Planner and Carousel Planner now install like apps, with their own icon
+on your phone or computer, and open without a connection.
+
+- iPhone and iPad: open the tool in Safari, tap Share, then Add to Home Screen.
+  The Install button shows you how.
+- Chrome, Edge and Android: tap Install.
+
+**What's new** · Privacy · [privacy.html]
+### A privacy policy, in English and French
+One page for the whole site and every tool: what's collected, why, who sees
+it, how long it's kept, and how to see, correct or delete your information.
+Written for Québec's Law 25.
+
+**What's new** · The whole site
+### Links that look like something
+Share any page or tool and it now shows a proper preview card: title, one
+line about it, and an image in the site's colours.
+
+**Installable apps — `tools/feed-planner.html`, `tools/carousel-planner.html`**
+- Each has a manifest (`tools/<app>.webmanifest`) and icons in `tools/icons/`
+  (192, 512, maskable 512, 180 for Apple). Scope is `tools/<app>`, so each
+  installs as its own app and nothing else on the site is captured by it.
+- `tools/pwa.js` (loaded with `data-app`) registers `tools/pwa-sw.js` for that
+  app's scope only, shows the page's Install button when the browser offers
+  installation (Chrome/Edge/Android prompt; iPhone/iPad get a "Share → Add to
+  Home Screen" note), and asks for persistent storage once installed.
+- `pwa-sw.js`: network first with a 3.5 s fallback to the kept copy; it caches
+  only the app's own files (page, manifest, icons, pwa.js). Photos and layouts
+  stay in IndexedDB/localStorage as before. Bump `VERSION` when editing it.
+- Install button: Feed Planner in the masthead actions, Carousel Planner in
+  the top bar beside Preview swipe. Hidden until installation is possible.
+- iOS note: an installed Home Screen app has its own storage, separate from
+  Safari — work started in Safari doesn't appear in the app.
+
+**Privacy — `privacy.html`**
+- One policy, English and French (buttons; `#fr` opens French; a French
+  browser gets French). Person in charge, what each tool collects, purposes
+  and consent, service providers and storage outside Québec, cookies and
+  browser storage, retention, rights (access, correction, deletion,
+  de-indexing, portability, withdrawal), complaints to the CAI, security,
+  incidents, under-14s.
+- Linked from every footer, the Index (The Site), the account panel
+  (`assets/account.js`), and under the guest sign-up buttons in Activity
+  Planner and Potluck.
+- Commitments Xavier keeps: delete accounts within 30 days of a request;
+  delete events/potlucks 12 months after their date; incident register.
+
+**Social previews — every page and tool**
+- Open Graph + Twitter card tags, canonical URL, and a meta description where
+  one was missing (16 tools). One 1200×630 image per page/tool in
+  `assets/og/`, made from the site's type and colours.
+- URLs are absolute (`https://xavierdebelle.github.io/website/`) — update
+  them if the site moves to its own domain.
+- Liquid Silver and Organic Loops: tab title was "Bundled Page", now the
+  piece's name.
+
+---
+
 ## v70 — 2026-10-02
 
 **What's new** · Activity Planner · [tools/activity-planner.html]

@@ -3,6 +3,29 @@
 <head>
 <meta charset="utf-8" />
 <title>Carousel Planner</title>
+<!-- social preview: link cards on Instagram, iMessage, WhatsApp, Facebook, X -->
+<meta name="description" content="Build an Instagram carousel that reads as one picture. Photos span across slides, snap to the edges, and export ready to post.">
+<link rel="canonical" href="https://xavierdebelle.github.io/website/tools/carousel-planner.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Xavier de Belle">
+<meta property="og:locale" content="en_CA">
+<meta property="og:title" content="Carousel Planner — Xavier de Belle">
+<meta property="og:description" content="Build an Instagram carousel that reads as one picture. Photos span across slides, snap to the edges, and export ready to post.">
+<meta property="og:url" content="https://xavierdebelle.github.io/website/tools/carousel-planner.html">
+<meta property="og:image" content="https://xavierdebelle.github.io/website/assets/og/carousel-planner.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Carousel Planner — Xavier de Belle">
+<meta name="twitter:card" content="summary_large_image">
+<!-- installable app: works offline once opened (pwa.js, pwa-sw.js) -->
+<link rel="manifest" href="carousel-planner.webmanifest">
+<link rel="apple-touch-icon" href="icons/carousel-planner-180.png">
+<link rel="icon" href="icons/carousel-planner-192.png" type="image/png">
+<meta name="apple-mobile-web-app-title" content="Carousel Planner">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#f3f1ec" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#18171b" media="(prefers-color-scheme: dark)">
+<script src="pwa.js" data-app="carousel-planner"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <style>
   :root {
@@ -458,6 +481,7 @@
 
 
     <div class="group">
+      <button id="btnInstall" class="ghost" type="button" data-pwa-install style="display:none">Install</button>
       <button id="btnPreview">Preview swipe</button>
       <button id="btnExport" class="primary">Export slides</button>
     </div>

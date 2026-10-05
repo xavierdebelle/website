@@ -1,0 +1,17 @@
+{
+  "id": "carousel-planner",
+  "name": "Carousel Planner",
+  "short_name": "Carousel Planner",
+  "description": "Build an Instagram carousel that reads as one picture. Photos span across slides, snap to the edges, and export ready to post.",
+  "start_url": "carousel-planner.html",
+  "scope": "carousel-planner",
+  "display": "standalone",
+  "background_color": "#f3f1ec",
+  "theme_color": "#f3f1ec",
+  "categories": ["photo", "social", "productivity"],
+  "icons": [
+    { "src": "icons/carousel-planner-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/carousel-planner-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/carousel-planner-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
