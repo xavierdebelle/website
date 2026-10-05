@@ -28,7 +28,7 @@
    ============================================================ */
 'use strict';
 
-var VERSION = 'v73';
+var VERSION = 'v74';
 var NET_WAIT = 3500; // ms before a slow network gives way to the kept copy
 
 var APPS = {
@@ -68,6 +68,10 @@ var APPS = {
   'journal': [
     'journal.html', 'journal.webmanifest', 'pwa.js', '../assets/account.js', '../assets/logo.svg',
     'icons/journal-180.png', 'icons/journal-192.png', 'icons/journal-512.png', 'icons/journal-maskable-512.png'
+  ],
+  'kitchen': [
+    'kitchen.html', 'kitchen.webmanifest', 'pwa.js', '../assets/account.js', '../assets/logo.svg',
+    'icons/kitchen-180.png', 'icons/kitchen-192.png', 'icons/kitchen-512.png', 'icons/kitchen-maskable-512.png'
   ]
 };
 
@@ -89,7 +93,8 @@ var LIBS = {
     'https://unpkg.com/@babel/standalone@7.29.0/babel.min.js'
   ]),
   'notes': FIREBASE,
-  'journal': FIREBASE
+  'journal': FIREBASE,
+  'kitchen': FIREBASE
 };
 var LIB = 'xdb-app-lib';
 // versioned code and font files: keep the first copy

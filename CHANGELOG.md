@@ -5,6 +5,118 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v74 — 2026-10-05
+
+**What's new** · New section · [tools.html#maria]
+### Maria's Tools,<br>and a Kitchen
+A new corner of the workshop, built for Maria. The first tool in it is a
+kitchen.
+
+- **The book.** Every recipe keeps who it came from and when: Mom's,
+  Grandma's, yours, or the one saved from Instagram or TikTok, with its link.
+  Paste a whole recipe and it sorts the ingredients from the steps.
+- **Grandma's cards.** Photograph a handwritten card and it stays on screen
+  beside the form while you type it in. The photo is kept with the recipe.
+- **Ideas** for when nobody knows what to make, from your own book and
+  seventy-odd everyday dishes.
+- **Leftovers.** Say what's in the fridge (a photo helps you remember) and it
+  finds what you can make, best match first.
+- **A menu for the month**, filled in one tap if you like, and the grocery
+  list that comes out of it, added up and sorted by aisle.
+- **It learns.** What you cook, rate and love moves what it suggests.
+
+It syncs between your devices once you're signed in, installs as an app,
+and works offline.
+
+**Kitchen — `tools/kitchen.html`, source `Tools files/Tools/kitchen_v1.html`**
+- Six tabs (a bottom bar on phones): Book, Ideas, Leftovers, Menu, Groceries,
+  Taste.
+- **Book:** recipes with category, from (person or creator), date, kind
+  (home made / handwritten / from online + link, site detected: Instagram,
+  TikTok, YouTube, Pinterest, Facebook or the domain), serves, minutes,
+  ingredients, method, notes, tags, favourite, 1–5 stars. Search, filter by
+  category / person / kind, sort (newest, A–Z, most cooked, best rated,
+  oldest). Recipe view: scale ½–3×, tick ingredients, tap through steps,
+  Cooked it today, Add to the menu, Ingredients → groceries (pantry basics
+  left out), print. Delete with Undo.
+- **Paste a whole recipe:** headings (English or French) split it; without
+  headings, quantity lines are ingredients and sentences after them are
+  steps; picks up serves, total time and a link.
+- **Handwritten:** photo shrunk to 1800 px JPEG, kept in IndexedDB
+  (`xdb-kitchen` / `photos`) on the device that took it, **never synced**
+  (one doc carries every recipe; photos would make each sync heavy). Other
+  devices say where the photo is. Sticky beside the form; tap to zoom.
+- **Ingredient reader:** quantities (fractions, ½, ranges), units in English
+  and French (c. à soupe, tasse, gousse…), descriptors dropped, plurals and
+  ~150 synonyms folded (boeuf haché → ground beef, poivron → bell pepper,
+  chicken broth → broth so it never counts as chicken). Things like peanut
+  butter and coconut milk never match butter or milk.
+- **Ideas:** 74 built-in dishes (category, minutes, tags, season, main
+  ingredients, one-line method), moods (quick, comfort, healthy,
+  vegetarian, fish, kids, fancy, budget, one pot, breakfast, sweet, our book,
+  something new). Cook it tonight / Plan it / Love it / Not for us (hidden,
+  reversible in Taste) / Save to the book.
+- **Scoring (rebuilt from the data each time, nothing stored):** own recipes,
+  favourites and stars first; affinity for the categories, ingredients and
+  tags you cook (cooking lately weighs more), love/no on ideas, the menu;
+  cooked in the last 3/7/14 days pushed down, favourites not made in 45 days
+  and recipes saved but never cooked pushed up; season (October–April cold);
+  what's in the fridge. Each suggestion says why.
+- **Leftovers:** fridge list (synced; typed, or quick picks in four groups;
+  "half a pepper" → bell pepper), optional photo for reference only (not
+  saved). Matches from book and ideas, pantry basics count as had; shows
+  uses / also needs; Tonight; + missing to the list.
+- **Menu:** month grid (a list of days on phones), Breakfast/Lunch/Dinner
+  per Taste. Day sheet: add a recipe, an idea or free text ("eating out"),
+  Suggest, tick Cooked (logs it, which is what the learning feeds on).
+  **Fill empty days** from today: no repeat within 10 days, no same category
+  two days running, repeats in the month cost extra; Undo.
+- **Grocery list from the menu:** next 7 days / the 7 after / rest of month /
+  whole month; skip pantry basics, what's in the fridge, meals already
+  cooked; preview with untick; amounts summed per unit. List by aisle (10
+  aisles), typed adds ("2 lemons, 500 g ground beef"), same item merges,
+  Share (phone share sheet, or copied), clear checked / all with Undo.
+  **Often bought:** learned from what gets ticked off.
+- **Taste:** counts, where the book comes from, what gets cooked, most
+  cooked, ingredients you come back to, forgotten favourites, a few lines in
+  plain words. Settings: diet (vegetarian, pescatarian, no pork, gluten-free,
+  dairy-free), never suggest, pantry basics, meals on the menu, people,
+  categories, hidden ideas, export / import (.json, merges).
+- Data `xdb.kitchen.v1` = `{ recipes, menu, grocery, fridge, cooked, ideaFb,
+  bought, prefs }`; `prefs.v` marks a saved copy so an emptied list stays
+  empty after the database drops it.
+
+**Sync, install, account**
+- `sync-core.js` pasted verbatim with its adapter: doc `kitchen` under
+  `users/{uid}/tools/` — **no Firebase rules change**. Maria signs in with
+  her own Google account; her request appears on Access for Xavier to
+  approve, then it syncs on her devices. Her kitchen is hers — Xavier's
+  account would hold a separate one.
+- `TOOLS` in `assets/account.js`; installable (manifest, icons, `pwa.js`);
+  `pwa-sw.js` VERSION v74, `kitchen` in APPS and LIBS (Firebase only).
+
+**Site**
+- New category `maria`: chip, band "04 / Maria's Tools" (Events → 05, Art →
+  06), map node Tools → Maria's Tools (map re-baked for 24 nodes, no regrow
+  at load), text index link, README "six categories".
+
+**Scan.** Same Firebase project as every synced tool — nothing new public.
+
+**Verified locally (mock database, built-in browser)**
+- Paste → sort → save (online, Instagram link); card photo → type in → save
+  (photo kept on device, not in the cloud doc); scale, stars, favourite,
+  cooked, ingredients → groceries; plan, fill the month, day sheet add /
+  suggest / cooked; grocery list from the menu with untick; typed adds;
+  often bought after two ticks; leftovers; ideas moods, love, not for us;
+  Taste. 375 px: no sideways scroll on any tab.
+- Sync: a non-member signing in files a request and writes nothing else;
+  approved → live without reload, writes only under its own uid; edits flow
+  both ways live; reload writes nothing; both edited offline → the choice
+  bar in plain words, Keep works. Empty lists survive the round trip.
+- Not run: the offline launch in Playwright (not installed here). Kitchen's
+  offline files all exist and its setup matches Notes and Journal, which
+  were tested offline in v73.
+
 ## v73 — 2026-10-05
 
 **What's new** · New tools · [tools.html#personal]

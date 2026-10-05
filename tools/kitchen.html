@@ -1,0 +1,2952 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="../assets/account.js"></script>   <!-- site-wide account; the tool falls back to its own sign-in without it -->
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Kitchen — Xavier de Belle</title>
+<meta name="description" content="The family recipe book, with who gave you each one and when. Ideas when you're stuck, a leftover matcher for what's in the fridge, a monthly menu and the grocery list that falls out of it.">
+<link rel="icon" href="../assets/logo.svg" type="image/svg+xml">
+<!-- installable app: works offline once opened, syncs when back online (pwa.js, pwa-sw.js) -->
+<link rel="manifest" href="kitchen.webmanifest">
+<link rel="apple-touch-icon" href="icons/kitchen-180.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Kitchen">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="theme-color" content="#000000">
+<script src="pwa.js" data-app="kitchen"></script>
+<style>
+:root{
+  --ink:#000;--paper:#fff;--volt:#ffe800;--smoke:#141414;--ash:#2a2a2a;--dust:#8a8a8a;
+  --hair:#e2e2e2;--grey:#6a6a6a;--mist:#f4f4f4;
+  --stack:"Helvetica Neue",Helvetica,Arial,"Segoe UI",system-ui,sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --gut:clamp(14px,3vw,32px);
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+html,body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--stack)}
+button,input,select,textarea{font:inherit;color:inherit}
+a{color:inherit}
+[hidden]{display:none!important}
+.k{font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--grey)}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* ---------- top bar ---------- */
+.top{display:flex;align-items:center;gap:10px 14px;flex-wrap:wrap;padding:12px var(--gut);background:var(--ink);color:var(--paper);
+  padding-top:max(12px,env(safe-area-inset-top))}
+.brand{display:flex;align-items:baseline;gap:10px;margin-right:auto;min-width:0}
+.brand a{color:var(--paper);font-weight:900;font-size:12px;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap;text-decoration:none}
+.brand a:hover{color:var(--volt)}
+.brand h1{margin:0;font-weight:900;text-transform:uppercase;letter-spacing:-.04em;font-size:26px;line-height:1}
+.brand h1 span{color:var(--volt)}
+.top .btn{border-color:var(--paper);color:var(--paper)}
+.top .btn:hover{background:var(--volt);border-color:var(--volt);color:var(--ink)}
+.sync-btn.ok{border-color:var(--ash)!important;color:var(--dust)!important}
+.sync-btn.ok:hover{color:var(--ink)!important}
+.sync-btn.bad{border-color:var(--volt)!important;color:var(--volt)!important}
+
+/* ---------- buttons ---------- */
+.btn{background:transparent;border:3px solid var(--ink);color:var(--ink);font-weight:900;font-size:11px;letter-spacing:.12em;
+  text-transform:uppercase;padding:9px 13px;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:0;text-decoration:none}
+.btn:hover{background:var(--volt);border-color:var(--ink)}
+.btn.solid{background:var(--ink);color:var(--volt)}
+.btn.solid:hover{background:var(--volt);color:var(--ink)}
+.btn.y{background:var(--volt)}
+.btn.y:hover{background:var(--ink);color:var(--volt)}
+.btn.sm{font-size:10px;padding:6px 9px;border-width:2px}
+.btn:disabled{opacity:.35;cursor:default;background:transparent}
+.ghost{background:transparent;border:0;color:var(--grey);font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;
+  padding:8px 4px;cursor:pointer;text-decoration:none}
+.ghost:hover{color:var(--ink);text-decoration:underline}
+.chip{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;padding:7px 10px;border:2px solid #d4d4d4;
+  background:var(--paper);color:var(--grey);cursor:pointer;white-space:nowrap;border-radius:0}
+.chip:hover{border-color:var(--ink);color:var(--ink)}
+.chip.on{background:var(--ink);border-color:var(--ink);color:var(--paper)}
+.chip.y{background:var(--volt);border-color:var(--ink);color:var(--ink)}
+.chip i{font-style:normal;opacity:.6;margin-left:6px}
+.chip b{font-weight:400;margin-left:6px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+
+/* ---------- fields ---------- */
+.in,select.in,textarea.in{width:100%;min-width:0;border:2px solid #d4d4d4;padding:10px 12px;font-size:15px;font-weight:700;background:var(--paper);border-radius:0;outline:none}
+.in:focus{border-color:var(--ink)}
+textarea.in{font-weight:400;line-height:1.55;resize:vertical;min-height:120px}
+select.in{font-weight:700;padding-right:28px}
+.field{display:flex;flex-direction:column;gap:6px;min-width:0}
+.field>.k{color:var(--ink)}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.grow{flex:1 1 220px;min-width:0}
+
+/* ---------- sync bar ---------- */
+#sync-bar{display:none;align-items:center;gap:10px 18px;flex-wrap:wrap;background:var(--volt);color:var(--ink);padding:12px var(--gut)}
+#sync-bar.on{display:flex}
+#sync-bar .sync-dot{width:10px;height:10px;background:var(--ink);flex:none}
+#sync-what{flex:1 1 280px;font-family:var(--mono);font-size:11px;line-height:1.6;letter-spacing:.04em}
+#sync-bar button{border:3px solid var(--ink);background:var(--ink);color:var(--volt);font-weight:900;font-size:11px;letter-spacing:.12em;
+  text-transform:uppercase;padding:8px 12px;cursor:pointer}
+#sync-bar button+button{background:transparent;color:var(--ink)}
+
+/* ---------- tabs ---------- */
+.tabs{display:flex;gap:4px;padding:0 var(--gut);background:var(--ink);border-top:1px solid var(--ash);overflow-x:auto;position:sticky;top:0;z-index:20}
+.tab{background:transparent;border:0;border-bottom:4px solid transparent;padding:15px 12px 11px;cursor:pointer;font-family:var(--mono);
+  font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--dust);white-space:nowrap;display:flex;align-items:center;gap:8px}
+.tab:hover{color:var(--paper)}
+.tab.on{color:var(--paper);border-bottom-color:var(--volt)}
+.tab svg{width:18px;height:18px;flex:none}
+.tab i{font-style:normal;font-size:10px;color:var(--volt);letter-spacing:.04em}
+
+/* ---------- views ---------- */
+.wrap{max-width:1240px;margin:0 auto;padding:clamp(18px,3vw,36px) var(--gut) 90px}
+.vh{display:flex;flex-wrap:wrap;align-items:flex-end;gap:14px 18px;margin-bottom:22px}
+.vh h2{margin:0;margin-right:auto;font-weight:900;text-transform:uppercase;letter-spacing:-.045em;line-height:.88;font-size:clamp(40px,6vw,76px)}
+.vh h2 span{color:var(--ink);background:var(--volt);padding:0 .06em}
+.vh p{flex-basis:100%;margin:0;max-width:62ch;color:var(--grey);font-size:15px;line-height:1.5}
+.lede{font-size:15px;line-height:1.5;color:var(--grey);max-width:60ch;margin:0 0 18px}
+.empty{border:3px dashed #cfcfcf;padding:clamp(22px,4vw,44px);text-align:center;color:var(--grey);line-height:1.55}
+.empty b{display:block;color:var(--ink);font-size:20px;text-transform:uppercase;letter-spacing:-.02em;margin-bottom:6px}
+.empty .row{justify-content:center;margin-top:16px}
+
+/* ---------- book ---------- */
+.toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:12px}
+.toolbar .in{flex:1 1 260px}
+.toolbar select.in{flex:0 1 auto;width:auto;font-size:13px;padding:9px 28px 9px 10px}
+.catbar{margin-bottom:18px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.rc{display:flex;flex-direction:column;align-items:flex-start;gap:8px;text-align:left;background:var(--paper);border:3px solid var(--ink);
+  padding:14px 16px 13px;cursor:pointer;min-height:150px;position:relative}
+.rc:hover{background:var(--volt)}
+.rc .k{color:var(--grey)}
+.rc b{font-size:21px;font-weight:900;letter-spacing:-.03em;line-height:1.05;text-transform:uppercase;margin-right:24px;overflow-wrap:anywhere}
+.rc .m{font-size:13px;color:var(--grey);margin-top:auto;line-height:1.4}
+.rc .heart{position:absolute;top:10px;right:12px;font-size:18px;line-height:1}
+.badge{display:inline-block;font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;padding:3px 6px;background:var(--ink);color:var(--paper)}
+.badge.y{background:var(--volt);color:var(--ink);outline:2px solid var(--ink)}
+.count{font-family:var(--mono);font-size:11px;color:var(--grey);margin:0 0 12px}
+
+/* ---------- sheet (recipe, editor, day) ---------- */
+.sheet{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.62);display:flex;align-items:flex-start;justify-content:center;
+  padding:clamp(0px,3vw,36px)}
+.sheet-box{background:var(--paper);width:100%;max-width:980px;border:3px solid var(--ink);position:relative;
+  max-height:calc(100vh - 2 * clamp(0px,3vw,36px));max-height:calc(100dvh - 2 * clamp(0px,3vw,36px));overflow-y:auto;overscroll-behavior:contain}
+.sheet-head{display:flex;align-items:flex-start;gap:12px;padding:18px clamp(16px,3vw,30px) 16px;border-bottom:3px solid var(--ink);position:sticky;top:0;background:var(--paper);z-index:2}
+.sheet-head .t{margin-right:auto;min-width:0}
+.sheet-head h3{margin:6px 0 0;font-weight:900;text-transform:uppercase;letter-spacing:-.04em;line-height:.92;font-size:clamp(28px,4.4vw,48px);overflow-wrap:anywhere}
+.x{width:44px;height:44px;flex:none;border:3px solid var(--ink);background:var(--paper);font-size:22px;font-weight:700;cursor:pointer;line-height:1}
+.x:hover{background:var(--volt)}
+.sheet-body{padding:clamp(16px,3vw,30px)}
+.sheet-foot{display:flex;flex-wrap:wrap;gap:8px;padding:14px clamp(16px,3vw,30px);border-top:3px solid var(--ink);background:var(--mist);position:sticky;bottom:0}
+.sheet-foot .sp{flex:1}
+
+/* recipe view */
+.meta{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:14px;color:var(--grey);margin:-4px 0 16px}
+.meta b{color:var(--ink)}
+.acts{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:22px}
+.stars{display:inline-flex;gap:2px}
+.stars button{background:none;border:0;font-size:22px;cursor:pointer;padding:0 2px;color:#c8c8c8;line-height:1}
+.stars button.on{color:var(--ink)}
+.stars button:hover{color:var(--ink)}
+.two{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:clamp(18px,3vw,36px)}
+.sec>.k{display:flex;align-items:center;justify-content:space-between;gap:10px;color:var(--ink);border-bottom:3px solid var(--ink);padding-bottom:8px;margin-bottom:6px}
+.ings{list-style:none;margin:0;padding:0}
+.ings li{border-bottom:1px solid var(--hair)}
+.ings label{display:flex;gap:12px;align-items:flex-start;padding:10px 0;cursor:pointer;font-size:16px;line-height:1.35}
+.ings input{width:18px;height:18px;margin:1px 0 0;flex:none;accent-color:#000}
+.ings input:checked+span{text-decoration:line-through;color:#a0a0a0}
+.steps{list-style:none;margin:0;padding:0;counter-reset:s}
+.steps li{counter-increment:s;display:grid;grid-template-columns:38px 1fr;gap:10px;padding:12px 0;border-bottom:1px solid var(--hair);font-size:16px;line-height:1.55;cursor:pointer}
+.steps li::before{content:counter(s,decimal-leading-zero);font-family:var(--mono);font-weight:700;font-size:12px;padding-top:4px}
+.steps li.done{color:#a0a0a0}
+.steps li.done::before{color:#a0a0a0}
+.steps li.cur{background:var(--volt);margin:0 -10px;padding:12px 10px}
+.notes{white-space:pre-wrap;line-height:1.6;font-size:15px;background:var(--mist);padding:14px 16px;margin-top:22px;border-left:6px solid var(--volt)}
+.scale{display:inline-flex;gap:0}
+.scale button{border:2px solid var(--ink);background:var(--paper);font-family:var(--mono);font-size:10px;font-weight:700;padding:4px 7px;cursor:pointer;margin-left:-2px}
+.scale button.on{background:var(--ink);color:var(--paper)}
+.photo-thumb{display:block;max-width:100%;max-height:340px;border:3px solid var(--ink);margin:0 0 22px;cursor:zoom-in;background:var(--mist)}
+.src-link{display:inline-flex;align-items:center;gap:8px;font-weight:900;font-size:13px;text-transform:uppercase;letter-spacing:.06em;background:var(--volt);padding:8px 12px;border:3px solid var(--ink);text-decoration:none;margin-bottom:18px;max-width:100%}
+.src-link span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* editor */
+.ed{display:grid;grid-template-columns:minmax(0,1fr);gap:16px}
+.ed.with-photo{grid-template-columns:minmax(0,5fr) minmax(0,6fr);align-items:start}
+.ed-photo{position:sticky;top:96px}
+.ed-photo .frame{border:3px solid var(--ink);background:var(--mist);max-height:72vh;overflow:auto;cursor:zoom-in}
+.ed-photo .frame img{display:block;width:100%}
+.ed-photo .frame.zoom{cursor:zoom-out}
+.ed-photo .frame.zoom img{width:220%;max-width:none}
+.ed-fields{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:14px}
+.ed-fields .f6{grid-column:span 6}.ed-fields .f3{grid-column:span 3}.ed-fields .f2{grid-column:span 2}
+.seg{display:flex;flex-wrap:wrap;border:3px solid var(--ink)}
+.seg button{flex:1 1 auto;border:0;border-left:3px solid var(--ink);background:var(--paper);padding:10px 12px;font-weight:900;font-size:11px;letter-spacing:.1em;text-transform:uppercase;cursor:pointer}
+.seg button:first-child{border-left:0}
+.seg button.on{background:var(--ink);color:var(--volt)}
+.paste{background:var(--mist);border:3px solid var(--ink);padding:14px}
+.paste p{margin:0 0 10px;font-size:14px;line-height:1.5;color:var(--grey)}
+.hint{font-size:12px;color:var(--grey);line-height:1.45}
+.drop{border:3px dashed var(--ink);padding:22px;text-align:center;background:var(--mist);cursor:pointer}
+.drop:hover{background:var(--volt)}
+.drop b{display:block;font-size:16px;text-transform:uppercase;letter-spacing:.02em}
+
+/* ---------- ideas ---------- */
+.hero{border:3px solid var(--ink);display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr)}
+.hero-main{padding:clamp(18px,3vw,34px);background:var(--volt);display:flex;flex-direction:column;gap:12px;min-height:320px}
+.hero-main .k{color:var(--ink)}
+.hero-main h3{margin:0;font-weight:900;text-transform:uppercase;letter-spacing:-.05em;line-height:.86;font-size:clamp(40px,6.4vw,84px);overflow-wrap:anywhere}
+.why{font-size:16px;font-weight:700;line-height:1.35}
+.hero-main .acts{margin:auto 0 0}
+.hero-side{padding:clamp(18px,3vw,30px);display:flex;flex-direction:column;gap:14px;border-left:3px solid var(--ink)}
+.hero-side p{margin:0;line-height:1.55;font-size:15px}
+.ing-chips{display:flex;flex-wrap:wrap;gap:6px}
+.ing-chips span{font-family:var(--mono);font-size:11px;padding:4px 8px;border:2px solid var(--ink)}
+.ing-chips span.have{background:var(--ink);color:var(--paper)}
+.minis{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px;margin-top:14px}
+.mini{border:3px solid var(--ink);background:var(--paper);text-align:left;padding:12px 14px;cursor:pointer;display:flex;flex-direction:column;gap:6px;min-height:104px}
+.mini:hover{background:var(--volt)}
+.mini b{font-size:17px;font-weight:900;text-transform:uppercase;letter-spacing:-.02em;line-height:1.05}
+.mini span{font-size:12px;color:var(--grey);line-height:1.35;margin-top:auto}
+.subh{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin:34px 0 4px;border-bottom:3px solid var(--ink);padding-bottom:8px}
+.subh b{font-weight:900;text-transform:uppercase;letter-spacing:-.02em;font-size:22px}
+
+/* ---------- leftovers ---------- */
+.lo{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:clamp(18px,3vw,36px);align-items:start}
+.box{border:3px solid var(--ink);padding:16px}
+.box+.box{margin-top:14px}
+.box>.k{display:block;color:var(--ink);margin-bottom:10px}
+.fridge-photo img{display:block;width:100%;max-height:420px;object-fit:contain;background:var(--ink);border:3px solid var(--ink);margin-top:10px}
+.qp{margin-top:12px}
+.qp .k{display:block;margin:12px 0 6px}
+.match{border:3px solid var(--ink);padding:14px 16px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 16px;align-items:start}
+.match+.match{margin-top:10px}
+.match b{font-size:19px;font-weight:900;text-transform:uppercase;letter-spacing:-.02em;line-height:1.05}
+.match .m{font-size:13px;line-height:1.5;color:var(--grey)}
+.match .m strong{color:var(--ink)}
+.match .acts{margin:0;grid-column:1/-1}
+.pct{font-family:var(--mono);font-weight:700;font-size:13px;background:var(--ink);color:var(--volt);padding:6px 8px;white-space:nowrap}
+
+/* ---------- menu ---------- */
+.mhead{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;margin-bottom:14px}
+.mhead .mn{font-weight:900;text-transform:uppercase;letter-spacing:-.04em;font-size:clamp(30px,4.6vw,52px);line-height:.9;margin-right:auto;min-width:0}
+.sq{width:44px;height:44px;border:3px solid var(--ink);background:var(--paper);font-family:var(--mono);font-size:16px;font-weight:700;cursor:pointer;flex:none}
+.sq:hover{background:var(--volt)}
+.cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));border-left:3px solid var(--ink);border-top:3px solid var(--ink)}
+.cal .wd{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;padding:8px;background:var(--ink);color:var(--paper);border-right:1px solid var(--ash)}
+.day{border-right:3px solid var(--ink);border-bottom:3px solid var(--ink);min-height:118px;padding:8px;background:var(--paper);cursor:pointer;text-align:left;display:flex;flex-direction:column;gap:5px;min-width:0}
+.day:hover{background:#fffbd0}
+.day .dn{font-family:var(--mono);font-weight:700;font-size:12px;display:flex;justify-content:space-between;gap:6px}
+.day .dn em{font-style:normal;display:none}
+.day.past{background:var(--mist)}
+.day.past .meal{opacity:.6}
+.day.today .dn span{background:var(--volt);outline:2px solid var(--ink);padding:0 4px}
+.day.out{background:repeating-linear-gradient(45deg,#fafafa,#fafafa 6px,#f0f0f0 6px,#f0f0f0 12px);cursor:default}
+.meal{font-size:12.5px;font-weight:700;line-height:1.2;display:flex;gap:5px;align-items:baseline;min-width:0}
+.meal small{font-family:var(--mono);font-size:9px;font-weight:400;color:var(--grey);flex:none}
+.meal span{overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.meal.done span{text-decoration:line-through}
+.day .add{margin-top:auto;font-family:var(--mono);font-size:10px;color:#b0b0b0}
+.mstat{font-family:var(--mono);font-size:11px;color:var(--grey);margin:10px 0 0}
+.dslot{border-top:3px solid var(--ink);padding:14px 0}
+.dslot:first-child{border-top:0;padding-top:0}
+.dslot>.k{display:block;color:var(--ink);margin-bottom:8px}
+.pm{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--hair)}
+.pm .nm{flex:1;min-width:0;font-weight:700;font-size:16px;background:none;border:0;text-align:left;padding:0;cursor:pointer}
+.pm .nm:hover{text-decoration:underline}
+.pm .nm.plain{cursor:default;text-decoration:none}
+.pm label{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;cursor:pointer}
+.pm input{accent-color:#000;width:16px;height:16px}
+
+/* ---------- groceries ---------- */
+.gl{display:grid;grid-template-columns:minmax(0,7fr) minmax(0,4fr);gap:clamp(18px,3vw,36px);align-items:start}
+.aisle{margin-bottom:18px}
+.aisle>.k{display:flex;justify-content:space-between;color:var(--ink);border-bottom:3px solid var(--ink);padding-bottom:7px}
+.gi{display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--hair);padding:2px 0}
+.gi label{flex:1;display:flex;align-items:center;gap:12px;padding:10px 0;cursor:pointer;min-width:0;font-size:16px}
+.gi input{width:20px;height:20px;accent-color:#000;flex:none;margin:0}
+.gi .q{font-weight:900;white-space:nowrap}
+.gi .nm{min-width:0;overflow-wrap:anywhere}
+.gi .from{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:#a0a0a0;white-space:nowrap}
+.gi.done .nm,.gi.done .q{text-decoration:line-through;color:#a0a0a0}
+.gi .del{background:none;border:0;font-size:18px;color:#b0b0b0;cursor:pointer;padding:6px}
+.gi .del:hover{color:var(--ink)}
+.prev{max-height:50vh;overflow:auto;border:2px solid var(--hair);padding:0 12px;margin:12px 0}
+
+/* ---------- taste ---------- */
+.tt{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(18px,3vw,36px);align-items:start}
+.stat-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:14px}
+.stat{border:3px solid var(--ink);padding:12px 14px}
+.stat b{display:block;font-size:34px;font-weight:900;letter-spacing:-.04em;line-height:1}
+.stat span{font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--grey)}
+.bars{display:flex;flex-direction:column;gap:6px}
+.bar{display:grid;grid-template-columns:120px minmax(0,1fr) 34px;gap:10px;align-items:center;font-size:13px;font-weight:700}
+.bar i{display:block;height:14px;background:var(--volt);outline:2px solid var(--ink);outline-offset:-2px}
+.bar em{font-style:normal;font-family:var(--mono);font-size:11px;color:var(--grey);text-align:right}
+.bar span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.learn{font-size:15px;line-height:1.55;margin:0;padding-left:18px}
+.learn li{margin-bottom:6px}
+.set{display:flex;flex-direction:column;gap:14px}
+.taglist{display:flex;flex-wrap:wrap;gap:6px}
+.taglist .chip{display:inline-flex;align-items:center;gap:6px}
+
+/* ---------- toast ---------- */
+#toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,30px);opacity:0;visibility:hidden;background:var(--ink);color:var(--paper);display:flex;align-items:center;gap:16px;
+  padding:12px 14px 12px 18px;z-index:80;transition:transform .18s ease,opacity .18s ease,visibility 0s linear .18s;max-width:calc(100% - 24px);width:max-content;border:3px solid var(--volt)}
+#toast.on{transform:translate(-50%,0);opacity:1;visibility:visible;transition:transform .18s ease,opacity .18s ease}
+#toast span{font-size:14px;font-weight:700}
+#toast button{background:var(--volt);color:var(--ink);border:0;font-weight:900;font-size:11px;letter-spacing:.12em;text-transform:uppercase;padding:8px 10px;cursor:pointer}
+
+/* ---------- responsive ---------- */
+@media (max-width:900px){
+  .two,.lo,.gl,.tt,.hero{grid-template-columns:minmax(0,1fr)}
+  .hero-side{border-left:0;border-top:3px solid var(--ink)}
+  .ed.with-photo{grid-template-columns:minmax(0,1fr)}
+  /* the card stays in view under the header while you type it in */
+  .ed-photo{position:sticky;top:var(--head-h,86px);z-index:1;background:var(--paper);padding:8px 0 10px;margin-top:-8px;border-bottom:3px solid var(--ink)}
+  .ed-photo .frame{max-height:32vh}
+  .ed-photo .hint{display:none}
+}
+@media (max-width:760px){
+  body{padding-bottom:calc(64px + env(safe-area-inset-bottom))}
+  .tabs{position:fixed;top:auto;bottom:0;left:0;right:0;padding:0 0 env(safe-area-inset-bottom);gap:0;justify-content:space-between;overflow:hidden;border-top:3px solid var(--ink)}
+  .tab{flex:1 1 0;flex-direction:column;gap:3px;padding:9px 0 8px;font-size:8.5px;letter-spacing:.06em;border-bottom:0;border-top:4px solid transparent;min-width:0}
+  .tab.on{border-top-color:var(--volt)}
+  .tab i{display:none}
+  #toast{bottom:calc(80px + env(safe-area-inset-bottom))}
+  .cal{display:block;border:0}
+  .cal .wd,.day.out{display:none}
+  .day{width:100%;min-height:0;border:0;border-bottom:2px solid var(--hair);flex-direction:row;flex-wrap:wrap;align-items:baseline;gap:4px 12px;padding:12px 4px}
+  .day .dn{width:64px;flex:none;display:block}
+  .day .dn em{display:inline;color:var(--grey);font-weight:400;margin-right:4px}
+  .day .meals{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+  .day .add{margin:0}
+  .meal{font-size:15px}
+  .ed-fields .f3,.ed-fields .f2{grid-column:span 6}
+  .seg button{flex:1 1 0;padding:10px 4px;font-size:10px;letter-spacing:.04em}
+  .ed-fields .f2.half{grid-column:span 3}
+  .sheet{padding:0}
+  .sheet-box{border:0;height:100%;max-height:none;padding-bottom:env(safe-area-inset-bottom)}
+  .stat-row{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .stat b{font-size:26px}
+  .bar{grid-template-columns:92px minmax(0,1fr) 28px}
+}
+@media (max-width:560px){
+  .brand a{display:none}
+  .brand h1{font-size:22px}
+  .top .btn{padding:7px 9px;font-size:10px}
+  .grid{grid-template-columns:minmax(0,1fr)}
+  .rc{min-height:0}
+  .minis{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  .hero-main{min-height:0}
+}
+@media print{
+  .top,#sync-bar,.tabs,.acts,.sheet-foot,.x,#toast{display:none!important}
+  .sheet{position:static;background:none;padding:0;display:block}
+  .sheet-box{border:0;max-height:none;overflow:visible}
+  body.sheet-open .wrap{display:none}
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="brand"><a href="../index.html">Xavier de Belle</a><h1>Kitchen<span>.</span></h1></div>
+  <button class="btn" type="button" data-pwa-install style="display:none" title="Install as an app: its own icon, works offline">Install app</button>
+  <button class="btn sync-btn" id="btn-sync" onclick="syncClick()" style="display:none">Sign in to sync</button>
+  <button class="btn" id="btn-signout" onclick="signOutNow()" style="display:none" title="Sign out of sync">Sign out</button>
+</header>
+
+<div id="sync-bar" role="status">
+  <span class="sync-dot"></span>
+  <span id="sync-what"></span>
+  <button id="sync-keep-local" onclick="keepLocal()">Keep this device</button>
+  <button id="sync-keep-cloud" onclick="keepCloud()">Keep cloud copy</button>
+</div>
+
+<nav class="tabs" aria-label="Sections">
+  <button class="tab" type="button" data-view="book"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M5 3h12v18H5zM9 3v18M12 8h3"/></svg>Book<i id="n-book"></i></button>
+  <button class="tab" type="button" data-view="ideas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.8.8 1 1.5 1 2.5h6c0-1 .2-1.7 1-2.5A6 6 0 0 0 12 3z"/></svg>Ideas</button>
+  <button class="tab" type="button" data-view="left"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M6 2h12v20H6zM6 9h12M9 5v2M9 12v4"/></svg>Leftovers<i id="n-left"></i></button>
+  <button class="tab" type="button" data-view="menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M3 5h18v16H3zM3 10h18M8 2v5M16 2v5"/></svg>Menu</button>
+  <button class="tab" type="button" data-view="groc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M3 4h3l2.5 11h10L21 7H7M9 20h.01M18 20h.01"/></svg>Groceries<i id="n-groc"></i></button>
+  <button class="tab" type="button" data-view="taste"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M12 21s-8-5-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 10c0 6-8 11-8 11z"/></svg>Taste</button>
+</nav>
+
+<main class="wrap">
+
+  <!-- ============ BOOK ============ -->
+  <section id="v-book" aria-label="Recipe book" hidden>
+    <div class="vh">
+      <h2>The <span>Book</span></h2>
+      <button class="btn solid" type="button" data-act="new">+ New recipe</button>
+      <button class="btn" type="button" data-act="new-card">Scan a card</button>
+      <button class="btn" type="button" data-act="new-online">Save from online</button>
+    </div>
+    <div class="toolbar">
+      <input class="in" type="search" id="b-q" placeholder="Search recipes, ingredients, notes" aria-label="Search recipes" autocomplete="off">
+      <select class="in" id="b-from" aria-label="From"></select>
+      <select class="in" id="b-kind" aria-label="Kind">
+        <option value="">Any kind</option>
+        <option value="home">Home made</option>
+        <option value="card">Handwritten</option>
+        <option value="online">From online</option>
+      </select>
+      <select class="in" id="b-sort" aria-label="Sort">
+        <option value="new">Newest</option>
+        <option value="az">A–Z</option>
+        <option value="cooked">Most cooked</option>
+        <option value="rated">Best rated</option>
+        <option value="old">Oldest</option>
+      </select>
+    </div>
+    <div class="chips catbar" id="b-cats"></div>
+    <p class="count" id="b-count"></p>
+    <div class="grid" id="b-grid"></div>
+  </section>
+
+  <!-- ============ IDEAS ============ -->
+  <section id="v-ideas" aria-label="Meal ideas" hidden>
+    <div class="vh">
+      <h2>What do we <span>cook?</span></h2>
+      <p>Picked from your book and a list of everyday dishes, weighted by what you cook, rate and love. The more you use it, the better it gets.</p>
+    </div>
+    <div class="chips" id="i-moods" style="margin-bottom:16px"></div>
+    <div id="i-hero"></div>
+    <div class="subh"><b>Also good right now</b><button class="ghost" type="button" data-act="i-shuffle">Shuffle</button></div>
+    <div class="minis" id="i-minis"></div>
+  </section>
+
+  <!-- ============ LEFTOVERS ============ -->
+  <section id="v-left" aria-label="Leftover cooker" hidden>
+    <div class="vh">
+      <h2>Use it <span>up</span></h2>
+      <p>Tell it what's in the fridge and it finds what you can make, from your book first. Pantry basics (Taste → Pantry) count as already there.</p>
+    </div>
+    <div class="lo">
+      <div>
+        <div class="box">
+          <span class="k">1 · Snap the fridge (optional)</span>
+          <label class="btn" style="width:100%"><input type="file" id="l-photo" accept="image/*" capture="environment" hidden>Take or choose a photo</label>
+          <div class="fridge-photo" id="l-photo-view"></div>
+          <p class="hint" style="margin:10px 0 0">The photo is only a reminder while you tap what you see. It isn't saved or sent anywhere.</p>
+        </div>
+        <div class="box">
+          <span class="k">2 · What's in there</span>
+          <div class="row"><input class="in grow" id="l-add" placeholder="chicken, half a pepper, rice" autocomplete="off" aria-label="Add what's in the fridge"><button class="btn solid" type="button" data-act="l-add">Add</button></div>
+          <div class="chips" id="l-have" style="margin-top:12px"></div>
+          <div class="qp" id="l-quick"></div>
+        </div>
+      </div>
+      <div>
+        <div class="subh" style="margin-top:0"><b>You could make</b><span class="k" id="l-n"></span></div>
+        <div id="l-results"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ MENU ============ -->
+  <section id="v-menu" aria-label="Monthly menu" hidden>
+    <div class="mhead">
+      <button class="sq" type="button" data-act="m-prev" aria-label="Previous month">←</button>
+      <span class="mn" id="m-name"></span>
+      <button class="sq" type="button" data-act="m-next" aria-label="Next month">→</button>
+    </div>
+    <div class="row" style="margin-bottom:16px">
+      <button class="btn y" type="button" data-act="m-fill">Fill empty days</button>
+      <button class="btn solid" type="button" data-act="m-groc">Make the grocery list</button>
+      <button class="btn" type="button" data-act="m-today">This month</button>
+      <button class="ghost" type="button" data-act="m-clear">Clear month</button>
+    </div>
+    <div class="cal" id="m-cal"></div>
+    <p class="mstat" id="m-stat"></p>
+  </section>
+
+  <!-- ============ GROCERIES ============ -->
+  <section id="v-groc" aria-label="Grocery list" hidden>
+    <div class="vh">
+      <h2>Grocery <span>list</span></h2>
+      <button class="btn" type="button" data-act="g-share">Share list</button>
+    </div>
+    <div class="gl">
+      <div>
+        <div class="row" style="margin-bottom:18px">
+          <input class="in grow" id="g-add" placeholder="2 lemons, milk, 500 g ground beef" autocomplete="off" aria-label="Add to the grocery list">
+          <button class="btn solid" type="button" data-act="g-add">Add</button>
+        </div>
+        <div id="g-list"></div>
+        <div class="row" style="margin-top:6px">
+          <button class="ghost" type="button" data-act="g-clear-done">Clear checked</button>
+          <button class="ghost" type="button" data-act="g-clear-all">Clear all</button>
+        </div>
+      </div>
+      <div>
+        <div class="box"><span class="k">Often bought</span><div class="chips" id="g-usual"></div>
+          <p class="hint" style="margin:10px 0 0">Learned from what you tick off. Tap to add.</p></div>
+        <div class="box"><span class="k">From the menu</span>
+          <p class="hint" style="margin:0 0 10px">Everything in the recipes you've planned, added up and sorted by aisle.</p>
+          <button class="btn" type="button" data-act="m-groc" style="width:100%">Add from the menu</button></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ TASTE ============ -->
+  <section id="v-taste" aria-label="Taste profile and settings" hidden>
+    <div class="vh">
+      <h2>Our <span>taste</span></h2>
+      <p>What the kitchen has learned from you so far, and the few things worth telling it.</p>
+    </div>
+    <div class="tt">
+      <div id="t-learned"></div>
+      <div class="set" id="t-set"></div>
+    </div>
+  </section>
+</main>
+
+<div class="sheet" id="sheet" hidden><div class="sheet-box" id="sheet-box" role="dialog" aria-modal="true"></div></div>
+<input type="file" id="card-file" accept="image/*" capture="environment" hidden>
+<input type="file" id="import-file" accept="application/json,.json" hidden>
+<div id="toast" role="status"><span id="toast-msg"></span><button id="toast-undo" type="button">Undo</button></div>
+
+<script>
+/* ============================================================
+   KITCHEN — Maria's Tools · Xavier de Belle
+   The family recipe book (who it came from, and when), ideas
+   when you're stuck, a leftover matcher, a monthly menu and the
+   grocery list that falls out of it. Everything it suggests is
+   weighted by what you actually cook, rate and love, so it gets
+   better the more it's used. No AI, no outside service: it all
+   runs here. Saved in this browser as you go; synced while
+   signed in.
+   ============================================================ */
+var STORAGE_KEY = 'xdb.kitchen.v1';
+var VIEW_KEY = 'xdb.kitchen.view';            // which tab was open: this device only
+var $ = function (id) { return document.getElementById(id); };
+
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
+function pad(n) { return (n < 10 ? '0' : '') + n; }
+function keyOf(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+function parse(k) { var p = String(k).split('-'); return new Date(+p[0], (+p[1] || 1) - 1, +p[2] || 1); }
+function todayKey() { return keyOf(new Date()); }
+function addDays(k, n) { var d = parse(k); d.setDate(d.getDate() + n); return keyOf(d); }
+function daysBetween(a, b) { return Math.round((parse(b) - parse(a)) / 864e5); }
+function fmtDate(k, long) {
+  if (!k) return '';
+  var o = long ? { weekday: 'long', day: 'numeric', month: 'long' } : { day: 'numeric', month: 'short', year: 'numeric' };
+  return parse(k).toLocaleDateString(undefined, o);
+}
+function fmtShort(k) { return parse(k).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' }); }
+function listOf(v) { return Array.isArray(v) ? v : (v && typeof v === 'object' ? Object.values(v) : []); }
+function str(v) { return v == null ? '' : String(v); }
+function numOr0(v) { var n = parseFloat(v); return isFinite(n) && n > 0 ? n : 0; }
+function plural(n, one, many) { return n + ' ' + (n === 1 ? one : (many || one + 's')); }
+function cap(s) { s = String(s || ''); return s.charAt(0).toUpperCase() + s.slice(1); }
+function deaccent(s) { return String(s).normalize('NFD').replace(/[̀-ͯ]/g, ''); }
+function slug(s) { return deaccent(String(s).toLowerCase()).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60) || 'x'; }
+function uniq(a) { var s = {}; return a.filter(function (x) { if (s[x]) return false; s[x] = 1; return true; }); }
+
+/* ============================================================
+   Built-in knowledge
+   ============================================================ */
+var CATS = ['Breakfast', 'Soups', 'Salads', 'Pasta & noodles', 'Mains', 'Sides', 'Baking', 'Desserts', 'Snacks', 'Drinks', 'Sauces'];
+var NOT_MEALS = ['breakfast', 'sides', 'baking', 'desserts', 'snacks', 'drinks', 'sauces'];
+var SLOTS = [{ k: 'breakfast', n: 'Breakfast', s: 'B' }, { k: 'lunch', n: 'Lunch', s: 'L' }, { k: 'dinner', n: 'Dinner', s: 'D' }];
+var DIETS = [['vegetarian', 'Vegetarian'], ['pescatarian', 'Pescatarian'], ['no-pork', 'No pork'], ['gluten-free', 'Gluten-free'], ['dairy-free', 'Dairy-free']];
+var STAPLES = ['salt', 'pepper', 'oil', 'olive oil', 'butter', 'flour', 'sugar', 'water', 'baking powder', 'baking soda', 'vinegar'];
+var KINDS = { home: 'Home made', online: 'From online', card: 'Handwritten' };
+
+/* Everyday dishes for when the book runs dry. name | category | minutes |
+   tags | season (c = cold months, w = warm, blank = any) | main ingredients | how */
+var IDEA_ROWS = [
+  'Shakshuka|Breakfast|30|veg onepot budget||egg,tomato,onion,bell pepper,garlic|Soften onion and pepper, add crushed tomatoes, cumin and paprika, then crack the eggs into little wells and cover until just set.',
+  'Banana pancakes|Breakfast|20|quick kids veg||banana,egg,flour,milk|Mash ripe bananas into a simple pancake batter and cook small ones in a buttered pan.',
+  'Breakfast burritos|Breakfast|25|kids||egg,tortilla,cheese,potato,bell pepper|Scramble eggs with crispy diced potato and pepper, roll in warm tortillas with cheese and salsa.',
+  'Overnight oats|Breakfast|5|quick healthy veg|w|oat,milk,yogurt,berry|Stir oats, milk and yogurt in a jar the night before; top with berries in the morning.',
+  'French toast|Breakfast|15|quick kids veg comfort||bread,egg,milk,cinnamon|Soak thick bread in egg, milk and cinnamon, fry in butter, finish with maple syrup.',
+  'Veggie frittata|Breakfast|30|veg budget healthy||egg,spinach,cheese,onion,potato|Cook the vegetables in an ovenproof pan, pour over beaten eggs and cheese, finish in the oven.',
+  'Chicken noodle soup|Soups|45|comfort budget onepot|c|chicken,carrot,celery,onion,noodle|Simmer chicken with carrot, celery and onion in broth, shred the chicken, add noodles for the last minutes.',
+  'French onion soup|Soups|75|comfort|c|onion,butter,bread,cheese,broth|Caramelise a lot of onions slowly, add broth, then top bowls with toast and melted gruyère under the grill.',
+  'Lentil soup|Soups|40|healthy veg budget onepot|c|lentil,carrot,onion,celery,tomato|Sweat the vegetables, add lentils, tomatoes and broth, simmer until soft and finish with lemon.',
+  'Minestrone|Soups|45|veg healthy onepot|c|bean,pasta,zucchini,carrot,tomato,celery|A big pot of vegetables, beans and small pasta in tomato broth; parmesan on top.',
+  'Butternut squash soup|Soups|45|veg healthy|c|squash,onion,cream,broth|Roast or simmer squash with onion, blend with broth and a little cream.',
+  'Pea soup|Soups|120|comfort budget onepot|c|split pea,ham,onion,carrot|Split peas simmered slowly with a ham bone, onion and carrot until thick.',
+  'Tomato soup & grilled cheese|Soups|30|comfort kids veg quick|c|tomato,bread,cheese,butter,onion|A quick blended tomato soup with a crisp grilled cheese for dipping.',
+  'Thai coconut soup|Soups|35|healthy|c|chicken,coconut milk,mushroom,lime,curry paste|Fry curry paste, add coconut milk and broth, poach chicken and mushrooms, finish with lime.',
+  'Greek salad|Salads|15|quick healthy veg|w|tomato,cucumber,feta,olive,onion|Chunky tomato, cucumber and onion with olives and a slab of feta, olive oil and oregano.',
+  'Chicken Caesar salad|Salads|25|quick|w|lettuce,chicken,parmesan,bread,lemon|Grilled chicken over romaine with croutons, parmesan and a garlicky lemon dressing.',
+  'Quinoa bowl|Salads|30|healthy veg|w|quinoa,chickpea,cucumber,tomato,feta|Quinoa with roasted chickpeas, crunchy vegetables, feta and a lemon-tahini drizzle.',
+  'Caprese|Salads|10|quick veg fancy|w|tomato,mozzarella,basil|Ripe tomato and mozzarella slices with basil, olive oil and flaky salt.',
+  'Taco salad|Salads|25|quick kids|w|ground beef,lettuce,tomato,cheese,corn|Spiced ground beef over lettuce with corn, tomato, cheese and crushed tortilla chips.',
+  'Spaghetti bolognese|Pasta & noodles|60|comfort kids||ground beef,tomato,onion,carrot,pasta|A slow meat sauce with onion, carrot and tomato over spaghetti.',
+  'Carbonara|Pasta & noodles|20|quick comfort||pasta,bacon,egg,parmesan|Crisp bacon, then toss hot pasta off the heat with egg yolks, parmesan and pepper.',
+  'Pasta primavera|Pasta & noodles|25|veg quick healthy|w|pasta,zucchini,bell pepper,pea,parmesan|Spring vegetables sautéed quickly and tossed with pasta, lemon and parmesan.',
+  'Lasagna|Pasta & noodles|90|comfort kids|c|pasta,ground beef,tomato,ricotta,mozzarella|Layers of meat sauce, ricotta and mozzarella baked until bubbling.',
+  'Mac and cheese|Pasta & noodles|35|comfort kids veg|c|pasta,cheese,milk,butter|A proper cheese sauce over elbows, baked with crumbs on top if there is time.',
+  'Pesto pasta|Pasta & noodles|15|quick veg|w|pasta,basil,parmesan,pine nut,garlic|Blitz basil, garlic, pine nuts and parmesan with olive oil; toss with pasta and a splash of its water.',
+  'Shrimp scampi|Pasta & noodles|20|quick fish fancy||shrimp,pasta,garlic,lemon,butter|Shrimp in garlic butter and white wine with lemon, over linguine.',
+  'Baked ziti|Pasta & noodles|50|comfort kids budget||pasta,tomato,ricotta,mozzarella,sausage|Pasta, sausage and tomato sauce with dollops of ricotta, baked under mozzarella.',
+  'Pad thai|Pasta & noodles|30|quick||rice noodle,shrimp,egg,peanut,bean sprout|Rice noodles stir-fried with shrimp, egg and a tamarind sauce, peanuts and lime on top.',
+  'Ramen bowls|Pasta & noodles|30|quick comfort|c|ramen noodle,egg,green onion,mushroom,broth|Noodles in a hot broth with a jammy egg, mushrooms and green onion.',
+  'Roast chicken & potatoes|Mains|90|comfort budget|c|chicken,potato,lemon,garlic,carrot|A whole chicken roasted over potatoes and carrots with lemon and garlic.',
+  'Chicken stir-fry|Mains|25|quick healthy||chicken,bell pepper,broccoli,rice,soy sauce|Hot pan, chicken first, then vegetables, a soy-ginger sauce and rice.',
+  'Butter chicken|Mains|45|comfort|c|chicken,tomato,cream,butter,rice|Spiced chicken in a creamy tomato-butter sauce with rice or naan.',
+  'Chicken fajitas|Mains|30|quick kids|w|chicken,bell pepper,onion,tortilla|Sizzled chicken strips with peppers and onions, wrapped at the table.',
+  'Sheet-pan sausages & veg|Mains|40|budget onepot kids||sausage,potato,bell pepper,onion|Everything on one tray at high heat until the sausages are browned.',
+  'Beef tacos|Mains|25|quick kids||ground beef,tortilla,lettuce,tomato,cheese|Seasoned ground beef in shells with all the toppings out.',
+  'Beef stew|Mains|150|comfort onepot|c|beef,potato,carrot,onion,broth|Browned chuck simmered for hours with root vegetables until it falls apart.',
+  'Chili con carne|Mains|60|comfort onepot budget|c|ground beef,bean,tomato,onion,bell pepper|Beef, beans and tomatoes with chili and cumin; better the next day.',
+  'Pâté chinois|Mains|60|comfort kids budget|c|ground beef,potato,corn,onion|Ground beef, then corn, then mashed potatoes, baked until golden.',
+  'Burgers|Mains|30|kids|w|ground beef,bun,cheese,lettuce,tomato|Hand-pressed patties on the grill with cheese and the works.',
+  'Pork tenderloin with apples|Mains|45|fancy|c|pork,apple,onion,mustard|Seared tenderloin roasted on apples and onions, a mustard-cream pan sauce.',
+  'Pulled pork sandwiches|Mains|240|comfort kids||pork,bun,barbecue sauce,cabbage|Pork shoulder cooked low and slow, shredded with barbecue sauce, coleslaw on top.',
+  'Salmon teriyaki|Mains|25|quick healthy fish||salmon,soy sauce,rice,broccoli|Salmon glazed with a quick teriyaki, rice and steamed broccoli.',
+  'Fish tacos|Mains|30|quick fish|w|white fish,tortilla,cabbage,lime,avocado|Crisp or grilled white fish in tortillas with lime slaw and avocado.',
+  'Baked cod with lemon|Mains|25|quick healthy fish||cod,lemon,butter,potato|Cod baked with lemon, butter and herbs; small potatoes on the side.',
+  'Moules-frites|Mains|30|fancy fish||mussel,white wine,garlic,potato|Mussels steamed in white wine and garlic, with fries for the sauce.',
+  'Steak night|Mains|25|quick fancy|w|steak,lettuce,tomato,potato|Seared steak, rested, with a green salad and crispy potatoes.',
+  'Chicken curry|Mains|45|comfort onepot|c|chicken,coconut milk,curry paste,onion,rice|Chicken simmered in coconut curry with onion and whatever vegetables are around.',
+  'Chana masala|Mains|35|veg healthy budget onepot|c|chickpea,tomato,onion,spinach,rice|Chickpeas in a spiced tomato-onion sauce with spinach stirred in.',
+  'Vegetable fried rice|Mains|20|quick veg budget||rice,egg,pea,carrot,soy sauce|Day-old rice fried hot with egg, peas, carrot and soy. The best use of leftover rice.',
+  'Homemade pizza|Mains|45|kids comfort||pizza dough,tomato,mozzarella,pepperoni|Stretch the dough, thin sauce, everyone picks their own toppings.',
+  'Stuffed peppers|Mains|60|healthy||bell pepper,ground beef,rice,tomato,cheese|Peppers filled with beef, rice and tomato, baked under cheese.',
+  'Black bean quesadillas|Mains|20|quick veg kids budget||tortilla,black bean,cheese,bell pepper,corn|Beans, corn and cheese in a crisp tortilla, salsa and sour cream to dip.',
+  'Tourtière|Mains|90|comfort|c|ground pork,pie crust,potato,onion|Spiced pork and potato in a double crust; holidays, or any cold Sunday.',
+  'Chicken pot pie|Mains|75|comfort|c|chicken,pie crust,carrot,pea,cream|Creamy chicken and vegetables under a pastry lid.',
+  'Falafel wraps|Mains|40|veg healthy|w|chickpea,tortilla,cucumber,tomato,yogurt|Crisp chickpea falafel in wraps with cucumber, tomato and a yogurt sauce.',
+  'Mushroom risotto|Mains|40|veg comfort fancy|c|rice,mushroom,parmesan,onion,white wine|Arborio stirred with hot broth and browned mushrooms, finished with parmesan.',
+  'Poke bowls|Mains|25|healthy fish fancy|w|salmon,rice,avocado,cucumber,soy sauce|Rice topped with marinated salmon, avocado and crunchy vegetables.',
+  'Eggplant parmesan|Mains|60|veg comfort||eggplant,tomato,mozzarella,parmesan,bread crumb|Breaded eggplant layered with tomato sauce and cheese, baked.',
+  'Meatballs in tomato sauce|Mains|50|comfort kids||ground beef,tomato,egg,bread crumb,parmesan|Tender meatballs simmered in sauce; with pasta or in a sub.',
+  'BBQ chicken & corn|Mains|40|kids|w|chicken,corn,barbecue sauce|Grilled chicken brushed with barbecue sauce, corn on the cob alongside.',
+  'Lemon garlic chicken thighs|Mains|40|healthy budget||chicken,lemon,garlic,potato|Thighs roasted skin-side up with lemon, garlic and potatoes in one pan.',
+  'Roasted vegetables|Sides|35|veg healthy||carrot,zucchini,bell pepper,onion|Big chunks, a hot oven, olive oil and salt. Goes with anything.',
+  'Garlic bread|Sides|15|kids veg quick||bread,garlic,butter|Garlic butter on a split baguette, baked until crisp.',
+  'Coleslaw|Sides|15|veg quick|w|cabbage,carrot,mayonnaise|Shredded cabbage and carrot in a tangy dressing.',
+  'Mashed potatoes|Sides|30|comfort veg|c|potato,butter,milk|Floury potatoes, warm milk, plenty of butter.',
+  'Banana bread|Baking|70|veg budget kids||banana,flour,egg,butter,sugar|The reason to let bananas go brown.',
+  'Chocolate chip cookies|Baking|30|kids||flour,butter,sugar,chocolate,egg|Brown the butter if you have five extra minutes.',
+  'Blueberry muffins|Baking|35|kids||flour,blueberry,egg,milk,butter|A quick batter, lots of berries, sugar on top.',
+  'Apple crumble|Desserts|50|comfort|c|apple,oat,butter,flour,sugar|Sliced apples under a buttery oat crumble, baked until bubbling.',
+  'Pouding chômeur|Desserts|45|comfort budget|c|flour,maple syrup,butter,sugar,milk|A simple cake batter baked over hot maple syrup, which turns into its own sauce.',
+  'Tiramisu|Desserts|30|fancy||ladyfinger,mascarpone,coffee,egg,cocoa|Coffee-soaked ladyfingers and mascarpone cream, overnight in the fridge.',
+  'Hummus & veggies|Snacks|10|quick veg healthy||chickpea,tahini,lemon,carrot,cucumber|Blend chickpeas, tahini, lemon and garlic until smooth; vegetables for dipping.',
+  'Nachos|Snacks|20|kids quick||tortilla chip,cheese,black bean,salsa|A tray of chips, beans and cheese under the grill, salsa and sour cream on top.',
+  'Guacamole|Snacks|10|quick veg|w|avocado,lime,onion,tomato|Ripe avocado mashed with lime, onion, tomato and salt.'
+];
+var IDEAS = IDEA_ROWS.map(function (row) {
+  var p = row.split('|');
+  return { k: slug(p[0]), name: p[0], cat: p[1], mins: +p[2] || 0, tags: p[3] ? p[3].split(' ') : [], season: p[4] || '',
+           ings: p[5].split(','), how: p[6] };
+});
+var IDEA = {};
+IDEAS.forEach(function (i) { IDEA[i.k] = i; });
+
+var QUICK_PICKS = [
+  ['Veg & fruit', ['onion', 'garlic', 'tomato', 'bell pepper', 'carrot', 'celery', 'potato', 'broccoli', 'spinach', 'zucchini', 'mushroom', 'cucumber', 'lettuce', 'cabbage', 'avocado', 'corn', 'green onion', 'lemon', 'lime', 'apple', 'banana']],
+  ['Protein', ['chicken', 'ground beef', 'beef', 'pork', 'sausage', 'bacon', 'ham', 'salmon', 'white fish', 'shrimp', 'tofu', 'egg', 'chickpea', 'black bean', 'lentil']],
+  ['Dairy', ['milk', 'cream', 'butter', 'cheese', 'mozzarella', 'parmesan', 'feta', 'ricotta', 'yogurt', 'sour cream']],
+  ['Pantry', ['rice', 'pasta', 'noodle', 'bread', 'tortilla', 'quinoa', 'oat', 'tomato sauce', 'coconut milk', 'broth', 'soy sauce', 'curry paste', 'pie crust']]
+];
+
+/* ---------- reading an ingredient line ---------- */
+var FRAC = { '½': 0.5, '⅓': 1 / 3, '⅔': 2 / 3, '¼': 0.25, '¾': 0.75, '⅛': 0.125, '⅕': 0.2 };
+var QTY_RE = /^((?:\d+\s+)?\d+\/\d+|\d+(?:[.,]\d+)?\s*[½⅓⅔¼¾⅛⅕]|\d+(?:[.,]\d+)?|[½⅓⅔¼¾⅛⅕])(?:\s*(?:-|–|to|à|ou|or)\s*(?:\d+\/\d+|\d+(?:[.,]\d+)?|[½⅓⅔¼¾⅛⅕]))?\s*/i;
+var END = '(?=[\\s,.)]|$)\\.?';
+var UNITS = [
+  ['tbsp', '(?:c\\.?\\s*(?:à|a)\\s*(?:soupe|s)|cuill[eè]res?\\s*(?:à|a)\\s*soupe|c\\.?\\s?s|c\\.à\\.s|tbsps?|tbs|tbl|tablespoons?)'],
+  ['tsp', '(?:c\\.?\\s*(?:à|a)\\s*(?:th[eé]|caf[eé]|t|c)|cuill[eè]res?\\s*(?:à|a)\\s*(?:th[eé]|caf[eé])|c\\.?\\s?[tc]|c\\.à\\.t|tsps?|teaspoons?)'],
+  ['cup', '(?:cups?|tasses?)'],
+  ['kg', '(?:kg|kilos?|kilograms?|kilogrammes?)'],
+  ['g', '(?:g|gr|grams?|grammes?)'],
+  ['ml', '(?:ml|millilit(?:re|er)s?)'],
+  ['l', '(?:l|lit(?:re|er)s?)'],
+  ['lb', '(?:lbs?|pounds?|livres?)'],
+  ['oz', '(?:oz|ounces?|onces?)'],
+  ['clove', '(?:cloves?|gousses?)'],
+  ['can', '(?:cans?|tins?|bo[iî]tes?|conserves?)'],
+  ['pinch', '(?:pinch(?:es)?|pinc[eé]es?)'],
+  ['bunch', '(?:bunch(?:es)?|bottes?)'],
+  ['slice', '(?:slices?|tranches?)'],
+  ['pkg', '(?:packages?|pkgs?|packs?|paquets?|sachets?)'],
+  ['stick', '(?:sticks?)'],
+  ['sprig', '(?:sprigs?|brins?)'],
+  ['handful', '(?:handfuls?|poign[eé]es?)'],
+  ['piece', '(?:pieces?|morceaux?)'],
+  ['jar', '(?:jars?|pots?)'],
+  ['head', '(?:heads?)'],
+  ['dash', '(?:dash(?:es)?|traits?)']
+].map(function (u) { return [u[0], new RegExp('^' + u[1] + END + '\\s*', 'i')]; });
+
+function qtyValue(t) {
+  t = String(t).trim().replace(',', '.');
+  var m;
+  if ((m = t.match(/^(\d+)\s+(\d+)\/(\d+)$/))) return +m[1] + m[2] / m[3];
+  if ((m = t.match(/^(\d+)\/(\d+)$/))) return m[1] / m[2];
+  if ((m = t.match(/^(\d+(?:\.\d+)?)?\s*([½⅓⅔¼¾⅛⅕])$/))) return (+m[1] || 0) + FRAC[m[2]];
+  return parseFloat(t) || 0;
+}
+var UNIT_PL = { cup: 'cups', clove: 'cloves', can: 'cans', pinch: 'pinches', bunch: 'bunches', slice: 'slices', pkg: 'pkgs', stick: 'sticks',
+  sprig: 'sprigs', handful: 'handfuls', piece: 'pieces', jar: 'jars', head: 'heads', dash: 'dashes', lb: 'lb' };
+function qtyUnit(n, u) { return fmtQty(n) + (u ? ' ' + (n > 1 && UNIT_PL[u] ? UNIT_PL[u] : u) : ''); }
+function fmtQty(n) {
+  if (!n) return '';
+  var w = Math.floor(n + 1e-6), f = n - w, best = '', d = 1;
+  [['', 0], ['¼', 0.25], ['⅓', 1 / 3], ['½', 0.5], ['⅔', 2 / 3], ['¾', 0.75], ['', 1]].forEach(function (c) {
+    var dd = Math.abs(f - c[1]);
+    if (dd < d) { d = dd; best = c; }
+  });
+  if (d < 0.04) {
+    if (best[1] === 1) return String(w + 1);
+    return (w ? w : '') + best[0] || '0';
+  }
+  return String(Math.round(n * 100) / 100);
+}
+
+var DESCRIPTORS = ('chopped diced minced sliced grated shredded fresh freshly large small medium finely roughly thinly coarsely peeled ' +
+  'boneless skinless ripe cooked raw organic whole halved quartered cubed crushed packed softened melted room temperature cold ' +
+  'extra virgin kosher sea fine coarse unsalted salted lean plain about approx approximately heaping level good quality optional ' +
+  'hache hachee haches hachees emince emincee emincees coupe coupee coupes coupees frais fraiche gros grosse grosses petit petite petits petites ' +
+  'moyen moyenne moyens moyennes rape rapee rapes rapees tranche tranchee en des de du la le les au aux a d l of the leftover leftovers half').split(' ');
+var DESC = {};
+DESCRIPTORS.forEach(function (w) { DESC[w] = 1; });
+
+var SYN = {
+  'spaghetti': 'pasta', 'penne': 'pasta', 'linguine': 'pasta', 'fettuccine': 'pasta', 'fettucine': 'pasta', 'macaroni': 'pasta', 'rigatoni': 'pasta',
+  'fusilli': 'pasta', 'farfalle': 'pasta', 'orzo': 'pasta', 'lasagna noodle': 'pasta', 'lasagna sheet': 'pasta', 'lasagne': 'pasta', 'elbow macaroni': 'pasta', 'pate': 'pasta',
+  'minced beef': 'ground beef', 'beef mince': 'ground beef', 'hamburger': 'ground beef', 'boeuf hache': 'ground beef', 'ground chuck': 'ground beef',
+  'porc hache': 'ground pork', 'pork mince': 'ground pork',
+  'red bell pepper': 'bell pepper', 'green bell pepper': 'bell pepper', 'yellow bell pepper': 'bell pepper', 'orange bell pepper': 'bell pepper',
+  'red pepper': 'bell pepper', 'green pepper': 'bell pepper', 'yellow pepper': 'bell pepper', 'poivron': 'bell pepper', 'poivron rouge': 'bell pepper',
+  'poivron vert': 'bell pepper', 'poivron jaune': 'bell pepper', 'capsicum': 'bell pepper',
+  'black pepper': 'pepper', 'ground black pepper': 'pepper', 'ground pepper': 'pepper', 'poivre': 'pepper', 'poivre noir': 'pepper', 'salt and pepper': 'salt',
+  'scallion': 'green onion', 'spring onion': 'green onion', 'echalote verte': 'green onion', 'oignon vert': 'green onion',
+  'yellow onion': 'onion', 'red onion': 'onion', 'white onion': 'onion', 'sweet onion': 'onion', 'oignon': 'onion', 'oignon rouge': 'onion',
+  'garlic clove': 'garlic', 'ail': 'garlic',
+  'poulet': 'chicken', 'poitrine poulet': 'chicken breast', 'cuisse poulet': 'chicken thigh', 'hauts cuisse poulet': 'chicken thigh', 'whole chicken': 'chicken',
+  'chicken broth': 'broth', 'chicken stock': 'broth', 'beef broth': 'broth', 'beef stock': 'broth', 'vegetable broth': 'broth', 'vegetable stock': 'broth',
+  'stock': 'broth', 'bouillon': 'broth', 'bouillon poulet': 'broth', 'bouillon boeuf': 'broth', 'bouillon legume': 'broth', 'chicken bouillon': 'broth',
+  'egg noodle': 'noodle', 'oeuf': 'egg', 'œuf': 'egg', 'egg yolk': 'egg', 'egg white': 'egg',
+  'lait': 'milk', 'beurre': 'butter', 'fromage': 'cheese', 'pomme terre': 'potato', 'patate': 'potato', 'yukon gold potato': 'potato', 'russet potato': 'potato',
+  'carotte': 'carrot', 'tomate': 'tomato', 'cherry tomato': 'tomato', 'tomate cerise': 'tomato', 'riz': 'rice', 'farine': 'flour', 'all-purpose flour': 'flour',
+  'all purpose flour': 'flour', 'sucre': 'sugar', 'white sugar': 'sugar', 'granulated sugar': 'sugar', 'cassonade': 'brown sugar',
+  'creme': 'cream', 'heavy cream': 'cream', 'whipping cream': 'cream', 'creme 35': 'cream', 'creme 15': 'cream', 'creme sure': 'sour cream',
+  'champignon': 'mushroom', 'citron': 'lemon', 'saumon': 'salmon', 'jambon': 'ham', 'lardon': 'bacon', 'porc': 'pork', 'boeuf': 'beef', 'celeri': 'celery',
+  'epinard': 'spinach', 'baby spinach': 'spinach', 'courgette': 'zucchini', 'aubergine': 'eggplant', 'brocoli': 'broccoli', 'chou': 'cabbage', 'mais': 'corn',
+  'pois': 'pea', 'green pea': 'pea', 'pois chiche': 'chickpea', 'garbanzo bean': 'chickpea', 'lentille': 'lentil', 'haricot': 'bean', 'haricot noir': 'black bean',
+  'pain': 'bread', 'sel': 'salt', 'huile': 'oil', 'vegetable oil': 'oil', 'canola oil': 'oil', 'huile olive': 'olive oil', 'extra-virgin olive oil': 'olive oil',
+  'yogourt': 'yogurt', 'yoghurt': 'yogurt', 'greek yogurt': 'yogurt', 'parmigiano': 'parmesan', 'parmesan cheese': 'parmesan', 'parmigiano reggiano': 'parmesan',
+  'cheddar cheese': 'cheddar', 'mozzarella cheese': 'mozzarella', 'feta cheese': 'feta', 'ricotta cheese': 'ricotta', 'sirop erable': 'maple syrup',
+  'maple': 'maple syrup', 'crushed tomato': 'tomato', 'canned tomato': 'tomato', 'diced tomato': 'tomato', 'tomates en des': 'tomato',
+  'pomme': 'apple', 'banane': 'banana', 'fraise': 'strawberry', 'bleuet': 'blueberry', 'framboise': 'raspberry', 'concombre': 'cucumber', 'laitue': 'lettuce',
+  'avocat': 'avocado', 'limette': 'lime', 'crevette': 'shrimp', 'moule': 'mussel', 'morue': 'cod', 'saucisse': 'sausage', 'dinde': 'turkey', 'agneau': 'lamb'
+};
+var FAMILY = {
+  cheese: ['cheddar', 'mozzarella', 'parmesan', 'feta', 'swiss', 'gouda', 'ricotta', 'mascarpone', 'brie', 'goat cheese', 'monterey jack', 'gruyere', 'cream cheese'],
+  'white fish': ['cod', 'haddock', 'tilapia', 'halibut', 'sole', 'pollock', 'basa'],
+  fish: ['cod', 'haddock', 'tilapia', 'halibut', 'sole', 'pollock', 'salmon', 'trout', 'tuna', 'white fish'],
+  berry: ['blueberry', 'strawberry', 'raspberry', 'blackberry'],
+  noodle: ['pasta', 'ramen noodle', 'rice noodle', 'egg noodle'],
+  broth: ['bouillon'],
+  beef: ['steak', 'ground beef'],
+  pork: ['ground pork', 'pork chop', 'pork tenderloin']
+};
+var SING_KEEP = { glass: 1, hummus: 1, couscous: 1, asparagus: 1, molasses: 1, swiss: 1, brussels: 1, citrus: 1, lettuce: 1, pois: 1, mais: 1, frais: 1, gros: 1, swiss: 1 };
+function singular(w) {
+  if (w.length <= 3 || SING_KEEP[w]) return w;
+  if (/ies$/.test(w)) return w.slice(0, -3) + 'y';
+  if (/oes$/.test(w)) return w.slice(0, -2);
+  if (/(ch|sh|x|z|ss)es$/.test(w)) return w.slice(0, -2);
+  if (/ves$/.test(w) && w !== 'olives' && w !== 'chives') return w.slice(0, -3) + 'f';
+  if (/[^su]s$/.test(w)) return w.slice(0, -1);
+  return w;
+}
+
+/* "2 ½ cups finely chopped red onions, divided" →
+   { qty: 2.5, qtyText: '2 ½', unit: 'cup', name: 'finely chopped red onions', key: 'onion' } */
+function parseIng(line) {
+  var s = String(line || '').trim().replace(/^[-•*▢☐□·–—]+\s*/, '');
+  var out = { qty: 0, qtyText: '', unit: '', unitText: '', name: '', key: '', rest: s };
+  var m = s.match(QTY_RE);
+  if (m) { out.qtyText = m[1]; out.qty = qtyValue(m[1]); s = s.slice(m[0].length).replace(/^\([^)]*\)\s*/, ''); }
+  for (var i = 0; i < UNITS.length; i++) {
+    var u = s.match(UNITS[i][1]);
+    if (u && (m || UNITS[i][0] !== 'l')) { out.unit = UNITS[i][0]; out.unitText = u[0].trim(); s = s.slice(u[0].length); break; }
+  }
+  out.rest = s;
+  var name = s.replace(/^(of|de|d['’])\s*/i, '').replace(/\([^)]*\)/g, ' ')
+    .split(/,|;|\s[-–—]\s|\bto taste\b|\bau goût\b|\bfor serving\b|\boptional\b|\bfacultatif\b|\bdivided\b/i)[0]
+    .replace(/\s+/g, ' ').trim();
+  out.name = name;
+  out.key = ingKey(name);
+  return out;
+}
+function ingKey(name) {
+  var s = deaccent(String(name || '').toLowerCase()).replace(/['’]/g, ' ').replace(/[^a-z0-9%\- ]/g, ' ').replace(/\b\d+%?/g, ' ');
+  var all = s.split(/\s+/).filter(function (w) { return w && w !== 'de' && w !== 'd' && w !== 'of'; }).map(singular).join(' ');
+  if (SYN[all]) return SYN[all];
+  var words = s.split(/\s+/).filter(function (w) { return w && !DESC[w]; }).map(singular);
+  var k = words.join(' ').trim();
+  if (SYN[k]) return SYN[k];
+  // a known phrase at the end ("2 big ripe tomatoes" → tomato) or a known phrase on its own
+  for (var n = Math.min(3, words.length); n >= 1; n--) {
+    var tail = words.slice(-n).join(' ');
+    if (SYN[tail]) return words.length === n ? SYN[tail] : (words.slice(0, -n).join(' ') + ' ' + SYN[tail]).trim();
+  }
+  return k;
+}
+/* Things that contain another ingredient's name without being it. */
+var STANDALONE = { 'peanut butter': 1, 'coconut milk': 1, 'coconut cream': 1, 'almond milk': 1, 'oat milk': 1, 'soy milk': 1,
+  'cream of tartar': 1, 'butter bean': 1, 'apple butter': 1, 'apple cider vinegar': 1, 'rice vinegar': 1, 'rice noodle': 1, 'egg noodle': 1 };
+function matches(have, need) {
+  if (!have || !need) return false;
+  if (have === need) return true;
+  if (STANDALONE[need] || STANDALONE[have]) return false;
+  if ((' ' + need + ' ').indexOf(' ' + have + ' ') >= 0) return true;
+  if ((' ' + have + ' ').indexOf(' ' + need + ' ') >= 0) return true;
+  var fam = FAMILY[need];
+  return !!(fam && fam.indexOf(have) >= 0);
+}
+var stapleMemo = { src: null, keys: [] };
+function isStaple(k) {
+  var src = state.prefs.staples.join('|');
+  if (stapleMemo.src !== src) stapleMemo = { src: src, keys: state.prefs.staples.map(ingKey) };
+  return stapleMemo.keys.indexOf(k) >= 0;
+}
+
+/* ---------- aisles ---------- */
+var AISLE_ORDER = ['Produce', 'Bakery', 'Meat & fish', 'Dairy & eggs', 'Pantry', 'Spices', 'Frozen', 'Drinks', 'Household', 'Other'];
+var AISLE_WORDS = {
+  'Produce': 'apple,banana,lemon,lime,orange,berry,blueberry,strawberry,raspberry,grape,pear,peach,avocado,tomato,onion,green onion,garlic,potato,sweet potato,carrot,celery,lettuce,spinach,kale,arugula,cabbage,broccoli,cauliflower,zucchini,cucumber,eggplant,bell pepper,jalapeno,mushroom,corn,bean sprout,squash,butternut squash,pumpkin,basil,parsley,cilantro,coriander,mint,dill,thyme,rosemary,ginger,leek,shallot,radish,beet,asparagus,green bean,fruit,herb,salad,romaine,tofu',
+  'Meat & fish': 'chicken,chicken breast,chicken thigh,beef,ground beef,pork,ground pork,bacon,ham,sausage,steak,lamb,turkey,veal,pepperoni,prosciutto,salmon,cod,fish,white fish,shrimp,mussel,tuna,tilapia,haddock,trout,scallop,crab,pork tenderloin,pork chop,chorizo',
+  'Dairy & eggs': 'milk,cream,butter,cheese,cheddar,mozzarella,parmesan,feta,ricotta,mascarpone,yogurt,sour cream,egg,cream cheese,gruyere,swiss,goat cheese',
+  'Bakery': 'bread,bun,tortilla,pita,baguette,bagel,croissant,naan,pie crust,pizza dough,ladyfinger,english muffin',
+  'Pantry': 'pasta,rice,noodle,ramen noodle,rice noodle,flour,sugar,brown sugar,oat,quinoa,lentil,chickpea,black bean,split pea,bean,broth,tomato paste,tomato sauce,coconut milk,curry paste,soy sauce,vinegar,oil,olive oil,honey,maple syrup,peanut butter,peanut,jam,mustard,mayonnaise,ketchup,barbecue sauce,salsa,tahini,chocolate,chocolate chip,cocoa,coffee,tea,cereal,cracker,tortilla chip,nut,pine nut,almond,walnut,raisin,bread crumb,baking powder,baking soda,yeast,vanilla,olive,pea,white wine,red wine,stock,canned tomato',
+  'Spices': 'salt,pepper,cinnamon,paprika,cumin,oregano,chili powder,curry powder,nutmeg,bay leaf,spice,garam masala,turmeric,chili flake,cayenne',
+  'Frozen': 'frozen,ice cream,frozen pea,frozen berry',
+  'Drinks': 'water,juice,beer,soda,sparkling water',
+  'Household': 'paper towel,soap,detergent,dish soap,foil,plastic wrap,toilet paper,sponge,garbage bag,trash bag'
+};
+var AISLE_OF = {};
+Object.keys(AISLE_WORDS).forEach(function (a) { AISLE_WORDS[a].split(',').forEach(function (w) { AISLE_OF[w] = a; }); });
+function aisleFor(p) { return (p.unit === 'can' || p.unit === 'jar') && aisleOf(p.key) !== 'Meat & fish' ? 'Pantry' : aisleOf(p.key); }
+function aisleOf(key) {
+  if (!key) return 'Other';
+  if (AISLE_OF[key]) return AISLE_OF[key];
+  var w = key.split(' ');
+  for (var n = w.length - 1; n >= 1; n--) { var t = w.slice(-n).join(' '); if (AISLE_OF[t]) return AISLE_OF[t]; }
+  for (var i = 0; i < w.length; i++) if (AISLE_OF[w[i]]) return AISLE_OF[w[i]];
+  return 'Other';
+}
+
+var MEAT = ['chicken', 'beef', 'pork', 'bacon', 'ham', 'sausage', 'steak', 'lamb', 'turkey', 'veal', 'pepperoni', 'prosciutto', 'chorizo', 'ground beef', 'ground pork', 'duck', 'pancetta'];
+var FISH = ['salmon', 'cod', 'fish', 'white fish', 'shrimp', 'mussel', 'tuna', 'tilapia', 'haddock', 'trout', 'scallop', 'crab', 'anchovy', 'sardine', 'halibut', 'lobster'];
+var PORK = ['pork', 'bacon', 'ham', 'sausage', 'pepperoni', 'prosciutto', 'chorizo', 'ground pork', 'pancetta'];
+var GLUTEN = ['flour', 'bread', 'pasta', 'noodle', 'ramen noodle', 'tortilla', 'bun', 'pie crust', 'pizza dough', 'bread crumb', 'ladyfinger', 'beer', 'cracker', 'baguette', 'pita', 'couscous'];
+var DAIRY = ['milk', 'cream', 'butter', 'cheese', 'cheddar', 'mozzarella', 'parmesan', 'feta', 'ricotta', 'mascarpone', 'yogurt', 'sour cream', 'cream cheese', 'gruyere'];
+function hasAny(ings, words) { return ings.some(function (k) { return words.some(function (w) { return matches(w, k); }); }); }
+
+/* ============================================================
+   State
+   ============================================================ */
+function defaultPrefs() {
+  return { v: 1, diet: [], avoid: [], staples: STAPLES.slice(), slots: ['dinner'], people: ['Me', 'Mom', 'Grandma'], cats: CATS.slice() };
+}
+function defaultState() {
+  return { recipes: [], menu: [], grocery: [], fridge: [], cooked: [], ideaFb: {}, bought: {}, prefs: defaultPrefs() };
+}
+function strList(v) { return listOf(v).map(str).map(function (s) { return s.trim(); }).filter(Boolean); }
+function normRecipe(r) {
+  return {
+    id: str(r.id), title: str(r.title).trim() || 'Untitled', cat: str(r.cat), from: str(r.from),
+    kind: KINDS[r.kind] ? r.kind : 'home', url: str(r.url), date: str(r.date),
+    serves: numOr0(r.serves), time: numOr0(r.time),
+    ingredients: strList(r.ingredients), steps: strList(r.steps), notes: str(r.notes), tags: strList(r.tags),
+    fav: !!r.fav, rating: Math.max(0, Math.min(5, Math.round(+r.rating || 0))), hasPhoto: !!r.hasPhoto,
+    created: +r.created || 0, updated: +r.updated || 0
+  };
+}
+function normMenu(m) {
+  return { id: str(m.id), date: str(m.date), slot: SLOTS.some(function (s) { return s.k === m.slot; }) ? m.slot : 'dinner',
+           rid: str(m.rid), idea: str(m.idea), text: str(m.text), done: !!m.done };
+}
+function normGroc(g) {
+  return { id: str(g.id), name: str(g.name), qty: str(g.qty), aisle: AISLE_ORDER.indexOf(g.aisle) >= 0 ? g.aisle : aisleOf(ingKey(g.name)),
+           done: !!g.done, src: str(g.src), at: +g.at || 0 };
+}
+function normalise(d) {
+  if (!d || typeof d !== 'object') return null;
+  var p = d.prefs && typeof d.prefs === 'object' ? d.prefs : null;
+  var D = defaultPrefs();
+  var prefs = p && p.v ? {   // a saved copy: a missing list was emptied on purpose (the database drops empty lists)
+    v: 1, diet: strList(p.diet), avoid: strList(p.avoid), staples: strList(p.staples),
+    slots: strList(p.slots).filter(function (s) { return SLOTS.some(function (x) { return x.k === s; }); }),
+    people: strList(p.people), cats: strList(p.cats)
+  } : D;
+  if (!prefs.slots.length) prefs.slots = ['dinner'];
+  var fb = {}, bought = {};
+  if (d.ideaFb && typeof d.ideaFb === 'object') Object.keys(d.ideaFb).forEach(function (k) { var v = +d.ideaFb[k]; if (v === 1 || v === -1) fb[k] = v; });
+  if (d.bought && typeof d.bought === 'object') Object.keys(d.bought).forEach(function (k) {
+    var b = d.bought[k]; if (b && b.name) bought[k] = { n: +b.n || 1, name: str(b.name) };
+  });
+  return {
+    recipes: listOf(d.recipes).filter(function (r) { return r && r.id; }).map(normRecipe),
+    menu: listOf(d.menu).filter(function (m) { return m && m.id && m.date; }).map(normMenu),
+    grocery: listOf(d.grocery).filter(function (g) { return g && g.id && g.name; }).map(normGroc),
+    fridge: strList(d.fridge),
+    cooked: listOf(d.cooked).filter(function (c) { return c && c.date && (c.rid || c.idea); }).map(function (c) {
+      return { id: str(c.id) || uid(), date: str(c.date), rid: str(c.rid), idea: str(c.idea), mid: str(c.mid) };
+    }),
+    ideaFb: fb, bought: bought, prefs: prefs
+  };
+}
+function payloadOf(s) {
+  return { recipes: s.recipes, menu: s.menu, grocery: s.grocery, fridge: s.fridge, cooked: s.cooked, ideaFb: s.ideaFb, bought: s.bought, prefs: s.prefs };
+}
+function load() {
+  try { var s = normalise(JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null')); if (s) return s; } catch (e) {}
+  return defaultState();
+}
+var state = load();
+var saveTimer = null;
+function saveNow() {
+  clearTimeout(saveTimer);
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
+  cloudTouch();
+}
+function save() { clearTimeout(saveTimer); saveTimer = setTimeout(saveNow, 300); }
+function commit() { saveNow(); renderAll(); }
+function snapshot() { return JSON.stringify(payloadOf(state)); }
+function restore(snap) { var s = normalise(JSON.parse(snap)); if (s) { state = s; commit(); } }
+
+function recipeById(id) { for (var i = 0; i < state.recipes.length; i++) if (state.recipes[i].id === id) return state.recipes[i]; return null; }
+function cookedOf(rid) { return state.cooked.filter(function (c) { return c.rid === rid; }); }
+function lastCooked(list) { return list.reduce(function (a, c) { return c.date > a ? c.date : a; }, ''); }
+function siteOf(url) {
+  if (!url) return '';
+  var h = '';
+  try { h = new URL(/^https?:/i.test(url) ? url : 'https://' + url).hostname.replace(/^www\.|^m\./, ''); } catch (e) { return ''; }
+  if (/instagram\./.test(h)) return 'Instagram';
+  if (/tiktok\./.test(h)) return 'TikTok';
+  if (/youtube\.|youtu\.be/.test(h)) return 'YouTube';
+  if (/pinterest\./.test(h)) return 'Pinterest';
+  if (/facebook\.|fb\./.test(h)) return 'Facebook';
+  return h;
+}
+function kindLabel(r) { return r.kind === 'online' ? (siteOf(r.url) || 'Online') : KINDS[r.kind]; }
+function peopleList() {
+  return uniq(state.prefs.people.concat(state.recipes.map(function (r) { return r.from; }).filter(Boolean)));
+}
+function catList() { return uniq(state.prefs.cats.concat(state.recipes.map(function (r) { return r.cat; }).filter(Boolean))); }
+
+/* ============================================================
+   What it has learned — rebuilt from the data every time, so
+   it can never drift from what's actually in the book
+   ============================================================ */
+function recipeItem(r) {
+  var ings = r.ingredients.map(function (l) { return parseIng(l).key; }).filter(Boolean);
+  var tags = r.tags.map(function (t) { return t.toLowerCase(); });
+  if (r.time && r.time <= 30) tags.push('quick');
+  if (ings.length && !hasAny(ings, MEAT) && !hasAny(ings, FISH)) tags.push('veg');
+  if (hasAny(ings, FISH)) tags.push('fish');
+  return { type: 'r', id: r.id, key: 'r:' + r.id, name: r.title, cat: r.cat, mins: r.time, tags: tags, ings: ings, rec: r, season: '' };
+}
+function ideaItem(i) {
+  var tags = i.tags.slice();
+  if (i.mins <= 30) tags.push('quick');
+  return { type: 'i', id: i.k, key: 'i:' + i.k, name: i.name, cat: i.cat, mins: i.mins, tags: tags, ings: i.ings, idea: i, season: i.season };
+}
+function itemOfEntry(e) {
+  if (e.rid) { var r = recipeById(e.rid); if (r) return recipeItem(r); }
+  if (e.idea && IDEA[e.idea]) return ideaItem(IDEA[e.idea]);
+  return null;
+}
+function dietOk(it) {
+  var d = state.prefs.diet, ings = it.ings;
+  if (d.indexOf('vegetarian') >= 0 && (hasAny(ings, MEAT) || hasAny(ings, FISH))) return false;
+  if (d.indexOf('pescatarian') >= 0 && hasAny(ings, MEAT)) return false;
+  if (d.indexOf('no-pork') >= 0 && hasAny(ings, PORK)) return false;
+  if (d.indexOf('gluten-free') >= 0 && hasAny(ings, GLUTEN)) return false;
+  if (d.indexOf('dairy-free') >= 0 && hasAny(ings, DAIRY)) return false;
+  var avoid = state.prefs.avoid.map(ingKey);
+  if (avoid.length && ings.some(function (k) { return avoid.some(function (a) { return matches(a, k); }); })) return false;
+  return true;
+}
+function pool() {
+  var titles = {};
+  var out = state.recipes.map(function (r) { titles[slug(r.title)] = 1; return recipeItem(r); });
+  IDEAS.forEach(function (i) { if (!titles[i.k] && state.ideaFb[i.k] !== -1) out.push(ideaItem(i)); });
+  return out.filter(dietOk);
+}
+
+function profile() {
+  var P = { cat: {}, ing: {}, tag: {}, catN: {}, ingN: {}, tagN: {}, cooks: 0, byKey: {}, lastByKey: {} };
+  var today = todayKey();
+  function add(it, w) {
+    if (!it || !w) return;
+    var c = (it.cat || '').toLowerCase();
+    if (c) P.cat[c] = (P.cat[c] || 0) + w;
+    it.ings.forEach(function (k) { if (!isStaple(k)) P.ing[k] = (P.ing[k] || 0) + w; });
+    it.tags.forEach(function (t) { P.tag[t] = (P.tag[t] || 0) + w; });
+  }
+  state.cooked.forEach(function (c) {
+    var it = c.rid ? (recipeById(c.rid) ? recipeItem(recipeById(c.rid)) : null) : (IDEA[c.idea] ? ideaItem(IDEA[c.idea]) : null);
+    if (!it) return;
+    var age = daysBetween(c.date, today);
+    add(it, age > 365 ? 0.4 : age > 120 ? 0.7 : 1);          // what you cook lately counts most
+    P.cooks++;
+    P.byKey[it.key] = (P.byKey[it.key] || 0) + 1;
+    if (!P.lastByKey[it.key] || c.date > P.lastByKey[it.key]) P.lastByKey[it.key] = c.date;
+  });
+  state.recipes.forEach(function (r) {
+    var it = recipeItem(r);
+    add(it, 0.3 + (r.fav ? 1.2 : 0) + (r.rating ? (r.rating - 3) * 0.4 : 0));
+  });
+  Object.keys(state.ideaFb).forEach(function (k) {
+    if (IDEA[k]) add(ideaItem(IDEA[k]), state.ideaFb[k] > 0 ? 1 : -0.6);
+  });
+  state.menu.forEach(function (e) { add(itemOfEntry(e), 0.25); });
+  function norm(src, dst) {
+    var max = 0;
+    Object.keys(src).forEach(function (k) { if (src[k] > max) max = src[k]; });
+    Object.keys(src).forEach(function (k) { dst[k] = max > 0 ? Math.max(-1, src[k] / max) : 0; });
+  }
+  norm(P.cat, P.catN); norm(P.ing, P.ingN); norm(P.tag, P.tagN);
+  return P;
+}
+function topOf(obj, n) {
+  return Object.keys(obj).filter(function (k) { return obj[k] > 0; }).sort(function (a, b) { return obj[b] - obj[a]; }).slice(0, n);
+}
+function coldSeason(k) { var m = parse(k).getMonth(); return m >= 9 || m <= 3; }   // October to April, as it is here
+
+/* Score one dish for a day. Returns { s, why }. */
+function scoreItem(it, P, ctx) {
+  var s = Math.random() * (ctx.jitter == null ? 0.6 : ctx.jitter), why = [];
+  function reason(w, t) { why.push([w, t]); }
+  var date = ctx.date || todayKey();
+  if (it.type === 'r') {
+    var r = it.rec;
+    s += 0.9;
+    if (r.fav) { s += 0.7; reason(0.5, 'One of your favourites'); }
+    if (r.rating) s += (r.rating - 3) * 0.25;
+    if (r.rating >= 4) reason(0.45, 'You gave it ' + r.rating + ' stars');
+  } else {
+    if (state.ideaFb[it.id] > 0) { s += 0.7; reason(0.55, 'You loved this one'); }
+  }
+  var n = P.byKey[it.key] || 0, last = P.lastByKey[it.key];
+  s += Math.min(n, 6) * 0.06;
+  if (last) {
+    var ago = daysBetween(last, date);
+    if (ago >= 0 && ago < 3) s -= 3;
+    else if (ago >= 0 && ago < 7) s -= 1.6;
+    else if (ago >= 0 && ago < 14) s -= 0.8;
+    else if (ago > 45 && (n >= 2 || (it.rec && (it.rec.fav || it.rec.rating >= 4)))) { s += 0.6; reason(0.8, 'You haven’t made it since ' + fmtDate(last)); }
+  } else if (it.type === 'r') {
+    var age = it.rec.created ? (Date.now() - it.rec.created) / 864e5 : 0;
+    if (age > 10) { s += 0.3; reason(0.6, 'Saved ' + (age > 60 ? Math.round(age / 30) + ' months' : Math.round(age / 7) + ' weeks') + ' ago and never cooked'); }
+  }
+  var c = (it.cat || '').toLowerCase();
+  if (P.catN[c]) { s += 0.8 * P.catN[c]; if (P.catN[c] > 0.65) reason(0.3, 'You cook a lot of ' + it.cat.toLowerCase()); }
+  if (it.ings.length) {
+    var sum = 0, best = '', bestV = 0;
+    it.ings.forEach(function (k) { var v = P.ingN[k] || 0; sum += v; if (v > bestV) { bestV = v; best = k; } });
+    s += 0.6 * (sum / it.ings.length);
+    if (bestV > 0.6) reason(0.25, 'Uses ' + best + ', which you cook with a lot');
+  }
+  if (it.tags.length) {
+    var ts = 0; it.tags.forEach(function (t) { ts += P.tagN[t] || 0; });
+    s += 0.4 * (ts / it.tags.length);
+  }
+  if (it.season) {
+    var cold = coldSeason(date);
+    if ((it.season === 'c') === cold) { s += 0.35; reason(0.2, cold ? 'Good for a cold evening' : 'Good for a warm day'); }
+    else s -= 0.4;
+  }
+  if (ctx.near && ctx.near[it.key]) s -= 1.2;
+  if (ctx.fridge && ctx.fridge.length) {
+    var used = ctx.fridge.filter(function (f) { return it.ings.some(function (k) { return matches(f, k); }); });
+    if (used.length) { s += Math.min(used.length, 3) * 0.25; reason(0.7, 'Uses the ' + used.slice(0, 2).join(' and ') + ' in the fridge'); }
+  }
+  if (!why.length) {
+    if (it.type === 'r') reason(0.1, it.rec.from ? 'From the book · ' + it.rec.from : 'From the book');
+    else reason(0.1, 'Something different');
+  }
+  why.sort(function (a, b) { return b[0] - a[0]; });
+  return { s: s, why: why[0][1] };
+}
+function nearMap(date, days) {
+  var m = {};
+  state.menu.forEach(function (e) {
+    if (Math.abs(daysBetween(e.date, date)) <= days) {
+      if (e.rid) m['r:' + e.rid] = 1;
+      if (e.idea) m['i:' + e.idea] = 1;
+    }
+  });
+  return m;
+}
+function isMeal(it) { return NOT_MEALS.indexOf((it.cat || '').toLowerCase()) < 0; }
+
+/* ============================================================
+   UI state (this device only)
+   ============================================================ */
+var ui = {
+  view: (function () { try { return localStorage.getItem(VIEW_KEY) || 'book'; } catch (e) { return 'book'; } })(),
+  book: { q: '', cat: '', from: '', kind: '', sort: 'new' },
+  ideas: { mood: '', list: null, idx: 0 },
+  menu: { y: new Date().getFullYear(), m: new Date().getMonth() },
+  fridgePhoto: '',
+  sheet: null,          // { mode: 'recipe'|'editor'|'day'|'plan'|'groc', id, ... }
+  scale: 1, stepsDone: {}, curStep: -1
+};
+var VIEWS = ['book', 'ideas', 'left', 'menu', 'groc', 'taste'];
+if (VIEWS.indexOf(ui.view) < 0) ui.view = 'book';
+
+function showView(v) {
+  ui.view = v;
+  try { localStorage.setItem(VIEW_KEY, v); } catch (e) {}
+  VIEWS.forEach(function (k) { $('v-' + k).hidden = k !== v; });
+  document.querySelectorAll('.tab').forEach(function (t) { t.classList.toggle('on', t.dataset.view === v); });
+  if (v === 'ideas' && !ui.ideas.list) rankIdeas();
+  renderView();
+  window.scrollTo(0, 0);
+}
+function renderAll() {
+  renderCounts();
+  renderView();
+  if (ui.sheet && ui.sheet.mode !== 'editor') rerenderSheet();
+}
+function renderView() {
+  ({ book: renderBook, ideas: renderIdeas, left: renderLeft, menu: renderMenu, groc: renderGroc, taste: renderTaste })[ui.view]();
+}
+function renderCounts() {
+  $('n-book').textContent = state.recipes.length || '';
+  $('n-left').textContent = state.fridge.length || '';
+  var g = state.grocery.filter(function (x) { return !x.done; }).length;
+  $('n-groc').textContent = g || '';
+}
+
+/* ---------- toast with undo ---------- */
+var toastT = null, toastUndo = null, toastExpire = null;
+function toast(msg, undo, expire) {
+  if (toastExpire) { var f = toastExpire; toastExpire = null; f(); }
+  $('toast-msg').textContent = msg;
+  $('toast-undo').hidden = !undo;
+  toastUndo = undo || null; toastExpire = expire || null;
+  $('toast').classList.add('on');
+  clearTimeout(toastT);
+  toastT = setTimeout(function () {
+    $('toast').classList.remove('on'); toastUndo = null;
+    if (toastExpire) { var f = toastExpire; toastExpire = null; f(); }
+  }, undo ? 6500 : 2800);
+}
+$('toast-undo').addEventListener('click', function () {
+  var u = toastUndo; toastUndo = null; toastExpire = null;
+  $('toast').classList.remove('on');
+  if (u) u();
+});
+function undoable(msg, fn, expire) { var snap = snapshot(); fn(); commit(); toast(msg, function () { restore(snap); }, expire); }
+
+/* ============================================================
+   BOOK
+   ============================================================ */
+function bookFiltered() {
+  var b = ui.book, q = b.q.trim().toLowerCase();
+  var list = state.recipes.filter(function (r) {
+    if (b.cat && r.cat !== b.cat) return false;
+    if (b.from && r.from !== b.from) return false;
+    if (b.kind && r.kind !== b.kind) return false;
+    if (b.cat === '' && b.fav && !r.fav) return false;
+    if (q) {
+      var hay = [r.title, r.cat, r.from, r.notes, r.url, kindLabel(r)].concat(r.ingredients, r.tags, r.steps).join(' ').toLowerCase();
+      if (deaccent(hay).indexOf(deaccent(q)) < 0) return false;
+    }
+    return true;
+  });
+  var counts = {};
+  state.cooked.forEach(function (c) { if (c.rid) counts[c.rid] = (counts[c.rid] || 0) + 1; });
+  var by = {
+    'new': function (a, b) { return (b.date || '').localeCompare(a.date || '') || b.created - a.created; },
+    old: function (a, b) { return (a.date || '9').localeCompare(b.date || '9') || a.created - b.created; },
+    az: function (a, b) { return a.title.localeCompare(b.title); },
+    cooked: function (a, b) { return (counts[b.id] || 0) - (counts[a.id] || 0) || a.title.localeCompare(b.title); },
+    rated: function (a, b) { return (b.rating + (b.fav ? 0.5 : 0)) - (a.rating + (a.fav ? 0.5 : 0)) || a.title.localeCompare(b.title); }
+  };
+  list.sort(by[b.sort] || by['new']);
+  return { list: list, counts: counts };
+}
+function renderBook() {
+  var b = ui.book;
+  // people and kinds
+  var ppl = peopleList();
+  $('b-from').innerHTML = '<option value="">From anyone</option>' + ppl.map(function (p) {
+    return '<option value="' + esc(p) + '"' + (p === b.from ? ' selected' : '') + '>From ' + esc(p) + '</option>';
+  }).join('');
+  $('b-kind').value = b.kind; $('b-sort').value = b.sort;
+  if ($('b-q').value !== b.q) $('b-q').value = b.q;
+  // categories that hold something
+  var byCat = {};
+  state.recipes.forEach(function (r) { if (r.cat) byCat[r.cat] = (byCat[r.cat] || 0) + 1; });
+  var favN = state.recipes.filter(function (r) { return r.fav; }).length;
+  var chips = '<button class="chip' + (!b.cat && !b.fav ? ' on' : '') + '" type="button" data-act="b-cat" data-v="">All<i>' + state.recipes.length + '</i></button>';
+  if (favN) chips += '<button class="chip' + (b.fav ? ' on' : '') + '" type="button" data-act="b-fav">♥ Favourites<i>' + favN + '</i></button>';
+  catList().forEach(function (c) {
+    if (!byCat[c]) return;
+    chips += '<button class="chip' + (b.cat === c ? ' on' : '') + '" type="button" data-act="b-cat" data-v="' + esc(c) + '">' + esc(c) + '<i>' + byCat[c] + '</i></button>';
+  });
+  $('b-cats').innerHTML = state.recipes.length ? chips : '';
+
+  var f = bookFiltered();
+  if (!state.recipes.length) {
+    $('b-count').textContent = '';
+    $('b-grid').innerHTML = '<div class="empty" style="grid-column:1/-1"><b>The book is empty</b>Add the first one: a family recipe, a photo of Grandma’s card, or something saved from Instagram or TikTok. Every recipe keeps who it came from and when.' +
+      '<div class="row"><button class="btn solid" type="button" data-act="new">+ New recipe</button><button class="btn" type="button" data-act="new-card">Scan a card</button><button class="btn" type="button" data-act="new-online">Save from online</button></div></div>';
+    return;
+  }
+  $('b-count').textContent = f.list.length === state.recipes.length ? plural(f.list.length, 'recipe') : f.list.length + ' of ' + plural(state.recipes.length, 'recipe');
+  if (!f.list.length) { $('b-grid').innerHTML = '<div class="empty" style="grid-column:1/-1"><b>Nothing matches</b>Try fewer filters.</div>'; return; }
+  $('b-grid').innerHTML = f.list.map(function (r) {
+    var n = f.counts[r.id] || 0;
+    var bits = [];
+    if (r.from) bits.push('From ' + esc(r.from));
+    if (r.date) bits.push(esc(fmtDate(r.date)));
+    if (n) bits.push('Cooked ' + n + '×');
+    if (r.rating) bits.push('★'.repeat(r.rating));
+    return '<button class="rc" type="button" data-act="open" data-id="' + esc(r.id) + '">' +
+      '<span class="k">' + esc(r.cat || 'No category') + ' · ' + esc(kindLabel(r)) + (r.time ? ' · ' + r.time + ' min' : '') + '</span>' +
+      '<b>' + esc(r.title) + '</b>' + (r.fav ? '<span class="heart" aria-label="Favourite">♥</span>' : '') +
+      '<span class="m">' + bits.join(' · ') + '</span></button>';
+  }).join('');
+}
+
+/* ---------- recipe view ---------- */
+function openRecipe(id, back) {
+  if (!recipeById(id)) return;
+  ui.scale = 1; ui.stepsDone = {}; ui.curStep = -1;
+  ui.sheet = { mode: 'recipe', id: id, back: back || null };
+  rerenderSheet();
+}
+function scaleLine(line, f) {
+  if (f === 1) return esc(line);
+  var p = parseIng(line);
+  if (!p.qty) return esc(line);
+  var lead = String(line).trim().replace(/^[-•*▢☐□·–—]+\s*/, '');
+  var m = lead.match(QTY_RE);
+  return '<b>' + esc(fmtQty(p.qty * f)) + '</b> ' + esc(lead.slice(m[0].length));
+}
+function recipeHTML(r) {
+  var cooks = cookedOf(r.id), last = lastCooked(cooks);
+  var meta = [];
+  if (r.from) meta.push('From <b>' + esc(r.from) + '</b>');
+  if (r.date) meta.push(esc(fmtDate(r.date)));
+  if (r.serves) meta.push('Serves <b>' + r.serves + '</b>');
+  if (r.time) meta.push('<b>' + r.time + '</b> min');
+  meta.push(cooks.length ? 'Cooked <b>' + cooks.length + '×</b>, last ' + esc(fmtDate(last)) : 'Not cooked yet');
+  var stars = '<span class="stars" role="group" aria-label="Rating">' + [1, 2, 3, 4, 5].map(function (n) {
+    return '<button type="button" class="' + (n <= r.rating ? 'on' : '') + '" data-act="rate" data-v="' + n + '" aria-label="' + n + ' star' + (n > 1 ? 's' : '') + '">★</button>';
+  }).join('') + '</span>';
+  var site = siteOf(r.url);
+  var ingHTML = r.ingredients.length ? '<ul class="ings">' + r.ingredients.map(function (l, i) {
+    return '<li><label><input type="checkbox" data-ing="' + i + '"><span>' + scaleLine(l, ui.scale) + '</span></label></li>';
+  }).join('') + '</ul>' : '<p class="hint">No ingredients written down yet.</p>';
+  var stepHTML = r.steps.length ? '<ol class="steps">' + r.steps.map(function (s, i) {
+    return '<li data-act="step" data-v="' + i + '" class="' + (ui.stepsDone[i] ? 'done' : '') + (ui.curStep === i ? ' cur' : '') + '">' + esc(s) + '</li>';
+  }).join('') + '</ol>' : '<p class="hint">No steps written down yet.</p>';
+  return '<div class="sheet-head"><div class="t"><span class="k">' + esc(r.cat || 'No category') + ' · ' + esc(kindLabel(r)) + '</span><h3>' + esc(r.title) + '</h3></div>' +
+    '<button class="x" type="button" data-act="close" aria-label="Close">×</button></div>' +
+    '<div class="sheet-body">' +
+    '<div class="meta">' + meta.map(function (m) { return '<span>' + m + '</span>'; }).join('') + '</div>' +
+    '<div class="row" style="margin-bottom:16px">' + stars +
+    '<button class="btn sm' + (r.fav ? ' y' : '') + '" type="button" data-act="fav">' + (r.fav ? '♥ Favourite' : '♡ Favourite') + '</button></div>' +
+    '<div class="acts">' +
+    '<button class="btn solid" type="button" data-act="cooked">Cooked it today</button>' +
+    '<button class="btn" type="button" data-act="plan" data-ref="r:' + esc(r.id) + '">Add to the menu</button>' +
+    '<button class="btn" type="button" data-act="r-groc">Ingredients → groceries</button>' +
+    '<button class="btn" type="button" data-act="edit">Edit</button></div>' +
+    (r.url ? '<a class="src-link" href="' + esc(/^https?:/i.test(r.url) ? r.url : 'https://' + r.url) + '" target="_blank" rel="noopener"><span>Open on ' + esc(site || 'the web') + '</span> ↗</a>' : '') +
+    (r.hasPhoto ? '<div id="rv-photo"><p class="hint">The photo of the card is kept on the device that scanned it.</p></div>' : '') +
+    '<div class="two">' +
+    '<div class="sec"><div class="k"><span>Ingredients</span>' + (r.ingredients.some(function (l) { return parseIng(l).qty; }) ?
+      '<span class="scale" role="group" aria-label="Scale">' + [0.5, 1, 2, 3].map(function (f) {
+        return '<button type="button" data-act="scale" data-v="' + f + '" class="' + (ui.scale === f ? 'on' : '') + '">' + (f === 0.5 ? '½' : f) + '×</button>';
+      }).join('') + '</span>' : '') + '</div>' + ingHTML + '</div>' +
+    '<div class="sec"><div class="k"><span>Method</span>' + (r.steps.length ? '<span class="hint">Tap a step as you go</span>' : '') + '</div>' + stepHTML + '</div>' +
+    '</div>' +
+    (r.notes ? '<div class="notes">' + esc(r.notes) + '</div>' : '') +
+    (r.tags.length ? '<div class="chips" style="margin-top:18px">' + r.tags.map(function (t) { return '<span class="chip">' + esc(t) + '</span>'; }).join('') + '</div>' : '') +
+    '</div>' +
+    '<div class="sheet-foot"><button class="btn" type="button" data-act="print">Print</button><span class="sp"></span><button class="ghost" type="button" data-act="del">Delete recipe</button></div>';
+}
+function loadRecipePhoto(r) {
+  if (!r.hasPhoto) return;
+  PHOTOS.get(r.id).then(function (src) {
+    var box = $('rv-photo');
+    if (!box || !src || !ui.sheet || ui.sheet.id !== r.id) return;
+    box.innerHTML = '<img class="photo-thumb" src="' + src + '" alt="The original card" data-act="photo-full">';
+  }).catch(function () {});
+}
+
+/* ---------- photos of cards: kept on this device only (IndexedDB) ---------- */
+var PHOTOS = (function () {
+  var dbp = null;
+  function db() {
+    if (!dbp) dbp = new Promise(function (res, rej) {
+      if (!window.indexedDB) return rej(new Error('no indexedDB'));
+      var r = indexedDB.open('xdb-kitchen', 1);
+      r.onupgradeneeded = function () { r.result.createObjectStore('photos'); };
+      r.onsuccess = function () { res(r.result); };
+      r.onerror = function () { rej(r.error); };
+    });
+    return dbp;
+  }
+  function tx(mode, fn) {
+    return db().then(function (d) {
+      return new Promise(function (res, rej) {
+        var t = d.transaction('photos', mode), q = fn(t.objectStore('photos'));
+        t.oncomplete = function () { res(q && q.result); };
+        t.onerror = function () { rej(t.error); };
+      });
+    });
+  }
+  return {
+    get: function (id) { return tx('readonly', function (s) { return s.get(id); }); },
+    put: function (id, v) { return tx('readwrite', function (s) { return s.put(v, id); }); },
+    del: function (id) { return tx('readwrite', function (s) { return s.delete(id); }); }
+  };
+})();
+function shrink(file, max, q) {
+  return new Promise(function (res, rej) {
+    var img = new Image(), url = URL.createObjectURL(file);
+    img.onload = function () {
+      var w = img.naturalWidth, h = img.naturalHeight, k = Math.min(1, max / Math.max(w, h));
+      var c = document.createElement('canvas');
+      c.width = Math.round(w * k); c.height = Math.round(h * k);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url);
+      res(c.toDataURL('image/jpeg', q));
+    };
+    img.onerror = function () { URL.revokeObjectURL(url); rej(new Error('That file is not a photo this browser can read.')); };
+    img.src = url;
+  });
+}
+
+/* ---------- editor ---------- */
+var ed = null;   // { draft, photo, photoChanged, dirty }
+function openEditor(r, opts) {
+  opts = opts || {};
+  var draft = r ? JSON.parse(JSON.stringify(r)) : normRecipe({ id: '', kind: opts.kind || 'home', date: todayKey(), from: opts.from || '' });
+  if (opts.prefill) Object.keys(opts.prefill).forEach(function (k) { draft[k] = opts.prefill[k]; });
+  ed = { draft: draft, photo: '', photoChanged: false, dirty: !!opts.prefill, paste: opts.kind === 'online' };
+  ui.sheet = { mode: 'editor', id: draft.id, back: r && ui.sheet && ui.sheet.mode === 'recipe' ? ui.sheet : null };
+  paintEditor();
+  if (r && r.hasPhoto) PHOTOS.get(r.id).then(function (src) { if (ed && ed.draft.id === r.id && src && !ed.photoChanged) { ed.photo = src; readEditor(); paintEditor(); } }).catch(function () {});
+}
+function readEditor() {
+  if (!ed || !$('ed-title')) return;
+  var d = ed.draft;
+  d.title = $('ed-title').value;
+  d.cat = $('ed-cat').value;
+  d.from = $('ed-from').value.trim();
+  d.date = $('ed-date').value;
+  d.serves = numOr0($('ed-serves').value);
+  d.time = numOr0($('ed-time').value);
+  d.url = $('ed-url') ? $('ed-url').value.trim() : d.url;
+  d.ingredients = $('ed-ings').value.split('\n').map(function (s) { return s.trim(); }).filter(Boolean);
+  d.steps = splitSteps($('ed-steps').value);
+  d.notes = $('ed-notes').value;
+  d.tags = $('ed-tags').value.split(',').map(function (s) { return s.trim(); }).filter(Boolean);
+}
+function splitSteps(t) {
+  return String(t || '').split(/\n/).map(function (s) { return s.trim().replace(/^(?:step\s*\d+[:.)]?|étape\s*\d+[:.)]?|\d+\s*[.)]|[-•*])\s*/i, ''); }).filter(Boolean);
+}
+function paintEditor() {
+  var d = ed.draft, cats = catList();
+  if (d.cat && cats.indexOf(d.cat) < 0) cats.push(d.cat);
+  var kinds = ['home', 'card', 'online'].map(function (k) {
+    return '<button type="button" data-act="ed-kind" data-v="' + k + '" class="' + (d.kind === k ? 'on' : '') + '">' + KINDS[k] + '</button>';
+  }).join('');
+  var photoCol = '';
+  if (d.kind === 'card') {
+    photoCol = '<div class="ed-photo">' + (ed.photo ?
+      '<div class="frame" data-act="zoom" title="Tap to zoom"><img src="' + ed.photo + '" alt="The handwritten card"></div>' +
+      '<div class="row" style="margin-top:8px"><label class="btn sm" for="card-file">Retake</label><button class="ghost" type="button" data-act="ed-nophoto">Remove photo</button></div>' +
+      '<p class="hint">Tap the photo to zoom. Type it in on the ' + (innerWidth > 900 ? 'right' : 'form below') + '; the photo stays on this device with the recipe.</p>'
+      : '<label class="drop" for="card-file"><b>Take a photo of the card</b><span class="hint">It sits beside the form while you type it in, and stays with the recipe on this device.</span></label>') + '</div>';
+  }
+  var pasteBox = (d.kind !== 'card') ? (ed.paste ?
+    '<div class="paste f6"><p><b>Paste the whole recipe</b> (from a website, an Instagram caption, a message) and it sorts the ingredients from the steps for you. Check what it did before saving.</p>' +
+    '<textarea class="in" id="ed-paste" rows="7" placeholder="Paste here…"></textarea>' +
+    '<div class="row" style="margin-top:10px"><button class="btn solid" type="button" data-act="ed-sort">Sort it out</button><button class="ghost" type="button" data-act="ed-paste-off">Hide</button></div></div>'
+    : '<div class="f6"><button class="ghost" type="button" data-act="ed-paste-on" style="padding-left:0">+ Paste a whole recipe and sort it out</button></div>') : '';
+  var html = '<div class="sheet-head"><div class="t"><span class="k">' + (d.id ? 'Edit recipe' : 'New recipe') + '</span><h3>' + esc((d.title !== 'Untitled' && d.title) || (d.kind === 'card' ? 'From a card' : d.kind === 'online' ? 'From online' : 'New recipe')) + '</h3></div>' +
+    '<button class="x" type="button" data-act="close" aria-label="Close">×</button></div>' +
+    '<div class="sheet-body"><div class="ed' + (d.kind === 'card' ? ' with-photo' : '') + '">' + photoCol +
+    '<div class="ed-fields">' +
+    '<div class="field f6"><span class="k">What kind</span><div class="seg">' + kinds + '</div></div>' +
+    (d.kind === 'online' ? '<label class="field f6"><span class="k">Link</span><input class="in" id="ed-url" type="url" inputmode="url" value="' + esc(d.url) + '" placeholder="The Instagram, TikTok or website link"></label>' : '') +
+    pasteBox +
+    '<label class="field f6"><span class="k">Name</span><input class="in" id="ed-title" value="' + esc(d.title === 'Untitled' ? '' : d.title) + '" placeholder="Grandma’s tourtière" autocomplete="off"></label>' +
+    '<label class="field f2"><span class="k">Category</span><select class="in" id="ed-cat"><option value="">—</option>' +
+      cats.map(function (c) { return '<option' + (c === d.cat ? ' selected' : '') + '>' + esc(c) + '</option>'; }).join('') +
+      '<option value="__new">+ New category…</option></select></label>' +
+    '<label class="field f2"><span class="k">' + (d.kind === 'online' ? 'Made by' : 'From') + '</span><input class="in" id="ed-from" list="dl-people" value="' + esc(d.from) + '" placeholder="' + (d.kind === 'online' ? '@someone, or a name' : 'Me, Mom, Grandma…') + '" autocomplete="off">' +
+      '<datalist id="dl-people">' + peopleList().map(function (p) { return '<option value="' + esc(p) + '">'; }).join('') + '</datalist></label>' +
+    '<label class="field f2"><span class="k">Date</span><input class="in" id="ed-date" type="date" value="' + esc(d.date) + '"></label>' +
+    '<label class="field f2 half"><span class="k">Serves</span><input class="in" id="ed-serves" type="number" min="0" inputmode="numeric" value="' + (d.serves || '') + '"></label>' +
+    '<label class="field f2 half"><span class="k">Minutes</span><input class="in" id="ed-time" type="number" min="0" inputmode="numeric" value="' + (d.time || '') + '" placeholder="total"></label>' +
+    '<div class="f2"></div>' +
+    '<label class="field f3"><span class="k">Ingredients</span><textarea class="in" id="ed-ings" rows="10" placeholder="One per line&#10;2 cups flour&#10;1 onion, chopped">' + esc(d.ingredients.join('\n')) + '</textarea></label>' +
+    '<label class="field f3"><span class="k">Method</span><textarea class="in" id="ed-steps" rows="10" placeholder="One step per line">' + esc(d.steps.join('\n')) + '</textarea></label>' +
+    '<label class="field f6"><span class="k">Notes</span><textarea class="in" id="ed-notes" rows="3" placeholder="Tips, swaps, the story behind it" style="min-height:80px">' + esc(d.notes) + '</textarea></label>' +
+    '<label class="field f6"><span class="k">Tags</span><input class="in" id="ed-tags" value="' + esc(d.tags.join(', ')) + '" placeholder="comfort, holidays, freezer — comma separated" autocomplete="off"></label>' +
+    '</div></div></div>' +
+    '<div class="sheet-foot"><button class="btn solid" type="button" data-act="ed-save">Save recipe</button><button class="btn" type="button" data-act="close">Cancel</button>' +
+    '<span class="sp"></span>' + (d.id ? '<button class="ghost" type="button" data-act="del">Delete</button>' : '') + '</div>';
+  showSheet(html);
+}
+function saveEditor() {
+  readEditor();
+  var d = ed.draft;
+  d.title = d.title.trim();
+  if (!d.title) { $('ed-title').focus(); toast('Give it a name first'); return; }
+  if (d.cat === '__new') d.cat = '';
+  var now = Date.now(), isNew = !d.id;
+  if (isNew) { d.id = uid(); d.created = now; }
+  d.updated = now;
+  if (ed.photoChanged) d.hasPhoto = !!ed.photo;
+  var r = normRecipe(d);
+  if (isNew) state.recipes.unshift(r);
+  else state.recipes = state.recipes.map(function (x) { return x.id === r.id ? r : x; });
+  if (r.from && state.prefs.people.indexOf(r.from) < 0 && r.kind !== 'online') state.prefs.people.push(r.from);
+  if (r.cat && state.prefs.cats.indexOf(r.cat) < 0) state.prefs.cats.push(r.cat);
+  var photo = ed.photo, changed = ed.photoChanged;
+  if (changed) (photo ? PHOTOS.put(r.id, photo) : PHOTOS.del(r.id)).catch(function () { toast('The photo could not be kept on this device'); });
+  ed = null;
+  commit();
+  openRecipe(r.id);
+  toast(isNew ? 'Added to the book' : 'Saved');
+}
+
+/* "Paste a whole recipe" — split pasted text into its parts */
+function parseRecipeText(txt) {
+  var lines = String(txt || '').replace(/\r/g, '').split('\n').map(function (l) { return l.trim(); });
+  var out = { title: '', ingredients: [], steps: [], notes: [], serves: 0, time: 0, url: '' };
+  var mode = '', sawHeader = false;
+  var H_ING = /^(ingredients?|ingr[ée]dients?|what you(?:'|’)?ll need|you(?:'|’)?ll need|shopping list)\s*:?$/i;
+  var H_STEP = /^(instructions?|method|directions?|steps?|preparation|pr[ée]paration|[ée]tapes?|how to make( it)?|m[ée]thode)\s*:?$/i;
+  var H_NOTE = /^(notes?|tips?|astuces?|conseils?)\s*:?$/i;
+  lines.forEach(function (l, i) {
+    if (!l) return;
+    var url = l.match(/https?:\/\/\S+/);
+    if (url && !out.url) out.url = url[0];
+    var sv = l.match(/(?:serves|servings?|portions?|yield|makes|pour)\s*:?\s*(\d+)/i) || l.match(/(\d+)\s*(?:servings|portions|people|personnes)/i);
+    if (sv && !out.serves && l.length < 60) { out.serves = +sv[1]; return; }
+    var tm = l.match(/(?:total|cook|prep)?\s*time\s*:?\s*(?:(\d+)\s*h(?:ours?|rs?)?\s*)?(?:(\d+)\s*m(?:in(?:utes?)?)?)?/i);
+    if (tm && (tm[1] || tm[2]) && l.length < 60) { out.time = Math.max(out.time, (+tm[1] || 0) * 60 + (+tm[2] || 0)); return; }
+    var bare = l.replace(/^#+\s*|^\*\*|\*\*$/g, '').trim();
+    if (H_ING.test(bare)) { mode = 'i'; sawHeader = true; return; }
+    if (H_STEP.test(bare)) { mode = 's'; sawHeader = true; return; }
+    if (H_NOTE.test(bare)) { mode = 'n'; sawHeader = true; return; }
+    if (url && l.replace(url[0], '').trim().length < 3) return;
+    var looksIng = (QTY_RE.test(l.replace(/^[-•*▢☐□·]+\s*/, '')) && l.length < 90) || (/^[-•*▢☐□·]/.test(l) && l.length < 70);
+    var looksStep = /^(\d+\s*[.)]|step\s*\d+|étape\s*\d+)/i.test(l) || l.length > 90;
+    if (!out.title && !mode && !looksIng && !looksStep && l.length < 70 && i < 4) { out.title = l.replace(/^#+\s*/, ''); return; }
+    if (mode === 'i' && !(looksStep && l.length > 90)) { out.ingredients.push(l.replace(/^[-•*▢☐□·]+\s*/, '')); return; }
+    if (mode === 's') { out.steps.push(l); return; }
+    if (mode === 'n') { out.notes.push(l); return; }
+    if (!sawHeader) {
+      if (looksIng && !/^\d+\s*[.)]\s/.test(l)) out.ingredients.push(l.replace(/^[-•*▢☐□·]+\s*/, ''));
+      else if (looksStep || (out.ingredients.length && l.length > 30)) out.steps.push(l);
+      else if (out.steps.length) out.steps.push(l);
+      else out.notes.push(l);
+    } else {
+      out.notes.push(l);
+    }
+  });
+  out.steps = splitSteps(out.steps.join('\n'));
+  return out;
+}
+
+/* ============================================================
+   IDEAS
+   ============================================================ */
+var MOODS = [['', 'Anything'], ['quick', 'Quick'], ['comfort', 'Comfort'], ['healthy', 'Healthy'], ['veg', 'Vegetarian'], ['fish', 'Fish'],
+  ['kids', 'Kids'], ['fancy', 'Fancy'], ['budget', 'Budget'], ['onepot', 'One pot'], ['breakfast', 'Breakfast'], ['sweet', 'Sweet'],
+  ['book', 'From our book'], ['new', 'Something new']];
+function moodOk(it, mood) {
+  var c = (it.cat || '').toLowerCase();
+  switch (mood) {
+    case '': return isMeal(it);
+    case 'breakfast': return c === 'breakfast';
+    case 'sweet': return c === 'desserts' || c === 'baking';
+    case 'book': return it.type === 'r' && isMeal(it);
+    case 'new': return it.type === 'i' && isMeal(it) && !state.cooked.some(function (x) { return x.idea === it.id; });
+    case 'quick': return isMeal(it) && it.mins > 0 && it.mins <= 30;
+    default: return isMeal(it) && it.tags.indexOf(mood) >= 0;
+  }
+}
+function rankIdeas() {
+  var P = profile(), ctx = { date: todayKey(), near: nearMap(todayKey(), 3), fridge: state.fridge.map(ingKey), jitter: 0.9 };
+  ui.ideas.list = pool().filter(function (it) { return moodOk(it, ui.ideas.mood); }).map(function (it) {
+    var sc = scoreItem(it, P, ctx); it.score = sc.s; it.why = sc.why; return it;
+  }).sort(function (a, b) { return b.score - a.score; });
+  ui.ideas.idx = 0;
+}
+function currentIdea() { var l = ui.ideas.list || []; return l[ui.ideas.idx] || null; }
+function renderIdeas() {
+  $('i-moods').innerHTML = MOODS.map(function (m) {
+    return '<button class="chip' + (ui.ideas.mood === m[0] ? ' on' : '') + '" type="button" data-act="i-mood" data-v="' + m[0] + '">' + m[1] + '</button>';
+  }).join('');
+  if (!ui.ideas.list) rankIdeas();
+  var it = currentIdea(), list = ui.ideas.list;
+  if (!it) {
+    $('i-hero').innerHTML = '<div class="empty"><b>Nothing fits</b>' + (ui.ideas.mood === 'book' ? 'The book has no meals in it yet.' : 'Try another mood, or loosen the diet settings in Taste.') + '</div>';
+    $('i-minis').innerHTML = ''; return;
+  }
+  var fridge = state.fridge.map(ingKey);
+  var isR = it.type === 'r', r = it.rec, loved = isR ? r.fav : state.ideaFb[it.id] > 0;
+  var desc = isR ? (r.notes ? r.notes.split('\n')[0] : (r.steps[0] || '')) : it.idea.how;
+  var ingNames = isR ? r.ingredients.map(function (l) { var p = parseIng(l); return { n: p.name || l, k: p.key }; }) : it.ings.map(function (k) { return { n: k, k: k }; });
+  $('i-hero').innerHTML = '<div class="hero"><div class="hero-main">' +
+    '<span class="k">' + esc(it.cat || '') + (it.mins ? ' · ' + it.mins + ' min' : '') + ' · ' + (isR ? 'From the book' + (r.from ? ' · ' + esc(r.from) : '') : 'An idea') + '</span>' +
+    '<h3>' + esc(it.name) + '</h3><p class="why">' + esc(it.why) + '</p>' +
+    '<div class="acts">' +
+    '<button class="btn solid" type="button" data-act="tonight" data-ref="' + esc(it.key) + '">Cook it tonight</button>' +
+    '<button class="btn" type="button" data-act="plan" data-ref="' + esc(it.key) + '">Plan it…</button>' +
+    '<button class="btn" type="button" data-act="i-next">Another →</button></div></div>' +
+    '<div class="hero-side">' + (desc ? '<p>' + esc(desc) + '</p>' : '') +
+    (ingNames.length ? '<div><span class="k" style="display:block;margin-bottom:8px">' + (fridge.length ? 'Black = in the fridge' : 'You’ll need') + '</span><div class="ing-chips">' +
+      ingNames.slice(0, 14).map(function (x) { var have = fridge.some(function (f) { return matches(f, x.k); }); return '<span class="' + (have ? 'have' : '') + '">' + esc(x.n) + '</span>'; }).join('') + '</div></div>' : '') +
+    '<div class="row" style="margin-top:auto">' +
+    (isR ? '<button class="btn sm" type="button" data-act="open" data-id="' + esc(r.id) + '">Open recipe</button>'
+         : '<button class="btn sm" type="button" data-act="i-save">Save to the book</button>') +
+    '<button class="btn sm' + (loved ? ' y' : '') + '" type="button" data-act="i-love">' + (loved ? '♥ Loved' : '♡ Love it') + '</button>' +
+    '<button class="ghost" type="button" data-act="i-nope">' + (isR ? 'Not now' : 'Not for us') + '</button></div>' +
+    '</div></div>';
+  var minis = [];
+  for (var i = 1; i < list.length && minis.length < 8; i++) {
+    var j = (ui.ideas.idx + i) % list.length;
+    if (j === ui.ideas.idx) break;
+    minis.push(j);
+  }
+  $('i-minis').innerHTML = minis.map(function (j) {
+    var m = list[j];
+    return '<button class="mini" type="button" data-act="i-pick" data-v="' + j + '"><span class="k">' + esc(m.cat) + (m.mins ? ' · ' + m.mins + ' min' : '') + (m.type === 'r' ? ' · Book' : '') + '</span>' +
+      '<b>' + esc(m.name) + '</b><span>' + esc(m.why) + '</span></button>';
+  }).join('');
+}
+function refItem(ref) {
+  var p = String(ref).split(':');
+  if (p[0] === 'r') { var r = recipeById(p.slice(1).join(':')); return r ? recipeItem(r) : null; }
+  if (p[0] === 'i' && IDEA[p[1]]) return ideaItem(IDEA[p[1]]);
+  return null;
+}
+function ideaToDraft(i) {
+  return { title: i.name, cat: i.cat, time: i.mins, ingredients: i.ings.map(cap), steps: [i.how], notes: 'Started from an idea in Kitchen. Make it yours: fix the amounts and the steps once you’ve cooked it.', from: 'Me', kind: 'home' };
+}
+
+/* ============================================================
+   LEFTOVERS
+   ============================================================ */
+function addFridge(text) {
+  var added = 0;
+  String(text || '').split(/[,;\n]| and | et /).forEach(function (t) {
+    t = t.trim();
+    while (/^(half|some|a bit of|a little|leftovers?|left over|a|an|the|of)\s+/i.test(t)) t = t.replace(/^(half|some|a bit of|a little|leftovers?|left over|a|an|the|of)\s+/i, '');
+    var p = parseIng(t);
+    var k = p.key || ingKey(t);
+    if (!k) return;
+    if (state.fridge.map(ingKey).indexOf(k) >= 0) return;
+    state.fridge.push(k); added++;
+  });
+  return added;
+}
+function leftoverMatches() {
+  var have = state.fridge.map(ingKey);
+  if (!have.length) return [];
+  var P = profile();
+  return pool().map(function (it) {
+    var need = uniq(it.ings.filter(function (k) { return k && !isStaple(k); }));
+    if (!need.length) return null;
+    var got = [], miss = [];
+    var names = {};
+    if (it.type === 'r') it.rec.ingredients.forEach(function (l) { var p = parseIng(l); if (p.key && !names[p.key]) names[p.key] = p.name; });
+    need.forEach(function (k) { (have.some(function (h) { return matches(h, k); }) ? got : miss).push(names[k] || k); });
+    if (!got.length) return null;
+    var sc = scoreItem(it, P, { date: todayKey(), jitter: 0 }).s;
+    it.got = got; it.miss = miss;
+    it.rank = (got.length / need.length) * 2 + Math.min(got.length, 4) * 0.3 + (it.type === 'r' ? 0.4 : 0) + sc * 0.15 - (isMeal(it) ? 0 : 0.5);
+    return it;
+  }).filter(Boolean).sort(function (a, b) { return b.rank - a.rank; }).slice(0, 14);
+}
+function renderLeft() {
+  var have = state.fridge;
+  $('l-have').innerHTML = have.length ? have.map(function (h, i) {
+    return '<button class="chip on" type="button" data-act="l-del" data-v="' + i + '" title="Remove">' + esc(h) + ' ×</button>';
+  }).join('') + '<button class="ghost" type="button" data-act="l-clear">Empty the fridge</button>' : '<span class="hint">Nothing yet. Type what you have, or tap below.</span>';
+  var keys = have.map(ingKey);
+  $('l-quick').innerHTML = QUICK_PICKS.map(function (g) {
+    return '<span class="k">' + g[0] + '</span><div class="chips">' + g[1].map(function (w) {
+      var on = keys.indexOf(ingKey(w)) >= 0;
+      return '<button class="chip' + (on ? ' on' : '') + '" type="button" data-act="l-toggle" data-v="' + esc(w) + '">' + esc(w) + '</button>';
+    }).join('') + '</div>';
+  }).join('');
+  $('l-photo-view').innerHTML = ui.fridgePhoto ? '<img src="' + ui.fridgePhoto + '" alt="Your fridge"><button class="ghost" type="button" data-act="l-nophoto">Remove photo</button>' : '';
+  var res = leftoverMatches();
+  $('l-n').textContent = res.length ? res.length + ' found' : '';
+  if (!have.length) { $('l-results').innerHTML = '<div class="empty"><b>Open the fridge</b>Add a few things on the left and the matches appear here, best first. Your own recipes come before the built-in ideas.</div>'; return; }
+  if (!res.length) { $('l-results').innerHTML = '<div class="empty"><b>No match yet</b>Add a couple more things — a protein and a starch usually unlock plenty.</div>'; return; }
+  $('l-results').innerHTML = res.map(function (it) {
+    var total = it.got.length + it.miss.length;
+    return '<div class="match"><div><span class="k">' + esc(it.cat) + (it.mins ? ' · ' + it.mins + ' min' : '') + ' · ' + (it.type === 'r' ? 'From the book' : 'An idea') + '</span><br><b>' + esc(it.name) + '</b></div>' +
+      '<span class="pct">' + it.got.length + '/' + total + '</span>' +
+      '<div class="m" style="grid-column:1/-1">Uses <strong>' + esc(it.got.join(', ')) + '</strong>' + (it.miss.length ? '<br>Also needs ' + esc(it.miss.join(', ')) : '<br><strong>You have everything.</strong>') + '</div>' +
+      '<div class="acts">' +
+      (it.type === 'r' ? '<button class="btn sm" type="button" data-act="open" data-id="' + esc(it.id) + '">Open</button>' : '<button class="btn sm" type="button" data-act="i-save-ref" data-ref="' + esc(it.key) + '">Save to the book</button>') +
+      '<button class="btn sm solid" type="button" data-act="tonight" data-ref="' + esc(it.key) + '">Tonight</button>' +
+      (it.miss.length ? '<button class="btn sm" type="button" data-act="l-missing" data-ref="' + esc(it.key) + '">+ ' + it.miss.length + ' missing to the list</button>' : '') +
+      '</div></div>';
+  }).join('');
+}
+
+/* ============================================================
+   MENU
+   ============================================================ */
+function entriesOn(date) { return state.menu.filter(function (e) { return e.date === date; }); }
+function slotOrder(e) { return SLOTS.map(function (s) { return s.k; }).indexOf(e.slot); }
+function addMenu(date, slot, it, text) {
+  var e = normMenu({ id: uid(), date: date, slot: slot, rid: it && it.type === 'r' ? it.id : '', idea: it && it.type === 'i' ? it.id : '', text: it ? it.name : text });
+  state.menu.push(e);
+  return e;
+}
+function entryName(e) { var r = e.rid && recipeById(e.rid); return r ? r.title : (e.idea && IDEA[e.idea] ? IDEA[e.idea].name : e.text); }
+function setDone(e, done) {
+  e.done = done;
+  state.cooked = state.cooked.filter(function (c) { return c.mid !== e.id; });
+  if (done && (e.rid || e.idea)) state.cooked.push({ id: uid(), date: e.date, rid: e.rid, idea: e.idea, mid: e.id });
+}
+function renderMenu() {
+  var y = ui.menu.y, m = ui.menu.m, first = new Date(y, m, 1), days = new Date(y, m + 1, 0).getDate();
+  $('m-name').textContent = first.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+  var lead = (first.getDay() + 6) % 7, today = todayKey();
+  var html = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(function (d) { return '<div class="wd">' + d + '</div>'; }).join('');
+  for (var i = 0; i < lead; i++) html += '<div class="day out" aria-hidden="true"></div>';
+  var planned = 0, slots = state.prefs.slots;
+  for (var d = 1; d <= days; d++) {
+    var k = y + '-' + pad(m + 1) + '-' + pad(d);
+    var es = entriesOn(k).sort(function (a, b) { return slotOrder(a) - slotOrder(b); });
+    slots.forEach(function (s) { if (es.some(function (e) { return e.slot === s; })) planned++; });
+    html += '<button class="day' + (k < today ? ' past' : '') + (k === today ? ' today' : '') + '" type="button" data-act="day" data-v="' + k + '">' +
+      '<span class="dn"><span><em>' + parse(k).toLocaleDateString(undefined, { weekday: 'short' }) + '</em>' + d + '</span></span><span class="meals">' +
+      es.map(function (e) {
+        return '<span class="meal' + (e.done ? ' done' : '') + '">' + (slots.length > 1 || e.slot !== 'dinner' ? '<small>' + SLOTS[slotOrder(e)].s + '</small>' : '') + '<span>' + esc(entryName(e)) + '</span></span>';
+      }).join('') + (es.length ? '' : '<span class="add">+ plan</span>') + '</span></button>';
+  }
+  $('m-cal').innerHTML = html;
+  var total = days * slots.length;
+  var cooked = state.menu.filter(function (e) { return e.done && e.date.slice(0, 7) === y + '-' + pad(m + 1); }).length;
+  $('m-stat').textContent = planned + ' of ' + total + ' ' + slots.map(function (s) { return s + 's'; }).join(' and ') + ' planned' + (cooked ? ' · ' + cooked + ' ticked off as cooked' : '') + '. Tap a day to plan it; tick a meal once it’s eaten and the kitchen learns from it.';
+}
+function fillMonth() {
+  var y = ui.menu.y, m = ui.menu.m, days = new Date(y, m + 1, 0).getDate(), today = todayKey();
+  var P = profile(), all = pool(), added = 0, used = {};
+  var snap = snapshot();
+  state.menu.forEach(function (e) { if (e.date.slice(0, 7) === y + '-' + pad(m + 1)) { var it = itemOfEntry(e); if (it) used[it.key] = (used[it.key] || 0) + 1; } });
+  for (var d = 1; d <= days; d++) {
+    var k = y + '-' + pad(m + 1) + '-' + pad(d);
+    if (k < today) continue;
+    state.prefs.slots.forEach(function (slot) {
+      if (entriesOn(k).some(function (e) { return e.slot === slot; })) return;
+      var near = nearMap(k, 10);
+      var prev = state.menu.filter(function (e) { return e.date === addDays(k, -1) && e.slot === slot; }).map(itemOfEntry).filter(Boolean)[0];
+      var cands = all.filter(function (it) { return slot === 'breakfast' ? (it.cat || '').toLowerCase() === 'breakfast' : isMeal(it); });
+      var best = null, bestS = -1e9;
+      cands.forEach(function (it) {
+        if (near[it.key]) return;
+        var s = scoreItem(it, P, { date: k, jitter: 0.8 }).s;
+        if (prev && prev.cat === it.cat) s -= 0.6;
+        s -= (used[it.key] || 0) * (it.type === 'r' ? 0.5 : 1.1);   // a month of the same ten dishes is no help
+        if (slot === 'lunch' && it.mins > 60) s -= 0.8;
+        if (s > bestS) { bestS = s; best = it; }
+      });
+      if (best) { addMenu(k, slot, best); used[best.key] = (used[best.key] || 0) + 1; added++; }
+    });
+  }
+  if (!added) { toast('Every day from today is already planned'); return; }
+  commit();
+  toast('Planned ' + plural(added, 'meal'), function () { restore(snap); });
+}
+
+/* ---------- day sheet ---------- */
+function dayHTML(k) {
+  var es = entriesOn(k);
+  var slots = SLOTS.filter(function (s) { return state.prefs.slots.indexOf(s.k) >= 0 || es.some(function (e) { return e.slot === s.k; }); });
+  var dl = '<datalist id="dl-dishes">' + state.recipes.map(function (r) { return '<option value="' + esc(r.title) + '">'; }).join('') +
+    IDEAS.filter(function (i) { return state.ideaFb[i.k] !== -1; }).map(function (i) { return '<option value="' + esc(i.name) + '">'; }).join('') + '</datalist>';
+  return '<div class="sheet-head"><div class="t"><span class="k">The menu</span><h3>' + esc(fmtDate(k, true)) + '</h3></div>' +
+    '<button class="x" type="button" data-act="close" aria-label="Close">×</button></div>' +
+    '<div class="sheet-body">' + slots.map(function (s) {
+      var mine = es.filter(function (e) { return e.slot === s.k; });
+      return '<div class="dslot"><span class="k">' + s.n + '</span>' + mine.map(function (e) {
+        var linked = e.rid && recipeById(e.rid);
+        return '<div class="pm">' + (linked ? '<button class="nm" type="button" data-act="open" data-id="' + esc(e.rid) + '">' + esc(entryName(e)) + '</button>'
+          : '<span class="nm plain">' + esc(entryName(e)) + (e.idea ? ' <span class="badge">Idea</span>' : '') + '</span>') +
+          '<label><input type="checkbox" data-act="m-done" data-id="' + esc(e.id) + '"' + (e.done ? ' checked' : '') + '>Cooked</label>' +
+          '<button class="ghost" type="button" data-act="m-del" data-id="' + esc(e.id) + '" aria-label="Remove">×</button></div>';
+      }).join('') +
+      '<div class="row" style="margin-top:10px"><input class="in grow" list="dl-dishes" data-slot="' + s.k + '" placeholder="A recipe, an idea or anything — “leftovers”, “eating out”" autocomplete="off">' +
+      '<button class="btn sm solid" type="button" data-act="m-add" data-slot="' + s.k + '">Add</button>' +
+      '<button class="btn sm" type="button" data-act="m-suggest" data-slot="' + s.k + '">Suggest</button></div></div>';
+    }).join('') + dl + '</div>' +
+    '<div class="sheet-foot"><button class="btn" type="button" data-act="day-prev">← Day before</button><button class="btn" type="button" data-act="day-next">Next day →</button><span class="sp"></span><button class="btn solid" type="button" data-act="close">Done</button></div>';
+}
+function resolveDish(text) {
+  var t = text.trim(), s = slug(t);
+  var r = state.recipes.filter(function (x) { return slug(x.title) === s; })[0];
+  if (r) return recipeItem(r);
+  if (IDEA[s]) return ideaItem(IDEA[s]);
+  return null;
+}
+function suggestFor(k, slot) {
+  var P = profile(), near = nearMap(k, 10);
+  var best = null, bestS = -1e9;
+  pool().forEach(function (it) {
+    if (slot === 'breakfast' ? (it.cat || '').toLowerCase() !== 'breakfast' : !isMeal(it)) return;
+    if (near[it.key]) return;
+    var s = scoreItem(it, P, { date: k, jitter: 0.9 }).s;
+    if (s > bestS) { bestS = s; best = it; }
+  });
+  return best;
+}
+
+/* ---------- plan sheet (pick a day for one dish) ---------- */
+function planHTML(it) {
+  var k = todayKey(), slots = state.prefs.slots;
+  for (var i = 0; i < 60; i++) { var d = addDays(todayKey(), i); if (!entriesOn(d).some(function (e) { return e.slot === 'dinner'; })) { k = d; break; } }
+  return '<div class="sheet-head"><div class="t"><span class="k">Add to the menu</span><h3>' + esc(it.name) + '</h3></div>' +
+    '<button class="x" type="button" data-act="close" aria-label="Close">×</button></div>' +
+    '<div class="sheet-body"><div class="row">' +
+    '<label class="field grow"><span class="k">Day</span><input class="in" type="date" id="pl-date" value="' + k + '"></label>' +
+    '<label class="field grow"><span class="k">Meal</span><select class="in" id="pl-slot">' + SLOTS.map(function (s) {
+      return '<option value="' + s.k + '"' + (s.k === (slots.indexOf('dinner') >= 0 ? 'dinner' : slots[0]) ? ' selected' : '') + '>' + s.n + '</option>';
+    }).join('') + '</select></label></div><p class="hint" style="margin-top:12px">The first evening with nothing planned is picked for you.</p></div>' +
+    '<div class="sheet-foot"><button class="btn solid" type="button" data-act="pl-add" data-ref="' + esc(it.key) + '">Add it</button><button class="btn" type="button" data-act="close">Cancel</button></div>';
+}
+
+/* ---------- grocery list from the menu ---------- */
+function rangeOf(r) {
+  var t = todayKey(), y = ui.menu.y, m = ui.menu.m;
+  var mFirst = y + '-' + pad(m + 1) + '-01', mLast = y + '-' + pad(m + 1) + '-' + pad(new Date(y, m + 1, 0).getDate());
+  if (r === 'week') return [t, addDays(t, 6)];
+  if (r === 'next') return [addDays(t, 7), addDays(t, 13)];
+  if (r === 'rest') return [t > mFirst ? t : mFirst, mLast];
+  return [mFirst, mLast];
+}
+function gatherGroceries(opt) {
+  var rg = rangeOf(opt.range), fridge = state.fridge.map(ingKey), agg = {}, order = [];
+  state.menu.forEach(function (e) {
+    if (e.date < rg[0] || e.date > rg[1]) return;
+    if (opt.skipDone && e.done) return;
+    var dish = entryName(e), lines = [];
+    var r = e.rid && recipeById(e.rid);
+    if (r) lines = r.ingredients.map(parseIng);
+    else if (e.idea && IDEA[e.idea]) lines = IDEA[e.idea].ings.map(function (k) { return { qty: 0, unit: '', name: k, key: k }; });
+    lines.forEach(function (p) {
+      if (!p.key) return;
+      if (opt.skipStaples && isStaple(p.key)) return;
+      if (opt.skipFridge && fridge.some(function (f) { return matches(f, p.key) && f.split(' ').length >= p.key.split(' ').length; })) return;
+      var a = agg[p.key];
+      if (!a) { a = agg[p.key] = { key: p.key, name: p.name || p.key, q: {}, bare: 0, from: [], aisle: aisleFor(p) }; order.push(p.key); }
+      if (p.qty) a.q[p.unit] = (a.q[p.unit] || 0) + p.qty; else a.bare++;
+      if (a.from.indexOf(dish) < 0) a.from.push(dish);
+    });
+  });
+  return order.map(function (k) {
+    var a = agg[k];
+    var qty = Object.keys(a.q).map(function (u) { return qtyUnit(a.q[u], u); }).join(' + ');
+    return { key: k, name: a.name, qty: qty, aisle: a.aisle, from: a.from };
+  }).sort(function (a, b) { return AISLE_ORDER.indexOf(a.aisle) - AISLE_ORDER.indexOf(b.aisle) || a.name.localeCompare(b.name); });
+}
+var gopt = { range: 'week', skipStaples: true, skipFridge: true, skipDone: true };
+function grocHTML() {
+  var items = gatherGroceries(gopt);
+  var monthName = new Date(ui.menu.y, ui.menu.m, 1).toLocaleDateString(undefined, { month: 'long' });
+  var ranges = [['week', 'Next 7 days'], ['next', 'The 7 after'], ['rest', 'Rest of ' + monthName], ['month', 'All of ' + monthName]];
+  var tog = function (k, label) { return '<button class="chip' + (gopt[k] ? ' on' : '') + '" type="button" data-act="gq-tog" data-v="' + k + '">' + (gopt[k] ? '✓ ' : '') + label + '</button>'; };
+  return '<div class="sheet-head"><div class="t"><span class="k">From the menu</span><h3>Grocery list</h3></div>' +
+    '<button class="x" type="button" data-act="close" aria-label="Close">×</button></div>' +
+    '<div class="sheet-body"><div class="chips">' + ranges.map(function (r) {
+      return '<button class="chip' + (gopt.range === r[0] ? ' on' : '') + '" type="button" data-act="gq-range" data-v="' + r[0] + '">' + esc(r[1]) + '</button>';
+    }).join('') + '</div><div class="chips" style="margin-top:8px">' + tog('skipStaples', 'Skip pantry basics') + tog('skipFridge', 'Skip what’s in the fridge') + tog('skipDone', 'Skip meals already cooked') + '</div>' +
+    (items.length ? '<div class="prev">' + items.map(function (it, i) {
+      return '<div class="gi"><label><input type="checkbox" checked data-gq="' + i + '"><span class="q">' + esc(it.qty) + '</span><span class="nm">' + esc(it.name) + '</span></label><span class="from" title="' + esc(it.from.join(', ')) + '">' + esc(it.aisle) + '</span></div>';
+    }).join('') + '</div><p class="hint">Untick anything you already have. Ingredients from built-in ideas come without amounts.</p>'
+      : '<div class="empty" style="margin-top:14px"><b>Nothing to buy</b>No recipes planned in that stretch' + (gopt.skipDone ? ' (that aren’t already cooked)' : '') + '. Plan some days first, or pick a longer range.</div>') +
+    '</div><div class="sheet-foot"><button class="btn solid" type="button" data-act="gq-add"' + (items.length ? '' : ' disabled') + '>Add to the grocery list</button><button class="btn" type="button" data-act="close">Cancel</button></div>';
+}
+
+/* ============================================================
+   GROCERIES
+   ============================================================ */
+function addGrocery(name, qty, src, aisle) {
+  name = String(name || '').trim();
+  if (!name) return false;
+  var k = ingKey(name);
+  var same = state.grocery.filter(function (g) { return !g.done && ingKey(g.name) === k; })[0];
+  if (same) {
+    if (qty) {
+      var a = parseIng(same.qty + ' x'), b = parseIng(qty + ' x');
+      same.qty = (a.qty && b.qty && a.unit === b.unit) ? qtyUnit(a.qty + b.qty, a.unit) : (same.qty ? same.qty + ' + ' + qty : qty);
+    }
+    return true;
+  }
+  state.grocery.push(normGroc({ id: uid(), name: name, qty: qty || '', aisle: aisle || aisleOf(k), src: src || '', at: Date.now() }));
+  return true;
+}
+function addTyped(text) {
+  var n = 0;
+  String(text).split(/,|;|\n/).forEach(function (t) {
+    t = t.trim(); if (!t) return;
+    var p = parseIng(t);
+    var qty = p.qtyText ? (p.qtyText + (p.unitText ? ' ' + p.unitText : '')) : '';
+    var name = p.qtyText ? (p.rest.replace(/^(of|de|d['’])\s*/i, '').trim() || t) : t;
+    if (addGrocery(name, qty, '', aisleFor(p))) n++;
+  });
+  return n;
+}
+function renderGroc() {
+  var items = state.grocery;
+  if (!items.length) {
+    $('g-list').innerHTML = '<div class="empty"><b>The list is empty</b>Type above, add from the menu, or send a recipe’s ingredients here from the book.</div>';
+  } else {
+    var by = {};
+    items.forEach(function (g) { (by[g.aisle] = by[g.aisle] || []).push(g); });
+    $('g-list').innerHTML = AISLE_ORDER.filter(function (a) { return by[a]; }).map(function (a) {
+      var list = by[a].sort(function (x, y) { return (x.done - y.done) || x.name.localeCompare(y.name); });
+      var left = list.filter(function (g) { return !g.done; }).length;
+      return '<div class="aisle"><div class="k"><span>' + esc(a) + '</span><span>' + (left ? left + ' to get' : 'done') + '</span></div>' + list.map(function (g) {
+        return '<div class="gi' + (g.done ? ' done' : '') + '"><label><input type="checkbox" data-act="g-done" data-id="' + esc(g.id) + '"' + (g.done ? ' checked' : '') + '>' +
+          (g.qty ? '<span class="q">' + esc(g.qty) + '</span>' : '') + '<span class="nm">' + esc(g.name) + '</span></label>' +
+          (g.src ? '<span class="from">' + esc(g.src) + '</span>' : '') +
+          '<button class="del" type="button" data-act="g-del" data-id="' + esc(g.id) + '" aria-label="Remove ' + esc(g.name) + '">×</button></div>';
+      }).join('') + '</div>';
+    }).join('');
+  }
+  var onList = state.grocery.filter(function (g) { return !g.done; }).map(function (g) { return ingKey(g.name); });
+  var usual = Object.keys(state.bought).map(function (k) { return state.bought[k]; })
+    .filter(function (b) { return b.n >= 2 && onList.indexOf(ingKey(b.name)) < 0; })
+    .sort(function (a, b) { return b.n - a.n; }).slice(0, 16);
+  $('g-usual').innerHTML = usual.length ? usual.map(function (b) {
+    return '<button class="chip" type="button" data-act="g-usual" data-v="' + esc(b.name) + '">+ ' + esc(b.name) + '<i>' + b.n + '×</i></button>';
+  }).join('') : '<span class="hint">Nothing yet. Things you tick off twice or more show up here.</span>';
+}
+function groceryText() {
+  var by = {};
+  state.grocery.filter(function (g) { return !g.done; }).forEach(function (g) { (by[g.aisle] = by[g.aisle] || []).push(g); });
+  return 'Grocery list\n' + AISLE_ORDER.filter(function (a) { return by[a]; }).map(function (a) {
+    return '\n' + a.toUpperCase() + '\n' + by[a].map(function (g) { return '- ' + (g.qty ? g.qty + ' ' : '') + g.name; }).join('\n');
+  }).join('\n');
+}
+
+/* ============================================================
+   TASTE
+   ============================================================ */
+function bars(rows) {
+  var max = rows.reduce(function (m, r) { return Math.max(m, r[1]); }, 0) || 1;
+  return '<div class="bars">' + rows.map(function (r) {
+    return '<div class="bar"><span title="' + esc(r[0]) + '">' + esc(r[0]) + '</span><i style="width:' + Math.max(4, Math.round(r[1] / max * 100)) + '%"></i><em>' + r[1] + '</em></div>';
+  }).join('') + '</div>';
+}
+function renderTaste() {
+  var P = profile(), t = todayKey(), month = t.slice(0, 7);
+  var thisMonth = state.cooked.filter(function (c) { return c.date.slice(0, 7) === month; }).length;
+  var h = '<div class="stat-row"><div class="stat"><b>' + state.recipes.length + '</b><span>Recipes</span></div>' +
+    '<div class="stat"><b>' + state.cooked.length + '</b><span>Meals cooked</span></div>' +
+    '<div class="stat"><b>' + thisMonth + '</b><span>This month</span></div></div>';
+  var learned = [];
+  if (!state.recipes.length && !state.cooked.length && !Object.keys(state.ideaFb).length) {
+    h += '<div class="empty"><b>Nothing learned yet</b>Add recipes, tick meals off on the menu as you eat them, rate what you make and tap ♡ on ideas you like. Every one of those changes what Ideas, Leftovers and Fill empty days suggest.</div>';
+    $('t-learned').innerHTML = h; renderSettings(); return;
+  }
+  // where the book comes from
+  var from = {};
+  state.recipes.forEach(function (r) { var f = r.kind === 'online' ? (siteOf(r.url) || 'Online') : (r.from || 'Unknown'); from[f] = (from[f] || 0) + 1; });
+  var fromRows = Object.keys(from).map(function (k) { return [k, from[k]]; }).sort(function (a, b) { return b[1] - a[1]; }).slice(0, 8);
+  if (fromRows.length) h += '<div class="subh"><b>Where the book comes from</b></div>' + bars(fromRows);
+  // what gets cooked
+  var cats = {};
+  state.cooked.forEach(function (c) {
+    var it = c.rid ? (recipeById(c.rid) ? recipeItem(recipeById(c.rid)) : null) : (IDEA[c.idea] ? ideaItem(IDEA[c.idea]) : null);
+    if (it && it.cat) cats[it.cat] = (cats[it.cat] || 0) + 1;
+  });
+  var catRows = Object.keys(cats).map(function (k) { return [k, cats[k]]; }).sort(function (a, b) { return b[1] - a[1]; }).slice(0, 8);
+  if (catRows.length) h += '<div class="subh"><b>What gets cooked</b></div>' + bars(catRows);
+  // most cooked
+  var most = Object.keys(P.byKey).sort(function (a, b) { return P.byKey[b] - P.byKey[a]; }).slice(0, 5);
+  if (most.length) h += '<div class="subh"><b>Most cooked</b></div><ol class="learn">' + most.map(function (k) {
+    var it = refItem(k); return it ? '<li><b>' + esc(it.name) + '</b> · ' + P.byKey[k] + '×, last ' + esc(fmtDate(P.lastByKey[k])) + '</li>' : '';
+  }).join('') + '</ol>';
+  // ingredients
+  var ings = topOf(P.ing, 14);
+  if (ings.length) h += '<div class="subh"><b>Ingredients you come back to</b></div><div class="ing-chips">' + ings.map(function (k) { return '<span>' + esc(k) + '</span>'; }).join('') + '</div>';
+  // forgotten favourites
+  var forgot = state.recipes.filter(function (r) {
+    if (!(r.fav || r.rating >= 4)) return false;
+    var l = lastCooked(cookedOf(r.id)); return !l || daysBetween(l, t) > 45;
+  }).slice(0, 6);
+  if (forgot.length) h += '<div class="subh"><b>Forgotten favourites</b></div><div class="chips">' + forgot.map(function (r) {
+    return '<button class="chip y" type="button" data-act="open" data-id="' + esc(r.id) + '">' + esc(r.title) + '</button>';
+  }).join('') + '</div>';
+  // in plain words
+  var cookedItems = state.cooked.map(function (c) { return c.rid ? (recipeById(c.rid) ? recipeItem(recipeById(c.rid)) : null) : (IDEA[c.idea] ? ideaItem(IDEA[c.idea]) : null); }).filter(Boolean);
+  if (cookedItems.length >= 4) {
+    var veg = cookedItems.filter(function (it) { return it.tags.indexOf('veg') >= 0; }).length / cookedItems.length;
+    var quick = cookedItems.filter(function (it) { return it.mins && it.mins <= 30; }).length / cookedItems.length;
+    var fromBook = cookedItems.filter(function (it) { return it.type === 'r'; }).length / cookedItems.length;
+    if (veg >= 0.5) learned.push('Half or more of what you cook is vegetarian, so it leans that way.');
+    if (quick >= 0.5) learned.push('Most of what you cook takes 30 minutes or less.');
+    learned.push(Math.round(fromBook * 100) + '% of meals cooked came from your own book.');
+  }
+  if (catRows.length) learned.push('Ideas lean toward ' + catRows.slice(0, 2).map(function (r) { return r[0].toLowerCase(); }).join(' and ') + ', because that’s what you cook.');
+  var loved = Object.keys(state.ideaFb).filter(function (k) { return state.ideaFb[k] > 0 && IDEA[k]; });
+  if (loved.length) learned.push('You loved ' + plural(loved.length, 'idea') + '; those come up more.');
+  learned.push(coldSeason(t) ? 'It’s the cold half of the year: soups, stews and bakes get a nudge.' : 'It’s the warm half of the year: salads, the grill and quick dishes get a nudge.');
+  h += '<div class="subh"><b>In plain words</b></div><ul class="learn">' + learned.map(function (l) { return '<li>' + esc(l) + '</li>'; }).join('') + '</ul>';
+  $('t-learned').innerHTML = h;
+  renderSettings();
+}
+function tagEditor(key, label, hint, placeholder) {
+  var list = state.prefs[key];
+  return '<div class="box"><span class="k">' + label + '</span>' + (hint ? '<p class="hint" style="margin:0 0 10px">' + hint + '</p>' : '') +
+    '<div class="taglist">' + list.map(function (v, i) {
+      return '<button class="chip" type="button" data-act="p-del" data-key="' + key + '" data-v="' + i + '" title="Remove">' + esc(v) + ' ×</button>';
+    }).join('') + '</div>' +
+    '<div class="row" style="margin-top:10px"><input class="in grow" data-padd="' + key + '" placeholder="' + esc(placeholder) + '" autocomplete="off"><button class="btn sm" type="button" data-act="p-add" data-key="' + key + '">Add</button></div></div>';
+}
+function renderSettings() {
+  var p = state.prefs;
+  var hidden = Object.keys(state.ideaFb).filter(function (k) { return state.ideaFb[k] < 0 && IDEA[k]; });
+  $('t-set').innerHTML =
+    '<div class="box"><span class="k">Diet</span><p class="hint" style="margin:0 0 10px">Suggestions that don’t fit are left out everywhere.</p><div class="chips">' +
+      DIETS.map(function (d) { var on = p.diet.indexOf(d[0]) >= 0; return '<button class="chip' + (on ? ' on' : '') + '" type="button" data-act="p-diet" data-v="' + d[0] + '">' + (on ? '✓ ' : '') + d[1] + '</button>'; }).join('') + '</div></div>' +
+    '<div class="box"><span class="k">Meals on the menu</span><p class="hint" style="margin:0 0 10px">Which meals the month plans and fills.</p><div class="chips">' +
+      SLOTS.map(function (s) { var on = p.slots.indexOf(s.k) >= 0; return '<button class="chip' + (on ? ' on' : '') + '" type="button" data-act="p-slot" data-v="' + s.k + '">' + (on ? '✓ ' : '') + s.n + '</button>'; }).join('') + '</div></div>' +
+    tagEditor('avoid', 'Never suggest', 'Anything with these is left out. Allergies, dislikes.', 'mushroom, cilantro') +
+    tagEditor('staples', 'Pantry basics', 'Always in the house: they don’t go on grocery lists and count as “have” for leftovers.', 'rice, garlic') +
+    tagEditor('people', 'People', 'Who recipes come from.', 'Aunt Sophie') +
+    tagEditor('cats', 'Categories', '', 'Holidays') +
+    (hidden.length ? '<div class="box"><span class="k">Ideas you said no to</span><div class="chips">' + hidden.map(function (k) {
+      return '<button class="chip" type="button" data-act="p-unhide" data-v="' + esc(k) + '" title="Bring it back">' + esc(IDEA[k].name) + ' ↺</button>';
+    }).join('') + '</div></div>' : '') +
+    '<div class="box"><span class="k">Backup</span><p class="hint" style="margin:0 0 10px">Everything in one file. Card photos stay on the device that took them.</p><div class="row">' +
+      '<button class="btn sm" type="button" data-act="export">Export (.json)</button><button class="btn sm" type="button" data-act="import">Import</button></div></div>';
+}
+
+/* ============================================================
+   Sheet plumbing
+   ============================================================ */
+var sheetSig = '';
+function showSheet(html) {
+  var sig = ui.sheet ? ui.sheet.mode + ':' + ui.sheet.id : '';
+  var box = $('sheet-box'), sh = $('sheet'), keep = (!sh.hidden && sig === sheetSig) ? box.scrollTop : 0;   // same sheet redrawn: stay put
+  sheetSig = sig;
+  box.innerHTML = html;
+  var head = box.querySelector('.sheet-head');
+  if (head) box.style.setProperty('--head-h', head.offsetHeight + 'px');
+  sh.hidden = false;
+  document.body.classList.add('sheet-open');
+  document.body.style.overflow = 'hidden';
+  box.scrollTop = keep;
+}
+function rerenderSheet() {
+  var s = ui.sheet;
+  if (!s) return;
+  if (s.mode === 'recipe') {
+    var r = recipeById(s.id);
+    if (!r) { closeSheet(true); return; }
+    showSheet(recipeHTML(r)); loadRecipePhoto(r);
+  } else if (s.mode === 'day') showSheet(dayHTML(s.id));
+  else if (s.mode === 'groc') showSheet(grocHTML());
+  else if (s.mode === 'plan') { var it = refItem(s.id); if (it) showSheet(planHTML(it)); else closeSheet(true); }
+}
+function closeSheet(force) {
+  if (!force && ui.sheet && ui.sheet.mode === 'editor' && ed && ed.dirty && !confirm('Close without saving this recipe?')) return;
+  var back = ui.sheet && ui.sheet.back;
+  ui.sheet = null; ed = null;
+  $('sheet').hidden = true; $('sheet-box').innerHTML = '';
+  document.body.classList.remove('sheet-open');
+  document.body.style.overflow = '';
+  if (back) { ui.sheet = back; rerenderSheet(); }
+}
+$('sheet').addEventListener('click', function (ev) { if (ev.target === $('sheet')) closeSheet(); });
+$('sheet-box').addEventListener('input', function (ev) {
+  if (ed && ev.target.id && ev.target.id.indexOf('ed-') === 0) {
+    ed.dirty = true;
+    if (ev.target.id === 'ed-title') {
+      var h = document.querySelector('.sheet-head h3');
+      if (h) { h.textContent = ev.target.value || 'New recipe'; $('sheet-box').style.setProperty('--head-h', h.parentNode.parentNode.offsetHeight + 'px'); }
+    }
+  }
+});
+$('sheet-box').addEventListener('change', function (ev) {
+  var t = ev.target;
+  if (t.id === 'ed-cat' && t.value === '__new') {
+    var n = (prompt('Name the new category') || '').trim();
+    if (n) { readEditor(); ed.draft.cat = n; if (state.prefs.cats.indexOf(n) < 0) { state.prefs.cats.push(n); save(); } paintEditor(); }
+    else t.value = ed.draft.cat || '';
+  }
+  if (t.dataset && t.dataset.act === 'm-done') {
+    var e = state.menu.filter(function (x) { return x.id === t.dataset.id; })[0];
+    if (e) { setDone(e, t.checked); commit(); if (t.checked) toast(e.rid || e.idea ? 'Ticked off. The kitchen remembers.' : 'Ticked off'); }
+  }
+});
+$('sheet-box').addEventListener('keydown', function (ev) {
+  if (ev.key !== 'Enter') return;
+  var t = ev.target;
+  if (t.dataset && t.dataset.slot && t.tagName === 'INPUT') { ev.preventDefault(); act('m-add', t); }
+});
+
+/* ============================================================
+   One click handler for everything
+   ============================================================ */
+document.addEventListener('click', function (ev) {
+  var el = ev.target.closest('[data-act]');
+  if (!el || el.tagName === 'INPUT') return;
+  act(el.dataset.act, el, ev);
+});
+document.querySelectorAll('.tab').forEach(function (t) { t.addEventListener('click', function () { showView(t.dataset.view); }); });
+
+function act(a, el, ev) {
+  var v = el.dataset.v, s = ui.sheet, r, it, e;
+  switch (a) {
+    /* book */
+    case 'new': openEditor(null, { kind: 'home' }); break;
+    case 'new-online': openEditor(null, { kind: 'online' }); break;
+    case 'new-card': openEditor(null, { kind: 'card' }); $('card-file').click(); break;
+    case 'b-cat': ui.book.cat = v; ui.book.fav = false; renderBook(); break;
+    case 'b-fav': ui.book.fav = !ui.book.fav; ui.book.cat = ''; renderBook(); break;
+    case 'open': openRecipe(el.dataset.id, s && (s.mode === 'day' || s.mode === 'groc') ? s : null); break;
+    case 'close': closeSheet(); break;
+
+    /* recipe */
+    case 'rate': r = recipeById(s.id); r.rating = r.rating === +v ? 0 : +v; r.updated = Date.now(); commit(); break;
+    case 'fav': r = recipeById(s.id); r.fav = !r.fav; r.updated = Date.now(); commit(); toast(r.fav ? 'A favourite. It’ll come up more.' : 'No longer a favourite'); break;
+    case 'cooked':
+      r = recipeById(s.id);
+      undoable('Logged. Cooked ' + (cookedOf(r.id).length + 1) + '× now.', function () { state.cooked.push({ id: uid(), date: todayKey(), rid: r.id, idea: '', mid: '' }); });
+      break;
+    case 'r-groc':
+      r = recipeById(s.id);
+      var snapG = snapshot(), nG = 0;
+      r.ingredients.forEach(function (l) {
+        var p = parseIng(l);
+        if (!p.key || isStaple(p.key)) return;
+        var qty = p.qty ? qtyUnit(p.qty * ui.scale, p.unit) : '';
+        if (addGrocery(cap(p.name || p.key), qty, r.title.slice(0, 24), aisleFor(p))) nG++;
+      });
+      commit();
+      toast(nG ? 'Added ' + plural(nG, 'ingredient') + ' to the grocery list (pantry basics left out)' : 'Nothing to add: it’s all pantry basics', nG ? function () { restore(snapG); } : null);
+      break;
+    case 'edit': r = recipeById(s.id); openEditor(r); break;
+    case 'del':
+      r = recipeById(s.id); if (!r) break;
+      var gone = r.id, hadPhoto = r.hasPhoto;
+      closeSheet(true);
+      undoable('Deleted “' + r.title + '”', function () {
+        state.recipes = state.recipes.filter(function (x) { return x.id !== gone; });
+        state.menu.forEach(function (m) { if (m.rid === gone) { m.text = m.text || r.title; m.rid = ''; } });
+      }, function () { if (hadPhoto && !recipeById(gone)) PHOTOS.del(gone).catch(function () {}); });
+      break;
+    case 'scale': ui.scale = +v; rerenderSheet(); break;
+    case 'step':
+      var i = +v;
+      if (ui.curStep === i) { ui.stepsDone[i] = true; ui.curStep = i + 1 < recipeById(s.id).steps.length ? i + 1 : -1; }
+      else if (ui.stepsDone[i]) { delete ui.stepsDone[i]; ui.curStep = i; }
+      else ui.curStep = i;
+      rerenderSheet(); break;
+    case 'print': window.print(); break;
+    case 'photo-full': var w = window.open(); if (w) w.document.write('<title>Card</title><body style="margin:0;background:#000"><img src="' + el.src + '" style="width:100%">'); break;
+    case 'plan':
+      it = refItem(el.dataset.ref); if (!it) break;
+      ui.sheet = { mode: 'plan', id: it.key, back: s && s.mode === 'recipe' ? s : null };
+      showSheet(planHTML(it)); break;
+    case 'pl-add':
+      it = refItem(el.dataset.ref);
+      var date = $('pl-date').value || todayKey(), slot = $('pl-slot').value;
+      undoable('On the menu for ' + fmtShort(date), function () { addMenu(date, slot, it); });
+      closeSheet(true); break;
+    case 'tonight':
+      it = refItem(el.dataset.ref); if (!it) break;
+      undoable('On tonight’s menu: ' + it.name, function () { addMenu(todayKey(), 'dinner', it); });
+      break;
+
+    /* editor */
+    case 'ed-kind': readEditor(); ed.draft.kind = v; ed.dirty = true; if (v === 'online' && !ed.draft.url) ed.paste = true; paintEditor(); break;
+    case 'ed-paste-on': readEditor(); ed.paste = true; paintEditor(); setTimeout(function () { $('ed-paste') && $('ed-paste').focus(); }); break;
+    case 'ed-paste-off': readEditor(); ed.paste = false; paintEditor(); break;
+    case 'ed-sort':
+      var txt = $('ed-paste').value;
+      if (!txt.trim()) { toast('Paste something first'); break; }
+      readEditor();
+      var got = parseRecipeText(txt), d = ed.draft;
+      if (got.title && (!d.title || d.title === 'Untitled')) d.title = got.title;
+      if (got.ingredients.length) d.ingredients = got.ingredients;
+      if (got.steps.length) d.steps = got.steps;
+      if (got.serves && !d.serves) d.serves = got.serves;
+      if (got.time && !d.time) d.time = got.time;
+      if (got.url && !d.url) { d.url = got.url; if (d.kind === 'home') d.kind = 'online'; }
+      if (got.notes.length) d.notes = (d.notes ? d.notes + '\n' : '') + got.notes.join('\n');
+      ed.paste = false; ed.dirty = true;
+      paintEditor();
+      toast('Sorted: ' + plural(got.ingredients.length, 'ingredient') + ', ' + plural(got.steps.length, 'step') + '. Check it over.');
+      break;
+    case 'ed-nophoto': readEditor(); ed.photo = ''; ed.photoChanged = true; ed.dirty = true; paintEditor(); break;
+    case 'zoom': el.classList.toggle('zoom'); break;
+    case 'ed-save': saveEditor(); break;
+
+    /* ideas */
+    case 'i-mood': ui.ideas.mood = v; rankIdeas(); renderIdeas(); break;
+    case 'i-next':
+      if (ui.ideas.idx + 1 >= ui.ideas.list.length) rankIdeas(); else ui.ideas.idx++;
+      renderIdeas(); break;
+    case 'i-shuffle': rankIdeas(); renderIdeas(); break;
+    case 'i-pick': ui.ideas.idx = +v; renderIdeas(); window.scrollTo({ top: $('i-hero').offsetTop - 70, behavior: 'smooth' }); break;
+    case 'i-love':
+      it = currentIdea(); if (!it) break;
+      if (it.type === 'r') { it.rec.fav = !it.rec.fav; toast(it.rec.fav ? 'A favourite now' : 'No longer a favourite'); }
+      else if (state.ideaFb[it.id] > 0) delete state.ideaFb[it.id];
+      else { state.ideaFb[it.id] = 1; toast('Noted. More like this.'); }
+      saveNow(); renderCounts(); renderIdeas(); break;
+    case 'i-nope':
+      it = currentIdea(); if (!it) break;
+      if (it.type === 'i') {
+        var snap = snapshot();
+        state.ideaFb[it.id] = -1; saveNow();
+        ui.ideas.list.splice(ui.ideas.idx, 1);
+        if (ui.ideas.idx >= ui.ideas.list.length) ui.ideas.idx = 0;
+        renderIdeas();
+        toast('It won’t come up again', function () { restore(snap); rankIdeas(); renderIdeas(); });
+      } else { ui.ideas.list.splice(ui.ideas.idx, 1); if (ui.ideas.idx >= ui.ideas.list.length) ui.ideas.idx = 0; renderIdeas(); }
+      break;
+    case 'i-save': it = currentIdea(); if (it && it.type === 'i') openEditor(null, { prefill: ideaToDraft(it.idea) }); break;
+    case 'i-save-ref': it = refItem(el.dataset.ref); if (it && it.type === 'i') openEditor(null, { prefill: ideaToDraft(it.idea) }); break;
+
+    /* leftovers */
+    case 'l-add': var n = addFridge($('l-add').value); $('l-add').value = ''; if (n) commit(); $('l-add').focus(); break;
+    case 'l-toggle':
+      var k = ingKey(v), at = state.fridge.map(ingKey).indexOf(k);
+      if (at >= 0) state.fridge.splice(at, 1); else state.fridge.push(k);
+      commit(); break;
+    case 'l-del': state.fridge.splice(+v, 1); commit(); break;
+    case 'l-clear': undoable('Fridge emptied', function () { state.fridge = []; }); break;
+    case 'l-nophoto': ui.fridgePhoto = ''; renderLeft(); break;
+    case 'l-missing':
+      it = refItem(el.dataset.ref);
+      var miss = (leftoverMatches().filter(function (x) { return x.key === it.key; })[0] || {}).miss || [];
+      undoable('Added ' + plural(miss.length, 'item') + ' to the grocery list', function () { miss.forEach(function (m) { addGrocery(cap(m), '', it.name.slice(0, 24)); }); });
+      break;
+
+    /* menu */
+    case 'm-prev': ui.menu.m--; if (ui.menu.m < 0) { ui.menu.m = 11; ui.menu.y--; } renderMenu(); break;
+    case 'm-next': ui.menu.m++; if (ui.menu.m > 11) { ui.menu.m = 0; ui.menu.y++; } renderMenu(); break;
+    case 'm-today': ui.menu.y = new Date().getFullYear(); ui.menu.m = new Date().getMonth(); renderMenu(); break;
+    case 'm-fill': fillMonth(); break;
+    case 'm-clear':
+      var pre = ui.menu.y + '-' + pad(ui.menu.m + 1);
+      var cnt = state.menu.filter(function (x) { return x.date.slice(0, 7) === pre; }).length;
+      if (!cnt) { toast('Nothing planned this month'); break; }
+      undoable('Cleared ' + plural(cnt, 'meal'), function () {
+        var ids = {};
+        state.menu.forEach(function (x) { if (x.date.slice(0, 7) === pre) ids[x.id] = 1; });
+        state.menu = state.menu.filter(function (x) { return !ids[x.id]; });
+        state.cooked = state.cooked.filter(function (c) { return !ids[c.mid]; });
+      });
+      break;
+    case 'day': ui.sheet = { mode: 'day', id: v }; showSheet(dayHTML(v)); break;
+    case 'day-prev': case 'day-next': ui.sheet.id = addDays(ui.sheet.id, a === 'day-prev' ? -1 : 1); rerenderSheet(); break;
+    case 'm-add':
+      var inp = document.querySelector('#sheet-box input[data-slot="' + el.dataset.slot + '"]');
+      var text = inp && inp.value.trim();
+      if (!text) { inp && inp.focus(); break; }
+      addMenu(s.id, el.dataset.slot, resolveDish(text), text);
+      commit(); break;
+    case 'm-suggest':
+      it = suggestFor(s.id, el.dataset.slot);
+      if (it) { addMenu(s.id, el.dataset.slot, it); commit(); } else toast('Nothing fits that day');
+      break;
+    case 'm-del':
+      e = state.menu.filter(function (x) { return x.id === el.dataset.id; })[0];
+      if (e) undoable('Removed ' + entryName(e), function () { setDone(e, false); state.menu = state.menu.filter(function (x) { return x.id !== e.id; }); });
+      break;
+    case 'm-groc': ui.sheet = { mode: 'groc' }; showSheet(grocHTML()); break;
+    case 'gq-range': gopt.range = v; rerenderSheet(); break;
+    case 'gq-tog': gopt[v] = !gopt[v]; rerenderSheet(); break;
+    case 'gq-add':
+      var items = gatherGroceries(gopt), picked = [];
+      document.querySelectorAll('#sheet-box [data-gq]').forEach(function (cb) { if (cb.checked) picked.push(items[+cb.dataset.gq]); });
+      if (!picked.length) { toast('Nothing ticked'); break; }
+      closeSheet(true);
+      undoable('Added ' + plural(picked.length, 'item') + ' to the grocery list', function () {
+        picked.forEach(function (p) { addGrocery(cap(p.name), p.qty, 'menu', p.aisle); });
+      });
+      if (ui.view !== 'groc') showView('groc');
+      break;
+
+    /* groceries */
+    case 'g-add': var m = addTyped($('g-add').value); $('g-add').value = ''; if (m) commit(); $('g-add').focus(); break;
+    case 'g-usual': addGrocery(v, '', ''); commit(); break;
+    case 'g-del':
+      e = state.grocery.filter(function (g) { return g.id === el.dataset.id; })[0];
+      if (e) undoable('Removed ' + e.name, function () { state.grocery = state.grocery.filter(function (g) { return g.id !== e.id; }); });
+      break;
+    case 'g-clear-done':
+      var dn = state.grocery.filter(function (g) { return g.done; }).length;
+      if (!dn) { toast('Nothing checked yet'); break; }
+      undoable('Cleared ' + plural(dn, 'item'), function () { state.grocery = state.grocery.filter(function (g) { return !g.done; }); });
+      break;
+    case 'g-clear-all':
+      if (!state.grocery.length) break;
+      undoable('List cleared', function () { state.grocery = []; });
+      break;
+    case 'g-share':
+      var body = groceryText();
+      if (!state.grocery.some(function (g) { return !g.done; })) { toast('The list is empty'); break; }
+      if (navigator.share) navigator.share({ title: 'Grocery list', text: body }).catch(function () {});
+      else if (navigator.clipboard) navigator.clipboard.writeText(body).then(function () { toast('Copied. Paste it in a message.'); }, function () { toast('Could not copy'); });
+      break;
+
+    /* taste */
+    case 'p-diet': var dl = state.prefs.diet, di = dl.indexOf(v); if (di >= 0) dl.splice(di, 1); else dl.push(v); ui.ideas.list = null; commit(); break;
+    case 'p-slot':
+      var sl = state.prefs.slots, si = sl.indexOf(v);
+      if (si >= 0) { if (sl.length === 1) { toast('Keep at least one meal'); break; } sl.splice(si, 1); }
+      else { sl.push(v); sl.sort(function (x, y) { return SLOTS.map(function (q) { return q.k; }).indexOf(x) - SLOTS.map(function (q) { return q.k; }).indexOf(y); }); }
+      commit(); break;
+    case 'p-add':
+      var key = el.dataset.key, box = document.querySelector('[data-padd="' + key + '"]');
+      var vals = box.value.split(',').map(function (x) { return x.trim(); }).filter(Boolean);
+      vals.forEach(function (x) { if (state.prefs[key].indexOf(x) < 0) state.prefs[key].push(x); });
+      box.value = '';
+      if (vals.length) { ui.ideas.list = null; commit(); var nb = document.querySelector('[data-padd="' + key + '"]'); nb && nb.focus(); }
+      break;
+    case 'p-del':
+      var lst = state.prefs[el.dataset.key], gone2 = lst[+v];
+      undoable('Removed ' + gone2, function () { lst.splice(+v, 1); ui.ideas.list = null; });
+      break;
+    case 'p-unhide': delete state.ideaFb[v]; ui.ideas.list = null; commit(); toast('It’s back in the ideas'); break;
+    case 'export':
+      var blob = new Blob([JSON.stringify({ kitchen: 1, exported: new Date().toISOString(), data: payloadOf(state) }, null, 2)], { type: 'application/json' });
+      var link = document.createElement('a');
+      link.href = URL.createObjectURL(blob); link.download = 'kitchen-' + todayKey() + '.json';
+      document.body.appendChild(link); link.click(); link.remove();
+      setTimeout(function () { URL.revokeObjectURL(link.href); }, 2000);
+      break;
+    case 'import': $('import-file').click(); break;
+  }
+}
+
+/* ---------- inputs ---------- */
+document.addEventListener('change', function (ev) {
+  var t = ev.target;
+  if (!t.dataset || t.dataset.act !== 'g-done') return;
+  var g = state.grocery.filter(function (x) { return x.id === t.dataset.id; })[0];
+  if (!g) return;
+  g.done = t.checked;
+  if (g.done) {   // what gets bought often becomes a one-tap add
+    var k = slug(ingKey(g.name) || g.name), b = state.bought[k];
+    state.bought[k] = { n: (b ? b.n : 0) + 1, name: b ? b.name : cap(g.name) };
+  }
+  commit();
+});
+$('b-q').addEventListener('input', function () { ui.book.q = this.value; renderBook(); });
+$('b-from').addEventListener('change', function () { ui.book.from = this.value; renderBook(); });
+$('b-kind').addEventListener('change', function () { ui.book.kind = this.value; renderBook(); });
+$('b-sort').addEventListener('change', function () { ui.book.sort = this.value; renderBook(); });
+$('l-add').addEventListener('keydown', function (ev) { if (ev.key === 'Enter') { ev.preventDefault(); act('l-add', this); } });
+$('g-add').addEventListener('keydown', function (ev) { if (ev.key === 'Enter') { ev.preventDefault(); act('g-add', this); } });
+document.addEventListener('keydown', function (ev) {
+  if (ev.key === 'Enter' && ev.target.dataset && ev.target.dataset.padd) { ev.preventDefault(); act('p-add', { dataset: { key: ev.target.dataset.padd } }); return; }
+  if (ev.key === 'Escape' && ui.sheet) { closeSheet(); return; }
+  var typing = /INPUT|TEXTAREA|SELECT/.test((document.activeElement || {}).tagName || '');
+  if (ev.key === '/' && !typing && !ui.sheet) { ev.preventDefault(); showView('book'); $('b-q').focus(); }
+});
+$('l-photo').addEventListener('change', function () {
+  var f = this.files && this.files[0]; this.value = '';
+  if (!f) return;
+  shrink(f, 1400, 0.8).then(function (src) { ui.fridgePhoto = src; renderLeft(); }).catch(function (e) { toast(e.message); });
+});
+$('card-file').addEventListener('change', function () {
+  var f = this.files && this.files[0]; this.value = '';
+  if (!f || !ed) return;
+  shrink(f, 1800, 0.82).then(function (src) { readEditor(); ed.photo = src; ed.photoChanged = true; ed.dirty = true; ed.draft.kind = 'card'; paintEditor(); })
+    .catch(function (e) { toast(e.message); });
+});
+$('import-file').addEventListener('change', function () {
+  var f = this.files && this.files[0]; this.value = '';
+  if (!f) return;
+  f.text().then(function (t) {
+    var j = JSON.parse(t), inc = normalise(j && j.data ? j.data : j);
+    if (!inc) throw new Error('bad');
+    var snap = snapshot(), add = 0;
+    function mergeBy(list, incoming, newer) {
+      var at = {}; list.forEach(function (x, i) { at[x.id] = i; });
+      incoming.forEach(function (x) {
+        if (at[x.id] == null) { list.push(x); add++; }
+        else if (newer && newer(x, list[at[x.id]])) list[at[x.id]] = x;
+      });
+    }
+    mergeBy(state.recipes, inc.recipes, function (a, b) { return a.updated > b.updated; });
+    mergeBy(state.menu, inc.menu);
+    mergeBy(state.grocery, inc.grocery);
+    mergeBy(state.cooked, inc.cooked);
+    Object.keys(inc.ideaFb).forEach(function (k) { if (!(k in state.ideaFb)) state.ideaFb[k] = inc.ideaFb[k]; });
+    commit();
+    toast('Imported ' + plural(add, 'new thing'), function () { restore(snap); });
+  }).catch(function () { toast('That file isn’t a Kitchen backup'); });
+});
+// past midnight, "today" moves on
+var lastToday = todayKey();
+setInterval(function () { var t = todayKey(); if (t !== lastToday) { lastToday = t; ui.ideas.list = null; renderAll(); } }, 60000);
+
+/* ---------- sync adapter: what this tool hands the shared sync code ---------- */
+var SYNC = {
+  doc: 'kitchen',                            // users/{uid}/tools/kitchen
+  storageKey: STORAGE_KEY,
+  noun: 'kitchen',
+
+  payload: function () { return payloadOf(state); },   // open tab, filters and the fridge photo are not edits
+
+  /* The database drops empty lists and objects; normalise() rebuilds them. */
+  apply: function (d, remote) {
+    var next = normalise(d);
+    if (!next) return false;
+    state = next;
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
+    ui.ideas.list = null;
+    renderAll();
+    if (ui.view === 'ideas') renderIdeas();
+    return true;
+  },
+
+  untouched: function () { return JSON.stringify(payloadOf(state)) === JSON.stringify(payloadOf(defaultState())); },
+
+  flush: function () { saveNow(); },
+
+  describe: function (d) {
+    var r = listOf(d && d.recipes).length, m = listOf(d && d.menu).length, g = listOf(d && d.grocery).filter(function (x) { return x && !x.done; }).length;
+    return plural(r, 'recipe') + ', ' + plural(m, 'meal') + ' on the menu, ' + g + ' on the grocery list';
+  },
+
+  buttonClass: function (s) {
+    return 'btn sync-btn' + (s === 'synced' ? ' ok' : '') + ((s === 'conflict' || s === 'error') ? ' bad' : '');
+  }
+};
+
+/* ============================================================
+   Cloud sync — local first, optional, live while signed in
+
+   Shared by Project Phases, Budget Tracker and Idea Bank. Keep the copies
+   identical: everything tool-specific lives in the SYNC adapter just above.
+
+   Sync is by invitation: Xavier's account, plus the people he approves on
+   the Access page (members/{uid}). Signing in is how someone asks — their
+   request appears there, and sync starts on its own once it is approved.
+
+   Signed out, the tool is purely local and the Firebase SDK is never
+   fetched. Signed in as the owner, the cloud copy is watched live, so a
+   change on one device shows up on the other within a second or two.
+
+   Every write goes through the same pass — read the cloud, compare it
+   with the watermark, then act — so a device that is behind can never
+   overwrite a newer copy. When both sides changed, it asks.
+   ============================================================ */
+
+/* Public Firebase identifiers — not secrets. They ship in every Firebase
+   web app; the database rules are what protect the data. */
+var FIREBASE = {
+  apiKey:      'AIzaSyCu0CA6eLWIkhhl-Z7jr_dDisuXDt1dKco',
+  authDomain:  'xdb-tools.firebaseapp.com',
+  databaseURL: 'https://xdb-tools-default-rtdb.firebaseio.com',
+  projectId:   'xdb-tools',
+  appId:       '1:6009567091:web:f7ee8c43ebe1bd25fcb706'
+};
+var SDK = 'https://www.gstatic.com/firebasejs/10.12.2/';
+
+/* Who may sync. Courtesy checks only — the database rules enforce all of
+   it, and would refuse anyone else even if these lines were edited away. */
+var OWNER = 'jGJdt3h4EeaOL3mYWUHA4yMZsRx2';
+var ACCESS_URL = '../access.html';   // where requests are approved; tools live in tools/
+var META_KEY = SYNC.storageKey + '.meta';   // watermarks live beside the data, not in it
+
+var cloud = {
+  on: !!FIREBASE.databaseURL,
+  status: 'signedout',  // signedout | working | synced | conflict | pending | private | error
+  uid: null,            // set only when the signed-in account owns this sync
+  authed: false,
+  listening: false,
+  at: 0,
+  msg: '',
+  fb: null,
+  timer: null,
+  busy: false,          // a sync pass is in flight
+  again: false,         // something changed while it was, so run one more
+  pending: null,        // a conflict waiting on a decision
+  print: null,          // the synced data as last seen, to tell edits from re-saves
+  outgoing: 0,          // stamp of our own latest write, so its echo is not news
+  unwatch: null,
+  unmember: null,       // live watch on this account's membership
+  asked: false          // an access request was sent this session
+};
+
+function syncEl(id) { return document.getElementById(id); }
+
+/* No connection is not a failure: the tool keeps saving here and sends it all
+   once the connection is back. Firebase says "Client is offline" without a code. */
+function errCode(err) {
+  var c = (err && err.code) || '', m = (err && err.message) || '';
+  if (navigator.onLine === false) return 'unavailable';
+  if (!c && /offline|network|failed to fetch|load failed|dynamically imported/i.test(m)) return 'unavailable';
+  return c || 'failed';
+}
+function isOffline(code) { return code === 'unavailable' || code === 'timeout' || code === 'auth/network-request-failed'; }
+
+function explain(code) {
+  var offline = 'No connection. Everything still saves on this device and will sync when you are back online.';
+  var map = {
+    'auth/unauthorized-domain':
+      'This site is not on the Firebase authorised domains list. Add ' + location.hostname +
+      ' under Authentication → Settings → Authorized domains.',
+    'auth/operation-not-allowed':
+      'Google sign-in is not enabled for this Firebase project. Turn it on under Authentication → Sign-in method.',
+    'auth/popup-blocked':
+      'Your browser blocked the sign-in popup. Allow popups for this site, or try again.',
+    'auth/popup-closed-by-user':
+      'The sign-in window closed before it finished.',
+    'auth/network-request-failed': offline,
+    'unavailable': offline,
+    'timeout': offline,
+    'PERMISSION_DENIED':
+      'The database rules refused this account. Check the rules allow users/<your uid>.'
+  };
+  return map[code] || ('Sync failed' + (code ? ' (' + code + ')' : '') + '.');
+}
+
+function deviceName() {
+  var ua = navigator.userAgent;
+  if (/iPhone/.test(ua)) return 'iPhone';
+  if (/iPad/.test(ua)) return 'iPad';
+  if (/Android/.test(ua)) return 'Android';
+  if (/Mac OS X/.test(ua)) return 'Mac';
+  if (/Windows/.test(ua)) return 'Windows';
+  return 'this device';
+}
+
+/* Kept out of the tool's own data so exports stay clean and an imported
+   file never carries another device's watermark. */
+function meta() {
+  try {
+    var m = JSON.parse(localStorage.getItem(META_KEY) || '{}');
+    return { updatedAt: +m.updatedAt || 0, lastSyncedAt: +m.lastSyncedAt || 0, signedIn: !!m.signedIn };
+  } catch (e) { return { updatedAt: 0, lastSyncedAt: 0, signedIn: false }; }
+}
+function setMeta(patch) {
+  var m = meta();
+  for (var k in patch) m[k] = patch[k];
+  try { localStorage.setItem(META_KEY, JSON.stringify(m)); } catch (e) {}
+  return m;
+}
+
+/* Stamps only ever move forward past the watermark. Phone and laptop clocks
+   disagree by a second or two; without this, an edit made just after
+   taking a copy from a device whose clock runs ahead would look older than
+   the copy and never be sent. */
+function nextStamp() {
+  return Math.max(Date.now(), meta().lastSyncedAt + 1, cloud.outgoing + 1);
+}
+
+function syncPrint() { return JSON.stringify(SYNC.payload()); }
+
+/* A device that already held real data before sync existed has no
+   watermark, which would read as "never edited" and let the cloud replace
+   it silently. Mark it as holding unsynced work instead, so the worst case
+   is being asked. Runs once at boot, before anything is compared. */
+function seedMeta() {
+  var noWatermark = false;
+  try { noWatermark = localStorage.getItem(META_KEY) == null; } catch (e) {}
+  if (noWatermark && !SYNC.untouched()) setMeta({ updatedAt: 1 });
+  cloud.print = syncPrint();
+}
+
+/* ---- SDK, loaded once and only on demand ---- */
+/* With the site-wide account (assets/account.js) present, the tool shares
+   its one Firebase connection and its sign-in; opened on its own, it runs
+   its own. */
+function account() { return window.xdbAccount || null; }
+function loadSDK() {
+  if (cloud.fb) return Promise.resolve(cloud.fb);
+  if (account()) return account().sdk().then(function (s) {
+    cloud.fb = { auth: s.auth, db: s.db, a: s.a, f: s.f };
+    return cloud.fb;
+  });
+  return Promise.all([
+    import(SDK + 'firebase-app.js'),
+    import(SDK + 'firebase-auth.js'),
+    import(SDK + 'firebase-database.js')
+  ]).then(function (mods) {
+    var application = mods[0].initializeApp(FIREBASE);
+    cloud.fb = { auth: mods[1].getAuth(application), db: mods[2].getDatabase(application), a: mods[1], f: mods[2] };
+    return cloud.fb;
+  });
+}
+function docRef() { return cloud.fb.f.ref(cloud.fb.db, 'users/' + cloud.uid + '/tools/' + SYNC.doc); }
+
+function withTimeout(p, ms) {
+  return Promise.race([p, new Promise(function (_, no) {
+    setTimeout(function () { no({ code: 'timeout' }); }, ms);
+  })]);
+}
+
+/* ---- the three way decision ----------------------------------------
+   Local and cloud timestamps alone cannot tell an edit from a stale copy.
+   The watermark — the cloud stamp we last agreed with — is what makes
+   "both changed since we last spoke" detectable. */
+function reconcile(remote) {
+  var m = meta();
+  var localAt = m.updatedAt, syncedAt = m.lastSyncedAt;
+  var remoteAt = remote ? (+remote.updatedAt || 0) : 0;
+  if (!remote) return localAt ? 'push' : 'idle';
+  if (remoteAt === syncedAt) return localAt > syncedAt ? 'push' : 'idle';
+  return localAt > syncedAt ? 'conflict' : 'pull';
+}
+
+/* Taking a copy re-renders the page. If a field had the cursor, put it
+   back, so a change arriving from the other device does not throw you out
+   of where you were. */
+function keepingFocus(fn) {
+  function fields() { return Array.prototype.slice.call(document.querySelectorAll('input,textarea,select')); }
+  var a = document.activeElement, i = fields().indexOf(a), sel = null;
+  try { if (i >= 0 && a.selectionStart != null) sel = [a.selectionStart, a.selectionEnd]; } catch (e) {}
+  var result = fn();
+  var b = i >= 0 ? fields()[i] : null;
+  if (b && b !== document.activeElement) {
+    try { b.focus({ preventScroll: true }); if (sel) b.setSelectionRange(sel[0], sel[1]); } catch (e) {}
+  }
+  return result;
+}
+
+function adopt(remote) {
+  var d = remote && remote.data;
+  if (!d) return false;
+  if (!keepingFocus(function () { return SYNC.apply(d, remote); })) return false;
+  cloud.print = syncPrint();
+  var stamp = +remote.updatedAt || Date.now();
+  setMeta({ updatedAt: stamp, lastSyncedAt: stamp });
+  return true;
+}
+
+function pushNow() {
+  var stamp = nextStamp();
+  var print = syncPrint();
+  cloud.outgoing = stamp;
+  return cloud.fb.f.set(docRef(), { data: JSON.parse(print), updatedAt: stamp, device: deviceName() })
+    .then(function () {
+      var ahead = syncPrint() !== print;   // edited again while this was on its way
+      setMeta({ lastSyncedAt: stamp, updatedAt: ahead ? Math.max(meta().updatedAt, stamp + 1) : stamp });
+      cloud.at = stamp;
+      if (ahead) cloud.again = true;
+    });
+}
+function pullNow() {
+  return withTimeout(cloud.fb.f.get(docRef()), 12000).then(function (snap) {
+    return snap.exists() ? snap.val() : null;
+  });
+}
+
+function decide(remote) {
+  var move = reconcile(remote);
+  if (move === 'pull')     { adopt(remote); cloud.at = Date.now(); setStatus('synced'); return; }
+  if (move === 'push')     { return pushNow().then(function () { setStatus('synced'); }); }
+  if (move === 'conflict') { cloud.pending = remote; setStatus('conflict'); return; }
+  cloud.at = Date.now();
+  setStatus('synced');
+}
+
+/* One pass. Only one runs at a time; anything that asks while one is in
+   flight gets a second pass afterwards rather than being dropped. `known`
+   is a copy the live listener already has in hand, which saves a read. */
+function syncNow(userAsked, known) {
+  if (!cloud.on || !cloud.uid) return Promise.resolve();
+  if (cloud.busy) { cloud.again = true; return Promise.resolve(); }
+  if (cloud.status === 'conflict' && !userAsked) return Promise.resolve();
+  cloud.busy = true;
+  cloud.again = false;
+  clearTimeout(cloud.timer);
+  setStatus('working');
+  return (known ? Promise.resolve(known) : pullNow()).then(decide).then(function () {
+    cloud.busy = false;
+    if (cloud.again && cloud.status !== 'conflict') return syncNow();
+  }, function (err) {
+    cloud.busy = false;
+    cloud.msg = errCode(err);
+    setStatus('error');
+    if (userAsked) console.warn('[sync]', err);
+  });
+}
+
+/* Called on every save. Tools re-save on load, on navigation and on the
+   way out, so the fingerprint decides whether anything was really edited —
+   otherwise merely opening the tool would count as a change. */
+function cloudTouch() {
+  if (cloud.print === null) return;          // still booting
+  var p = syncPrint();
+  if (p === cloud.print) return;
+  cloud.print = p;
+  setMeta({ updatedAt: nextStamp() });
+  if (!cloud.on || !cloud.uid) return;
+  clearTimeout(cloud.timer);
+  cloud.timer = setTimeout(function () { syncNow(); }, 600);
+}
+
+/* ---- live ---- */
+function watch() {
+  if (cloud.unwatch || !cloud.uid) return;
+  cloud.unwatch = cloud.fb.f.onValue(docRef(), function (snap) {
+    var remote = snap.exists() ? snap.val() : null;
+    if (!remote) return;
+    var at = +remote.updatedAt || 0;
+    if (at === cloud.outgoing || at === meta().lastSyncedAt) return;   // our own write, or one we already have
+    if (cloud.status === 'conflict') { cloud.pending = remote; paintSync(); return; }
+    if (cloud.busy) { cloud.again = true; return; }
+    syncNow(false, remote);
+  }, function (err) {
+    cloud.unwatch = null;
+    cloud.msg = errCode(err);
+    setStatus('error');
+  });
+}
+function stopWatching() {
+  if (cloud.unwatch) { cloud.unwatch(); cloud.unwatch = null; }
+}
+
+/* ---- membership ----
+   Xavier always syncs. Anyone else is watched live at members/{uid}: when
+   he approves them, sync starts without a reload; if he removes them, it
+   stops and the tool carries on locally. Until then signing in files a
+   request (once per session) and the tool says so. */
+function admit(uid) {
+  if (cloud.uid === uid) return;
+  cloud.uid = uid;
+  syncNow();
+  watch();
+}
+function stopMembership() {
+  if (cloud.unmember) { cloud.unmember(); cloud.unmember = null; }
+}
+function askForAccess(user) {
+  if (cloud.asked) { setStatus('pending'); return; }
+  cloud.asked = true;
+  var ref = cloud.fb.f.ref(cloud.fb.db, 'requests/' + user.uid);
+  cloud.fb.f.set(ref, {
+    email: user.email || '', name: (user.displayName || '').slice(0, 120), at: Date.now(), tool: SYNC.doc
+  }).then(function () {
+    if (!cloud.uid) setStatus('pending');
+  }, function () {
+    // refused: this account was declined — say so, and keep working locally
+    if (!cloud.uid) setStatus('private');
+  });
+}
+function checkMembership(user) {
+  if (user.uid === OWNER) { admit(user.uid); return; }
+  setStatus('working');
+  cloud.unmember = cloud.fb.f.onValue(cloud.fb.f.ref(cloud.fb.db, 'members/' + user.uid), function (snap) {
+    if (snap.exists()) { admit(user.uid); return; }
+    if (cloud.uid) { cloud.uid = null; stopWatching(); clearTimeout(cloud.timer); }
+    askForAccess(user);
+  }, function () {
+    cloud.uid = null;
+    stopWatching();
+    setStatus('private');
+  });
+}
+
+/* ---- sign in / out ---- */
+function listen(fb) {
+  if (cloud.listening) return;
+  cloud.listening = true;
+  fb.a.onAuthStateChanged(fb.auth, function (user) {
+    cloud.authed = !!user;
+    setMeta({ signedIn: !!user });
+    stopWatching();
+    stopMembership();
+    cloud.uid = null;
+    cloud.asked = false;
+    if (!user) { setStatus('signedout'); return; }
+    checkMembership(user);
+  });
+}
+
+function signIn() {
+  if (!cloud.on) return;
+  setMeta({ signedIn: true });   // so a redirect sign-in is picked up when the page comes back
+  setStatus('working');
+  if (account()) {
+    loadSDK().then(listen).catch(function () {});
+    account().signIn().catch(function (err) {
+      if (err && err.code === 'auth/popup-closed-by-user') { if (!cloud.authed) setStatus('signedout'); return; }
+      cloud.msg = errCode(err);
+      setStatus('error');
+    });
+    return;
+  }
+  loadSDK().then(function (fb) {
+    listen(fb);
+    var provider = new fb.a.GoogleAuthProvider();
+    if (provider.setCustomParameters) provider.setCustomParameters({ prompt: 'select_account' });   // always offer the account picker
+    return fb.a.signInWithPopup(fb.auth, provider).catch(function (err) {
+      // iOS and locked-down browsers block popups; a redirect always works
+      if (err && /popup-blocked|operation-not-supported/i.test(err.code || '')) return fb.a.signInWithRedirect(fb.auth, provider);
+      throw err;
+    });
+  }).catch(function (err) {
+    setMeta({ signedIn: false });
+    cloud.msg = errCode(err);
+    setStatus('error');
+  });
+}
+function signOutNow() {
+  if (account()) { account().signOut(); return; }
+  if (cloud.fb) cloud.fb.a.signOut(cloud.fb.auth);
+}
+function syncClick() {
+  if (account() && cloud.authed) { account().openPanel(); return; }   // signed in: the account panel has it all
+  if (!cloud.uid) signIn(); else syncNow(true);
+}
+
+/* ---- the choice, in plain words ----
+   Two situations ask: a browser with work of its own signing in for the
+   first time, and two devices that both changed things before they could
+   sync. The text says which, what each side holds, and which is newer. */
+function summary(d) {
+  var s = '';
+  try { s = String(SYNC.describe(d) || ''); } catch (e) {}
+  return s.replace(/^It holds /, '').replace(/\.$/, '') || 'a copy';
+}
+function whenLabel(ms) {
+  if (!ms) return '';
+  var d = new Date(ms), now = new Date();
+  var day = d.toDateString() === now.toDateString() ? 'today'
+    : new Date(now.getTime() - 864e5).toDateString() === d.toDateString() ? 'yesterday'
+    : d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  return day + ' at ' + hhmm(ms);
+}
+function otherDevice(remote) {
+  var other = (remote && remote.device) || '';
+  if (!other) return 'your other device';
+  return other === deviceName() ? 'your other ' + other : 'your ' + other;
+}
+function choiceWords(remote) {
+  var here = deviceName(), m = meta();
+  var mine = summary(JSON.parse(syncPrint())), theirs = summary(remote.data);
+  var remoteAt = +remote.updatedAt || 0;
+  var other = otherDevice(remote), otherShort = other.replace(/^your /, 'the ');
+  if (!m.lastSyncedAt) {
+    return {
+      text: 'This browser already has its own ' + SYNC.noun + ' (' + mine + '). Your account has ' + theirs +
+        ', last saved from ' + other + ' ' + whenLabel(remoteAt) + '. Which should this browser use? ' +
+        'Whichever you don\u2019t pick is kept here as a backup for ' + BACKUP_DAYS + ' days.',
+      local: 'Keep this browser\u2019s',
+      cloud: 'Use my account\u2019s'
+    };
+  }
+  var localNewer = m.updatedAt > remoteAt;
+  return {
+    text: 'This ' + here + ' and ' + other + ' both made changes before they could sync. ' +
+      'This ' + here + (m.updatedAt > 1e12 ? ', ' + whenLabel(m.updatedAt) : '') + ': ' + mine + (localNewer ? ' (newer)' : '') + '. ' +
+      other.charAt(0).toUpperCase() + other.slice(1) + ', ' + whenLabel(remoteAt) + ': ' + theirs + (localNewer ? '' : ' (newer)') + '. ' +
+      'Which version do you want? The other is kept here as a backup for ' + BACKUP_DAYS + ' days.',
+    local: 'Keep this ' + here + '\u2019s',
+    cloud: 'Use ' + otherShort + '\u2019s'
+  };
+}
+
+/* ---- backup of the version not chosen ----
+   Whichever side loses a choice is saved on this device for a week, with
+   Restore on the bar. Restoring is itself undoable: the version it replaces
+   becomes the backup. */
+var BACKUP_KEY = SYNC.storageKey + '.backup';
+var BACKUP_DAYS = 7;
+function readBackup() {
+  try {
+    var b = JSON.parse(localStorage.getItem(BACKUP_KEY) || 'null');
+    if (b && b.data && Date.now() - (+b.at || 0) < BACKUP_DAYS * 864e5) return b;
+  } catch (e) {}
+  return null;
+}
+function writeBackup(b) {
+  try { localStorage.setItem(BACKUP_KEY, JSON.stringify(b)); } catch (e) {}
+}
+function keepBackup(data, label, restored) {
+  writeBackup({ data: data, at: Date.now(), label: label, summary: summary(data), shown: true, restored: !!restored });
+}
+function dismissBackup() {
+  var b = readBackup();
+  if (b) { b.shown = false; writeBackup(b); }
+  paintSync();
+}
+function restoreBackup() {
+  var b = readBackup();
+  if (!b) return;
+  var current = JSON.parse(syncPrint());
+  var ok = keepingFocus(function () { return SYNC.apply(b.data, { data: b.data, updatedAt: Date.now(), device: deviceName() }); });
+  if (!ok) return;
+  keepBackup(current, 'the version you just replaced', true);
+  cloud.print = syncPrint();
+  setMeta({ updatedAt: nextStamp() });   // the restored version is now the newest edit, and goes up as one
+  if (cloud.uid) syncNow(true); else paintSync();
+}
+
+/* ---- conflict resolution ----
+   The bar's two buttons also serve the backup: with no choice pending,
+   the first restores it and the second puts the note away. */
+function keepLocal() {
+  var remote = cloud.pending;
+  if (!remote) { restoreBackup(); return; }
+  keepBackup(remote.data, 'the version from ' + otherDevice(remote).replace(/^your /, 'the '));
+  cloud.pending = null;
+  var seen = +remote.updatedAt || 0;
+  // acknowledge the copy we saw, and stay ahead of it so this device wins
+  setMeta({ lastSyncedAt: seen, updatedAt: Math.max(meta().updatedAt, seen + 1) });
+  cloud.status = 'working';
+  syncNow(true);
+}
+function keepCloud() {
+  var remote = cloud.pending;
+  if (!remote) { dismissBackup(); return; }
+  keepBackup(JSON.parse(syncPrint()), 'this ' + deviceName() + '\u2019s version');
+  cloud.pending = null;
+  adopt(remote);
+  cloud.at = Date.now();
+  setStatus('synced');
+}
+
+/* ---- the visible half ---- */
+function hhmm(ms) {
+  var d = new Date(ms);
+  return (d.getHours() < 10 ? '0' : '') + d.getHours() + ':' + (d.getMinutes() < 10 ? '0' : '') + d.getMinutes();
+}
+function setStatus(s) {
+  cloud.status = s;
+  if (s === 'synced') cloud.at = cloud.at || Date.now();
+  paintSync();
+}
+
+function paintSync() {
+  var btn = syncEl('btn-sync'), out = syncEl('btn-signout'), bar = syncEl('sync-bar');
+  if (!btn) return;
+  if (!cloud.on) { btn.style.display = 'none'; out.style.display = 'none'; bar.classList.remove('on'); return; }
+
+  var label, title;
+  switch (cloud.status) {
+    case 'working':  label = 'Syncing…';                   title = 'Talking to the cloud'; break;
+    case 'synced':   label = 'Live · ' + hhmm(cloud.at);   title = 'Signed in — changes on your other devices appear here as they happen'; break;
+    case 'conflict': label = 'Pick a version';             title = 'Two versions to choose between \u2014 see the note below'; break;
+    case 'pending':  label = 'Access requested';           title = 'Waiting for Xavier to approve this account'; break;
+    case 'private':  label = 'No access';                  title = 'This account is not on the invitation list'; break;
+    case 'error':    label = isOffline(cloud.msg) ? 'Offline \u00b7 saved here' : 'Sync failed';                title = explain(cloud.msg); break;
+    default:         label = 'Sign in to sync';            title = 'Keep this in step across your devices';
+  }
+  var acct = account();
+  if (acct && cloud.authed) {
+    btn.innerHTML = acct.badgeHTML() + ' <span>' + label.replace(/[&<>]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]; }) + '</span>';
+    title += ' \u2014 open your account';
+  } else {
+    btn.textContent = label;
+  }
+  btn.title = title;
+  btn.className = SYNC.buttonClass(cloud.status);
+  btn.style.display = '';
+  out.style.display = cloud.authed && !acct ? '' : 'none';   // with the site account, signing out lives in its panel
+
+  var what = syncEl('sync-what'), kl = syncEl('sync-keep-local'), kc = syncEl('sync-keep-cloud');
+  if (cloud.status === 'pending' || cloud.status === 'private' || cloud.status === 'error') {
+    what.textContent = cloud.status === 'pending'
+      ? 'Sync is by invitation, and your request is in. Once Xavier approves it, syncing starts here on its own. ' +
+        'Until then everything keeps saving in this browser as usual. '
+      : cloud.status === 'private'
+      ? 'Sync on this site is by invitation, and this account isn\u2019t on the list. ' +
+        'Everything still saves in this browser exactly as before, and nothing is sent anywhere. '
+      : explain(cloud.msg);
+    if (cloud.status !== 'error') {
+      var more = document.createElement('a');
+      more.href = ACCESS_URL;
+      more.textContent = 'About access \u2192';
+      what.appendChild(more);
+    }
+    kl.style.display = 'none';
+    kc.style.display = 'none';
+    bar.classList.add('on');
+    return;
+  }
+  kl.style.display = '';
+  kc.style.display = '';
+  var b = readBackup();
+  if (cloud.status === 'conflict' && cloud.pending) {
+    var w = choiceWords(cloud.pending);
+    what.textContent = w.text;
+    kl.textContent = w.local;
+    kc.textContent = w.cloud;
+    bar.classList.add('on');
+  } else if (b && b.shown) {
+    what.textContent = b.restored
+      ? 'Restored. The version you replaced (' + b.summary + ') is saved here in case you want it back.'
+      : 'Done. The version you didn\u2019t keep \u2014 ' + b.label + ' (' + b.summary + ') \u2014 is saved on this device for ' + BACKUP_DAYS + ' days.';
+    kl.textContent = b.restored ? 'Switch back' : 'Restore it';
+    kc.textContent = 'OK';
+    bar.classList.add('on');
+  } else {
+    bar.classList.remove('on');
+  }
+}
+
+function initCloud() {
+  seedMeta();
+  paintSync();
+  if (!cloud.on) return;
+
+  /* Only someone who has signed in here before gets the SDK on load; a
+     visitor who never touches the button never fetches it. Signed in
+     anywhere on the site counts. */
+  var acct = account();
+  if (acct) {
+    acct.registerTool({ doc: SYNC.doc, syncNow: function () { syncNow(true); } });
+    acct.on(function (st) {
+      if (st.user && !cloud.listening) loadSDK().then(listen).catch(function () {});   // signed in from the panel
+      paintSync();
+    });
+  }
+  if (meta().signedIn || (acct && acct.wanted())) {
+    setStatus('working');
+    loadSDK().then(listen).catch(function (err) { cloud.msg = errCode(err); setStatus('error'); });
+  }
+
+  document.addEventListener('visibilitychange', function () {
+    if (!cloud.uid) return;
+    if (document.hidden) {
+      // a phone suspends the page soon after it hides: send anything unsent now
+      SYNC.flush();
+      if (meta().updatedAt > meta().lastSyncedAt) syncNow();
+    } else {
+      syncNow();
+    }
+  });
+  window.addEventListener('focus', function () { if (cloud.uid) syncNow(); });
+  window.addEventListener('online', function () { if (cloud.uid) syncNow(); });
+}
+/* ---------- boot ---------- */
+showView(ui.view);
+renderCounts();
+initCloud();
+window.addEventListener('beforeunload', saveNow);
+window.addEventListener('pagehide', saveNow);
+
+// test hooks
+window.__kitchen = { state: function () { return state; }, parseIng: parseIng, parseRecipeText: parseRecipeText, profile: profile };
+</script>
+</body>
+</html>
