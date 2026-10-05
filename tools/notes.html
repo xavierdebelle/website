@@ -1,0 +1,1112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="../assets/account.js"></script>   <!-- site-wide account; the tool falls back to its own sign-in without it -->
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Notes — Xavier de Belle</title>
+<meta name="description" content="Notes without ceremony. Open, type, done. A dash and a space makes a bullet, Enter keeps the list going, and every note syncs between your devices.">
+<link rel="icon" href="../assets/logo.svg" type="image/svg+xml">
+<!-- installable app: works offline once opened, syncs when back online (pwa.js, pwa-sw.js) -->
+<link rel="manifest" href="notes.webmanifest">
+<link rel="apple-touch-icon" href="icons/notes-180.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Notes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="theme-color" content="#000000">
+<script src="pwa.js" data-app="notes"></script>
+<style>
+:root{
+  --ink:#000;--paper:#fff;--volt:#ffe800;--smoke:#141414;--ash:#2a2a2a;--dust:#8a8a8a;
+  --hair:#e2e2e2;--grey:#6a6a6a;
+  --stack:"Helvetica Neue",Helvetica,Arial,"Segoe UI",system-ui,sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --gut:clamp(14px,3vw,28px);
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+html,body{margin:0;height:100%;background:var(--ink);color:var(--paper);font-family:var(--stack)}
+body{display:flex;flex-direction:column;height:100vh;height:100dvh;overflow:hidden}
+button{font:inherit;color:inherit}
+a{color:var(--volt);text-decoration:none}
+[hidden]{display:none!important}
+
+/* ---------- top bar ---------- */
+.top{display:flex;align-items:center;gap:10px 16px;flex-wrap:wrap;padding:12px var(--gut);border-bottom:3px solid var(--paper);flex:none;
+  padding-top:max(12px,env(safe-area-inset-top))}
+.brand{display:flex;align-items:baseline;gap:10px;margin-right:auto;min-width:0}
+.brand a{color:var(--paper);font-weight:900;font-size:12px;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap}
+.brand a:hover{color:var(--volt)}
+.brand h1{margin:0;font-weight:900;text-transform:uppercase;letter-spacing:-.04em;font-size:26px;line-height:1}
+.brand h1 span{color:var(--volt)}
+.btn{background:transparent;border:3px solid var(--paper);color:var(--paper);font-weight:900;font-size:11px;letter-spacing:.12em;
+  text-transform:uppercase;padding:9px 13px;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:8px;border-radius:0}
+.btn:hover{background:var(--volt);border-color:var(--volt);color:var(--ink)}
+.btn.solid{background:var(--volt);border-color:var(--volt);color:var(--ink)}
+.btn.solid:hover{background:var(--paper);border-color:var(--paper)}
+.sync-btn.ok{border-color:var(--ash);color:var(--dust)}
+.sync-btn.ok:hover{color:var(--ink)}
+.sync-btn.bad{border-color:var(--volt);color:var(--volt)}
+.ghost{background:transparent;border:0;color:var(--grey);font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;
+  padding:8px 4px;cursor:pointer}
+.ghost:hover{color:var(--ink)}
+
+/* ---------- sync bar ---------- */
+#sync-bar{display:none;align-items:center;gap:10px 18px;flex-wrap:wrap;background:var(--volt);color:var(--ink);padding:12px var(--gut);flex:none}
+#sync-bar.on{display:flex}
+#sync-bar .sync-dot{width:10px;height:10px;background:var(--ink);flex:none}
+#sync-what{flex:1 1 280px;font-family:var(--mono);font-size:11px;line-height:1.6;letter-spacing:.04em}
+#sync-bar button{border:3px solid var(--ink);background:var(--ink);color:var(--volt);font-weight:900;font-size:11px;letter-spacing:.12em;
+  text-transform:uppercase;padding:8px 12px;cursor:pointer}
+#sync-bar button+button{background:transparent;color:var(--ink)}
+
+/* ---------- layout: list | editor ---------- */
+.main{flex:1;min-height:0;display:grid;grid-template-columns:minmax(260px,340px) minmax(0,1fr)}
+.side{display:flex;flex-direction:column;min-height:0;min-width:0;border-right:3px solid var(--paper)}
+.side-head{display:flex;gap:8px;padding:14px var(--gut) 12px;flex:none}
+.search{flex:1;min-width:0;background:transparent;border:3px solid var(--ash);color:var(--paper);padding:9px 11px;font-family:var(--mono);
+  font-size:12px;letter-spacing:.06em;border-radius:0;outline:none}
+.search:focus{border-color:var(--volt)}
+.list{flex:1;min-height:0;overflow-y:auto;padding:0 var(--gut) 18px}
+.item{display:block;width:100%;text-align:left;background:transparent;border:0;border-top:2px solid var(--ash);padding:13px 4px 13px 12px;
+  cursor:pointer;position:relative;color:var(--paper)}
+.item::before{content:"";position:absolute;left:0;top:13px;bottom:13px;width:4px;background:transparent}
+.item:hover::before{background:var(--ash)}
+.item.on::before{background:var(--volt)}
+.item b{display:block;font-size:15px;font-weight:700;letter-spacing:-.01em;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.item span{display:block;margin-top:4px;font-size:13px;color:var(--dust);line-height:1.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.item small{display:flex;gap:8px;margin-top:7px;font-family:var(--mono);font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--dust)}
+.item small i{font-style:normal;color:var(--volt)}
+.empty-list{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--dust);line-height:1.8;padding:16px 4px}
+.side-foot{flex:none;display:flex;gap:4px 14px;flex-wrap:wrap;padding:10px var(--gut);border-top:2px solid var(--ash)}
+.side-foot .ghost{color:var(--dust)}
+.side-foot .ghost:hover{color:var(--volt)}
+
+.editor{display:flex;flex-direction:column;min-height:0;background:var(--paper);color:var(--ink)}
+.ed-head{display:flex;align-items:center;gap:6px 14px;flex-wrap:wrap;padding:10px var(--gut);border-bottom:3px solid var(--ink);flex:none}
+.back{display:none}
+.stamp{margin-right:auto;font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--grey)}
+.ed-head .ghost.on{color:var(--ink);background:var(--volt);padding:6px 8px}
+textarea#note{flex:1;min-height:0;width:100%;resize:none;border:0;outline:none;background:transparent;color:var(--ink);
+  padding:22px var(--gut) 40vh;font-family:var(--stack);font-size:18px;line-height:1.55;letter-spacing:-.005em;tab-size:2}
+textarea#note::placeholder{color:#9a9a9a}
+.blank{flex:1;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:18px;padding:var(--gut)}
+.blank h2{margin:0;font-weight:900;text-transform:uppercase;letter-spacing:-.045em;line-height:.86;font-size:clamp(40px,7vw,84px)}
+.blank h2 span{color:var(--volt);-webkit-text-stroke:2px var(--ink)}
+.blank p{margin:0;max-width:44ch;font-size:15px;line-height:1.6;color:#4a4a4a}
+.blank kbd{font-family:var(--mono);font-size:12px;background:var(--ink);color:var(--volt);padding:2px 6px}
+.blank .btn{border-color:var(--ink);color:var(--ink)}
+.blank .btn.solid{background:var(--ink);color:var(--volt);border-color:var(--ink)}
+.blank .btn.solid:hover{background:var(--volt);color:var(--ink)}
+
+/* ---------- toast ---------- */
+#toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:50;display:none;
+  align-items:center;gap:16px;background:var(--paper);color:var(--ink);border:3px solid var(--ink);outline:3px solid var(--volt);
+  padding:11px 14px;max-width:calc(100vw - 32px)}
+#toast.on{display:flex}
+#toast span{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;line-height:1.5}
+#toast button{background:var(--ink);color:var(--volt);border:0;font-weight:900;font-size:11px;letter-spacing:.12em;text-transform:uppercase;
+  padding:7px 11px;cursor:pointer}
+
+/* ---------- phones: one panel at a time ---------- */
+@media (max-width:760px){
+  .brand h1{font-size:22px}
+  .brand a{display:none}
+  .main{grid-template-columns:minmax(0,1fr)}
+  .side{border-right:0}
+  .editor{display:none}
+  body.editing .side{display:none}
+  body.editing .editor{display:flex}
+  .back{display:inline-flex;margin-right:auto}
+  .stamp{order:9;flex-basis:100%;margin:0;padding-bottom:2px}
+  textarea#note{font-size:17px;padding-bottom:30vh}
+}
+@media print{.top,#sync-bar,.side,.ed-head{display:none!important}.main{display:block}textarea#note{height:auto}}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="brand"><a href="../index.html">Xavier de Belle</a><h1>Notes<span>.</span></h1></div>
+  <button class="btn" type="button" data-pwa-install style="display:none" title="Install as an app: its own icon, works offline">Install app</button>
+  <button class="btn sync-btn" id="btn-sync" onclick="syncClick()" style="display:none">Sign in to sync</button>
+  <button class="btn" id="btn-signout" onclick="signOutNow()" style="display:none" title="Sign out of sync">Sign out</button>
+</header>
+
+<div id="sync-bar" role="status">
+  <span class="sync-dot"></span>
+  <span id="sync-what"></span>
+  <button id="sync-keep-local" onclick="keepLocal()">Keep this device</button>
+  <button id="sync-keep-cloud" onclick="keepCloud()">Keep cloud copy</button>
+</div>
+
+<main class="main">
+  <section class="side" aria-label="All notes">
+    <div class="side-head">
+      <input class="search" id="search" type="search" placeholder="Search notes" aria-label="Search notes" autocomplete="off">
+      <button class="btn solid" id="btn-new" type="button" title="New note (Alt+N)">+ New</button>
+    </div>
+    <div class="list" id="list"></div>
+    <div class="side-foot">
+      <button class="ghost" id="btn-export" type="button">Export</button>
+      <button class="ghost" id="btn-import" type="button">Import</button>
+      <input type="file" id="import-file" accept="application/json,.json" hidden>
+    </div>
+  </section>
+
+  <section class="editor" aria-label="Note">
+    <div class="ed-head" id="ed-head">
+      <button class="ghost back" id="btn-back" type="button">← Notes</button>
+      <span class="stamp" id="stamp"></span>
+      <button class="ghost" id="btn-pin" type="button" aria-pressed="false">Pin</button>
+      <button class="ghost" id="btn-copy" type="button">Copy</button>
+      <button class="ghost" id="btn-del" type="button">Delete</button>
+    </div>
+    <textarea id="note" spellcheck="true" placeholder="Start typing. The first line is the title.&#10;&#10;- a dash and a space makes a bullet"></textarea>
+    <div class="blank" id="blank" hidden>
+      <h2>Write it<br><span>down.</span></h2>
+      <p>The first line of a note is its title. Type <kbd>-</kbd> and a space for a bullet, <kbd>1.</kbd> and a space for a numbered list. Enter keeps the list going; Enter on an empty item ends it.</p>
+      <button class="btn solid" type="button" onclick="newNote()">+ New note</button>
+    </div>
+  </section>
+</main>
+
+<div id="toast" role="status"><span id="toast-msg"></span><button id="toast-undo" type="button">Undo</button></div>
+
+<script>
+/* ============================================================
+   NOTES — Xavier de Belle
+   One list of notes. The first line of a note is its title.
+   Saved in this browser as you type; synced while signed in.
+   ============================================================ */
+var STORAGE_KEY = 'xdb.notes.v1';
+var PHONE = window.matchMedia ? matchMedia('(max-width: 760px)') : { matches: false };   // same line as the CSS
+var $ = function (id) { return document.getElementById(id); };
+
+/* ---------- data ---------- */
+function defaultState() {
+  return { notes: [{
+    id: 'welcome', pinned: false, createdAt: 0, updatedAt: 0,
+    text: 'Welcome to Notes\n\nThe first line of a note is its title. Everything saves as you type.\n\n' +
+          '• Type a dash and a space for a bullet\n• Enter keeps the list going\n• Enter on an empty bullet ends it\n\n' +
+          '1. Numbers work the same way\n2. Like this\n\nDelete this note whenever you like.'
+  }] };
+}
+function listOf(v) { return Array.isArray(v) ? v : (v && typeof v === 'object' ? Object.values(v) : []); }
+function normNote(n) {
+  if (!n || typeof n !== 'object') return null;
+  return {
+    id: String(n.id || uid()), text: typeof n.text === 'string' ? n.text : '',
+    pinned: !!n.pinned, createdAt: +n.createdAt || 0, updatedAt: +n.updatedAt || 0
+  };
+}
+function normalise(d) {
+  if (!d || typeof d !== 'object') return null;
+  return { notes: listOf(d.notes).map(normNote).filter(Boolean) };
+}
+function uid() { return 'n' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+function loadState() {
+  try {
+    var s = normalise(JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null'));
+    if (s) return s;
+  } catch (e) {}
+  return defaultState();
+}
+
+var state = loadState();
+var currentId = null, query = '', saveTimer = null, toastTimer = null, undoFn = null;
+
+function saveNow() {
+  clearTimeout(saveTimer);
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
+  cloudTouch();
+}
+function save() { clearTimeout(saveTimer); saveTimer = setTimeout(saveNow, 350); }
+
+/* ---------- reading a note ---------- */
+var MARK = /^\s*(?:• |\d+[.)] )/;
+function lines(n) { return n.text.split('\n').map(function (l) { return l.replace(MARK, '').trim(); }).filter(Boolean); }
+function titleOf(n) { return lines(n)[0] || 'New note'; }
+function excerptOf(n) { return lines(n).slice(1).join('  ·  ') || 'No more text'; }
+function words(t) { var m = t.match(/[^\s•]+/g); return m ? m.length : 0; }
+function pad(n) { return (n < 10 ? '0' : '') + n; }
+function hhmm(t) { var d = new Date(t); return pad(d.getHours()) + ':' + pad(d.getMinutes()); }
+function when(t) {
+  if (!t) return '';
+  var d = new Date(t), now = new Date();
+  if (d.toDateString() === now.toDateString()) return hhmm(t);
+  var y = new Date(now.getTime() - 864e5);
+  if (d.toDateString() === y.toDateString()) return 'Yesterday';
+  return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' }) + (d.getFullYear() !== now.getFullYear() ? ' ' + d.getFullYear() : '');
+}
+function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+function current() { return state.notes.filter(function (n) { return n.id === currentId; })[0] || null; }
+function sorted() {
+  return state.notes.slice().sort(function (a, b) { return (b.pinned - a.pinned) || (b.updatedAt - a.updatedAt); });
+}
+
+/* ---------- rendering ---------- */
+function renderList() {
+  var q = query.trim().toLowerCase();
+  var ns = sorted().filter(function (n) { return !q || n.text.toLowerCase().indexOf(q) > -1; });
+  $('list').innerHTML = ns.length ? ns.map(function (n) {
+    return '<button type="button" class="item' + (n.id === currentId ? ' on' : '') + '" data-id="' + esc(n.id) + '">' +
+      '<b>' + esc(titleOf(n)) + '</b><span>' + esc(excerptOf(n)) + '</span>' +
+      '<small>' + (n.pinned ? '<i>Pinned</i>' : '') + '<em style="font-style:normal">' + esc(when(n.updatedAt) || 'Start here') + '</em></small></button>';
+  }).join('') : '<div class="empty-list">' + (q ? 'Nothing matches “' + esc(query) + '”.' : 'No notes yet. Press + New.') + '</div>';
+}
+function renderEditor(focus) {
+  var n = current();
+  $('note').hidden = !n; $('ed-head').style.visibility = n ? '' : 'hidden'; $('blank').hidden = !!n;
+  if (!n) { document.body.classList.remove('editing'); return; }
+  if ($('note').value !== n.text) $('note').value = n.text;
+  $('btn-pin').textContent = n.pinned ? 'Pinned' : 'Pin';
+  $('btn-pin').classList.toggle('on', n.pinned);
+  $('btn-pin').setAttribute('aria-pressed', n.pinned ? 'true' : 'false');
+  renderStamp();
+  if (focus) { $('note').focus(); }
+}
+function renderStamp() {
+  var n = current(); if (!n) return;
+  var w = words(n.text);
+  $('stamp').textContent = (n.updatedAt ? 'Edited ' + when(n.updatedAt) : 'Not edited yet') + ' · ' + w + ' word' + (w === 1 ? '' : 's');
+}
+function render(focus) { renderList(); renderEditor(focus); }
+
+/* ---------- actions ---------- */
+function open(id, focus) {
+  dropIfEmpty(id);
+  currentId = id;
+  document.body.classList.add('editing');
+  render(focus);
+  if (focus) { var t = $('note'); var end = t.value.length; try { t.setSelectionRange(end, end); } catch (e) {} }
+}
+function newNote() {
+  var n = { id: uid(), text: '', pinned: false, createdAt: Date.now(), updatedAt: Date.now() };
+  state.notes.push(n);
+  query = ''; $('search').value = '';
+  open(n.id, true);
+}
+/* A note left empty is not worth keeping: it goes when you move on. */
+function dropIfEmpty(nextId) {
+  var n = current();
+  if (n && n.id !== nextId && !n.text.trim()) {
+    state.notes = state.notes.filter(function (x) { return x !== n; });
+    saveNow();
+  }
+}
+function removeCurrent() {
+  var n = current(); if (!n) return;
+  var at = state.notes.indexOf(n);
+  state.notes.splice(at, 1);
+  currentId = null;
+  document.body.classList.remove('editing');
+  saveNow(); render();
+  if (n.text.trim()) toast('Deleted “' + titleOf(n).slice(0, 32) + '”', function () {
+    state.notes.splice(at, 0, n); saveNow(); open(n.id);
+  });
+}
+function toast(msg, undo) {
+  clearTimeout(toastTimer);
+  undoFn = undo || null;
+  $('toast-msg').textContent = msg;
+  $('toast-undo').style.display = undo ? '' : 'none';
+  $('toast').classList.add('on');
+  toastTimer = setTimeout(function () { $('toast').classList.remove('on'); undoFn = null; }, 5000);
+}
+function copyText(text) {
+  function ok() { toast('Copied'); }
+  function fallback() {
+    var ta = document.createElement('textarea');
+    ta.value = text; ta.setAttribute('readonly', ''); ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0';
+    document.body.appendChild(ta); ta.select();
+    var done = false; try { done = document.execCommand('copy'); } catch (e) {}
+    ta.remove();
+    if (done) ok(); else toast("This browser wouldn't copy");
+  }
+  if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(text).then(ok, fallback); else fallback();
+}
+function exportAll() {
+  var blob = new Blob([JSON.stringify({ app: 'xdb-notes', version: 1, exportedAt: new Date().toISOString(), notes: state.notes }, null, 2)], { type: 'application/json' });
+  var a = document.createElement('a');
+  var d = new Date();
+  a.href = URL.createObjectURL(blob); a.download = 'notes-' + d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + '.json';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+}
+function importFile(f) {
+  var fr = new FileReader();
+  fr.onload = function () {
+    try {
+      var d = normalise(JSON.parse(String(fr.result)));
+      if (!d || !d.notes.length) throw 0;
+      var have = {}; state.notes.forEach(function (n) { have[n.id] = n; });
+      var added = 0, updated = 0;
+      d.notes.forEach(function (n) {
+        var h = have[n.id];
+        if (!h) { state.notes.push(n); added++; }
+        else if (n.updatedAt > h.updatedAt) { h.text = n.text; h.pinned = n.pinned; h.updatedAt = n.updatedAt; updated++; }
+      });
+      saveNow(); render();
+      toast('Imported: ' + added + ' new, ' + updated + ' updated');
+    } catch (e) { toast("That file isn't a Notes export"); }
+  };
+  fr.readAsText(f);
+}
+
+/* ============================================================
+   List typing — the only "formatting" there is
+   - a dash (or *) and a space at the start of a line → •
+   - Enter on a bullet or numbered line continues the list;
+     Enter on an empty item ends it
+   - Backspace on a bare bullet removes it
+   - Tab / Shift+Tab indent and outdent a list line
+   Edits go through execCommand so Undo still works.
+   ============================================================ */
+var BULLET = '• ', typing = false;
+function lineStart(v, i) { return v.lastIndexOf('\n', i - 1) + 1; }
+function replaceRange(ta, from, to, text) {
+  var before = ta.value;
+  ta.setSelectionRange(from, to);
+  var ok = false;
+  try { ok = document.execCommand('insertText', false, text); } catch (e) {}
+  if (!ok || ta.value === before && (to > from || text)) {
+    ta.value = before;
+    ta.setRangeText(text, from, to, 'end');
+  }
+  // browsers disagree on where the caret lands after an edit at the very end; say it outright
+  ta.setSelectionRange(from + text.length, from + text.length);
+}
+function listTyping(ta, ev) {
+  if (typing) return false;
+  var v = ta.value, c = ta.selectionStart;
+  if (c !== ta.selectionEnd) return false;
+  var type = (ev && ev.inputType) || '';
+  var ls = lineStart(v, c), before = v.slice(ls, c);
+  var done = false;
+  typing = true;
+  if (type === 'insertText' && /^\s*[-*] $/.test(before)) {
+    replaceRange(ta, ls, c, before.match(/^\s*/)[0] + BULLET);
+    done = true;
+  } else if ((type === 'insertLineBreak' || type === 'insertParagraph' || (type === 'insertText' && ev.data == null)) && v.charAt(c - 1) === '\n') {
+    var pls = lineStart(v, c - 1), prev = v.slice(pls, c - 1);
+    var m = prev.match(/^(\s*)(• |(\d+)([.)]) )(.*)$/);
+    if (m) {
+      if (!m[5].trim()) replaceRange(ta, pls, c, '');                       // empty item: end the list
+      else replaceRange(ta, c, c, m[1] + (m[3] ? (parseInt(m[3], 10) + 1) + m[4] + ' ' : BULLET));
+      done = true;
+    }
+  } else if (type === 'deleteContentBackward' && /^\s*•$/.test(before)) {
+    replaceRange(ta, c - 1, c, '');
+    done = true;
+  }
+  typing = false;
+  return done;
+}
+function listKeys(ta, ev) {
+  if (ev.key !== 'Tab' || ev.altKey || ev.metaKey || ev.ctrlKey) return;
+  var v = ta.value, c = ta.selectionStart, ls = lineStart(v, c);
+  var le = v.indexOf('\n', c); if (le < 0) le = v.length;
+  var line = v.slice(ls, le);
+  if (!/^\s*(• |\d+[.)] )/.test(line)) return;          // Tab means Tab only inside a list
+  ev.preventDefault();
+  var keepSel = ta.selectionEnd - c;
+  typing = true;
+  if (ev.shiftKey) {
+    var cut = Math.min(2, line.match(/^ */)[0].length);
+    if (cut) { replaceRange(ta, ls, ls + cut, ''); ta.setSelectionRange(c - cut, c - cut + keepSel); }
+  } else {
+    replaceRange(ta, ls, ls, '  '); ta.setSelectionRange(c + 2, c + 2 + keepSel);
+  }
+  typing = false;
+  onType();
+}
+
+/* ---------- wiring ---------- */
+function onType() {
+  var n = current(); if (!n) return;
+  n.text = $('note').value;
+  n.updatedAt = Date.now();
+  save();
+  renderList(); renderStamp();
+}
+$('note').addEventListener('input', function (ev) { listTyping(this, ev); onType(); });
+$('note').addEventListener('keydown', function (ev) { listKeys(this, ev); });
+$('list').addEventListener('click', function (ev) {
+  var b = ev.target.closest('.item'); if (!b) return;
+  open(b.getAttribute('data-id'), !PHONE.matches);
+});
+$('search').addEventListener('input', function () { query = this.value; renderList(); });
+$('search').addEventListener('keydown', function (ev) {
+  if (ev.key === 'Enter') { var f = $('list').querySelector('.item'); if (f) f.click(); }
+});
+$('btn-new').addEventListener('click', newNote);
+$('btn-back').addEventListener('click', function () { dropIfEmpty(null); currentId = null; document.body.classList.remove('editing'); render(); });
+$('btn-pin').addEventListener('click', function () { var n = current(); if (!n) return; n.pinned = !n.pinned; saveNow(); render(); });
+$('btn-copy').addEventListener('click', function () { var n = current(); if (n) copyText(n.text); });
+$('btn-del').addEventListener('click', removeCurrent);
+$('btn-export').addEventListener('click', exportAll);
+$('btn-import').addEventListener('click', function () { $('import-file').click(); });
+$('import-file').addEventListener('change', function () { if (this.files[0]) importFile(this.files[0]); this.value = ''; });
+$('toast-undo').addEventListener('click', function () { var u = undoFn; undoFn = null; $('toast').classList.remove('on'); if (u) u(); });
+document.addEventListener('keydown', function (ev) {
+  if (ev.altKey && (ev.key === 'n' || ev.key === 'N' || ev.code === 'KeyN')) { ev.preventDefault(); newNote(); }
+  else if (ev.key === '/' && document.activeElement !== $('note') && document.activeElement !== $('search')) { ev.preventDefault(); $('search').focus(); }
+  else if (ev.key === 'Escape' && document.activeElement === $('search')) { $('search').value = ''; query = ''; renderList(); }
+});
+setInterval(function () { renderList(); renderStamp(); }, 60000);   // "14:32" becomes "Yesterday" on its own
+
+/* ---------- sync adapter: what this tool hands the shared sync code ---------- */
+var SYNC = {
+  doc: 'notes',                              // users/{uid}/tools/notes
+  storageKey: STORAGE_KEY,
+  noun: 'notes',
+
+  payload: function () { return { notes: state.notes }; },   // which note is open is not an edit
+
+  /* The database drops empty strings' parents and arrays; normalise() rebuilds them. */
+  apply: function (d, remote) {
+    var next = normalise(d);
+    if (!next) return false;
+    state = next;
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
+    if (currentId && !current()) { currentId = null; document.body.classList.remove('editing'); }
+    var ta = $('note'), n = current();
+    if (n && ta.value !== n.text) {
+      var c = ta.selectionStart;
+      ta.value = n.text;
+      if (document.activeElement === ta) try { ta.setSelectionRange(c, c); } catch (e) {}
+    }
+    render();
+    return true;
+  },
+
+  /* Only the welcome note, untouched: nothing worth protecting. */
+  untouched: function () { return JSON.stringify(state) === JSON.stringify(defaultState()); },
+
+  flush: function () { saveNow(); },
+
+  describe: function (d) {
+    var ns = listOf(d && d.notes), n = ns.length;
+    var last = ns.reduce(function (a, x) { return Math.max(a, +(x && x.updatedAt) || 0); }, 0);
+    return n + ' note' + (n === 1 ? '' : 's') + (last ? ', last edited ' + when(last) : '');
+  },
+
+  buttonClass: function (s) {
+    return 'btn sync-btn' + (s === 'synced' ? ' ok' : '') + ((s === 'conflict' || s === 'error') ? ' bad' : '');
+  }
+};
+
+/* ============================================================
+   Cloud sync — local first, optional, live while signed in
+
+   Shared by Project Phases, Budget Tracker and Idea Bank. Keep the copies
+   identical: everything tool-specific lives in the SYNC adapter just above.
+
+   Sync is by invitation: Xavier's account, plus the people he approves on
+   the Access page (members/{uid}). Signing in is how someone asks — their
+   request appears there, and sync starts on its own once it is approved.
+
+   Signed out, the tool is purely local and the Firebase SDK is never
+   fetched. Signed in as the owner, the cloud copy is watched live, so a
+   change on one device shows up on the other within a second or two.
+
+   Every write goes through the same pass — read the cloud, compare it
+   with the watermark, then act — so a device that is behind can never
+   overwrite a newer copy. When both sides changed, it asks.
+   ============================================================ */
+
+/* Public Firebase identifiers — not secrets. They ship in every Firebase
+   web app; the database rules are what protect the data. */
+var FIREBASE = {
+  apiKey:      'AIzaSyCu0CA6eLWIkhhl-Z7jr_dDisuXDt1dKco',
+  authDomain:  'xdb-tools.firebaseapp.com',
+  databaseURL: 'https://xdb-tools-default-rtdb.firebaseio.com',
+  projectId:   'xdb-tools',
+  appId:       '1:6009567091:web:f7ee8c43ebe1bd25fcb706'
+};
+var SDK = 'https://www.gstatic.com/firebasejs/10.12.2/';
+
+/* Who may sync. Courtesy checks only — the database rules enforce all of
+   it, and would refuse anyone else even if these lines were edited away. */
+var OWNER = 'jGJdt3h4EeaOL3mYWUHA4yMZsRx2';
+var ACCESS_URL = '../access.html';   // where requests are approved; tools live in tools/
+var META_KEY = SYNC.storageKey + '.meta';   // watermarks live beside the data, not in it
+
+var cloud = {
+  on: !!FIREBASE.databaseURL,
+  status: 'signedout',  // signedout | working | synced | conflict | pending | private | error
+  uid: null,            // set only when the signed-in account owns this sync
+  authed: false,
+  listening: false,
+  at: 0,
+  msg: '',
+  fb: null,
+  timer: null,
+  busy: false,          // a sync pass is in flight
+  again: false,         // something changed while it was, so run one more
+  pending: null,        // a conflict waiting on a decision
+  print: null,          // the synced data as last seen, to tell edits from re-saves
+  outgoing: 0,          // stamp of our own latest write, so its echo is not news
+  unwatch: null,
+  unmember: null,       // live watch on this account's membership
+  asked: false          // an access request was sent this session
+};
+
+function syncEl(id) { return document.getElementById(id); }
+
+/* No connection is not a failure: the tool keeps saving here and sends it all
+   once the connection is back. Firebase says "Client is offline" without a code. */
+function errCode(err) {
+  var c = (err && err.code) || '', m = (err && err.message) || '';
+  if (navigator.onLine === false) return 'unavailable';
+  if (!c && /offline|network|failed to fetch|load failed|dynamically imported/i.test(m)) return 'unavailable';
+  return c || 'failed';
+}
+function isOffline(code) { return code === 'unavailable' || code === 'timeout' || code === 'auth/network-request-failed'; }
+
+function explain(code) {
+  var offline = 'No connection. Everything still saves on this device and will sync when you are back online.';
+  var map = {
+    'auth/unauthorized-domain':
+      'This site is not on the Firebase authorised domains list. Add ' + location.hostname +
+      ' under Authentication → Settings → Authorized domains.',
+    'auth/operation-not-allowed':
+      'Google sign-in is not enabled for this Firebase project. Turn it on under Authentication → Sign-in method.',
+    'auth/popup-blocked':
+      'Your browser blocked the sign-in popup. Allow popups for this site, or try again.',
+    'auth/popup-closed-by-user':
+      'The sign-in window closed before it finished.',
+    'auth/network-request-failed': offline,
+    'unavailable': offline,
+    'timeout': offline,
+    'PERMISSION_DENIED':
+      'The database rules refused this account. Check the rules allow users/<your uid>.'
+  };
+  return map[code] || ('Sync failed' + (code ? ' (' + code + ')' : '') + '.');
+}
+
+function deviceName() {
+  var ua = navigator.userAgent;
+  if (/iPhone/.test(ua)) return 'iPhone';
+  if (/iPad/.test(ua)) return 'iPad';
+  if (/Android/.test(ua)) return 'Android';
+  if (/Mac OS X/.test(ua)) return 'Mac';
+  if (/Windows/.test(ua)) return 'Windows';
+  return 'this device';
+}
+
+/* Kept out of the tool's own data so exports stay clean and an imported
+   file never carries another device's watermark. */
+function meta() {
+  try {
+    var m = JSON.parse(localStorage.getItem(META_KEY) || '{}');
+    return { updatedAt: +m.updatedAt || 0, lastSyncedAt: +m.lastSyncedAt || 0, signedIn: !!m.signedIn };
+  } catch (e) { return { updatedAt: 0, lastSyncedAt: 0, signedIn: false }; }
+}
+function setMeta(patch) {
+  var m = meta();
+  for (var k in patch) m[k] = patch[k];
+  try { localStorage.setItem(META_KEY, JSON.stringify(m)); } catch (e) {}
+  return m;
+}
+
+/* Stamps only ever move forward past the watermark. Phone and laptop clocks
+   disagree by a second or two; without this, an edit made just after
+   taking a copy from a device whose clock runs ahead would look older than
+   the copy and never be sent. */
+function nextStamp() {
+  return Math.max(Date.now(), meta().lastSyncedAt + 1, cloud.outgoing + 1);
+}
+
+function syncPrint() { return JSON.stringify(SYNC.payload()); }
+
+/* A device that already held real data before sync existed has no
+   watermark, which would read as "never edited" and let the cloud replace
+   it silently. Mark it as holding unsynced work instead, so the worst case
+   is being asked. Runs once at boot, before anything is compared. */
+function seedMeta() {
+  var noWatermark = false;
+  try { noWatermark = localStorage.getItem(META_KEY) == null; } catch (e) {}
+  if (noWatermark && !SYNC.untouched()) setMeta({ updatedAt: 1 });
+  cloud.print = syncPrint();
+}
+
+/* ---- SDK, loaded once and only on demand ---- */
+/* With the site-wide account (assets/account.js) present, the tool shares
+   its one Firebase connection and its sign-in; opened on its own, it runs
+   its own. */
+function account() { return window.xdbAccount || null; }
+function loadSDK() {
+  if (cloud.fb) return Promise.resolve(cloud.fb);
+  if (account()) return account().sdk().then(function (s) {
+    cloud.fb = { auth: s.auth, db: s.db, a: s.a, f: s.f };
+    return cloud.fb;
+  });
+  return Promise.all([
+    import(SDK + 'firebase-app.js'),
+    import(SDK + 'firebase-auth.js'),
+    import(SDK + 'firebase-database.js')
+  ]).then(function (mods) {
+    var application = mods[0].initializeApp(FIREBASE);
+    cloud.fb = { auth: mods[1].getAuth(application), db: mods[2].getDatabase(application), a: mods[1], f: mods[2] };
+    return cloud.fb;
+  });
+}
+function docRef() { return cloud.fb.f.ref(cloud.fb.db, 'users/' + cloud.uid + '/tools/' + SYNC.doc); }
+
+function withTimeout(p, ms) {
+  return Promise.race([p, new Promise(function (_, no) {
+    setTimeout(function () { no({ code: 'timeout' }); }, ms);
+  })]);
+}
+
+/* ---- the three way decision ----------------------------------------
+   Local and cloud timestamps alone cannot tell an edit from a stale copy.
+   The watermark — the cloud stamp we last agreed with — is what makes
+   "both changed since we last spoke" detectable. */
+function reconcile(remote) {
+  var m = meta();
+  var localAt = m.updatedAt, syncedAt = m.lastSyncedAt;
+  var remoteAt = remote ? (+remote.updatedAt || 0) : 0;
+  if (!remote) return localAt ? 'push' : 'idle';
+  if (remoteAt === syncedAt) return localAt > syncedAt ? 'push' : 'idle';
+  return localAt > syncedAt ? 'conflict' : 'pull';
+}
+
+/* Taking a copy re-renders the page. If a field had the cursor, put it
+   back, so a change arriving from the other device does not throw you out
+   of where you were. */
+function keepingFocus(fn) {
+  function fields() { return Array.prototype.slice.call(document.querySelectorAll('input,textarea,select')); }
+  var a = document.activeElement, i = fields().indexOf(a), sel = null;
+  try { if (i >= 0 && a.selectionStart != null) sel = [a.selectionStart, a.selectionEnd]; } catch (e) {}
+  var result = fn();
+  var b = i >= 0 ? fields()[i] : null;
+  if (b && b !== document.activeElement) {
+    try { b.focus({ preventScroll: true }); if (sel) b.setSelectionRange(sel[0], sel[1]); } catch (e) {}
+  }
+  return result;
+}
+
+function adopt(remote) {
+  var d = remote && remote.data;
+  if (!d) return false;
+  if (!keepingFocus(function () { return SYNC.apply(d, remote); })) return false;
+  cloud.print = syncPrint();
+  var stamp = +remote.updatedAt || Date.now();
+  setMeta({ updatedAt: stamp, lastSyncedAt: stamp });
+  return true;
+}
+
+function pushNow() {
+  var stamp = nextStamp();
+  var print = syncPrint();
+  cloud.outgoing = stamp;
+  return cloud.fb.f.set(docRef(), { data: JSON.parse(print), updatedAt: stamp, device: deviceName() })
+    .then(function () {
+      var ahead = syncPrint() !== print;   // edited again while this was on its way
+      setMeta({ lastSyncedAt: stamp, updatedAt: ahead ? Math.max(meta().updatedAt, stamp + 1) : stamp });
+      cloud.at = stamp;
+      if (ahead) cloud.again = true;
+    });
+}
+function pullNow() {
+  return withTimeout(cloud.fb.f.get(docRef()), 12000).then(function (snap) {
+    return snap.exists() ? snap.val() : null;
+  });
+}
+
+function decide(remote) {
+  var move = reconcile(remote);
+  if (move === 'pull')     { adopt(remote); cloud.at = Date.now(); setStatus('synced'); return; }
+  if (move === 'push')     { return pushNow().then(function () { setStatus('synced'); }); }
+  if (move === 'conflict') { cloud.pending = remote; setStatus('conflict'); return; }
+  cloud.at = Date.now();
+  setStatus('synced');
+}
+
+/* One pass. Only one runs at a time; anything that asks while one is in
+   flight gets a second pass afterwards rather than being dropped. `known`
+   is a copy the live listener already has in hand, which saves a read. */
+function syncNow(userAsked, known) {
+  if (!cloud.on || !cloud.uid) return Promise.resolve();
+  if (cloud.busy) { cloud.again = true; return Promise.resolve(); }
+  if (cloud.status === 'conflict' && !userAsked) return Promise.resolve();
+  cloud.busy = true;
+  cloud.again = false;
+  clearTimeout(cloud.timer);
+  setStatus('working');
+  return (known ? Promise.resolve(known) : pullNow()).then(decide).then(function () {
+    cloud.busy = false;
+    if (cloud.again && cloud.status !== 'conflict') return syncNow();
+  }, function (err) {
+    cloud.busy = false;
+    cloud.msg = errCode(err);
+    setStatus('error');
+    if (userAsked) console.warn('[sync]', err);
+  });
+}
+
+/* Called on every save. Tools re-save on load, on navigation and on the
+   way out, so the fingerprint decides whether anything was really edited —
+   otherwise merely opening the tool would count as a change. */
+function cloudTouch() {
+  if (cloud.print === null) return;          // still booting
+  var p = syncPrint();
+  if (p === cloud.print) return;
+  cloud.print = p;
+  setMeta({ updatedAt: nextStamp() });
+  if (!cloud.on || !cloud.uid) return;
+  clearTimeout(cloud.timer);
+  cloud.timer = setTimeout(function () { syncNow(); }, 600);
+}
+
+/* ---- live ---- */
+function watch() {
+  if (cloud.unwatch || !cloud.uid) return;
+  cloud.unwatch = cloud.fb.f.onValue(docRef(), function (snap) {
+    var remote = snap.exists() ? snap.val() : null;
+    if (!remote) return;
+    var at = +remote.updatedAt || 0;
+    if (at === cloud.outgoing || at === meta().lastSyncedAt) return;   // our own write, or one we already have
+    if (cloud.status === 'conflict') { cloud.pending = remote; paintSync(); return; }
+    if (cloud.busy) { cloud.again = true; return; }
+    syncNow(false, remote);
+  }, function (err) {
+    cloud.unwatch = null;
+    cloud.msg = errCode(err);
+    setStatus('error');
+  });
+}
+function stopWatching() {
+  if (cloud.unwatch) { cloud.unwatch(); cloud.unwatch = null; }
+}
+
+/* ---- membership ----
+   Xavier always syncs. Anyone else is watched live at members/{uid}: when
+   he approves them, sync starts without a reload; if he removes them, it
+   stops and the tool carries on locally. Until then signing in files a
+   request (once per session) and the tool says so. */
+function admit(uid) {
+  if (cloud.uid === uid) return;
+  cloud.uid = uid;
+  syncNow();
+  watch();
+}
+function stopMembership() {
+  if (cloud.unmember) { cloud.unmember(); cloud.unmember = null; }
+}
+function askForAccess(user) {
+  if (cloud.asked) { setStatus('pending'); return; }
+  cloud.asked = true;
+  var ref = cloud.fb.f.ref(cloud.fb.db, 'requests/' + user.uid);
+  cloud.fb.f.set(ref, {
+    email: user.email || '', name: (user.displayName || '').slice(0, 120), at: Date.now(), tool: SYNC.doc
+  }).then(function () {
+    if (!cloud.uid) setStatus('pending');
+  }, function () {
+    // refused: this account was declined — say so, and keep working locally
+    if (!cloud.uid) setStatus('private');
+  });
+}
+function checkMembership(user) {
+  if (user.uid === OWNER) { admit(user.uid); return; }
+  setStatus('working');
+  cloud.unmember = cloud.fb.f.onValue(cloud.fb.f.ref(cloud.fb.db, 'members/' + user.uid), function (snap) {
+    if (snap.exists()) { admit(user.uid); return; }
+    if (cloud.uid) { cloud.uid = null; stopWatching(); clearTimeout(cloud.timer); }
+    askForAccess(user);
+  }, function () {
+    cloud.uid = null;
+    stopWatching();
+    setStatus('private');
+  });
+}
+
+/* ---- sign in / out ---- */
+function listen(fb) {
+  if (cloud.listening) return;
+  cloud.listening = true;
+  fb.a.onAuthStateChanged(fb.auth, function (user) {
+    cloud.authed = !!user;
+    setMeta({ signedIn: !!user });
+    stopWatching();
+    stopMembership();
+    cloud.uid = null;
+    cloud.asked = false;
+    if (!user) { setStatus('signedout'); return; }
+    checkMembership(user);
+  });
+}
+
+function signIn() {
+  if (!cloud.on) return;
+  setMeta({ signedIn: true });   // so a redirect sign-in is picked up when the page comes back
+  setStatus('working');
+  if (account()) {
+    loadSDK().then(listen).catch(function () {});
+    account().signIn().catch(function (err) {
+      if (err && err.code === 'auth/popup-closed-by-user') { if (!cloud.authed) setStatus('signedout'); return; }
+      cloud.msg = errCode(err);
+      setStatus('error');
+    });
+    return;
+  }
+  loadSDK().then(function (fb) {
+    listen(fb);
+    var provider = new fb.a.GoogleAuthProvider();
+    if (provider.setCustomParameters) provider.setCustomParameters({ prompt: 'select_account' });   // always offer the account picker
+    return fb.a.signInWithPopup(fb.auth, provider).catch(function (err) {
+      // iOS and locked-down browsers block popups; a redirect always works
+      if (err && /popup-blocked|operation-not-supported/i.test(err.code || '')) return fb.a.signInWithRedirect(fb.auth, provider);
+      throw err;
+    });
+  }).catch(function (err) {
+    setMeta({ signedIn: false });
+    cloud.msg = errCode(err);
+    setStatus('error');
+  });
+}
+function signOutNow() {
+  if (account()) { account().signOut(); return; }
+  if (cloud.fb) cloud.fb.a.signOut(cloud.fb.auth);
+}
+function syncClick() {
+  if (account() && cloud.authed) { account().openPanel(); return; }   // signed in: the account panel has it all
+  if (!cloud.uid) signIn(); else syncNow(true);
+}
+
+/* ---- the choice, in plain words ----
+   Two situations ask: a browser with work of its own signing in for the
+   first time, and two devices that both changed things before they could
+   sync. The text says which, what each side holds, and which is newer. */
+function summary(d) {
+  var s = '';
+  try { s = String(SYNC.describe(d) || ''); } catch (e) {}
+  return s.replace(/^It holds /, '').replace(/\.$/, '') || 'a copy';
+}
+function whenLabel(ms) {
+  if (!ms) return '';
+  var d = new Date(ms), now = new Date();
+  var day = d.toDateString() === now.toDateString() ? 'today'
+    : new Date(now.getTime() - 864e5).toDateString() === d.toDateString() ? 'yesterday'
+    : d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  return day + ' at ' + hhmm(ms);
+}
+function otherDevice(remote) {
+  var other = (remote && remote.device) || '';
+  if (!other) return 'your other device';
+  return other === deviceName() ? 'your other ' + other : 'your ' + other;
+}
+function choiceWords(remote) {
+  var here = deviceName(), m = meta();
+  var mine = summary(JSON.parse(syncPrint())), theirs = summary(remote.data);
+  var remoteAt = +remote.updatedAt || 0;
+  var other = otherDevice(remote), otherShort = other.replace(/^your /, 'the ');
+  if (!m.lastSyncedAt) {
+    return {
+      text: 'This browser already has its own ' + SYNC.noun + ' (' + mine + '). Your account has ' + theirs +
+        ', last saved from ' + other + ' ' + whenLabel(remoteAt) + '. Which should this browser use? ' +
+        'Whichever you don\u2019t pick is kept here as a backup for ' + BACKUP_DAYS + ' days.',
+      local: 'Keep this browser\u2019s',
+      cloud: 'Use my account\u2019s'
+    };
+  }
+  var localNewer = m.updatedAt > remoteAt;
+  return {
+    text: 'This ' + here + ' and ' + other + ' both made changes before they could sync. ' +
+      'This ' + here + (m.updatedAt > 1e12 ? ', ' + whenLabel(m.updatedAt) : '') + ': ' + mine + (localNewer ? ' (newer)' : '') + '. ' +
+      other.charAt(0).toUpperCase() + other.slice(1) + ', ' + whenLabel(remoteAt) + ': ' + theirs + (localNewer ? '' : ' (newer)') + '. ' +
+      'Which version do you want? The other is kept here as a backup for ' + BACKUP_DAYS + ' days.',
+    local: 'Keep this ' + here + '\u2019s',
+    cloud: 'Use ' + otherShort + '\u2019s'
+  };
+}
+
+/* ---- backup of the version not chosen ----
+   Whichever side loses a choice is saved on this device for a week, with
+   Restore on the bar. Restoring is itself undoable: the version it replaces
+   becomes the backup. */
+var BACKUP_KEY = SYNC.storageKey + '.backup';
+var BACKUP_DAYS = 7;
+function readBackup() {
+  try {
+    var b = JSON.parse(localStorage.getItem(BACKUP_KEY) || 'null');
+    if (b && b.data && Date.now() - (+b.at || 0) < BACKUP_DAYS * 864e5) return b;
+  } catch (e) {}
+  return null;
+}
+function writeBackup(b) {
+  try { localStorage.setItem(BACKUP_KEY, JSON.stringify(b)); } catch (e) {}
+}
+function keepBackup(data, label, restored) {
+  writeBackup({ data: data, at: Date.now(), label: label, summary: summary(data), shown: true, restored: !!restored });
+}
+function dismissBackup() {
+  var b = readBackup();
+  if (b) { b.shown = false; writeBackup(b); }
+  paintSync();
+}
+function restoreBackup() {
+  var b = readBackup();
+  if (!b) return;
+  var current = JSON.parse(syncPrint());
+  var ok = keepingFocus(function () { return SYNC.apply(b.data, { data: b.data, updatedAt: Date.now(), device: deviceName() }); });
+  if (!ok) return;
+  keepBackup(current, 'the version you just replaced', true);
+  cloud.print = syncPrint();
+  setMeta({ updatedAt: nextStamp() });   // the restored version is now the newest edit, and goes up as one
+  if (cloud.uid) syncNow(true); else paintSync();
+}
+
+/* ---- conflict resolution ----
+   The bar's two buttons also serve the backup: with no choice pending,
+   the first restores it and the second puts the note away. */
+function keepLocal() {
+  var remote = cloud.pending;
+  if (!remote) { restoreBackup(); return; }
+  keepBackup(remote.data, 'the version from ' + otherDevice(remote).replace(/^your /, 'the '));
+  cloud.pending = null;
+  var seen = +remote.updatedAt || 0;
+  // acknowledge the copy we saw, and stay ahead of it so this device wins
+  setMeta({ lastSyncedAt: seen, updatedAt: Math.max(meta().updatedAt, seen + 1) });
+  cloud.status = 'working';
+  syncNow(true);
+}
+function keepCloud() {
+  var remote = cloud.pending;
+  if (!remote) { dismissBackup(); return; }
+  keepBackup(JSON.parse(syncPrint()), 'this ' + deviceName() + '\u2019s version');
+  cloud.pending = null;
+  adopt(remote);
+  cloud.at = Date.now();
+  setStatus('synced');
+}
+
+/* ---- the visible half ---- */
+function hhmm(ms) {
+  var d = new Date(ms);
+  return (d.getHours() < 10 ? '0' : '') + d.getHours() + ':' + (d.getMinutes() < 10 ? '0' : '') + d.getMinutes();
+}
+function setStatus(s) {
+  cloud.status = s;
+  if (s === 'synced') cloud.at = cloud.at || Date.now();
+  paintSync();
+}
+
+function paintSync() {
+  var btn = syncEl('btn-sync'), out = syncEl('btn-signout'), bar = syncEl('sync-bar');
+  if (!btn) return;
+  if (!cloud.on) { btn.style.display = 'none'; out.style.display = 'none'; bar.classList.remove('on'); return; }
+
+  var label, title;
+  switch (cloud.status) {
+    case 'working':  label = 'Syncing…';                   title = 'Talking to the cloud'; break;
+    case 'synced':   label = 'Live · ' + hhmm(cloud.at);   title = 'Signed in — changes on your other devices appear here as they happen'; break;
+    case 'conflict': label = 'Pick a version';             title = 'Two versions to choose between \u2014 see the note below'; break;
+    case 'pending':  label = 'Access requested';           title = 'Waiting for Xavier to approve this account'; break;
+    case 'private':  label = 'No access';                  title = 'This account is not on the invitation list'; break;
+    case 'error':    label = isOffline(cloud.msg) ? 'Offline \u00b7 saved here' : 'Sync failed';                title = explain(cloud.msg); break;
+    default:         label = 'Sign in to sync';            title = 'Keep this in step across your devices';
+  }
+  var acct = account();
+  if (acct && cloud.authed) {
+    btn.innerHTML = acct.badgeHTML() + ' <span>' + label.replace(/[&<>]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]; }) + '</span>';
+    title += ' \u2014 open your account';
+  } else {
+    btn.textContent = label;
+  }
+  btn.title = title;
+  btn.className = SYNC.buttonClass(cloud.status);
+  btn.style.display = '';
+  out.style.display = cloud.authed && !acct ? '' : 'none';   // with the site account, signing out lives in its panel
+
+  var what = syncEl('sync-what'), kl = syncEl('sync-keep-local'), kc = syncEl('sync-keep-cloud');
+  if (cloud.status === 'pending' || cloud.status === 'private' || cloud.status === 'error') {
+    what.textContent = cloud.status === 'pending'
+      ? 'Sync is by invitation, and your request is in. Once Xavier approves it, syncing starts here on its own. ' +
+        'Until then everything keeps saving in this browser as usual. '
+      : cloud.status === 'private'
+      ? 'Sync on this site is by invitation, and this account isn\u2019t on the list. ' +
+        'Everything still saves in this browser exactly as before, and nothing is sent anywhere. '
+      : explain(cloud.msg);
+    if (cloud.status !== 'error') {
+      var more = document.createElement('a');
+      more.href = ACCESS_URL;
+      more.textContent = 'About access \u2192';
+      what.appendChild(more);
+    }
+    kl.style.display = 'none';
+    kc.style.display = 'none';
+    bar.classList.add('on');
+    return;
+  }
+  kl.style.display = '';
+  kc.style.display = '';
+  var b = readBackup();
+  if (cloud.status === 'conflict' && cloud.pending) {
+    var w = choiceWords(cloud.pending);
+    what.textContent = w.text;
+    kl.textContent = w.local;
+    kc.textContent = w.cloud;
+    bar.classList.add('on');
+  } else if (b && b.shown) {
+    what.textContent = b.restored
+      ? 'Restored. The version you replaced (' + b.summary + ') is saved here in case you want it back.'
+      : 'Done. The version you didn\u2019t keep \u2014 ' + b.label + ' (' + b.summary + ') \u2014 is saved on this device for ' + BACKUP_DAYS + ' days.';
+    kl.textContent = b.restored ? 'Switch back' : 'Restore it';
+    kc.textContent = 'OK';
+    bar.classList.add('on');
+  } else {
+    bar.classList.remove('on');
+  }
+}
+
+function initCloud() {
+  seedMeta();
+  paintSync();
+  if (!cloud.on) return;
+
+  /* Only someone who has signed in here before gets the SDK on load; a
+     visitor who never touches the button never fetches it. Signed in
+     anywhere on the site counts. */
+  var acct = account();
+  if (acct) {
+    acct.registerTool({ doc: SYNC.doc, syncNow: function () { syncNow(true); } });
+    acct.on(function (st) {
+      if (st.user && !cloud.listening) loadSDK().then(listen).catch(function () {});   // signed in from the panel
+      paintSync();
+    });
+  }
+  if (meta().signedIn || (acct && acct.wanted())) {
+    setStatus('working');
+    loadSDK().then(listen).catch(function (err) { cloud.msg = errCode(err); setStatus('error'); });
+  }
+
+  document.addEventListener('visibilitychange', function () {
+    if (!cloud.uid) return;
+    if (document.hidden) {
+      // a phone suspends the page soon after it hides: send anything unsent now
+      SYNC.flush();
+      if (meta().updatedAt > meta().lastSyncedAt) syncNow();
+    } else {
+      syncNow();
+    }
+  });
+  window.addEventListener('focus', function () { if (cloud.uid) syncNow(); });
+  window.addEventListener('online', function () { if (cloud.uid) syncNow(); });
+}
+
+/* ---------- boot ---------- */
+render();
+if (!PHONE.matches && state.notes.length) open(sorted()[0].id, false);
+initCloud();
+window.addEventListener('beforeunload', saveNow);
+window.addEventListener('pagehide', saveNow);
+
+// test hooks
+window.__notes = { state: function () { return state; }, listTyping: listTyping };
+</script>
+</body>
+</html>

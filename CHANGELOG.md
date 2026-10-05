@@ -5,6 +5,76 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v73 — 2026-10-05
+
+**What's new** · New tools · [tools.html#personal]
+### Notes and<br>a Journal
+**Notes:** open it and type. The first line is the title and everything
+saves as you go. A dash and a space makes a bullet; Enter keeps the list
+going, Enter on an empty bullet ends it. Numbered lists work the same way.
+
+**Journal:** a page a day. How it went, three good things, and whatever
+else needs writing down, with a prompt when you're stuck. A calendar, a
+streak, and what you wrote on this day last year.
+
+Both sync between your devices once you're signed in, install as apps, and
+work offline.
+
+**Notes — `tools/notes.html`, source `Tools files/Tools/notes_v1.html`**
+- One textarea per note; first non-empty line = title (list markers
+  stripped). List, search (`/`), pin, copy, delete with Undo, Alt+N new
+  note; an empty note is dropped when you leave it. Phones: list and note
+  are separate screens (← Notes).
+- List typing (shared with Journal): `- ` or `* ` at a line start → `• `;
+  Enter continues `• ` and `1.`/`1)` lists (numbers count up), Enter on an
+  empty item ends the list; Backspace on a bare `•` removes it; Tab /
+  Shift+Tab indent a list line. Edits go through `execCommand('insertText')`
+  so Undo works (Undo turns a bullet back into the dash); the caret is set
+  explicitly afterwards (Chrome put it one short after removing the last
+  line).
+- Data `xdb.notes.v1` = `{ notes: [{ id, text, pinned, createdAt, updatedAt }] }`;
+  starts with one welcome note. Export / Import (.json, merges by id, newer
+  wins).
+
+**Journal — `tools/journal.html`, source `Tools files/Tools/journal_v1.html`**
+- One entry per day: mood 1–5 (Rough, Low, Okay, Good, Great; tap again to
+  clear), three good things, free writing with list typing and **Prompt
+  me** (18 prompts; Use it adds one to the text), tags with suggestions
+  from earlier entries. An entry exists only while something is filled in;
+  clearing everything removes it. No future days.
+- Calendar (written = white, good/great = yellow, today outlined), stats
+  (streak, longest, this month, words, mood over 30 days, entries), On this
+  day (same date in earlier years, a month ago, a week ago). Entries tab:
+  search, mood filter, tag filter, grouped by month. Export as text (.md) or
+  backup (.json); Import merges by date, newer wins. Alt+← / Alt+→ change
+  day. Under 980 px the calendar and stats become their own tab.
+- Data `xdb.journal.v1` = `{ entries: [{ date, mood, good[3], body, tags[], createdAt, updatedAt }] }`.
+
+**Sync, install, account**
+- Both paste `sync-core.js` verbatim with their own adapter: docs `notes`
+  and `journal` under `users/{uid}/tools/` — **no Firebase rules change**.
+  Added to `TOOLS` in `assets/account.js` (account panel lists them).
+- Installable: manifests, icons, `pwa.js`; `pwa-sw.js` (VERSION v73) gains
+  `notes` and `journal` in APPS and LIBS (Firebase library only; no web
+  fonts, both use the site's system type).
+- Cards in Personal; the section line now ends "and what's worth writing
+  down".
+
+**Verified locally (mock database, Playwright Chromium)**
+- Typing: dash-space → bullet, Enter continues, Tab/Shift+Tab, empty item
+  ends the list, numbered 1. → 2., Backspace on a bare bullet, Undo.
+- Notes: empty note dropped, search, pin, delete + Undo. Journal: mood,
+  good things, bullets, tags, prompt; calendar and streak (2 days after
+  writing yesterday); entries list, tag and text filters; clearing a day
+  removes its entry.
+- Two devices: sign-in with only the welcome note pushes nothing; a note
+  from A appears on B, B's edit shows on A live; reload writes nothing;
+  journal mood and text flow both ways, calendar updates live.
+- Installable with no manifest errors; both open with the server stopped
+  and every other host unreachable. 375 px phones: no sideways scroll.
+
+---
+
 ## v72 — 2026-10-04
 
 **What's new** · Budget, Phases, Idea Bank · [tools.html#personal]

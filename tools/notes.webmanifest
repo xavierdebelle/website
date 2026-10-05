@@ -1,0 +1,35 @@
+{
+  "id": "notes",
+  "name": "Notes",
+  "short_name": "Notes",
+  "description": "Notes without ceremony. Type, and it saves. A dash and a space makes a bullet.",
+  "start_url": "notes.html",
+  "scope": "notes",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "categories": [
+    "productivity",
+    "lifestyle"
+  ],
+  "icons": [
+    {
+      "src": "icons/notes-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/notes-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/notes-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

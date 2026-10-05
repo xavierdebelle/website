@@ -28,7 +28,7 @@
    ============================================================ */
 'use strict';
 
-var VERSION = 'v72';
+var VERSION = 'v73';
 var NET_WAIT = 3500; // ms before a slow network gives way to the kept copy
 
 var APPS = {
@@ -60,6 +60,14 @@ var APPS = {
     'idea-bank/_ds/xavier-de-belle-website-a7c85075-e389-43a8-89e9-7fca43266e85/styles.css',
     'icons/idea-bank-180.png', 'icons/idea-bank-192.png',
     'icons/idea-bank-512.png', 'icons/idea-bank-maskable-512.png'
+  ],
+  'notes': [
+    'notes.html', 'notes.webmanifest', 'pwa.js', '../assets/account.js', '../assets/logo.svg',
+    'icons/notes-180.png', 'icons/notes-192.png', 'icons/notes-512.png', 'icons/notes-maskable-512.png'
+  ],
+  'journal': [
+    'journal.html', 'journal.webmanifest', 'pwa.js', '../assets/account.js', '../assets/logo.svg',
+    'icons/journal-180.png', 'icons/journal-192.png', 'icons/journal-512.png', 'icons/journal-maskable-512.png'
   ]
 };
 
@@ -79,7 +87,9 @@ var LIBS = {
     'https://unpkg.com/react@18.3.1/umd/react.production.min.js',
     'https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js',
     'https://unpkg.com/@babel/standalone@7.29.0/babel.min.js'
-  ])
+  ]),
+  'notes': FIREBASE,
+  'journal': FIREBASE
 };
 var LIB = 'xdb-app-lib';
 // versioned code and font files: keep the first copy

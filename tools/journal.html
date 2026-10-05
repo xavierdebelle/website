@@ -1,0 +1,1448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="../assets/account.js"></script>   <!-- site-wide account; the tool falls back to its own sign-in without it -->
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Journal — Xavier de Belle</title>
+<meta name="description" content="A page a day. How it went, three good things, and whatever else needs writing down — with a calendar, streaks and what you wrote on this day before.">
+<link rel="icon" href="../assets/logo.svg" type="image/svg+xml">
+<!-- installable app: works offline once opened, syncs when back online (pwa.js, pwa-sw.js) -->
+<link rel="manifest" href="journal.webmanifest">
+<link rel="apple-touch-icon" href="icons/journal-180.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Journal">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="theme-color" content="#000000">
+<script src="pwa.js" data-app="journal"></script>
+<style>
+:root{
+  --ink:#000;--paper:#fff;--volt:#ffe800;--smoke:#141414;--ash:#2a2a2a;--dust:#8a8a8a;
+  --hair:#e2e2e2;--grey:#6a6a6a;
+  --stack:"Helvetica Neue",Helvetica,Arial,"Segoe UI",system-ui,sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --gut:clamp(14px,3vw,32px);
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+html,body{margin:0;background:var(--ink);color:var(--paper);font-family:var(--stack)}
+button{font:inherit;color:inherit}
+a{color:var(--volt);text-decoration:none}
+.k{font-family:var(--mono);font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--dust)}
+
+/* ---------- top bar ---------- */
+.top{display:flex;align-items:center;gap:10px 16px;flex-wrap:wrap;padding:12px var(--gut);border-bottom:3px solid var(--paper);
+  padding-top:max(12px,env(safe-area-inset-top))}
+.brand{display:flex;align-items:baseline;gap:10px;margin-right:auto;min-width:0}
+.brand a{color:var(--paper);font-weight:900;font-size:12px;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap}
+.brand a:hover{color:var(--volt)}
+.brand h1{margin:0;font-weight:900;text-transform:uppercase;letter-spacing:-.04em;font-size:26px;line-height:1}
+.brand h1 span{color:var(--volt)}
+.btn{background:transparent;border:3px solid var(--paper);color:var(--paper);font-weight:900;font-size:11px;letter-spacing:.12em;
+  text-transform:uppercase;padding:9px 13px;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:8px;border-radius:0}
+.btn:hover{background:var(--volt);border-color:var(--volt);color:var(--ink)}
+.btn.solid{background:var(--volt);border-color:var(--volt);color:var(--ink)}
+.btn.solid:hover{background:var(--paper);border-color:var(--paper)}
+.btn.dark{border-color:var(--ink);color:var(--ink)}
+.btn.dark.solid{background:var(--ink);color:var(--volt)}
+.btn.dark:hover{background:var(--volt);border-color:var(--volt);color:var(--ink)}
+.sync-btn.ok{border-color:var(--ash);color:var(--dust)}
+.sync-btn.ok:hover{color:var(--ink)}
+.sync-btn.bad{border-color:var(--volt);color:var(--volt)}
+.ghost{background:transparent;border:0;color:var(--grey);font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;
+  padding:8px 4px;cursor:pointer}
+.ghost:hover{color:var(--ink)}
+.dark-ghost{color:var(--dust)}
+.dark-ghost:hover{color:var(--volt)}
+
+/* ---------- sync bar ---------- */
+#sync-bar{display:none;align-items:center;gap:10px 18px;flex-wrap:wrap;background:var(--volt);color:var(--ink);padding:12px var(--gut)}
+#sync-bar.on{display:flex}
+#sync-bar .sync-dot{width:10px;height:10px;background:var(--ink);flex:none}
+#sync-what{flex:1 1 280px;font-family:var(--mono);font-size:11px;line-height:1.6;letter-spacing:.04em}
+#sync-bar button{border:3px solid var(--ink);background:var(--ink);color:var(--volt);font-weight:900;font-size:11px;letter-spacing:.12em;
+  text-transform:uppercase;padding:8px 12px;cursor:pointer}
+#sync-bar button+button{background:transparent;color:var(--ink)}
+
+/* ---------- tabs ---------- */
+.tabs{display:flex;gap:26px;padding:0 var(--gut);border-bottom:3px solid var(--paper);background:var(--smoke);overflow-x:auto}
+.tab{background:transparent;border:0;border-bottom:4px solid transparent;padding:16px 2px 12px;cursor:pointer;font-family:var(--mono);
+  font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--dust);white-space:nowrap}
+.tab:hover{color:var(--paper)}
+.tab.on{color:var(--paper);border-bottom-color:var(--volt)}
+.tab i{font-style:normal;font-size:10px;color:var(--volt);margin-left:8px;letter-spacing:.06em}
+.tab-cal{display:none}
+
+/* ---------- layout ---------- */
+.wrap{max-width:1280px;margin:0 auto;padding:clamp(18px,3vw,36px) var(--gut) 80px;display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:28px;align-items:start}
+.aside{display:flex;flex-direction:column;gap:22px;position:sticky;top:16px}
+[hidden]{display:none!important}
+
+/* ---------- write ---------- */
+.page{background:var(--paper);color:var(--ink)}
+.page-head{display:flex;flex-wrap:wrap;align-items:flex-end;gap:14px 20px;padding:clamp(18px,2.6vw,28px) clamp(16px,2.6vw,30px);border-bottom:3px solid var(--ink)}
+.date{margin-right:auto;min-width:0}
+.date .k{color:var(--grey)}
+.date h2{margin:6px 0 0;font-weight:900;text-transform:uppercase;letter-spacing:-.045em;line-height:.86;font-size:clamp(34px,5.4vw,64px)}
+.date h2 span{display:block}
+.date h2 em{font-style:normal;color:var(--grey)}
+.nav{display:flex;gap:8px}
+.sq{width:44px;height:44px;border:3px solid var(--ink);background:transparent;color:var(--ink);font-family:var(--mono);font-size:16px;font-weight:700;cursor:pointer}
+.sq:hover{background:var(--volt);border-color:var(--volt)}
+.sq:disabled{opacity:.25;cursor:default;background:transparent;border-color:var(--ink)}
+.block{padding:clamp(16px,2.4vw,26px) clamp(16px,2.6vw,30px);border-bottom:2px solid var(--hair)}
+.block>.k{display:flex;justify-content:space-between;gap:12px;color:var(--grey);margin-bottom:12px}
+.moods{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.mood{border:3px solid var(--ink);background:transparent;padding:12px 4px 10px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--ink)}
+.mood b{font-size:20px;font-weight:900;line-height:1;font-variant-numeric:tabular-nums}
+.mood span{font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase}
+.mood:hover{background:#f4f4f4}
+.mood.on{background:var(--volt);border-color:var(--ink)}
+.good{display:flex;flex-direction:column}
+.good label{display:flex;align-items:center;gap:14px;border-top:2px solid var(--hair);padding:2px 0}
+.good label:first-child{border-top:0}
+.good label span{font-family:var(--mono);font-size:11px;font-weight:700;flex:none;width:22px}
+.good input{flex:1;min-width:0;border:0;outline:none;background:transparent;padding:11px 0;font-family:var(--stack);font-size:16px;font-weight:700;color:var(--ink)}
+.good input::placeholder{color:#a8a8a8;font-weight:400}
+textarea#body{display:block;width:100%;min-height:240px;border:0;outline:none;background:transparent;resize:none;color:var(--ink);padding:0;
+  font-family:var(--stack);font-size:18px;line-height:1.6;field-sizing:content;tab-size:2}
+textarea#body::placeholder{color:#a8a8a8}
+.prompt{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;background:var(--volt);padding:12px 14px;margin-bottom:14px}
+.prompt p{flex:1 1 240px;margin:0;font-weight:700;font-size:16px;line-height:1.35}
+.tags-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.tags-row input{flex:1 1 200px;min-width:0;border:2px solid #dcdcdc;padding:10px 12px;font-family:var(--stack);font-size:14px;font-weight:700;color:var(--ink);background:#fff;border-radius:0;outline:none}
+.tags-row input:focus{border-color:var(--ink)}
+.chip{font-family:var(--mono);font-size:9px;letter-spacing:.16em;text-transform:uppercase;padding:5px 8px;border:2px solid #dcdcdc;background:transparent;color:var(--grey);cursor:pointer;white-space:nowrap}
+.chip:hover{border-color:var(--ink);color:var(--ink)}
+.chip.on{background:var(--ink);border-color:var(--ink);color:var(--paper)}
+.suggest{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.page-foot{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;padding:12px clamp(16px,2.6vw,30px)}
+.page-foot .k{margin-right:auto;color:var(--grey)}
+
+/* ---------- aside: calendar, stats, on this day ---------- */
+.panel{border:3px solid var(--paper)}
+.panel-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;border-bottom:3px solid var(--paper)}
+.panel-head b{font-weight:900;text-transform:uppercase;letter-spacing:-.03em;font-size:20px}
+.panel-head .sq{width:34px;height:34px;border-color:var(--paper);color:var(--paper);font-size:13px}
+.panel-head .sq:hover{color:var(--ink)}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;padding:12px 14px 14px}
+.cal .wd{font-family:var(--mono);font-size:9px;letter-spacing:.1em;color:var(--dust);text-align:center;padding-bottom:4px}
+.day{aspect-ratio:1;border:2px solid var(--ash);background:transparent;color:var(--dust);font-family:var(--mono);font-size:11px;font-weight:700;
+  cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center;font-variant-numeric:tabular-nums}
+.day:hover{border-color:var(--paper);color:var(--paper)}
+.day.has{background:var(--paper);border-color:var(--paper);color:var(--ink)}
+.day.good{background:var(--volt);border-color:var(--volt);color:var(--ink)}
+.day.today{outline:2px solid var(--volt);outline-offset:2px}
+.day.sel{box-shadow:inset 0 0 0 3px var(--ink);border-color:var(--paper)}
+.day.sel:not(.has):not(.good){box-shadow:none;border:3px solid var(--paper);color:var(--paper)}
+.day:disabled{opacity:.25;cursor:default}
+.day.out{visibility:hidden}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;padding:0 14px 14px}
+.legend span{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--dust)}
+.legend i{width:10px;height:10px;display:inline-block}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:3px;background:var(--paper);border:3px solid var(--paper)}
+.stat{background:var(--ink);padding:14px}
+.stat:first-child{background:var(--volt);color:var(--ink)}
+.stat:first-child .k{color:rgba(0,0,0,.6)}
+.stat b{display:block;margin-top:8px;font-weight:900;letter-spacing:-.045em;font-size:34px;line-height:.9;font-variant-numeric:tabular-nums}
+.stat b small{font-size:12px;letter-spacing:0;font-weight:700;margin-left:4px}
+.past{display:flex;flex-direction:column}
+.past button{text-align:left;background:transparent;border:0;border-top:2px solid var(--ash);padding:12px 14px;cursor:pointer;color:var(--paper)}
+.past button:first-child{border-top:0}
+.past button:hover{background:var(--smoke)}
+.past .k{color:var(--volt)}
+.past p{margin:6px 0 0;font-size:14px;line-height:1.45;color:#cfcfcf;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.past .none{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--dust);padding:14px;line-height:1.7}
+
+/* ---------- entries ---------- */
+.filters{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:16px}
+.filters input,.filters select{background:transparent;border:3px solid var(--ash);color:var(--paper);padding:10px 12px;font-family:var(--mono);font-size:12px;letter-spacing:.06em;border-radius:0;outline:none}
+.filters input{flex:1 1 220px;min-width:0}
+.filters input:focus,.filters select:focus{border-color:var(--volt)}
+.filters select{appearance:none;-webkit-appearance:none;padding-right:28px;background-image:linear-gradient(45deg,transparent 50%,var(--volt) 50%),linear-gradient(135deg,var(--volt) 50%,transparent 50%);
+  background-position:calc(100% - 15px) 50%,calc(100% - 10px) 50%;background-size:5px 5px;background-repeat:no-repeat}
+.filters select option{color:#000}
+.tagbar{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:18px}
+.tagbar .chip{border-color:var(--ash);color:var(--dust)}
+.tagbar .chip:hover{border-color:var(--paper);color:var(--paper)}
+.tagbar .chip.on{background:var(--volt);border-color:var(--volt);color:var(--ink)}
+.entries{display:flex;flex-direction:column;gap:12px}
+.entry{display:grid;grid-template-columns:auto 1fr;gap:6px 22px;text-align:left;background:var(--paper);color:var(--ink);border:0;padding:16px 18px;cursor:pointer}
+.entry:hover{outline:3px solid var(--volt);outline-offset:3px}
+.entry .d{grid-row:span 3;min-width:66px}
+.entry .d b{display:block;font-weight:900;font-size:40px;letter-spacing:-.05em;line-height:.85;font-variant-numeric:tabular-nums}
+.entry .d span{display:block;margin-top:6px;font-family:var(--mono);font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--grey)}
+.entry .meta{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.entry .meta i{font-style:normal;font-family:var(--mono);font-size:9px;letter-spacing:.16em;text-transform:uppercase;padding:4px 7px;border:2px solid #dcdcdc;color:var(--grey)}
+.entry .meta i.m{background:var(--ink);border-color:var(--ink);color:var(--paper)}
+.entry .meta i.m.hi{background:var(--volt);border-color:var(--volt);color:var(--ink)}
+.entry p{margin:0;font-size:15px;line-height:1.5;color:#3a3a3a;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.entry .g{font-size:13px;color:var(--grey)}
+.nothing{background:var(--paper);color:var(--ink);padding:clamp(24px,4vw,44px)}
+.nothing h3{margin:0;font-weight:900;text-transform:uppercase;letter-spacing:-.04em;line-height:.88;font-size:clamp(26px,3.4vw,40px)}
+.nothing p{margin:14px 0 0;max-width:46ch;font-size:15px;line-height:1.6;color:#4a4a4a}
+.list-foot{display:flex;flex-wrap:wrap;gap:4px 16px;margin-top:22px}
+
+/* ---------- toast ---------- */
+#toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:50;display:none;
+  align-items:center;gap:16px;background:var(--paper);color:var(--ink);border:3px solid var(--ink);outline:3px solid var(--volt);
+  padding:11px 14px;max-width:calc(100vw - 32px)}
+#toast.on{display:flex}
+#toast span{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;line-height:1.5}
+#toast button{background:var(--ink);color:var(--volt);border:0;font-weight:900;font-size:11px;letter-spacing:.12em;text-transform:uppercase;
+  padding:7px 11px;cursor:pointer}
+
+/* ---------- narrower: the calendar becomes its own tab ---------- */
+@media (max-width:980px){
+  .wrap{grid-template-columns:minmax(0,1fr)}
+  .aside{position:static}
+  .tab-cal{display:inline-block}
+  body:not(.view-cal) .aside{display:none}
+  body.view-cal .main-col{display:none}
+}
+@media (max-width:560px){
+  .brand a{display:none}
+  .brand h1{font-size:22px}
+  .mood{padding:10px 2px 8px}
+  .mood b{font-size:17px}
+  .mood span{font-size:8px;letter-spacing:.08em}
+  .entry{grid-template-columns:1fr}
+  .entry .d{grid-row:auto;display:flex;align-items:baseline;gap:10px}
+  .entry .d b{font-size:28px}
+}
+@media print{.top,#sync-bar,.tabs,.aside,.page-foot,.nav,.prompt,.suggest{display:none!important}.wrap{display:block}}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="brand"><a href="../index.html">Xavier de Belle</a><h1>Journal<span>.</span></h1></div>
+  <button class="btn" type="button" data-pwa-install style="display:none" title="Install as an app: its own icon, works offline">Install app</button>
+  <button class="btn sync-btn" id="btn-sync" onclick="syncClick()" style="display:none">Sign in to sync</button>
+  <button class="btn" id="btn-signout" onclick="signOutNow()" style="display:none" title="Sign out of sync">Sign out</button>
+</header>
+
+<div id="sync-bar" role="status">
+  <span class="sync-dot"></span>
+  <span id="sync-what"></span>
+  <button id="sync-keep-local" onclick="keepLocal()">Keep this device</button>
+  <button id="sync-keep-cloud" onclick="keepCloud()">Keep cloud copy</button>
+</div>
+
+<nav class="tabs" aria-label="Views">
+  <button class="tab on" type="button" data-view="write">Write</button>
+  <button class="tab tab-cal" type="button" data-view="cal">Calendar</button>
+  <button class="tab" type="button" data-view="list">Entries<i id="count"></i></button>
+</nav>
+
+<div class="wrap">
+  <div class="main-col">
+
+    <!-- ============ WRITE ============ -->
+    <section id="v-write" class="page" aria-label="Journal entry">
+      <div class="page-head">
+        <div class="date"><span class="k" id="d-week"></span><h2 id="d-date"></h2></div>
+        <div class="nav">
+          <button class="sq" id="prev" type="button" aria-label="Previous day" title="Previous day (Alt+←)">←</button>
+          <button class="btn dark" id="today" type="button">Today</button>
+          <button class="sq" id="next" type="button" aria-label="Next day" title="Next day (Alt+→)">→</button>
+        </div>
+      </div>
+
+      <div class="block">
+        <div class="k"><span>How was the day?</span><span id="mood-word"></span></div>
+        <div class="moods" id="moods" role="radiogroup" aria-label="Mood"></div>
+      </div>
+
+      <div class="block">
+        <div class="k"><span>Three good things</span></div>
+        <div class="good" id="good">
+          <label><span>01</span><input type="text" data-g="0" placeholder="Something that went right" maxlength="240"></label>
+          <label><span>02</span><input type="text" data-g="1" placeholder="Someone you were glad to see" maxlength="240"></label>
+          <label><span>03</span><input type="text" data-g="2" placeholder="Anything small counts" maxlength="240"></label>
+        </div>
+      </div>
+
+      <div class="block">
+        <div class="k"><span>Write</span><button class="ghost" id="btn-prompt" type="button" style="padding:0">Prompt me</button></div>
+        <div class="prompt" id="prompt" hidden>
+          <p id="prompt-text"></p>
+          <button class="btn dark solid" id="prompt-use" type="button">Use it</button>
+          <button class="ghost" id="prompt-next" type="button" style="color:var(--ink)">Another</button>
+          <button class="ghost" id="prompt-close" type="button" style="color:var(--ink)">×</button>
+        </div>
+        <textarea id="body" spellcheck="true" placeholder="What happened, what you're thinking, what's next.&#10;&#10;- a dash and a space makes a bullet"></textarea>
+      </div>
+
+      <div class="block">
+        <div class="k"><span>Tags</span></div>
+        <div class="tags-row"><input type="text" id="tags" placeholder="work, family, training — comma separated" autocomplete="off"></div>
+        <div class="suggest" id="suggest"></div>
+      </div>
+
+      <div class="page-foot">
+        <span class="k" id="stamp"></span>
+        <button class="ghost" id="btn-copy" type="button">Copy</button>
+        <button class="ghost" id="btn-del" type="button">Delete entry</button>
+      </div>
+    </section>
+
+    <!-- ============ ENTRIES ============ -->
+    <section id="v-list" hidden aria-label="All entries">
+      <div class="filters">
+        <input type="search" id="q" placeholder="Search everything you've written" aria-label="Search entries">
+        <select id="f-mood" aria-label="Filter by mood">
+          <option value="">Any day</option>
+          <option value="5">Great days</option><option value="4">Good days</option><option value="3">Okay days</option>
+          <option value="2">Low days</option><option value="1">Rough days</option>
+        </select>
+      </div>
+      <div class="tagbar" id="tagbar"></div>
+      <div class="entries" id="entries"></div>
+      <div class="list-foot">
+        <button class="ghost dark-ghost" id="btn-md" type="button">Export as text (.md)</button>
+        <button class="ghost dark-ghost" id="btn-json" type="button">Export backup (.json)</button>
+        <button class="ghost dark-ghost" id="btn-import" type="button">Import backup</button>
+        <input type="file" id="import-file" accept="application/json,.json" hidden>
+      </div>
+    </section>
+  </div>
+
+  <!-- ============ ASIDE ============ -->
+  <aside class="aside" aria-label="Calendar and stats">
+    <div class="panel">
+      <div class="panel-head">
+        <button class="sq" id="m-prev" type="button" aria-label="Previous month">←</button>
+        <b id="m-name"></b>
+        <button class="sq" id="m-next" type="button" aria-label="Next month">→</button>
+      </div>
+      <div class="cal" id="cal"></div>
+      <div class="legend">
+        <span><i style="background:var(--paper)"></i>Written</span>
+        <span><i style="background:var(--volt)"></i>Good or great</span>
+        <span><i style="outline:2px solid var(--volt);outline-offset:1px"></i>Today</span>
+      </div>
+    </div>
+    <div class="stats" id="stats"></div>
+    <div class="panel">
+      <div class="panel-head"><b>On this day</b></div>
+      <div class="past" id="past"></div>
+    </div>
+  </aside>
+</div>
+
+<div id="toast" role="status"><span id="toast-msg"></span><button id="toast-undo" type="button">Undo</button></div>
+
+<script>
+/* ============================================================
+   JOURNAL — Xavier de Belle
+   One entry per day: a mood, three good things, free writing,
+   tags. Saved in this browser as you type; synced while signed in.
+   ============================================================ */
+var STORAGE_KEY = 'xdb.journal.v1';
+var $ = function (id) { return document.getElementById(id); };
+var MOODS = [null, 'Rough', 'Low', 'Okay', 'Good', 'Great'];
+var PROMPTS = [
+  'What took more energy than it should have?', 'What are you looking forward to this week?',
+  'What did you learn today, even something small?', 'Who made today better, and did you tell them?',
+  'What would you do differently if you had today again?', 'What is on your mind that you haven’t said out loud?',
+  'What went better than expected?', 'Where did the time actually go today?',
+  'What is one thing you want to remember from today?', 'What are you avoiding, and why?',
+  'What made you laugh?', 'What would make tomorrow a good day?',
+  'What are you proud of this week?', 'What drained you, and what gave you energy?',
+  'What decision is waiting on you?', 'If today were a photo, what would be in the frame?',
+  'What do you need more of right now? Less of?', 'What did you notice today that you usually miss?'
+];
+
+/* ---------- dates (local, as YYYY-MM-DD) ---------- */
+function pad(n) { return (n < 10 ? '0' : '') + n; }
+function key(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+function parse(k) { var p = k.split('-'); return new Date(+p[0], +p[1] - 1, +p[2]); }
+function shift(k, n) { var d = parse(k); d.setDate(d.getDate() + n); return key(d); }
+function todayKey() { return key(new Date()); }
+function hhmm(t) { var d = new Date(t); return pad(d.getHours()) + ':' + pad(d.getMinutes()); }
+function longDate(k) { return parse(k).toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }); }
+function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+
+/* ---------- data ---------- */
+function listOf(v) { return Array.isArray(v) ? v : (v && typeof v === 'object' ? Object.values(v) : []); }
+function normEntry(e) {
+  if (!e || typeof e !== 'object' || !/^\d{4}-\d{2}-\d{2}$/.test(e.date || '')) return null;
+  var g = listOf(e.good).map(function (x) { return typeof x === 'string' ? x : ''; });
+  while (g.length < 3) g.push('');
+  return {
+    date: e.date, mood: Math.max(0, Math.min(5, Math.round(+e.mood || 0))),
+    good: g.slice(0, 3), body: typeof e.body === 'string' ? e.body : '',
+    tags: listOf(e.tags).map(function (t) { return String(t).trim(); }).filter(Boolean),
+    createdAt: +e.createdAt || 0, updatedAt: +e.updatedAt || 0
+  };
+}
+function normalise(d) {
+  if (!d || typeof d !== 'object') return null;
+  var seen = {}, out = [];
+  listOf(d.entries).map(normEntry).filter(Boolean).forEach(function (e) {
+    if (!seen[e.date] || e.updatedAt > seen[e.date].updatedAt) seen[e.date] = e;
+  });
+  Object.keys(seen).sort().forEach(function (k) { out.push(seen[k]); });
+  return { entries: out };
+}
+function defaultState() { return { entries: [] }; }
+function loadState() {
+  try { var s = normalise(JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null')); if (s) return s; } catch (e) {}
+  return defaultState();
+}
+function blank(e) { return !e.mood && !e.body.trim() && !e.good.some(function (g) { return g.trim(); }) && !e.tags.length; }
+
+var state = loadState();
+var sel = todayKey(), month = sel.slice(0, 7), view = 'write';
+var saveTimer = null, toastTimer = null, undoFn = null, promptAt = -1, tagsDraft = null;
+var filters = { q: '', mood: '', tag: '' };
+
+function byDate() { var m = {}; state.entries.forEach(function (e) { m[e.date] = e; }); return m; }
+function entry(k) { return byDate()[k] || null; }
+/* The entry for the day on screen, created the moment you write anything. */
+function editable() {
+  var e = entry(sel);
+  if (!e) {
+    e = normEntry({ date: sel, createdAt: Date.now() });
+    state.entries.push(e);
+    state.entries.sort(function (a, b) { return a.date < b.date ? -1 : 1; });
+  }
+  return e;
+}
+function touched(e) {
+  e.updatedAt = Date.now();
+  if (blank(e)) state.entries = state.entries.filter(function (x) { return x !== e; });
+  save();
+  renderAside(); renderStamp(); renderCount();
+}
+function saveNow() {
+  clearTimeout(saveTimer);
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
+  cloudTouch();
+}
+function save() { clearTimeout(saveTimer); saveTimer = setTimeout(saveNow, 400); }
+
+/* ---------- numbers ---------- */
+function words(t) { var m = (t || '').match(/[^\s•]+/g); return m ? m.length : 0; }
+function entryWords(e) { return words(e.body) + e.good.reduce(function (n, g) { return n + words(g); }, 0); }
+function streaks() {
+  var have = byDate(), t = todayKey();
+  var k = have[t] ? t : shift(t, -1), cur = 0;
+  while (have[k]) { cur++; k = shift(k, -1); }
+  var best = 0, run = 0, prev = null;
+  state.entries.forEach(function (e) {
+    run = prev && shift(prev, 1) === e.date ? run + 1 : 1;
+    best = Math.max(best, run); prev = e.date;
+  });
+  return { cur: cur, best: best };
+}
+
+/* ---------- rendering: write ---------- */
+function renderWrite() {
+  var e = entry(sel) || normEntry({ date: sel });
+  var d = parse(sel), t = todayKey();
+  $('d-week').textContent = sel === t ? 'Today · ' + d.toLocaleDateString(undefined, { weekday: 'long' })
+    : sel === shift(t, -1) ? 'Yesterday · ' + d.toLocaleDateString(undefined, { weekday: 'long' })
+    : d.toLocaleDateString(undefined, { weekday: 'long' });
+  $('d-date').innerHTML = '<span>' + esc(d.toLocaleDateString(undefined, { day: 'numeric', month: 'long' })) + '</span><em>' + d.getFullYear() + '</em>';
+  $('next').disabled = sel >= t;
+  $('today').style.visibility = sel === t ? 'hidden' : '';
+  $('moods').innerHTML = MOODS.slice(1).map(function (w, i) {
+    var n = i + 1;
+    return '<button type="button" class="mood' + (e.mood === n ? ' on' : '') + '" role="radio" aria-checked="' + (e.mood === n) + '" data-mood="' + n + '"><b>' + n + '</b><span>' + w + '</span></button>';
+  }).join('');
+  $('mood-word').textContent = e.mood ? MOODS[e.mood] : '';
+  Array.prototype.forEach.call(document.querySelectorAll('#good input'), function (inp) {
+    var v = e.good[+inp.getAttribute('data-g')];
+    if (inp.value !== v) inp.value = v;
+  });
+  if ($('body').value !== e.body) $('body').value = e.body;
+  var tv = tagsDraft && tagsDraft.date === sel ? tagsDraft.text : e.tags.join(', ');
+  if ($('tags').value !== tv) $('tags').value = tv;
+  renderSuggest(e);
+  renderStamp();
+  grow();
+}
+function renderStamp() {
+  var e = entry(sel);
+  $('stamp').textContent = e ? 'Saved ' + hhmm(e.updatedAt || Date.now()) + ' · ' + entryWords(e) + ' words' : 'Nothing written for this day yet';
+  $('btn-del').style.visibility = e ? '' : 'hidden';
+  $('btn-copy').style.visibility = e ? '' : 'hidden';
+}
+function allTags() {
+  var c = {};
+  state.entries.forEach(function (e) { e.tags.forEach(function (t) { var k = t.toLowerCase(); c[k] = c[k] || { t: t, n: 0 }; c[k].n++; }); });
+  return Object.keys(c).map(function (k) { return c[k]; }).sort(function (a, b) { return b.n - a.n || a.t.localeCompare(b.t); });
+}
+function renderSuggest(e) {
+  var mine = (e.tags || []).map(function (t) { return t.toLowerCase(); });
+  var s = allTags().filter(function (x) { return mine.indexOf(x.t.toLowerCase()) < 0; }).slice(0, 10);
+  $('suggest').innerHTML = s.map(function (x) { return '<button type="button" class="chip" data-tag="' + esc(x.t) + '">+ ' + esc(x.t) + '</button>'; }).join('');
+}
+function grow() {
+  var t = $('body');
+  if (window.CSS && CSS.supports && CSS.supports('field-sizing', 'content')) return;
+  t.style.height = 'auto'; t.style.height = Math.max(240, t.scrollHeight + 4) + 'px';
+}
+
+/* ---------- rendering: aside ---------- */
+function renderAside() {
+  var have = byDate(), t = todayKey();
+  var first = parse(month + '-01'), y = first.getFullYear(), m = first.getMonth();
+  $('m-name').textContent = first.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+  $('m-next').disabled = month >= t.slice(0, 7);
+  var lead = (first.getDay() + 6) % 7, days = new Date(y, m + 1, 0).getDate();
+  var h = ['M', 'T', 'W', 'T', 'F', 'S', 'S'].map(function (w) { return '<span class="wd">' + w + '</span>'; }).join('');
+  for (var i = 0; i < lead; i++) h += '<span class="day out"></span>';
+  for (var dd = 1; dd <= days; dd++) {
+    var k = month + '-' + pad(dd), e = have[k];
+    var cls = 'day' + (e ? (e.mood >= 4 ? ' good' : ' has') : '') + (k === t ? ' today' : '') + (k === sel ? ' sel' : '');
+    h += '<button type="button" class="' + cls + '" data-day="' + k + '"' + (k > t ? ' disabled' : '') +
+      ' aria-label="' + esc(longDate(k)) + (e ? ', written' + (e.mood ? ', ' + MOODS[e.mood] : '') : '') + '">' + dd + '</button>';
+  }
+  $('cal').innerHTML = h;
+
+  var s = streaks(), thisMonth = state.entries.filter(function (e) { return e.date.slice(0, 7) === t.slice(0, 7); }).length;
+  var recent = state.entries.filter(function (e) { return e.mood && e.date > shift(t, -30); });
+  var avg = recent.length ? recent.reduce(function (n, e) { return n + e.mood; }, 0) / recent.length : 0;
+  var total = state.entries.reduce(function (n, e) { return n + entryWords(e); }, 0);
+  $('stats').innerHTML = [
+    ['Streak', s.cur, s.cur === 1 ? 'day' : 'days'], ['Longest', s.best, s.best === 1 ? 'day' : 'days'],
+    ['This month', thisMonth, thisMonth === 1 ? 'entry' : 'entries'], ['Words', total >= 10000 ? Math.round(total / 1000) + 'k' : total, ''],
+    ['Mood · 30 days', avg ? MOODS[Math.round(avg)] : '—', ''], ['Entries', state.entries.length, '']
+  ].map(function (x) { return '<div class="stat"><span class="k">' + x[0] + '</span><b>' + x[1] + (x[2] ? '<small>' + x[2] + '</small>' : '') + '</b></div>'; }).join('');
+
+  // the same day in earlier years, then a month and a week before the selected day
+  var past = [], md = sel.slice(5);
+  state.entries.forEach(function (e) { if (e.date.slice(5) === md && e.date < sel) past.push([e, (+sel.slice(0, 4) - +e.date.slice(0, 4)) + ' year' + (+sel.slice(0, 4) - +e.date.slice(0, 4) === 1 ? '' : 's') + ' ago']); });
+  past.reverse();
+  var mo = parse(sel); mo.setMonth(mo.getMonth() - 1);
+  [[key(mo), 'A month ago'], [shift(sel, -7), 'A week ago']].forEach(function (x) { if (have[x[0]]) past.push([have[x[0]], x[1]]); });
+  $('past').innerHTML = past.length ? past.slice(0, 4).map(function (p) {
+    var e = p[0];
+    return '<button type="button" data-day="' + e.date + '"><span class="k">' + p[1] + ' · ' + esc(parse(e.date).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })) +
+      (e.mood ? ' · ' + MOODS[e.mood] : '') + '</span><p>' + esc(excerpt(e)) + '</p></button>';
+  }).join('') : '<div class="none">Nothing from this day in the past yet. Keep going: next year it will be here.</div>';
+}
+function excerpt(e) {
+  var b = e.body.replace(/^\s*(• |\d+[.)] )/gm, '').replace(/\s+/g, ' ').trim();
+  var g = e.good.filter(function (x) { return x.trim(); });
+  return b || (g.length ? 'Good things: ' + g.join(' · ') : (e.mood ? 'A ' + MOODS[e.mood].toLowerCase() + ' day.' : ''));
+}
+function renderCount() { $('count').textContent = state.entries.length || ''; }
+
+/* ---------- rendering: entries ---------- */
+function renderList() {
+  var q = filters.q.trim().toLowerCase();
+  var tags = allTags();
+  $('tagbar').innerHTML = tags.length ? tags.slice(0, 24).map(function (x) {
+    var on = filters.tag && filters.tag.toLowerCase() === x.t.toLowerCase();
+    return '<button type="button" class="chip' + (on ? ' on' : '') + '" data-ftag="' + esc(x.t) + '">#' + esc(x.t) + ' ' + x.n + '</button>';
+  }).join('') : '';
+  var list = state.entries.slice().reverse().filter(function (e) {
+    if (filters.mood && e.mood !== +filters.mood) return false;
+    if (filters.tag && !e.tags.some(function (t) { return t.toLowerCase() === filters.tag.toLowerCase(); })) return false;
+    if (q && (e.body + ' ' + e.good.join(' ') + ' ' + e.tags.join(' ') + ' ' + longDate(e.date)).toLowerCase().indexOf(q) < 0) return false;
+    return true;
+  });
+  if (!state.entries.length) {
+    $('entries').innerHTML = '<div class="nothing"><h3>Nothing<br>written yet</h3><p>Start with today. A mood and one good thing is already an entry.</p></div>';
+    return;
+  }
+  if (!list.length) { $('entries').innerHTML = '<div class="nothing"><h3>Nothing<br>matches</h3><p>Try fewer words, or clear the filters.</p></div>'; return; }
+  var lastMonth = '';
+  $('entries').innerHTML = list.map(function (e) {
+    var d = parse(e.date), m = e.date.slice(0, 7), head = '';
+    if (m !== lastMonth) { lastMonth = m; head = '<div class="k" style="margin:' + (head ? '10px' : '6px') + ' 0 2px">' + esc(d.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })) + '</div>'; }
+    var g = e.good.filter(function (x) { return x.trim(); }).length;
+    return head + '<button type="button" class="entry" data-day="' + e.date + '">' +
+      '<span class="d"><b>' + d.getDate() + '</b><span>' + esc(d.toLocaleDateString(undefined, { weekday: 'short', month: 'short' })) + '</span></span>' +
+      '<span class="meta">' + (e.mood ? '<i class="m' + (e.mood >= 4 ? ' hi' : '') + '">' + MOODS[e.mood] + '</i>' : '') +
+      (g ? '<i>' + g + ' good thing' + (g === 1 ? '' : 's') + '</i>' : '') +
+      e.tags.map(function (t) { return '<i>#' + esc(t) + '</i>'; }).join('') + '<i>' + entryWords(e) + ' words</i></span>' +
+      '<p>' + esc(e.body.replace(/^\s*(• |\d+[.)] )/gm, '').replace(/\s+/g, ' ').trim() || '—') + '</p>' +
+      (g ? '<span class="g">' + esc(e.good.filter(function (x) { return x.trim(); }).join(' · ')) + '</span>' : '') +
+      '</button>';
+  }).join('');
+}
+
+function setView(v) {
+  view = v;
+  document.querySelectorAll('.tab').forEach(function (t) { t.classList.toggle('on', t.getAttribute('data-view') === v); });
+  $('v-write').hidden = v === 'list';
+  $('v-list').hidden = v !== 'list';
+  document.body.classList.toggle('view-cal', v === 'cal');
+  if (v === 'list') renderList();
+  if (v === 'write') { renderWrite(); }
+}
+function go(k) {
+  if (k > todayKey()) return;
+  tagsDraft = null;
+  sel = k; month = k.slice(0, 7);
+  renderWrite(); renderAside();
+  if (view !== 'write') setView('write');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+function renderAll() { renderWrite(); renderAside(); renderCount(); if (view === 'list') renderList(); }
+
+/* ---------- toast, copy, files ---------- */
+function toast(msg, undo) {
+  clearTimeout(toastTimer); undoFn = undo || null;
+  $('toast-msg').textContent = msg;
+  $('toast-undo').style.display = undo ? '' : 'none';
+  $('toast').classList.add('on');
+  toastTimer = setTimeout(function () { $('toast').classList.remove('on'); undoFn = null; }, 5000);
+}
+function asText(e) {
+  var L = ['## ' + longDate(e.date) + (e.mood ? ' — ' + MOODS[e.mood] : '')];
+  var g = e.good.filter(function (x) { return x.trim(); });
+  if (g.length) { L.push('', '**Three good things**'); g.forEach(function (x, i) { L.push((i + 1) + '. ' + x); }); }
+  if (e.body.trim()) L.push('', e.body.replace(/^(\s*)• /gm, '$1- ').trim());
+  if (e.tags.length) L.push('', e.tags.map(function (t) { return '#' + t.replace(/\s+/g, '-'); }).join(' '));
+  return L.join('\n');
+}
+function copyText(text) {
+  function ok() { toast('Copied'); }
+  function fallback() {
+    var ta = document.createElement('textarea');
+    ta.value = text; ta.setAttribute('readonly', ''); ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0';
+    document.body.appendChild(ta); ta.select();
+    var done = false; try { done = document.execCommand('copy'); } catch (e) {}
+    ta.remove(); if (done) ok(); else toast("This browser wouldn't copy");
+  }
+  if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(text).then(ok, fallback); else fallback();
+}
+function download(name, text, type) {
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([text], { type: type }));
+  a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+}
+function importFile(f) {
+  var fr = new FileReader();
+  fr.onload = function () {
+    try {
+      var d = normalise(JSON.parse(String(fr.result)));
+      if (!d || !d.entries.length) throw 0;
+      var have = byDate(), added = 0, updated = 0;
+      d.entries.forEach(function (e) {
+        var h = have[e.date];
+        if (!h) { state.entries.push(e); added++; }
+        else if (e.updatedAt > h.updatedAt) { state.entries[state.entries.indexOf(h)] = e; updated++; }
+      });
+      state = normalise(state);
+      saveNow(); renderAll();
+      toast('Imported: ' + added + ' new, ' + updated + ' updated');
+    } catch (err) { toast("That file isn't a Journal backup"); }
+  };
+  fr.readAsText(f);
+}
+
+/* ============================================================
+   List typing — same as Notes
+   - a dash (or *) and a space at the start of a line → •
+   - Enter continues a bullet or numbered list; Enter on an empty item ends it
+   - Backspace on a bare bullet removes it; Tab / Shift+Tab indent a list line
+   ============================================================ */
+var BULLET = '• ', typing = false;
+function lineStart(v, i) { return v.lastIndexOf('\n', i - 1) + 1; }
+function replaceRange(ta, from, to, text) {
+  var before = ta.value;
+  ta.setSelectionRange(from, to);
+  var ok = false;
+  try { ok = document.execCommand('insertText', false, text); } catch (e) {}
+  if (!ok || ta.value === before && (to > from || text)) {
+    ta.value = before;
+    ta.setRangeText(text, from, to, 'end');
+  }
+  // browsers disagree on where the caret lands after an edit at the very end; say it outright
+  ta.setSelectionRange(from + text.length, from + text.length);
+}
+function listTyping(ta, ev) {
+  if (typing) return false;
+  var v = ta.value, c = ta.selectionStart;
+  if (c !== ta.selectionEnd) return false;
+  var type = (ev && ev.inputType) || '';
+  var ls = lineStart(v, c), before = v.slice(ls, c);
+  var done = false;
+  typing = true;
+  if (type === 'insertText' && /^\s*[-*] $/.test(before)) {
+    replaceRange(ta, ls, c, before.match(/^\s*/)[0] + BULLET);
+    done = true;
+  } else if ((type === 'insertLineBreak' || type === 'insertParagraph' || (type === 'insertText' && ev.data == null)) && v.charAt(c - 1) === '\n') {
+    var pls = lineStart(v, c - 1), prev = v.slice(pls, c - 1);
+    var m = prev.match(/^(\s*)(• |(\d+)([.)]) )(.*)$/);
+    if (m) {
+      if (!m[5].trim()) replaceRange(ta, pls, c, '');                       // empty item: end the list
+      else replaceRange(ta, c, c, m[1] + (m[3] ? (parseInt(m[3], 10) + 1) + m[4] + ' ' : BULLET));
+      done = true;
+    }
+  } else if (type === 'deleteContentBackward' && /^\s*•$/.test(before)) {
+    replaceRange(ta, c - 1, c, '');
+    done = true;
+  }
+  typing = false;
+  return done;
+}
+function listKeys(ta, ev) {
+  if (ev.key !== 'Tab' || ev.altKey || ev.metaKey || ev.ctrlKey) return false;
+  var v = ta.value, c = ta.selectionStart, ls = lineStart(v, c);
+  var le = v.indexOf('\n', c); if (le < 0) le = v.length;
+  var line = v.slice(ls, le);
+  if (!/^\s*(• |\d+[.)] )/.test(line)) return false;
+  ev.preventDefault();
+  var keepSel = ta.selectionEnd - c;
+  typing = true;
+  if (ev.shiftKey) {
+    var cut = Math.min(2, line.match(/^ */)[0].length);
+    if (cut) { replaceRange(ta, ls, ls + cut, ''); ta.setSelectionRange(c - cut, c - cut + keepSel); }
+  } else {
+    replaceRange(ta, ls, ls, '  '); ta.setSelectionRange(c + 2, c + 2 + keepSel);
+  }
+  typing = false;
+  return true;
+}
+
+/* ---------- wiring ---------- */
+$('moods').addEventListener('click', function (ev) {
+  var b = ev.target.closest('.mood'); if (!b) return;
+  var e = editable(), n = +b.getAttribute('data-mood');
+  e.mood = e.mood === n ? 0 : n;            // tap again to clear
+  touched(e); renderWrite();
+});
+$('good').addEventListener('input', function (ev) {
+  var inp = ev.target; if (!inp.hasAttribute('data-g')) return;
+  var e = editable(); e.good[+inp.getAttribute('data-g')] = inp.value; touched(e);
+});
+$('good').addEventListener('keydown', function (ev) {
+  if (ev.key !== 'Enter') return;
+  var i = +ev.target.getAttribute('data-g');
+  ev.preventDefault();
+  var nx = document.querySelector('#good input[data-g="' + (i + 1) + '"]');
+  (nx || $('body')).focus();
+});
+$('body').addEventListener('input', function (ev) {
+  listTyping(this, ev);
+  var e = editable(); e.body = this.value; touched(e); grow();
+});
+$('body').addEventListener('keydown', function (ev) {
+  if (listKeys(this, ev)) { var e = editable(); e.body = this.value; touched(e); }
+});
+$('tags').addEventListener('input', function () {
+  var e = editable();
+  tagsDraft = { date: sel, text: this.value };
+  var seen = {};
+  e.tags = this.value.split(',').map(function (t) { return t.trim(); }).filter(function (t) {
+    var k = t.toLowerCase(); if (!t || seen[k]) return false; seen[k] = 1; return true;
+  });
+  touched(e); renderSuggest(e);
+});
+$('tags').addEventListener('blur', function () { tagsDraft = null; renderWrite(); });
+$('suggest').addEventListener('click', function (ev) {
+  var b = ev.target.closest('[data-tag]'); if (!b) return;
+  var e = editable(); e.tags.push(b.getAttribute('data-tag'));
+  tagsDraft = null; touched(e); renderWrite();
+});
+$('prev').addEventListener('click', function () { go(shift(sel, -1)); });
+$('next').addEventListener('click', function () { go(shift(sel, 1)); });
+$('today').addEventListener('click', function () { go(todayKey()); });
+$('m-prev').addEventListener('click', function () { var d = parse(month + '-01'); d.setMonth(d.getMonth() - 1); month = key(d).slice(0, 7); renderAside(); });
+$('m-next').addEventListener('click', function () { var d = parse(month + '-01'); d.setMonth(d.getMonth() + 1); month = key(d).slice(0, 7); renderAside(); });
+document.addEventListener('click', function (ev) {
+  var b = ev.target.closest('[data-day]');
+  if (b && !b.disabled && (b.closest('#cal') || b.closest('#past') || b.closest('#entries'))) go(b.getAttribute('data-day'));
+  var t = ev.target.closest('.tab'); if (t) setView(t.getAttribute('data-view'));
+  var ft = ev.target.closest('[data-ftag]');
+  if (ft) { var v = ft.getAttribute('data-ftag'); filters.tag = filters.tag.toLowerCase() === v.toLowerCase() ? '' : v; renderList(); }
+});
+function showPrompt(step) {
+  promptAt = promptAt < 0 ? Math.floor(Math.random() * PROMPTS.length) : (promptAt + step) % PROMPTS.length;
+  $('prompt-text').textContent = PROMPTS[promptAt];
+  $('prompt').hidden = false;
+}
+$('btn-prompt').addEventListener('click', function () { showPrompt(1); });
+$('prompt-next').addEventListener('click', function () { showPrompt(1); });
+$('prompt-close').addEventListener('click', function () { $('prompt').hidden = true; });
+$('prompt-use').addEventListener('click', function () {
+  var ta = $('body'), q = PROMPTS[promptAt];
+  var add = (ta.value && !/\n$/.test(ta.value) ? '\n\n' : '') + q + '\n';
+  ta.focus(); var end = ta.value.length;
+  typing = true; replaceRange(ta, end, end, add); typing = false;
+  var e = editable(); e.body = ta.value; touched(e); grow();
+  $('prompt').hidden = true;
+});
+$('btn-del').addEventListener('click', function () {
+  var e = entry(sel); if (!e) return;
+  var at = state.entries.indexOf(e);
+  state.entries.splice(at, 1); saveNow(); renderAll();
+  toast('Deleted the entry for ' + parse(e.date).toLocaleDateString(undefined, { day: 'numeric', month: 'short' }), function () {
+    state.entries.splice(at, 0, e); saveNow(); renderAll();
+  });
+});
+$('btn-copy').addEventListener('click', function () { var e = entry(sel); if (e) copyText(asText(e)); });
+$('q').addEventListener('input', function () { filters.q = this.value; renderList(); });
+$('f-mood').addEventListener('change', function () { filters.mood = this.value; renderList(); });
+$('btn-md').addEventListener('click', function () {
+  download('journal-' + todayKey() + '.md', '# Journal\n\n' + state.entries.slice().reverse().map(asText).join('\n\n---\n\n') + '\n', 'text/markdown');
+});
+$('btn-json').addEventListener('click', function () {
+  download('journal-' + todayKey() + '.json', JSON.stringify({ app: 'xdb-journal', version: 1, exportedAt: new Date().toISOString(), entries: state.entries }, null, 2), 'application/json');
+});
+$('btn-import').addEventListener('click', function () { $('import-file').click(); });
+$('import-file').addEventListener('change', function () { if (this.files[0]) importFile(this.files[0]); this.value = ''; });
+$('toast-undo').addEventListener('click', function () { var u = undoFn; undoFn = null; $('toast').classList.remove('on'); if (u) u(); });
+document.addEventListener('keydown', function (ev) {
+  if (!ev.altKey) return;
+  if (ev.key === 'ArrowLeft') { ev.preventDefault(); go(shift(sel, -1)); }
+  else if (ev.key === 'ArrowRight') { ev.preventDefault(); go(shift(sel, 1)); }
+});
+// past midnight, "today" moves on: keep the page honest without a reload
+var lastToday = todayKey();
+setInterval(function () { var t = todayKey(); if (t !== lastToday) { if (sel === lastToday && !entry(sel)) sel = t; lastToday = t; renderAll(); } }, 60000);
+
+/* ---------- sync adapter: what this tool hands the shared sync code ---------- */
+var SYNC = {
+  doc: 'journal',                            // users/{uid}/tools/journal
+  storageKey: STORAGE_KEY,
+  noun: 'journal',
+
+  payload: function () { return { entries: state.entries }; },   // which day is on screen is not an edit
+
+  /* The database drops empty arrays (tags, good things); normalise() rebuilds them. */
+  apply: function (d, remote) {
+    var next = normalise(d);
+    if (!next) return false;
+    state = next;
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
+    renderAll();
+    return true;
+  },
+
+  untouched: function () { return !state.entries.length; },
+
+  flush: function () { saveNow(); },
+
+  describe: function (d) {
+    var es = listOf(d && d.entries).filter(function (e) { return e && e.date; });
+    var last = es.reduce(function (a, e) { return e.date > a ? e.date : a; }, '');
+    return es.length + ' entr' + (es.length === 1 ? 'y' : 'ies') + (last ? ', the latest ' + parse(last).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : '');
+  },
+
+  buttonClass: function (s) {
+    return 'btn sync-btn' + (s === 'synced' ? ' ok' : '') + ((s === 'conflict' || s === 'error') ? ' bad' : '');
+  }
+};
+
+/* ============================================================
+   Cloud sync — local first, optional, live while signed in
+
+   Shared by Project Phases, Budget Tracker and Idea Bank. Keep the copies
+   identical: everything tool-specific lives in the SYNC adapter just above.
+
+   Sync is by invitation: Xavier's account, plus the people he approves on
+   the Access page (members/{uid}). Signing in is how someone asks — their
+   request appears there, and sync starts on its own once it is approved.
+
+   Signed out, the tool is purely local and the Firebase SDK is never
+   fetched. Signed in as the owner, the cloud copy is watched live, so a
+   change on one device shows up on the other within a second or two.
+
+   Every write goes through the same pass — read the cloud, compare it
+   with the watermark, then act — so a device that is behind can never
+   overwrite a newer copy. When both sides changed, it asks.
+   ============================================================ */
+
+/* Public Firebase identifiers — not secrets. They ship in every Firebase
+   web app; the database rules are what protect the data. */
+var FIREBASE = {
+  apiKey:      'AIzaSyCu0CA6eLWIkhhl-Z7jr_dDisuXDt1dKco',
+  authDomain:  'xdb-tools.firebaseapp.com',
+  databaseURL: 'https://xdb-tools-default-rtdb.firebaseio.com',
+  projectId:   'xdb-tools',
+  appId:       '1:6009567091:web:f7ee8c43ebe1bd25fcb706'
+};
+var SDK = 'https://www.gstatic.com/firebasejs/10.12.2/';
+
+/* Who may sync. Courtesy checks only — the database rules enforce all of
+   it, and would refuse anyone else even if these lines were edited away. */
+var OWNER = 'jGJdt3h4EeaOL3mYWUHA4yMZsRx2';
+var ACCESS_URL = '../access.html';   // where requests are approved; tools live in tools/
+var META_KEY = SYNC.storageKey + '.meta';   // watermarks live beside the data, not in it
+
+var cloud = {
+  on: !!FIREBASE.databaseURL,
+  status: 'signedout',  // signedout | working | synced | conflict | pending | private | error
+  uid: null,            // set only when the signed-in account owns this sync
+  authed: false,
+  listening: false,
+  at: 0,
+  msg: '',
+  fb: null,
+  timer: null,
+  busy: false,          // a sync pass is in flight
+  again: false,         // something changed while it was, so run one more
+  pending: null,        // a conflict waiting on a decision
+  print: null,          // the synced data as last seen, to tell edits from re-saves
+  outgoing: 0,          // stamp of our own latest write, so its echo is not news
+  unwatch: null,
+  unmember: null,       // live watch on this account's membership
+  asked: false          // an access request was sent this session
+};
+
+function syncEl(id) { return document.getElementById(id); }
+
+/* No connection is not a failure: the tool keeps saving here and sends it all
+   once the connection is back. Firebase says "Client is offline" without a code. */
+function errCode(err) {
+  var c = (err && err.code) || '', m = (err && err.message) || '';
+  if (navigator.onLine === false) return 'unavailable';
+  if (!c && /offline|network|failed to fetch|load failed|dynamically imported/i.test(m)) return 'unavailable';
+  return c || 'failed';
+}
+function isOffline(code) { return code === 'unavailable' || code === 'timeout' || code === 'auth/network-request-failed'; }
+
+function explain(code) {
+  var offline = 'No connection. Everything still saves on this device and will sync when you are back online.';
+  var map = {
+    'auth/unauthorized-domain':
+      'This site is not on the Firebase authorised domains list. Add ' + location.hostname +
+      ' under Authentication → Settings → Authorized domains.',
+    'auth/operation-not-allowed':
+      'Google sign-in is not enabled for this Firebase project. Turn it on under Authentication → Sign-in method.',
+    'auth/popup-blocked':
+      'Your browser blocked the sign-in popup. Allow popups for this site, or try again.',
+    'auth/popup-closed-by-user':
+      'The sign-in window closed before it finished.',
+    'auth/network-request-failed': offline,
+    'unavailable': offline,
+    'timeout': offline,
+    'PERMISSION_DENIED':
+      'The database rules refused this account. Check the rules allow users/<your uid>.'
+  };
+  return map[code] || ('Sync failed' + (code ? ' (' + code + ')' : '') + '.');
+}
+
+function deviceName() {
+  var ua = navigator.userAgent;
+  if (/iPhone/.test(ua)) return 'iPhone';
+  if (/iPad/.test(ua)) return 'iPad';
+  if (/Android/.test(ua)) return 'Android';
+  if (/Mac OS X/.test(ua)) return 'Mac';
+  if (/Windows/.test(ua)) return 'Windows';
+  return 'this device';
+}
+
+/* Kept out of the tool's own data so exports stay clean and an imported
+   file never carries another device's watermark. */
+function meta() {
+  try {
+    var m = JSON.parse(localStorage.getItem(META_KEY) || '{}');
+    return { updatedAt: +m.updatedAt || 0, lastSyncedAt: +m.lastSyncedAt || 0, signedIn: !!m.signedIn };
+  } catch (e) { return { updatedAt: 0, lastSyncedAt: 0, signedIn: false }; }
+}
+function setMeta(patch) {
+  var m = meta();
+  for (var k in patch) m[k] = patch[k];
+  try { localStorage.setItem(META_KEY, JSON.stringify(m)); } catch (e) {}
+  return m;
+}
+
+/* Stamps only ever move forward past the watermark. Phone and laptop clocks
+   disagree by a second or two; without this, an edit made just after
+   taking a copy from a device whose clock runs ahead would look older than
+   the copy and never be sent. */
+function nextStamp() {
+  return Math.max(Date.now(), meta().lastSyncedAt + 1, cloud.outgoing + 1);
+}
+
+function syncPrint() { return JSON.stringify(SYNC.payload()); }
+
+/* A device that already held real data before sync existed has no
+   watermark, which would read as "never edited" and let the cloud replace
+   it silently. Mark it as holding unsynced work instead, so the worst case
+   is being asked. Runs once at boot, before anything is compared. */
+function seedMeta() {
+  var noWatermark = false;
+  try { noWatermark = localStorage.getItem(META_KEY) == null; } catch (e) {}
+  if (noWatermark && !SYNC.untouched()) setMeta({ updatedAt: 1 });
+  cloud.print = syncPrint();
+}
+
+/* ---- SDK, loaded once and only on demand ---- */
+/* With the site-wide account (assets/account.js) present, the tool shares
+   its one Firebase connection and its sign-in; opened on its own, it runs
+   its own. */
+function account() { return window.xdbAccount || null; }
+function loadSDK() {
+  if (cloud.fb) return Promise.resolve(cloud.fb);
+  if (account()) return account().sdk().then(function (s) {
+    cloud.fb = { auth: s.auth, db: s.db, a: s.a, f: s.f };
+    return cloud.fb;
+  });
+  return Promise.all([
+    import(SDK + 'firebase-app.js'),
+    import(SDK + 'firebase-auth.js'),
+    import(SDK + 'firebase-database.js')
+  ]).then(function (mods) {
+    var application = mods[0].initializeApp(FIREBASE);
+    cloud.fb = { auth: mods[1].getAuth(application), db: mods[2].getDatabase(application), a: mods[1], f: mods[2] };
+    return cloud.fb;
+  });
+}
+function docRef() { return cloud.fb.f.ref(cloud.fb.db, 'users/' + cloud.uid + '/tools/' + SYNC.doc); }
+
+function withTimeout(p, ms) {
+  return Promise.race([p, new Promise(function (_, no) {
+    setTimeout(function () { no({ code: 'timeout' }); }, ms);
+  })]);
+}
+
+/* ---- the three way decision ----------------------------------------
+   Local and cloud timestamps alone cannot tell an edit from a stale copy.
+   The watermark — the cloud stamp we last agreed with — is what makes
+   "both changed since we last spoke" detectable. */
+function reconcile(remote) {
+  var m = meta();
+  var localAt = m.updatedAt, syncedAt = m.lastSyncedAt;
+  var remoteAt = remote ? (+remote.updatedAt || 0) : 0;
+  if (!remote) return localAt ? 'push' : 'idle';
+  if (remoteAt === syncedAt) return localAt > syncedAt ? 'push' : 'idle';
+  return localAt > syncedAt ? 'conflict' : 'pull';
+}
+
+/* Taking a copy re-renders the page. If a field had the cursor, put it
+   back, so a change arriving from the other device does not throw you out
+   of where you were. */
+function keepingFocus(fn) {
+  function fields() { return Array.prototype.slice.call(document.querySelectorAll('input,textarea,select')); }
+  var a = document.activeElement, i = fields().indexOf(a), sel = null;
+  try { if (i >= 0 && a.selectionStart != null) sel = [a.selectionStart, a.selectionEnd]; } catch (e) {}
+  var result = fn();
+  var b = i >= 0 ? fields()[i] : null;
+  if (b && b !== document.activeElement) {
+    try { b.focus({ preventScroll: true }); if (sel) b.setSelectionRange(sel[0], sel[1]); } catch (e) {}
+  }
+  return result;
+}
+
+function adopt(remote) {
+  var d = remote && remote.data;
+  if (!d) return false;
+  if (!keepingFocus(function () { return SYNC.apply(d, remote); })) return false;
+  cloud.print = syncPrint();
+  var stamp = +remote.updatedAt || Date.now();
+  setMeta({ updatedAt: stamp, lastSyncedAt: stamp });
+  return true;
+}
+
+function pushNow() {
+  var stamp = nextStamp();
+  var print = syncPrint();
+  cloud.outgoing = stamp;
+  return cloud.fb.f.set(docRef(), { data: JSON.parse(print), updatedAt: stamp, device: deviceName() })
+    .then(function () {
+      var ahead = syncPrint() !== print;   // edited again while this was on its way
+      setMeta({ lastSyncedAt: stamp, updatedAt: ahead ? Math.max(meta().updatedAt, stamp + 1) : stamp });
+      cloud.at = stamp;
+      if (ahead) cloud.again = true;
+    });
+}
+function pullNow() {
+  return withTimeout(cloud.fb.f.get(docRef()), 12000).then(function (snap) {
+    return snap.exists() ? snap.val() : null;
+  });
+}
+
+function decide(remote) {
+  var move = reconcile(remote);
+  if (move === 'pull')     { adopt(remote); cloud.at = Date.now(); setStatus('synced'); return; }
+  if (move === 'push')     { return pushNow().then(function () { setStatus('synced'); }); }
+  if (move === 'conflict') { cloud.pending = remote; setStatus('conflict'); return; }
+  cloud.at = Date.now();
+  setStatus('synced');
+}
+
+/* One pass. Only one runs at a time; anything that asks while one is in
+   flight gets a second pass afterwards rather than being dropped. `known`
+   is a copy the live listener already has in hand, which saves a read. */
+function syncNow(userAsked, known) {
+  if (!cloud.on || !cloud.uid) return Promise.resolve();
+  if (cloud.busy) { cloud.again = true; return Promise.resolve(); }
+  if (cloud.status === 'conflict' && !userAsked) return Promise.resolve();
+  cloud.busy = true;
+  cloud.again = false;
+  clearTimeout(cloud.timer);
+  setStatus('working');
+  return (known ? Promise.resolve(known) : pullNow()).then(decide).then(function () {
+    cloud.busy = false;
+    if (cloud.again && cloud.status !== 'conflict') return syncNow();
+  }, function (err) {
+    cloud.busy = false;
+    cloud.msg = errCode(err);
+    setStatus('error');
+    if (userAsked) console.warn('[sync]', err);
+  });
+}
+
+/* Called on every save. Tools re-save on load, on navigation and on the
+   way out, so the fingerprint decides whether anything was really edited —
+   otherwise merely opening the tool would count as a change. */
+function cloudTouch() {
+  if (cloud.print === null) return;          // still booting
+  var p = syncPrint();
+  if (p === cloud.print) return;
+  cloud.print = p;
+  setMeta({ updatedAt: nextStamp() });
+  if (!cloud.on || !cloud.uid) return;
+  clearTimeout(cloud.timer);
+  cloud.timer = setTimeout(function () { syncNow(); }, 600);
+}
+
+/* ---- live ---- */
+function watch() {
+  if (cloud.unwatch || !cloud.uid) return;
+  cloud.unwatch = cloud.fb.f.onValue(docRef(), function (snap) {
+    var remote = snap.exists() ? snap.val() : null;
+    if (!remote) return;
+    var at = +remote.updatedAt || 0;
+    if (at === cloud.outgoing || at === meta().lastSyncedAt) return;   // our own write, or one we already have
+    if (cloud.status === 'conflict') { cloud.pending = remote; paintSync(); return; }
+    if (cloud.busy) { cloud.again = true; return; }
+    syncNow(false, remote);
+  }, function (err) {
+    cloud.unwatch = null;
+    cloud.msg = errCode(err);
+    setStatus('error');
+  });
+}
+function stopWatching() {
+  if (cloud.unwatch) { cloud.unwatch(); cloud.unwatch = null; }
+}
+
+/* ---- membership ----
+   Xavier always syncs. Anyone else is watched live at members/{uid}: when
+   he approves them, sync starts without a reload; if he removes them, it
+   stops and the tool carries on locally. Until then signing in files a
+   request (once per session) and the tool says so. */
+function admit(uid) {
+  if (cloud.uid === uid) return;
+  cloud.uid = uid;
+  syncNow();
+  watch();
+}
+function stopMembership() {
+  if (cloud.unmember) { cloud.unmember(); cloud.unmember = null; }
+}
+function askForAccess(user) {
+  if (cloud.asked) { setStatus('pending'); return; }
+  cloud.asked = true;
+  var ref = cloud.fb.f.ref(cloud.fb.db, 'requests/' + user.uid);
+  cloud.fb.f.set(ref, {
+    email: user.email || '', name: (user.displayName || '').slice(0, 120), at: Date.now(), tool: SYNC.doc
+  }).then(function () {
+    if (!cloud.uid) setStatus('pending');
+  }, function () {
+    // refused: this account was declined — say so, and keep working locally
+    if (!cloud.uid) setStatus('private');
+  });
+}
+function checkMembership(user) {
+  if (user.uid === OWNER) { admit(user.uid); return; }
+  setStatus('working');
+  cloud.unmember = cloud.fb.f.onValue(cloud.fb.f.ref(cloud.fb.db, 'members/' + user.uid), function (snap) {
+    if (snap.exists()) { admit(user.uid); return; }
+    if (cloud.uid) { cloud.uid = null; stopWatching(); clearTimeout(cloud.timer); }
+    askForAccess(user);
+  }, function () {
+    cloud.uid = null;
+    stopWatching();
+    setStatus('private');
+  });
+}
+
+/* ---- sign in / out ---- */
+function listen(fb) {
+  if (cloud.listening) return;
+  cloud.listening = true;
+  fb.a.onAuthStateChanged(fb.auth, function (user) {
+    cloud.authed = !!user;
+    setMeta({ signedIn: !!user });
+    stopWatching();
+    stopMembership();
+    cloud.uid = null;
+    cloud.asked = false;
+    if (!user) { setStatus('signedout'); return; }
+    checkMembership(user);
+  });
+}
+
+function signIn() {
+  if (!cloud.on) return;
+  setMeta({ signedIn: true });   // so a redirect sign-in is picked up when the page comes back
+  setStatus('working');
+  if (account()) {
+    loadSDK().then(listen).catch(function () {});
+    account().signIn().catch(function (err) {
+      if (err && err.code === 'auth/popup-closed-by-user') { if (!cloud.authed) setStatus('signedout'); return; }
+      cloud.msg = errCode(err);
+      setStatus('error');
+    });
+    return;
+  }
+  loadSDK().then(function (fb) {
+    listen(fb);
+    var provider = new fb.a.GoogleAuthProvider();
+    if (provider.setCustomParameters) provider.setCustomParameters({ prompt: 'select_account' });   // always offer the account picker
+    return fb.a.signInWithPopup(fb.auth, provider).catch(function (err) {
+      // iOS and locked-down browsers block popups; a redirect always works
+      if (err && /popup-blocked|operation-not-supported/i.test(err.code || '')) return fb.a.signInWithRedirect(fb.auth, provider);
+      throw err;
+    });
+  }).catch(function (err) {
+    setMeta({ signedIn: false });
+    cloud.msg = errCode(err);
+    setStatus('error');
+  });
+}
+function signOutNow() {
+  if (account()) { account().signOut(); return; }
+  if (cloud.fb) cloud.fb.a.signOut(cloud.fb.auth);
+}
+function syncClick() {
+  if (account() && cloud.authed) { account().openPanel(); return; }   // signed in: the account panel has it all
+  if (!cloud.uid) signIn(); else syncNow(true);
+}
+
+/* ---- the choice, in plain words ----
+   Two situations ask: a browser with work of its own signing in for the
+   first time, and two devices that both changed things before they could
+   sync. The text says which, what each side holds, and which is newer. */
+function summary(d) {
+  var s = '';
+  try { s = String(SYNC.describe(d) || ''); } catch (e) {}
+  return s.replace(/^It holds /, '').replace(/\.$/, '') || 'a copy';
+}
+function whenLabel(ms) {
+  if (!ms) return '';
+  var d = new Date(ms), now = new Date();
+  var day = d.toDateString() === now.toDateString() ? 'today'
+    : new Date(now.getTime() - 864e5).toDateString() === d.toDateString() ? 'yesterday'
+    : d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  return day + ' at ' + hhmm(ms);
+}
+function otherDevice(remote) {
+  var other = (remote && remote.device) || '';
+  if (!other) return 'your other device';
+  return other === deviceName() ? 'your other ' + other : 'your ' + other;
+}
+function choiceWords(remote) {
+  var here = deviceName(), m = meta();
+  var mine = summary(JSON.parse(syncPrint())), theirs = summary(remote.data);
+  var remoteAt = +remote.updatedAt || 0;
+  var other = otherDevice(remote), otherShort = other.replace(/^your /, 'the ');
+  if (!m.lastSyncedAt) {
+    return {
+      text: 'This browser already has its own ' + SYNC.noun + ' (' + mine + '). Your account has ' + theirs +
+        ', last saved from ' + other + ' ' + whenLabel(remoteAt) + '. Which should this browser use? ' +
+        'Whichever you don\u2019t pick is kept here as a backup for ' + BACKUP_DAYS + ' days.',
+      local: 'Keep this browser\u2019s',
+      cloud: 'Use my account\u2019s'
+    };
+  }
+  var localNewer = m.updatedAt > remoteAt;
+  return {
+    text: 'This ' + here + ' and ' + other + ' both made changes before they could sync. ' +
+      'This ' + here + (m.updatedAt > 1e12 ? ', ' + whenLabel(m.updatedAt) : '') + ': ' + mine + (localNewer ? ' (newer)' : '') + '. ' +
+      other.charAt(0).toUpperCase() + other.slice(1) + ', ' + whenLabel(remoteAt) + ': ' + theirs + (localNewer ? '' : ' (newer)') + '. ' +
+      'Which version do you want? The other is kept here as a backup for ' + BACKUP_DAYS + ' days.',
+    local: 'Keep this ' + here + '\u2019s',
+    cloud: 'Use ' + otherShort + '\u2019s'
+  };
+}
+
+/* ---- backup of the version not chosen ----
+   Whichever side loses a choice is saved on this device for a week, with
+   Restore on the bar. Restoring is itself undoable: the version it replaces
+   becomes the backup. */
+var BACKUP_KEY = SYNC.storageKey + '.backup';
+var BACKUP_DAYS = 7;
+function readBackup() {
+  try {
+    var b = JSON.parse(localStorage.getItem(BACKUP_KEY) || 'null');
+    if (b && b.data && Date.now() - (+b.at || 0) < BACKUP_DAYS * 864e5) return b;
+  } catch (e) {}
+  return null;
+}
+function writeBackup(b) {
+  try { localStorage.setItem(BACKUP_KEY, JSON.stringify(b)); } catch (e) {}
+}
+function keepBackup(data, label, restored) {
+  writeBackup({ data: data, at: Date.now(), label: label, summary: summary(data), shown: true, restored: !!restored });
+}
+function dismissBackup() {
+  var b = readBackup();
+  if (b) { b.shown = false; writeBackup(b); }
+  paintSync();
+}
+function restoreBackup() {
+  var b = readBackup();
+  if (!b) return;
+  var current = JSON.parse(syncPrint());
+  var ok = keepingFocus(function () { return SYNC.apply(b.data, { data: b.data, updatedAt: Date.now(), device: deviceName() }); });
+  if (!ok) return;
+  keepBackup(current, 'the version you just replaced', true);
+  cloud.print = syncPrint();
+  setMeta({ updatedAt: nextStamp() });   // the restored version is now the newest edit, and goes up as one
+  if (cloud.uid) syncNow(true); else paintSync();
+}
+
+/* ---- conflict resolution ----
+   The bar's two buttons also serve the backup: with no choice pending,
+   the first restores it and the second puts the note away. */
+function keepLocal() {
+  var remote = cloud.pending;
+  if (!remote) { restoreBackup(); return; }
+  keepBackup(remote.data, 'the version from ' + otherDevice(remote).replace(/^your /, 'the '));
+  cloud.pending = null;
+  var seen = +remote.updatedAt || 0;
+  // acknowledge the copy we saw, and stay ahead of it so this device wins
+  setMeta({ lastSyncedAt: seen, updatedAt: Math.max(meta().updatedAt, seen + 1) });
+  cloud.status = 'working';
+  syncNow(true);
+}
+function keepCloud() {
+  var remote = cloud.pending;
+  if (!remote) { dismissBackup(); return; }
+  keepBackup(JSON.parse(syncPrint()), 'this ' + deviceName() + '\u2019s version');
+  cloud.pending = null;
+  adopt(remote);
+  cloud.at = Date.now();
+  setStatus('synced');
+}
+
+/* ---- the visible half ---- */
+function hhmm(ms) {
+  var d = new Date(ms);
+  return (d.getHours() < 10 ? '0' : '') + d.getHours() + ':' + (d.getMinutes() < 10 ? '0' : '') + d.getMinutes();
+}
+function setStatus(s) {
+  cloud.status = s;
+  if (s === 'synced') cloud.at = cloud.at || Date.now();
+  paintSync();
+}
+
+function paintSync() {
+  var btn = syncEl('btn-sync'), out = syncEl('btn-signout'), bar = syncEl('sync-bar');
+  if (!btn) return;
+  if (!cloud.on) { btn.style.display = 'none'; out.style.display = 'none'; bar.classList.remove('on'); return; }
+
+  var label, title;
+  switch (cloud.status) {
+    case 'working':  label = 'Syncing…';                   title = 'Talking to the cloud'; break;
+    case 'synced':   label = 'Live · ' + hhmm(cloud.at);   title = 'Signed in — changes on your other devices appear here as they happen'; break;
+    case 'conflict': label = 'Pick a version';             title = 'Two versions to choose between \u2014 see the note below'; break;
+    case 'pending':  label = 'Access requested';           title = 'Waiting for Xavier to approve this account'; break;
+    case 'private':  label = 'No access';                  title = 'This account is not on the invitation list'; break;
+    case 'error':    label = isOffline(cloud.msg) ? 'Offline \u00b7 saved here' : 'Sync failed';                title = explain(cloud.msg); break;
+    default:         label = 'Sign in to sync';            title = 'Keep this in step across your devices';
+  }
+  var acct = account();
+  if (acct && cloud.authed) {
+    btn.innerHTML = acct.badgeHTML() + ' <span>' + label.replace(/[&<>]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]; }) + '</span>';
+    title += ' \u2014 open your account';
+  } else {
+    btn.textContent = label;
+  }
+  btn.title = title;
+  btn.className = SYNC.buttonClass(cloud.status);
+  btn.style.display = '';
+  out.style.display = cloud.authed && !acct ? '' : 'none';   // with the site account, signing out lives in its panel
+
+  var what = syncEl('sync-what'), kl = syncEl('sync-keep-local'), kc = syncEl('sync-keep-cloud');
+  if (cloud.status === 'pending' || cloud.status === 'private' || cloud.status === 'error') {
+    what.textContent = cloud.status === 'pending'
+      ? 'Sync is by invitation, and your request is in. Once Xavier approves it, syncing starts here on its own. ' +
+        'Until then everything keeps saving in this browser as usual. '
+      : cloud.status === 'private'
+      ? 'Sync on this site is by invitation, and this account isn\u2019t on the list. ' +
+        'Everything still saves in this browser exactly as before, and nothing is sent anywhere. '
+      : explain(cloud.msg);
+    if (cloud.status !== 'error') {
+      var more = document.createElement('a');
+      more.href = ACCESS_URL;
+      more.textContent = 'About access \u2192';
+      what.appendChild(more);
+    }
+    kl.style.display = 'none';
+    kc.style.display = 'none';
+    bar.classList.add('on');
+    return;
+  }
+  kl.style.display = '';
+  kc.style.display = '';
+  var b = readBackup();
+  if (cloud.status === 'conflict' && cloud.pending) {
+    var w = choiceWords(cloud.pending);
+    what.textContent = w.text;
+    kl.textContent = w.local;
+    kc.textContent = w.cloud;
+    bar.classList.add('on');
+  } else if (b && b.shown) {
+    what.textContent = b.restored
+      ? 'Restored. The version you replaced (' + b.summary + ') is saved here in case you want it back.'
+      : 'Done. The version you didn\u2019t keep \u2014 ' + b.label + ' (' + b.summary + ') \u2014 is saved on this device for ' + BACKUP_DAYS + ' days.';
+    kl.textContent = b.restored ? 'Switch back' : 'Restore it';
+    kc.textContent = 'OK';
+    bar.classList.add('on');
+  } else {
+    bar.classList.remove('on');
+  }
+}
+
+function initCloud() {
+  seedMeta();
+  paintSync();
+  if (!cloud.on) return;
+
+  /* Only someone who has signed in here before gets the SDK on load; a
+     visitor who never touches the button never fetches it. Signed in
+     anywhere on the site counts. */
+  var acct = account();
+  if (acct) {
+    acct.registerTool({ doc: SYNC.doc, syncNow: function () { syncNow(true); } });
+    acct.on(function (st) {
+      if (st.user && !cloud.listening) loadSDK().then(listen).catch(function () {});   // signed in from the panel
+      paintSync();
+    });
+  }
+  if (meta().signedIn || (acct && acct.wanted())) {
+    setStatus('working');
+    loadSDK().then(listen).catch(function (err) { cloud.msg = errCode(err); setStatus('error'); });
+  }
+
+  document.addEventListener('visibilitychange', function () {
+    if (!cloud.uid) return;
+    if (document.hidden) {
+      // a phone suspends the page soon after it hides: send anything unsent now
+      SYNC.flush();
+      if (meta().updatedAt > meta().lastSyncedAt) syncNow();
+    } else {
+      syncNow();
+    }
+  });
+  window.addEventListener('focus', function () { if (cloud.uid) syncNow(); });
+  window.addEventListener('online', function () { if (cloud.uid) syncNow(); });
+}
+
+/* ---------- boot ---------- */
+renderAll();
+initCloud();
+window.addEventListener('beforeunload', saveNow);
+window.addEventListener('pagehide', saveNow);
+
+// test hooks
+window.__journal = { state: function () { return state; }, go: go };
+</script>
+</body>
+</html>

@@ -51,7 +51,9 @@
   var TOOLS = [
     { doc: 'project-phases', name: 'Project Phases', href: 'tools/project-tracker.html', meta: 'ptt.v1.meta' },
     { doc: 'budget-tracker', name: 'Budget Tracker', href: 'tools/budget-tracker.html', meta: 'debelle.budget-tracker.v3.meta' },
-    { doc: 'idea-bank',      name: 'Idea Bank',      href: 'tools/idea-bank.html',      meta: 'ideabank.v1.meta' }
+    { doc: 'idea-bank',      name: 'Idea Bank',      href: 'tools/idea-bank.html',      meta: 'ideabank.v1.meta' },
+    { doc: 'notes',          name: 'Notes',          href: 'tools/notes.html',          meta: 'xdb.notes.v1.meta' },
+    { doc: 'journal',        name: 'Journal',        href: 'tools/journal.html',        meta: 'xdb.journal.v1.meta' }
   ];
 
   var S = { status: 'signedout', user: null, pending: 0, msg: '' };

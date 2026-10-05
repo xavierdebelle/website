@@ -1,0 +1,35 @@
+{
+  "id": "journal",
+  "name": "Journal",
+  "short_name": "Journal",
+  "description": "A page a day: how it went, three good things, and whatever needs writing down.",
+  "start_url": "journal.html",
+  "scope": "journal",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "categories": [
+    "productivity",
+    "lifestyle"
+  ],
+  "icons": [
+    {
+      "src": "icons/journal-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/journal-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/journal-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
