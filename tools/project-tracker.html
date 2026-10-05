@@ -18,6 +18,14 @@
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Project Phases — Xavier de Belle">
 <meta name="twitter:card" content="summary_large_image">
+<!-- installable app: works offline once opened, syncs when back online (pwa.js, pwa-sw.js) -->
+<link rel="manifest" href="project-tracker.webmanifest">
+<link rel="apple-touch-icon" href="icons/project-tracker-180.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Phases">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="theme-color" content="#E8232D">
+<script src="pwa.js" data-app="project-tracker"></script>
 <style>
 @import url("https://use.typekit.net/zxm4vjv.css");
 @import url("https://fonts.googleapis.com/css2?family=Inter+Tight:wght@300;400;500;600;700;800&display=swap");
@@ -405,6 +413,7 @@ body.view .client-grid{grid-template-columns:1fr}
     <button class="btn" id="btn-import">Import</button>
     <button class="btn" id="btn-share" style="display:none" title="A read-only link to this project for your client">Client link</button>
     <span class="view-pill">View only · updates live</span>
+    <button class="btn ghost" type="button" data-pwa-install style="display:none" title="Install as an app: its own icon, works offline">Install app</button>
     <button class="btn" id="btn-sync" style="display:none">Sign in to sync</button>
     <button class="btn ghost" id="btn-signout" style="display:none" title="Sign out of sync">Sign out</button>
   </div></header>
@@ -2859,6 +2868,16 @@ var cloud = {
 
 function syncEl(id) { return document.getElementById(id); }
 
+/* No connection is not a failure: the tool keeps saving here and sends it all
+   once the connection is back. Firebase says "Client is offline" without a code. */
+function errCode(err) {
+  var c = (err && err.code) || '', m = (err && err.message) || '';
+  if (navigator.onLine === false) return 'unavailable';
+  if (!c && /offline|network|failed to fetch|load failed|dynamically imported/i.test(m)) return 'unavailable';
+  return c || 'failed';
+}
+function isOffline(code) { return code === 'unavailable' || code === 'timeout' || code === 'auth/network-request-failed'; }
+
 function explain(code) {
   var offline = 'No connection. Everything still saves on this device and will sync when you are back online.';
   var map = {
@@ -3036,7 +3055,7 @@ function syncNow(userAsked, known) {
     if (cloud.again && cloud.status !== 'conflict') return syncNow();
   }, function (err) {
     cloud.busy = false;
-    cloud.msg = (err && err.code) || 'failed';
+    cloud.msg = errCode(err);
     setStatus('error');
     if (userAsked) console.warn('[sync]', err);
   });
@@ -3069,7 +3088,7 @@ function watch() {
     syncNow(false, remote);
   }, function (err) {
     cloud.unwatch = null;
-    cloud.msg = (err && err.code) || 'failed';
+    cloud.msg = errCode(err);
     setStatus('error');
   });
 }
@@ -3142,7 +3161,7 @@ function signIn() {
     loadSDK().then(listen).catch(function () {});
     account().signIn().catch(function (err) {
       if (err && err.code === 'auth/popup-closed-by-user') { if (!cloud.authed) setStatus('signedout'); return; }
-      cloud.msg = (err && err.code) || 'failed';
+      cloud.msg = errCode(err);
       setStatus('error');
     });
     return;
@@ -3158,7 +3177,7 @@ function signIn() {
     });
   }).catch(function (err) {
     setMeta({ signedIn: false });
-    cloud.msg = (err && err.code) || 'failed';
+    cloud.msg = errCode(err);
     setStatus('error');
   });
 }
@@ -3301,7 +3320,7 @@ function paintSync() {
     case 'conflict': label = 'Pick a version';             title = 'Two versions to choose between \u2014 see the note below'; break;
     case 'pending':  label = 'Access requested';           title = 'Waiting for Xavier to approve this account'; break;
     case 'private':  label = 'No access';                  title = 'This account is not on the invitation list'; break;
-    case 'error':    label = 'Sync failed';                title = explain(cloud.msg); break;
+    case 'error':    label = isOffline(cloud.msg) ? 'Offline \u00b7 saved here' : 'Sync failed';                title = explain(cloud.msg); break;
     default:         label = 'Sign in to sync';            title = 'Keep this in step across your devices';
   }
   var acct = account();
@@ -3375,7 +3394,7 @@ function initCloud() {
   }
   if (meta().signedIn || (acct && acct.wanted())) {
     setStatus('working');
-    loadSDK().then(listen).catch(function (err) { cloud.msg = (err && err.code) || 'failed'; setStatus('error'); });
+    loadSDK().then(listen).catch(function (err) { cloud.msg = errCode(err); setStatus('error'); });
   }
 
   document.addEventListener('visibilitychange', function () {

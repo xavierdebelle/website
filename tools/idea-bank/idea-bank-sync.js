@@ -24,6 +24,16 @@
       print: null, outgoing: 0, unwatch: null, unmember: null, asked: false
     };
 
+    /* No connection is not a failure: the tool keeps saving here and sends it all
+       once the connection is back. Firebase says "Client is offline" without a code. */
+    function errCode(err) {
+      var c = (err && err.code) || '', m = (err && err.message) || '';
+      if (navigator.onLine === false) return 'unavailable';
+      if (!c && /offline|network|failed to fetch|load failed|dynamically imported/i.test(m)) return 'unavailable';
+      return c || 'failed';
+    }
+    function isOffline(code) { return code === 'unavailable' || code === 'timeout' || code === 'auth/network-request-failed'; }
+
     function explain(code) {
       var offline = 'No connection. Everything still saves on this device and will sync when you are back online.';
       var map = {
@@ -136,7 +146,7 @@
         if (cloud.again && cloud.status !== 'conflict') return syncNow();
       }, function (err) {
         cloud.busy = false;
-        cloud.msg = (err && err.code) || 'failed';
+        cloud.msg = errCode(err);
         setStatus('error');
         if (userAsked) console.warn('[sync]', err);
       });
@@ -163,7 +173,7 @@
         syncNow(false, remote);
       }, function (err) {
         cloud.unwatch = null;
-        cloud.msg = (err && err.code) || 'failed';
+        cloud.msg = errCode(err);
         setStatus('error');
       });
     }
@@ -223,7 +233,7 @@
         loadSDK().then(listen).catch(function () {});
         account().signIn().catch(function (err) {
           if (err && err.code === 'auth/popup-closed-by-user') { if (!cloud.authed) setStatus('signedout'); return; }
-          cloud.msg = (err && err.code) || 'failed';
+          cloud.msg = errCode(err);
           setStatus('error');
         });
         return;
@@ -238,7 +248,7 @@
         });
       }).catch(function (err) {
         setMeta({ signedIn: false });
-        cloud.msg = (err && err.code) || 'failed';
+        cloud.msg = errCode(err);
         setStatus('error');
       });
     }
@@ -362,7 +372,7 @@
         case 'conflict': v.label = 'Pick a version'; v.title = 'Two versions to choose between \u2014 see the note below'; break;
         case 'pending':  v.label = 'Access requested'; v.title = 'Waiting for Xavier to approve this account'; break;
         case 'private':  v.label = 'No access'; v.title = 'This account is not on the invitation list'; break;
-        case 'error':    v.label = 'Sync failed'; v.title = explain(cloud.msg); break;
+        case 'error':    v.label = isOffline(cloud.msg) ? 'Offline \u00b7 saved here' : 'Sync failed'; v.title = explain(cloud.msg); break;
         default:         v.label = 'Sign in to sync'; v.title = 'Keep this in step across your devices';
       }
       if (cloud.status === 'pending' || cloud.status === 'private' || cloud.status === 'error') {
@@ -411,7 +421,7 @@
       }
       if (meta().signedIn || (acct && acct.wanted())) {
         setStatus('working');
-        loadSDK().then(listen).catch(function (err) { cloud.msg = (err && err.code) || 'failed'; setStatus('error'); });
+        loadSDK().then(listen).catch(function (err) { cloud.msg = errCode(err); setStatus('error'); });
       }
       document.addEventListener('visibilitychange', onVis);
       window.addEventListener('focus', onWake);

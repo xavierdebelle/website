@@ -5,6 +5,63 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v72 — 2026-10-04
+
+**What's new** · Budget, Phases, Idea Bank · [tools.html#personal]
+### Three more apps<br>that work offline
+Budget Tracker, Project Phases and Idea Bank now install like apps, with
+their own icon, and open without a connection. Work offline as usual:
+everything saves on the device, and the moment you're back online it syncs
+to your account and your other devices.
+
+- Chrome, Edge and Android: **Install app** (in Idea Bank, under Manage).
+- iPhone and iPad: open the tool in Safari, tap Share, then Add to Home
+  Screen.
+
+**Installable — `tools/budget-tracker.html`, `project-tracker.html`, `idea-bank.html`**
+- Manifests `tools/<app>.webmanifest`, icons in `tools/icons/` (180, 192,
+  512, maskable 512) in each tool's own colours. Scope `tools/<app>`, so each
+  is its own app (Idea Bank's scope covers its `idea-bank/` folder too).
+- `pwa-sw.js` (VERSION v72): the three join `APPS` with the files they load
+  from the site (incl. `assets/account.js`, Idea Bank's `idea-bank/` files).
+  New `LIBS` + shared cache `xdb-app-lib`: the Firebase library (10.12.2),
+  React/ReactDOM/Babel for Idea Bank, and the font stylesheets, fetched at
+  install; version-pinned code and font files are kept as first fetched,
+  font stylesheets are refreshed in the background. Database traffic is
+  never cached or touched.
+- `pwa.js`: `window.xdbPwa.can()/install()` and an `xdb-pwa` event, for
+  pages that draw their own Install button (Idea Bank → Manage → Install
+  app). Budget Tracker and Project Phases have an Install app button beside
+  the sync button (hidden in Project Phases' client view).
+
+**Sync while offline — all three tools + `add-cloud-sync/assets/sync-core.js`**
+- No connection now reads **Offline · saved here** with "No connection.
+  Everything still saves on this device and will sync when you are back
+  online." instead of "Sync failed (failed)". New `errCode()` maps Firebase's
+  codeless "Client is offline", network and module-load errors (and
+  `navigator.onLine === false`) to `unavailable`. Sync logic unchanged: on
+  reconnect the existing `online` listener and live listener push the
+  offline edits; if another device also changed things meanwhile, the usual
+  choice with a 7-day backup appears.
+- New originals: `budget_tracker_app_v17.html`, `project_tracker_v13.html`,
+  `ideas-v10/` (Install app in Manage; offline wording).
+
+**Verified (Playwright Chromium; built-in browser can't run service workers)**
+- All three: installable, no manifest errors; after one online visit they
+  opened with the server stopped and every other host unreachable — fonts,
+  React and the Firebase library from the kept copies.
+- Mock database: Idea Bank and Project Phases — edit online → in the cloud;
+  go offline → edit → "Offline · saved here", not in the cloud; reload while
+  offline → the edit is still there; back online → edit in the cloud,
+  "Live". Budget Tracker: offline label, reload offline, back to Live.
+
+**Not verifiable here:** signing in *inside* an installed iPhone app (Google
+sign-in in Home Screen apps can be refused by iOS). The iPhone app also has
+its own storage, separate from Safari: it starts empty and fills from the
+account after sign-in.
+
+---
+
 ## v71 — 2026-10-05
 
 **What's new** · Feed & Carousel Planner · [tools.html#portfolio]

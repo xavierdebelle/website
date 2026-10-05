@@ -1,0 +1,35 @@
+{
+  "id": "project-tracker",
+  "name": "Project Phases",
+  "short_name": "Phases",
+  "description": "Break a project into phases, log the hours, and share a clean view with the client.",
+  "start_url": "project-tracker.html",
+  "scope": "project-tracker",
+  "display": "standalone",
+  "background_color": "#E8232D",
+  "theme_color": "#E8232D",
+  "categories": [
+    "productivity",
+    "business"
+  ],
+  "icons": [
+    {
+      "src": "icons/project-tracker-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/project-tracker-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/project-tracker-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

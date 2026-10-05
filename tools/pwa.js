@@ -10,7 +10,10 @@
      prompt; iPhone and iPad get a note on how to add it to the Home
      Screen, since Safari has no prompt;
    - once installed, asks the browser to keep the app's saved photos
-     and layouts even when the device runs low on space.
+     and layouts even when the device runs low on space;
+   - for pages that draw their own buttons (Idea Bank's Manage menu):
+     window.xdbPwa.can() / .install(), and an 'xdb-pwa' event on window
+     whenever the answer to can() changes.
    ============================================================ */
 (function () {
   'use strict';
@@ -35,7 +38,23 @@
 
   var prompt = null;
   function btn() { return document.querySelector('[data-pwa-install]'); }
-  function show(on) { var b = btn(); if (b) b.style.display = on ? '' : 'none'; }
+  function show(on) {
+    var b = btn(); if (b) b.style.display = on ? '' : 'none';
+    try { window.dispatchEvent(new Event('xdb-pwa')); } catch (e) {}
+  }
+  function install() {
+    if (prompt) {
+      prompt.prompt();
+      prompt.userChoice.then(function () { prompt = null; show(false); });
+    } else if (ios) {
+      iosNote();
+    }
+  }
+  window.xdbPwa = {
+    can: function () { return !standalone && (!!prompt || ios); },
+    install: function () { install(); },
+    standalone: standalone
+  };
 
   window.addEventListener('beforeinstallprompt', function (ev) {
     ev.preventDefault();          // the page's own button replaces the browser's banner
@@ -68,12 +87,7 @@
     var b = ev.target.closest && ev.target.closest('[data-pwa-install]');
     if (!b) return;
     ev.preventDefault();
-    if (prompt) {
-      prompt.prompt();
-      prompt.userChoice.then(function () { prompt = null; show(false); });
-    } else if (ios) {
-      iosNote();
-    }
+    install();
   });
 
   // Safari never fires beforeinstallprompt: on an iPhone or iPad not yet

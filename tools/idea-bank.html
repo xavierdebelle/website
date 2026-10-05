@@ -18,6 +18,14 @@
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Idea Bank — Xavier de Belle">
 <meta name="twitter:card" content="summary_large_image">
+<!-- installable app: works offline once opened, syncs when back online (pwa.js, pwa-sw.js) -->
+<link rel="manifest" href="idea-bank.webmanifest">
+<link rel="apple-touch-icon" href="icons/idea-bank-180.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Idea Bank">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="theme-color" content="#000000">
+<script src="pwa.js" data-app="idea-bank"></script>
 <link rel="icon" href="../assets/logo.svg" type="image/svg+xml">
 <script src="../assets/account.js"></script>
 <script src="idea-bank/support.js"></script>
@@ -700,6 +708,9 @@ class Component extends DCLogic {
   componentDidMount() {
     this.onKey = (e) => { if (e.key === 'Escape') this.setState({ openId: null, pd: null, menu: false }); };
     document.addEventListener('keydown', this.onKey);
+    // the Install app item appears once the browser says it can install (pwa.js)
+    this.onPwa = () => this.setState({ pwa: Date.now() });
+    window.addEventListener('xdb-pwa', this.onPwa);
     // a running timer repaints once a second; nothing runs when none is on
     this.ticker = setInterval(() => { if (this.running()) this.setState({ now: Date.now() }); }, 1000);
     this.applyDataset();
@@ -725,6 +736,7 @@ class Component extends DCLogic {
   }
   componentWillUnmount() {
     document.removeEventListener('keydown', this.onKey);
+    window.removeEventListener('xdb-pwa', this.onPwa);
     clearTimeout(this.tt); clearInterval(this.ticker);
     this.stopSync();
   }
@@ -1232,7 +1244,8 @@ class Component extends DCLogic {
         ['Delete', s.projects.length < 2 ? 'Your only project can’t be deleted' : 'Delete “' + clip(proj.name, 24) + '” and its ideas', () => this.deleteProject(), s.projects.length < 2],
         ['Export', 'Save every project to a file', () => this.doExport(), false, true],
         ['Import', 'Load a file saved with Export', () => this.fileRef.current && this.fileRef.current.click()]
-      ].concat(this.live && sy && sy.authed && !sy.siteAccount ? [['Sign out', 'Stop syncing on this device', () => this.sync && this.sync.signOut(), false, true]] : [])
+      ].concat(window.xdbPwa && window.xdbPwa.can() ? [['Install app', 'Its own icon, opens like an app, works offline', () => window.xdbPwa.install(), false, true]] : [])
+        .concat(this.live && sy && sy.authed && !sy.siteAccount ? [['Sign out', 'Stop syncing on this device', () => this.sync && this.sync.signOut(), false, true]] : [])
         .map(([label, hint, fn, off, gap], k) => ({ label, hint, off: !!off, op: off ? .4 : 1, rule: k && gap ? '3px solid var(--ink)' : k ? '2px solid #e2e2e2' : '0',
           fn: () => { this.setState({ menu: false }); if (!off) fn(); } })),
       newProject: () => this.openPd('new'), renameProject: () => this.openPd('rename'),

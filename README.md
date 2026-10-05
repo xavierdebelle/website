@@ -19,7 +19,8 @@ browser tools I've built. Plain HTML/CSS/JS, no build step, no dependencies.
     assets/og/      social preview images, one per page and tool (1200×630)
     assets/account.js   site-wide sign-in: account button, panel, used by every page and synced tool
     tools/          the tools themselves, one self-contained file each
-    tools/pwa.js, tools/pwa-sw.js   install + offline for Feed Planner and Carousel Planner
+    tools/pwa.js, tools/pwa-sw.js   install + offline for Feed Planner, Carousel Planner,
+                                    Budget Tracker, Project Phases and Idea Bank
     versions/       local-only archive of past versions (not deployed)
     CHANGELOG.md    what changed, version by version
 
