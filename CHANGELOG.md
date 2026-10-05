@@ -43,8 +43,12 @@ to your account and your other devices.
   reconnect the existing `online` listener and live listener push the
   offline edits; if another device also changed things meanwhile, the usual
   choice with a 7-day backup appears.
-- New originals: `budget_tracker_app_v17.html`, `project_tracker_v13.html`,
-  `ideas-v10/` (Install app in Manage; offline wording).
+- New originals: `budget_tracker_app_v18.html`, `project_tracker_v15.html`,
+  `ideas-v10/` (Install app in Manage; offline wording). (While making
+  these, `budget_tracker_app_v17.html` and `project_tracker_v13.html` were
+  overwritten by mistake; both were restored byte for byte from the copies
+  published in v62 and v61. Publishing copies originals verbatim — checked
+  against `project_tracker_v14.html` and v64.)
 
 **Verified (Playwright Chromium; built-in browser can't run service workers)**
 - All three: installable, no manifest errors; after one online visit they
