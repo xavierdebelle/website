@@ -10,7 +10,7 @@ its ID forever. Statuses: new, planned, in progress, done, dropped.
 - Many creator sites (the /now convention) keep one short page of what the owner is working on this month. The site already ships a version every few days (CHANGELOG.md, changelog.html), but nothing says it in human terms on the home page. Add a now.html node on the mind map in index.html, fed by Xavier's editable-page pattern used in who-am-i.html, so returning visitors have a reason to come back and a booking nudge sits at the bottom.
 
 ### IDEA-002 · Social-share cards (Open Graph) on every page
-- **Category:** SEO · **Effort:** S · **Impact:** ★★★ · **Status:** new
+- **Category:** SEO · **Effort:** S · **Impact:** ★★★ · **Status:** done (done in v71, 2026-10-05)
 - Only who-am-i.html and what-is-this.html contain og: tags; index.html, work.html, tools.html and food-for-thought.html have none, so links pasted in Instagram DMs, iMessage or LinkedIn show a bare URL. Add og:title, og:description, og:image (a branded 1200×630 from assets/logo.svg) and a canonical link to each page. Every tool and blog link shared becomes a visible ad.
 
 ### IDEA-003 · Pricing-range teasers on work.html
@@ -78,7 +78,7 @@ its ID forever. Statuses: new, planned, in progress, done, dropped.
 - index.html opens on a canvas with "Tap the mark to open the map · twice to invert it". That's charming for regulars but friction for a stranger, and search engines only see the fallback text index. Keep the map, but add a visible one-line answer to "who is this and what can I do here" and three doors: Hire me / Use the tools / Read.
 
 ### IDEA-018 · Privacy policy (Quebec Law 25)
-- **Category:** Legal · **Effort:** S · **Impact:** ★★★ · **Status:** new
+- **Category:** Legal · **Effort:** S · **Impact:** ★★★ · **Status:** done (done in v71, 2026-10-05)
 - There's no privacy policy anywhere, yet Activity Planner and Potluck collect guests' names, emails and phone numbers into Firebase. Quebec's Law 25 requires a published policy and a named person in charge of personal information. Add privacy.html, link it in every footer and next to every form.
 
 ### IDEA-019 · French version of the public pages
@@ -168,3 +168,25 @@ its ID forever. Statuses: new, planned, in progress, done, dropped.
 ### IDEA-040 · Usage limits on the free tier in Firebase
 - **Category:** Fix · **Effort:** S · **Impact:** ★★ · **Status:** new
 - Firebase costs grow with usage. Before opening tools to the public or a free tier, cap what free accounts can store (number of potlucks, events, projects) and set a billing alert on xdb-tools.
+
+## 2026-10-05 — Conversion and lead capture
+
+### IDEA-041 · Tag every outbound link so GoHighLevel knows the lead came from this site
+- **Category:** Conversion · **Effort:** S · **Impact:** ★★ · **Status:** new
+- The buttons in work.html to debellephotography.com and 333photo.com, and the "Email me" / "Talk property" mailto links, carry no source tag, so a lead arriving from this site looks identical to one from Google. Add ?utm_source=xavierdebelle&utm_medium=site&utm_campaign=work-debelle (or -333, -tools) to each outbound link, and a pre-filled mailto subject per section ("Wedding enquiry – from your site"). GoHighLevel then records the source on each contact and Xavier can see which page actually produces bookings.
+
+### IDEA-042 · "Planning your own wedding?" footer on guest-facing tool views
+- **Category:** Conversion · **Effort:** S · **Impact:** ★★★ · **Status:** new
+- Potluck and Activity Planner are shared by link with groups of guests (potluck.html has a footer-links block at line ~1315, activity-planner.html a summary footer), yet none of those guest views mention de Belle Photography. Guests at a wedding or event are the warmest future-couple audience there is. Add a quiet "Made by Xavier de Belle · Photographing weddings in Montreal for 30 years" line linking to work.html#de-belle on the guest-visible screens only, never on the organiser's own view.
+
+### IDEA-043 · "Is my date free?" checker on work.html
+- **Category:** Conversion · **Effort:** M · **Impact:** ★★★ · **Status:** new
+- work.html asks couples to email blind, so the first question they have (is my date available?) takes a day to answer. Add a date picker in the de Belle chapter that reads a small list of booked dates (a JSON file or GoHighLevel calendar) and replies "That date is open, tell me about your day" or "Taken, here are nearby dates". Either answer reveals the contact step (builds on IDEA-004), and the date is captured with the lead.
+
+### IDEA-044 · Testimonial strip and review count on work.html
+- **Category:** Conversion · **Effort:** S · **Impact:** ★★★ · **Status:** new
+- work.html states "30+ years, 3000+ weddings" in a spec list but shows no word from an actual client, and neither the de Belle nor the 333 Photo chapter links to reviews. Add three short couple and client quotes with first names plus a "4.9 on Google, 120 reviews" link directly above the "Email me" call at the bottom of the page. A stranger deciding whether to write is persuaded by other people far more than by the studio's own description.
+
+### IDEA-045 · Free "Wedding timeline" PDF in exchange for email and wedding date
+- **Category:** Conversion · **Effort:** M · **Impact:** ★★★ · **Status:** new
+- tools/wedding-schedule.html gives couples a finished day plan but captures nothing. Offer a branded PDF of their schedule, plus a "how long each part really takes" cheat sheet, after they enter name, email and wedding date; the details go to GoHighLevel and start a 4-email nurture sequence ending with a consult invitation. It is a free attraction offer, distinct from the paid pack in IDEA-010, and the wedding date tells Xavier how soon each lead needs an answer.
