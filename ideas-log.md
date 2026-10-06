@@ -66,7 +66,7 @@ its ID forever. Statuses: new, planned, in progress, done, dropped.
 - No page has any analytics, so traffic, top tools and where visitors drop off are unknown, and any monetization would be guesswork. Add a Plausible or Umami script tag to every page and track key events (Package Builder export, enquiry clicks, tool opens).
 
 ### IDEA-015 · Meta descriptions on every tool page
-- **Category:** SEO · **Effort:** S · **Impact:** ★★ · **Status:** new
+- **Category:** SEO · **Effort:** S · **Impact:** ★★ · **Status:** done (done in v71, 2026-10-05)
 - 17 of the 18 pages in tools/ have no meta description (only neural-mind-map.html has one), so search results show random text. Write one outcome-led sentence per tool.
 
 ### IDEA-016 · Move to a custom domain
@@ -190,3 +190,21 @@ its ID forever. Statuses: new, planned, in progress, done, dropped.
 ### IDEA-045 · Free "Wedding timeline" PDF in exchange for email and wedding date
 - **Category:** Conversion · **Effort:** M · **Impact:** ★★★ · **Status:** new
 - tools/wedding-schedule.html gives couples a finished day plan but captures nothing. Offer a branded PDF of their schedule, plus a "how long each part really takes" cheat sheet, after they enter name, email and wedding date; the details go to GoHighLevel and start a 4-email nurture sequence ending with a consult invitation. It is a free attraction offer, distinct from the paid pack in IDEA-010, and the wedding date tells Xavier how soon each lead needs an answer.
+
+## 2026-10-06 — One tool in full: Portfolio Masonry
+
+### IDEA-046 · Stop Portfolio Masonry from quietly losing photos
+- **Category:** Fix · **Effort:** S · **Impact:** ★★ · **Status:** new
+- tools/portfolio-masonry.html stores every photo as a 1080px base64 JPEG inside localStorage (about 5 MB per site), and when it fills up saveState() only writes a console warning, so the wall looks fine until the page is reloaded and the newest photos are gone. Move the photos to IndexedDB (as the installable planners do), or at minimum show a visible "Storage full, export now" banner and a "x of about y photos" counter next to the count in the top bar. A photographer building a client wall must never lose work silently.
+
+### IDEA-047 · Real page basics and alt text for the photo-wall tools
+- **Category:** Fix · **Effort:** S · **Impact:** ★ · **Status:** new
+- portfolio-masonry.html, portfolio-grid.html, feed-planner.html and freecanvas.html have no doctype (so browsers render them in quirks mode) and no lang attribute, and Portfolio Masonry sets every photo to alt="" (line ~275). Add the doctype and lang="en" to all four, and add an optional "Describe this photo" field in the crop dialog that fills the alt text. It fixes layout surprises and makes the walls readable by screen readers.
+
+### IDEA-048 · Export presets for Portfolio Masonry
+- **Category:** Feature · **Effort:** M · **Impact:** ★★ · **Status:** new
+- composeMasonryCanvas() in portfolio-masonry.html always exports three columns, 356px each, on white, as one tall image, which fits neither an Instagram post nor a printed page. Add a small preset picker in the Export menu: Instagram 4:5 (1080×1350, auto-split into carousel slides), Letter/A4 PDF pages for a printed leave-behind, and a column, gap and background colour control. Add an optional name-and-site footer so every exported wall carries Xavier's brand.
+
+### IDEA-049 · "Pick your favourites" mode for client galleries
+- **Category:** Tool · **Effort:** L · **Impact:** ★★ · **Status:** new
+- The masonry wall already handles any photo shape, reordering and crops, but only the owner can see it. Add a Share button that creates a read-only link where a client taps a heart on their favourites and sends the picks back (saved in Firebase, with a note to Xavier). It turns the wall into a proofing tool for album and print selection, gives each wedding a reason to return to the site, and slots into the couple portal from IDEA-026.
