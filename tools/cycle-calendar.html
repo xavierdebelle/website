@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cycle Calendar</title>
+<!-- social preview: link cards on Instagram, iMessage, WhatsApp, Facebook, X -->
+<meta name="description" content="Log the first day of each period. It learns the cycle and marks the fertile window and the peak day on a two-month calendar.">
+<link rel="canonical" href="https://xavierdebelle.github.io/website/tools/cycle-calendar.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Xavier de Belle">
+<meta property="og:locale" content="en_CA">
+<meta property="og:title" content="Cycle Calendar — Xavier de Belle">
+<meta property="og:description" content="Log the first day of each period. It learns the cycle and marks the fertile window and the peak day on a two-month calendar.">
+<meta property="og:url" content="https://xavierdebelle.github.io/website/tools/cycle-calendar.html">
+<meta name="twitter:card" content="summary">
+<meta name="theme-color" content="#0d1117">
+<link rel="icon" href="../assets/logo.svg" type="image/svg+xml">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap');
+
+  html{color-scheme:dark;-webkit-text-size-adjust:100%}
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --bg:#0d1117;--surface:#161b22;--surface2:#1c2330;--surface3:#21283a;
+    --border:#2a3445;--border2:#344058;
+    --pink:#f48fb1;--pink-dim:#3d1a2a;--pink-text:#ff8fbd;
+    --teal:#80cbc4;--teal-dim:#1a3530;--teal-text:#a0ede8;
+    --green:#69f0ae;--green-dim:#0d2e1e;--green-text:#8fffc8;
+    --yellow:#ffd740;--yellow-dim:#2e2400;
+    --blue:#4fc3f7;--blue-dim:#1e3a52;--blue-text:#82d8ff;
+    --red:#ff5252;--red-dim:#2e0f0f;
+    --text:#e6edf3;--text2:#8b949e;--text3:#4d5566;
+    --radius:10px;--radius-sm:6px;
+  }
+  body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;font-size:14px;min-height:100vh}
+  .mono{font-family:'DM Mono',monospace}
+  .app{max-width:1100px;margin:0 auto;padding:20px 16px 48px}
+
+  /* HEADER */
+  .header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:16px}
+  .header h1{font-size:22px;font-weight:800;letter-spacing:-0.5px}
+  .header .subtitle{font-size:11px;color:var(--text3);margin-top:3px;letter-spacing:.2px}
+  .io-group{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .btn{background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:var(--radius-sm);padding:7px 11px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:600;letter-spacing:.3px;transition:.15s}
+  .btn:hover{border-color:var(--border2);background:var(--surface3)}
+  .btn.pink{border-color:#7a2a50;background:var(--pink-dim);color:var(--pink-text)}
+  .btn.pink:hover{border-color:var(--pink);background:#4d2034}
+  .btn.ghost{background:transparent}
+  .btn[aria-pressed="true"]{border-color:var(--blue);color:var(--blue-text)}
+
+  /* HERO */
+  .hero{display:grid;grid-template-columns:minmax(220px,1fr) 2fr;gap:18px;align-items:center;
+        background:linear-gradient(135deg,var(--surface2),var(--surface));
+        border:1px solid var(--border2);border-radius:var(--radius);padding:16px 20px;margin-bottom:16px}
+  .label{font-size:10px;font-weight:700;letter-spacing:1.6px;text-transform:uppercase;color:var(--text3);margin-bottom:4px}
+  .hero-val{font-family:'DM Mono',monospace;font-size:38px;font-weight:500;line-height:1.05;letter-spacing:-1px}
+  .hero-sub{font-size:12px;color:var(--text2);margin-top:6px;line-height:1.5}
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+  .stat{border-radius:var(--radius-sm);padding:10px 12px;border:1px solid var(--border);background:var(--surface)}
+  .stat span{display:block;font-size:9px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;opacity:.8;margin-bottom:5px}
+  .stat b{font-family:'DM Mono',monospace;font-size:15px;font-weight:500;display:block}
+  .stat i{font-style:normal;font-size:11px;opacity:.75;display:block;margin-top:3px}
+  .stat.period{background:var(--pink-dim);border-color:#7a2a50;color:var(--pink-text)}
+  .stat.fertile{background:var(--teal-dim);border-color:#1a5a55;color:var(--teal-text)}
+  .stat.peak{background:var(--yellow-dim);border-color:#5a4800;color:var(--yellow)}
+  .stat.avg{background:var(--blue-dim);border-color:#1e5a7a;color:var(--blue-text)}
+  .note{font-size:12px;line-height:1.5;color:var(--text2);margin-top:8px}
+  .note.warn{color:var(--yellow)}
+
+  /* LAYOUT */
+  .grid{display:grid;grid-template-columns:minmax(0,2fr) minmax(260px,1fr);gap:12px;align-items:start}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+  .card-head{padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:8px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+  .card-title{font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase}
+  .card-sub{font-size:10px;color:var(--text3);font-family:'DM Mono',monospace}
+  .card-body{padding:14px}
+
+  /* CALENDAR */
+  .months{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(300px,100%),1fr));gap:18px}
+  .month h3{font-size:14px;font-weight:700;margin-bottom:8px}
+  .dow,.days{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+  .dow span{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.8px;color:var(--text3);text-align:center;padding:2px 0 4px;text-transform:uppercase}
+  .day{aspect-ratio:1;border-radius:var(--radius-sm);border:1px solid transparent;background:var(--surface2);color:var(--text2);
+       font-family:'DM Mono',monospace;font-size:12px;display:flex;align-items:center;justify-content:center;position:relative;cursor:pointer;padding:0;transition:border-color .12s}
+  .day:hover{border-color:var(--border2)}
+  .day.blank{background:transparent;cursor:default;pointer-events:none}
+  .day.past{opacity:.55}
+  .day.period{background:var(--pink-dim);color:var(--pink-text);border-color:#7a2a50}
+  .day.period.expected{background:transparent;border:1px dashed #a0457a}
+  .day.fertile{background:var(--teal-dim);color:var(--teal-text);border-color:#1a5a55}
+  .day.peak{background:var(--yellow);color:#1a1400;font-weight:500;border-color:var(--yellow)}
+  .day.start::after{content:'';position:absolute;top:4px;right:4px;width:6px;height:6px;border-radius:50%;background:var(--pink)}
+  .day.today{outline:2px solid var(--text);outline-offset:1px}
+  .legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:14px;font-size:11px;color:var(--text2)}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .sw{width:14px;height:14px;border-radius:4px;display:inline-block;border:1px solid transparent}
+  .sw.period{background:var(--pink-dim);border-color:#7a2a50}
+  .sw.expected{border:1px dashed #a0457a}
+  .sw.fertile{background:var(--teal-dim);border-color:#1a5a55}
+  .sw.peak{background:var(--yellow)}
+  .sw.today{outline:2px solid var(--text);outline-offset:-2px}
+  .hint{font-size:11px;color:var(--text3);margin-top:10px;line-height:1.5}
+
+  /* LOG */
+  .add-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+  input[type=date],input[type=number]{background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:var(--radius-sm);padding:7px 9px;font-family:'DM Mono',monospace;font-size:13px;min-width:0}
+  input[type=date]{flex:1 1 140px}
+  input:focus-visible,.btn:focus-visible,.day:focus-visible{outline:2px solid var(--blue);outline-offset:1px}
+  .log{list-style:none;max-height:340px;overflow:auto}
+  .log li{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px}
+  .log li:last-child{border-bottom:none}
+  .log .len{font-family:'DM Mono',monospace;font-size:11px;color:var(--text3)}
+  .log .len.odd{color:var(--yellow)}
+  .x{width:22px;height:22px;border-radius:50%;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;font-size:14px;line-height:1}
+  .x:hover{border-color:var(--red);color:var(--red)}
+  .empty{font-size:13px;color:var(--text2);line-height:1.6}
+
+  /* SETTINGS */
+  .settings{display:grid;gap:12px}
+  .set-row{display:grid;grid-template-columns:1fr 84px;gap:10px;align-items:center}
+  .set-row label{font-size:13px}
+  .set-row small{display:block;font-size:11px;color:var(--text3);margin-top:2px}
+  .toggle{display:flex;gap:6px;flex-wrap:wrap}
+  .side{display:grid;gap:12px}
+  .foot{font-size:11px;color:var(--text3);line-height:1.6;margin-top:18px}
+  .foot a{color:var(--text2)}
+
+  @media (max-width:760px){
+    .hero{grid-template-columns:1fr}
+    .grid{grid-template-columns:1fr}
+    .hero-val{font-size:32px}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="header">
+    <div>
+      <h1>Cycle Calendar</h1>
+      <div class="subtitle">Saved on this device only &middot; <span id="save-status" class="mono">—</span></div>
+    </div>
+    <div class="io-group">
+      <button class="btn pink" id="b-today" type="button">Period started today</button>
+      <button class="btn ghost" id="b-export" type="button">Back up</button>
+      <button class="btn ghost" id="b-import" type="button">Restore</button>
+      <input type="file" id="f-import" accept="application/json,.json" hidden>
+    </div>
+  </header>
+
+  <section class="hero" aria-live="polite">
+    <div>
+      <div class="label">Today</div>
+      <div class="hero-val" id="h-day">—</div>
+      <div class="hero-sub" id="h-sub">Log the first day of a period to begin.</div>
+    </div>
+    <div>
+      <div class="stats">
+        <div class="stat fertile"><span>Fertile window</span><b id="s-window">—</b><i id="s-window-sub"></i></div>
+        <div class="stat peak"><span>Peak day</span><b id="s-peak">—</b><i id="s-peak-sub"></i></div>
+        <div class="stat period"><span>Next period</span><b id="s-next">—</b><i id="s-next-sub"></i></div>
+        <div class="stat avg"><span>Cycle length</span><b id="s-len">—</b><i id="s-len-sub"></i></div>
+      </div>
+      <p class="note" id="h-note" hidden></p>
+    </div>
+  </section>
+
+  <div class="grid">
+    <section class="card">
+      <div class="card-head">
+        <div><span class="card-title">Calendar</span> <span class="card-sub" id="cal-range"></span></div>
+        <div class="io-group">
+          <button class="btn ghost" id="b-prev" type="button" aria-label="Earlier months">&larr;</button>
+          <button class="btn ghost" id="b-now" type="button">This month</button>
+          <button class="btn ghost" id="b-next" type="button" aria-label="Later months">&rarr;</button>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="months" id="months"></div>
+        <div class="legend">
+          <span><i class="sw period"></i>Period</span>
+          <span><i class="sw expected"></i>Expected period</span>
+          <span><i class="sw fertile"></i>Fertile window</span>
+          <span><i class="sw peak"></i>Peak day (ovulation)</span>
+          <span><i class="sw today"></i>Today</span>
+        </div>
+        <p class="hint">Tap a day to mark it as the first day of a period. Tap a marked day again to remove it.</p>
+      </div>
+    </section>
+
+    <div class="side">
+      <section class="card">
+        <div class="card-head"><span class="card-title">Period log</span><span class="card-sub" id="log-count"></span></div>
+        <div class="card-body">
+          <form class="add-row" id="add-form">
+            <input type="date" id="f-date" aria-label="First day of a period" required>
+            <button class="btn pink" type="submit">Add</button>
+          </form>
+          <ul class="log" id="log"></ul>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-head"><span class="card-title">Settings</span></div>
+        <div class="card-body settings">
+          <div>
+            <div class="label" style="margin-bottom:8px">Cycle length</div>
+            <div class="toggle" role="group" aria-label="Cycle length source">
+              <button class="btn" type="button" id="m-auto" aria-pressed="true">Learn from log</button>
+              <button class="btn" type="button" id="m-manual" aria-pressed="false">Set by hand</button>
+            </div>
+          </div>
+          <div class="set-row">
+            <label for="f-cycle">Cycle length (days)<small id="cycle-help">Used until two periods are logged.</small></label>
+            <input type="number" id="f-cycle" min="18" max="45" step="1">
+          </div>
+          <div class="set-row">
+            <label for="f-period">Period length (days)<small>How many days are marked as period.</small></label>
+            <input type="number" id="f-period" min="1" max="10" step="1">
+          </div>
+          <button class="btn ghost" type="button" id="b-reset">Back to defaults (28 / 5)</button>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <p class="foot">
+    Peak day is estimated as 14 days before the next period; the fertile window runs four days before it to three after.
+    These are calendar estimates for planning, not medical advice and not contraception.
+    Data stays in this browser &mdash; use Back up now and then.
+    &middot; <a href="../tools.html">All tools</a>
+  </p>
+</div>
+
+<script>
+"use strict";
+(function () {
+  var KEY = 'debelle.cycle-calendar.v1';
+  var DEFAULTS = { cycle: 28, period: 5 };
+  var LUTEAL = 14;              // days from ovulation to the next period
+  var BEFORE = 4, AFTER = 3;    // fertile window around the peak day: 28-day cycle → days 10–17
+  var MIN_GAP = 18, MAX_GAP = 45, LEARN_FROM = 6;   // a gap outside this is probably a missed log
+
+  function $(id) { return document.getElementById(id); }
+  var DAY = 86400000;
+
+  /* ---- dates: plain YYYY-MM-DD strings, arithmetic in UTC so DST never shifts a day ---- */
+  function toNum(iso) { var p = iso.split('-'); return Date.UTC(+p[0], +p[1] - 1, +p[2]) / DAY; }
+  function toIso(n) { return new Date(n * DAY).toISOString().slice(0, 10); }
+  function todayIso() { var d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+  var MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  var SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  var WD = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  function fmt(n, withDay) {
+    var d = new Date(n * DAY);
+    return (withDay ? WD[d.getUTCDay()] + ' ' : '') + SHORT[d.getUTCMonth()] + ' ' + d.getUTCDate();
+  }
+  function plural(n, w) { return n + ' ' + w + (n === 1 ? '' : 's'); }
+
+  /* ---- state ---- */
+  var state = load();
+  function blank() { return { v: 1, starts: [], manual: false, cycle: DEFAULTS.cycle, period: DEFAULTS.period }; }
+  function clean(s) {
+    var o = blank();
+    if (!s || typeof s !== 'object') return o;
+    if (Array.isArray(s.starts)) {
+      var seen = {};
+      s.starts.forEach(function (x) { if (typeof x === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(x) && !seen[x]) { seen[x] = 1; o.starts.push(x); } });
+      o.starts.sort();
+    }
+    o.manual = !!s.manual;
+    if (s.cycle >= 18 && s.cycle <= 45) o.cycle = Math.round(s.cycle);
+    if (s.period >= 1 && s.period <= 10) o.period = Math.round(s.period);
+    return o;
+  }
+  function load() { try { return clean(JSON.parse(localStorage.getItem(KEY))); } catch (e) { return blank(); } }
+  function save() {
+    try {
+      localStorage.setItem(KEY, JSON.stringify(state));
+      $('save-status').textContent = 'saved ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } catch (e) { $('save-status').textContent = 'could not save — storage blocked'; }
+  }
+
+  /* ---- learning ---- */
+  function gaps() {
+    var g = [];
+    for (var i = 1; i < state.starts.length; i++) g.push(toNum(state.starts[i]) - toNum(state.starts[i - 1]));
+    return g;
+  }
+  function learned() {
+    var good = gaps().filter(function (x) { return x >= MIN_GAP && x <= MAX_GAP; }).slice(-LEARN_FROM);
+    if (!good.length) return null;
+    var avg = good.reduce(function (a, b) { return a + b; }, 0) / good.length;
+    return { avg: avg, n: good.length, min: Math.min.apply(null, good), max: Math.max.apply(null, good) };
+  }
+  function cycleLen() {
+    if (state.manual) return state.cycle;
+    var l = learned();
+    return l ? Math.round(l.avg) : state.cycle;
+  }
+
+  /* ---- the model: every day's role, logged cycles and predicted ones ---- */
+  function cycles() {
+    var L = cycleLen(), out = [], s = state.starts.map(toNum);
+    for (var i = 0; i < s.length; i++) {
+      var next = i + 1 < s.length ? s[i + 1] : null;
+      out.push({ start: s[i], len: next !== null ? next - s[i] : L, actual: true, closed: next !== null });
+    }
+    if (s.length) {
+      // predict a year ahead from the last logged start
+      var last = s[s.length - 1];
+      for (var k = 1; k <= 13; k++) out.push({ start: last + k * L, len: L, actual: false, closed: false });
+    }
+    return out;
+  }
+  function peakOf(c) { return c.start + c.len - LUTEAL; }
+  function dayMap() {
+    var m = {}, P = state.period;
+    cycles().forEach(function (c) {
+      // a logged gap outside the normal range is probably a missed or extra entry: no window guessed
+      if (c.len >= MIN_GAP && c.len <= MAX_GAP) {
+        var pk = peakOf(c);
+        for (var d = pk - BEFORE; d <= pk + AFTER; d++) if (d > c.start + P - 1) m[d] = m[d] === 'peak' ? 'peak' : 'fertile';
+        m[pk] = 'peak';
+      }
+    });
+    cycles().forEach(function (c) {
+      for (var d = c.start; d < c.start + P; d++) m[d] = c.actual ? 'period' : 'expected';
+    });
+    return m;
+  }
+
+  /* ---- render ---- */
+  var offset = 0;   // months from this month for the left-hand calendar
+
+  function renderHero() {
+    var t = toNum(todayIso()), L = cycleLen(), s = state.starts.map(toNum);
+    var note = $('h-note');
+    note.hidden = true; note.className = 'note';
+    ['s-window','s-peak','s-next','s-len'].forEach(function (id) { $(id).textContent = '—'; $(id + '-sub').textContent = ''; });
+    var l = learned();
+    $('s-len').textContent = plural(L, 'day');
+    $('s-len-sub').textContent = state.manual ? 'set by hand'
+      : l ? 'average of the last ' + plural(l.n, 'cycle') + (l.n > 1 ? ' (' + l.min + '–' + l.max + ')' : '')
+      : 'default — learns after two periods';
+
+    var past = s.filter(function (x) { return x <= t; });
+    if (!past.length) {
+      $('h-day').textContent = '—';
+      $('h-sub').textContent = s.length ? 'The first logged period is still ahead.' : 'Log the first day of a period to begin.';
+      return;
+    }
+    var last = past[past.length - 1];
+    var cd = t - last + 1;
+    var nextStart = last + L;          // in the past when the period is late — said so below
+    var pk = nextStart - LUTEAL;       // this cycle's peak day
+    $('h-day').textContent = 'Day ' + cd;
+    var phase;
+    if (cd <= state.period) phase = 'Period';
+    else if (t === pk) phase = 'Peak fertile day';
+    else if (t >= pk - BEFORE && t <= pk + AFTER) phase = 'Fertile window';
+    else if (t < pk - BEFORE) phase = 'Before the fertile window';
+    else if (t < nextStart) phase = 'After ovulation';
+    else phase = 'Period expected';
+    $('h-sub').textContent = phase + ' · cycle started ' + fmt(last, true);
+
+    // the next window that hasn't finished yet
+    if (t > pk + AFTER) pk = nextStart + L - LUTEAL;
+    $('s-window').textContent = fmt(pk - BEFORE) + ' – ' + fmt(pk + AFTER);
+    var toW = pk - BEFORE - t;
+    $('s-window-sub').textContent = toW > 0 ? 'starts in ' + plural(toW, 'day') : 'now — ' + plural(pk + AFTER - t + 1, 'day') + ' left';
+    $('s-peak').textContent = fmt(pk, true);
+    var toP = pk - t;
+    $('s-peak-sub').textContent = toP > 0 ? 'in ' + plural(toP, 'day') : toP === 0 ? 'today' : plural(-toP, 'day') + ' ago';
+
+    $('s-next').textContent = fmt(nextStart, true);
+    var toN = nextStart - t;
+    $('s-next-sub').textContent = toN > 0 ? 'in ' + plural(toN, 'day') : toN === 0 ? 'expected today' : plural(-toN, 'day') + ' late';
+    if (toN < 0) {
+      note.hidden = false; note.className = 'note warn';
+      note.textContent = 'The period is ' + plural(-toN, 'day') + ' later than expected. Log it on the day it starts and the predictions catch up.';
+    } else if (!state.manual && !l) {
+      note.hidden = false;
+      note.textContent = 'Using a ' + L + '-day cycle until a second period is logged — then it uses her real average.';
+    }
+  }
+
+  function renderCalendar() {
+    var m = dayMap(), t = toNum(todayIso()), starts = {};
+    state.starts.forEach(function (x) { starts[toNum(x)] = 1; });
+    var now = new Date(), wrap = $('months');
+    wrap.textContent = '';
+    var labels = [];
+    for (var k = 0; k < 2; k++) {
+      var y = now.getFullYear(), mo = now.getMonth() + offset + k;
+      y += Math.floor(mo / 12); mo = ((mo % 12) + 12) % 12;
+      labels.push(SHORT[mo] + ' ' + y);
+      var first = Date.UTC(y, mo, 1) / DAY, n = new Date(Date.UTC(y, mo + 1, 0)).getUTCDate();
+      var lead = new Date(first * DAY).getUTCDay();
+      var box = document.createElement('div'); box.className = 'month';
+      var h = document.createElement('h3'); h.textContent = MONTHS[mo] + ' ' + y; box.appendChild(h);
+      var dow = document.createElement('div'); dow.className = 'dow';
+      WD.forEach(function (w) { var s = document.createElement('span'); s.textContent = w.slice(0, 2); dow.appendChild(s); });
+      box.appendChild(dow);
+      var days = document.createElement('div'); days.className = 'days';
+      for (var b = 0; b < lead; b++) { var e = document.createElement('span'); e.className = 'day blank'; days.appendChild(e); }
+      for (var d = 0; d < n; d++) {
+        var num = first + d, btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'day' + (m[num] ? ' ' + m[num] : '') + (m[num] === 'expected' ? ' period' : '') +
+          (starts[num] ? ' start' : '') + (num === t ? ' today' : '') + (num < t ? ' past' : '');
+        btn.textContent = d + 1;
+        btn.dataset.day = toIso(num);
+        var what = { period: 'period', expected: 'expected period', fertile: 'fertile window', peak: 'peak fertile day' }[m[num]];
+        btn.setAttribute('aria-label', fmt(num, true) + (what ? ', ' + what : '') + (starts[num] ? ', logged first day' : ''));
+        days.appendChild(btn);
+      }
+      box.appendChild(days);
+      wrap.appendChild(box);
+    }
+    $('cal-range').textContent = labels.join(' – ');
+  }
+
+  function renderLog() {
+    var ul = $('log'); ul.textContent = '';
+    $('log-count').textContent = state.starts.length ? plural(state.starts.length, 'period') : '';
+    if (!state.starts.length) {
+      var li = document.createElement('li'); li.className = 'empty'; li.style.display = 'block';
+      li.textContent = 'Nothing logged yet. Add the first day of the last period — older ones too, if you know them. More history means better predictions.';
+      ul.appendChild(li); return;
+    }
+    for (var i = state.starts.length - 1; i >= 0; i--) {
+      var iso = state.starts[i], li = document.createElement('li');
+      var a = document.createElement('span'); a.textContent = fmt(toNum(iso), true) + ', ' + iso.slice(0, 4);
+      var len = document.createElement('span'); len.className = 'len';
+      if (i + 1 < state.starts.length) {
+        var g = toNum(state.starts[i + 1]) - toNum(iso);
+        len.textContent = g + ' d';
+        if (g < MIN_GAP || g > MAX_GAP) { len.className += ' odd'; len.title = 'Left out of the average — probably a missed or extra entry'; len.textContent += ' *'; }
+      } else len.textContent = 'current';
+      var x = document.createElement('button'); x.type = 'button'; x.className = 'x'; x.textContent = '×';
+      x.setAttribute('aria-label', 'Remove ' + iso); x.dataset.iso = iso;
+      li.appendChild(a); li.appendChild(len); li.appendChild(x); ul.appendChild(li);
+    }
+  }
+
+  function renderSettings() {
+    $('m-auto').setAttribute('aria-pressed', String(!state.manual));
+    $('m-manual').setAttribute('aria-pressed', String(state.manual));
+    var l = learned();
+    $('f-cycle').value = state.manual ? state.cycle : cycleLen();
+    $('f-cycle').disabled = !state.manual && !!l;
+    $('cycle-help').textContent = state.manual ? 'Always this number, whatever the log says.'
+      : l ? 'Learned from the log. Choose "Set by hand" to override.' : 'Used until two periods are logged.';
+    $('f-period').value = state.period;
+  }
+
+  function render() { renderHero(); renderCalendar(); renderLog(); renderSettings(); }
+
+  /* ---- actions ---- */
+  function addStart(iso) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(iso) || state.starts.indexOf(iso) >= 0) return;
+    // a second "first day" inside a logged period is almost always a slip
+    var n = toNum(iso), clash = state.starts.filter(function (x) { var d = Math.abs(toNum(x) - n); return d > 0 && d < state.period + 3; });
+    if (clash.length && !confirm('That is only a few days from the period logged on ' + clash[0] + '. Log it as a new period anyway?')) return;
+    state.starts.push(iso); state.starts.sort(); save(); render();
+  }
+  function removeStart(iso) {
+    state.starts = state.starts.filter(function (x) { return x !== iso; }); save(); render();
+  }
+
+  $('b-today').addEventListener('click', function () {
+    var t = todayIso();
+    if (state.starts.indexOf(t) >= 0) return;
+    addStart(t);
+  });
+  $('add-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var v = $('f-date').value;
+    if (v > todayIso() && !confirm('That date is in the future. Log it anyway?')) return;
+    addStart(v); $('f-date').value = '';
+  });
+  $('log').addEventListener('click', function (e) {
+    var b = e.target.closest('.x'); if (!b) return;
+    if (confirm('Remove the period logged on ' + b.dataset.iso + '?')) removeStart(b.dataset.iso);
+  });
+  $('months').addEventListener('click', function (e) {
+    var b = e.target.closest('.day[data-day]'); if (!b) return;
+    var iso = b.dataset.day;
+    if (state.starts.indexOf(iso) >= 0) { if (confirm('Remove the period logged on ' + iso + '?')) removeStart(iso); }
+    else if (confirm('Mark ' + iso + ' as the first day of a period?')) addStart(iso);
+  });
+  $('b-prev').addEventListener('click', function () { offset--; renderCalendar(); });
+  $('b-next').addEventListener('click', function () { offset++; renderCalendar(); });
+  $('b-now').addEventListener('click', function () { offset = 0; renderCalendar(); });
+
+  $('m-auto').addEventListener('click', function () { state.manual = false; save(); render(); });
+  $('m-manual').addEventListener('click', function () { state.cycle = cycleLen(); state.manual = true; save(); render(); });
+  $('f-cycle').addEventListener('change', function () {
+    var v = Math.round(+this.value);
+    if (!(v >= 18 && v <= 45)) { renderSettings(); return; }
+    state.cycle = v; save(); render();
+  });
+  $('f-period').addEventListener('change', function () {
+    var v = Math.round(+this.value);
+    if (!(v >= 1 && v <= 10)) { renderSettings(); return; }
+    state.period = v; save(); render();
+  });
+  $('b-reset').addEventListener('click', function () {
+    state.manual = false; state.cycle = DEFAULTS.cycle; state.period = DEFAULTS.period; save(); render();
+  });
+
+  $('b-export').addEventListener('click', function () {
+    var blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+    var a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+    a.download = 'cycle-calendar-' + todayIso() + '.json';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+  });
+  $('b-import').addEventListener('click', function () { $('f-import').click(); });
+  $('f-import').addEventListener('change', function () {
+    var f = this.files && this.files[0]; this.value = '';
+    if (!f) return;
+    f.text().then(function (txt) {
+      var s = clean(JSON.parse(txt));
+      if (!confirm('Replace what is here with ' + plural(s.starts.length, 'logged period') + ' from the backup?')) return;
+      state = s; save(); render();
+    }).catch(function () { alert('That file is not a Cycle Calendar backup.'); });
+  });
+
+  // another tab on the same device
+  window.addEventListener('storage', function (e) { if (e.key === KEY) { state = load(); render(); } });
+  // the day rolls over while it's open
+  var lastDay = todayIso();
+  setInterval(function () { if (todayIso() !== lastDay) { lastDay = todayIso(); render(); } }, 60000);
+
+  $('save-status').textContent = state.starts.length ? 'loaded' : 'nothing saved yet';
+  render();
+})();
+</script>
+</body>
+</html>

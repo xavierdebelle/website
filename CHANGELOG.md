@@ -5,6 +5,64 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v75 — 2026-10-07
+
+**What's new** · New page · [library.html]
+### The Library
+Three shelves: what I've read, what I'd recommend, and what's still on the
+pile. Pull a book off the shelf for the genre, a rating and what I thought
+of it.
+
+**What's new** · New tool · [tools.html#maria]
+### Cycle Calendar
+Log the first day of each period. As the log grows it works out the real
+average cycle, then marks the next period, the fertile window and the peak
+day on a two-month calendar. Everything stays on the phone it's used on.
+
+### Library (`library.html`) — new page
+- Three shelves (Read, Recommended, Want to Read) drawn as spines on a
+  yellow board, title and author in vertical text, one colour per book.
+  Click a spine → card with title, author, genre, rating (1–5), notes, and
+  date read on the Read shelf.
+- Books live at `pages/library` = `{title, books: {id: book}, updatedAt}` in
+  xdb-tools, under the existing `pages/$page` rule: public read, Xavier's
+  account only for writes. **No rules change, no console step.**
+- Admin mode = signed in as Xavier (account button). Shows Add book, Edit
+  and Delete. The brief asked for a hashed password in localStorage; Xavier
+  chose Firebase sign-in instead (2026-10-07), because localStorage books
+  would only ever show in his own browser and a client-side password guards
+  nothing.
+- Last copy cached in localStorage `debelle.library.v1` for instant draw and
+  offline. Until the first save, everyone sees 12 starter books (Hormozi ×3
+  and Sell Like Crazy on Read; the rest Recommended / Want to Read), no
+  ratings or dates — Xavier to edit.
+- Spine colours go beyond black/white/yellow, as the brief asked; the page
+  chrome stays on brand.
+- Linked from: the map (Personal → Library — a new node, so the layout
+  regrows), the Index, and every page footer beside Food for Thought.
+
+### Cycle Calendar (`tools/cycle-calendar.html`) — new tool, Maria's Tools
+- Asked for as "Baby Maker"; Xavier chose a neutral name and slug
+  (2026-10-07) so the public site says nothing personal.
+- Period start dates in localStorage `debelle.cycle-calendar.v1`, local only,
+  never synced. Back up / Restore as .json.
+- Learns: average of the last 6 logged gaps between 18 and 45 days (others
+  flagged as probable missed logs and left out). Settings: learn from log or
+  set cycle length by hand (default 28), period length (default 5).
+- Peak day = 14 days before the next period; fertile window = peak −4 to +3
+  (days 10–17 of a 28-day cycle). Two-month calendar with period, expected
+  period, fertile window, peak day, today; tap a day to log or remove a
+  start. Late periods are flagged.
+- Card in Maria's Tools; Privacy page lists it among local-only tools and
+  Google Fonts users.
+
+### Verified
+- Both scripts parse (JavaScriptCore). Scan: library — the same Firebase
+  config and pages rule as Who Am I? (already live); cycle calendar — no
+  backend.
+- **Not clicked through in a browser** — the preview test was stopped this
+  session. Check both after the push.
+
 ## v74 — 2026-10-05
 
 **What's new** · New section · [tools.html#maria]
