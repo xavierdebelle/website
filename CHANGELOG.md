@@ -5,6 +5,57 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v77 — 2026-10-07
+
+**What's new** · New tool · [tools.html#personal]
+### Cards: every<br>loyalty card, one place
+Scan a loyalty card's barcode once, with the camera or from a photo, or
+type its number. At the till, tap the card: it fills the screen, big and
+sharp, and the screen stays on. Cards sync between your devices, install as
+an app, and work offline.
+
+**Cards — `tools/cards.html`, source `Tools files/Tools/cards_v1.html`**
+- Wallet grid: favourites first (shown yellow), then most used, then
+  newest; search. Tap → full-screen white view with the barcode as SVG, the
+  number spaced out, the note, and a Wake Lock so the screen stays on (the
+  use count goes up each time). Edit / Delete with Undo.
+- Add: **Scan** (rear camera, scan frame, torch where the phone allows it),
+  **From a photo** (tries the picture at three sizes), **Type it** (a valid
+  EAN-13 / UPC-A / EAN-8 is recognised by its check digit, anything else
+  becomes Code 128). The preview draws the barcode before saving; a number
+  that can't be drawn in the chosen type is refused with a plain message.
+- 13 formats: Code 128, EAN-13, EAN-8, UPC-A, UPC-E, Code 39, Code 93, ITF,
+  Codabar, QR, PDF417, Aztec, Data Matrix.
+- Reading: the browser's `BarcodeDetector` where it exists (Chrome on
+  Android and Mac), otherwise ZXing (`@zxing/library@0.23.0`, loaded only
+  when scanning) — that is the iPhone/Safari path. Chrome's "EAN-13 with a
+  leading 0" is stored as the UPC-A printed on the card. Drawing: bwip-js
+  4.11.4. Both from unpkg with SRI, kept offline by `pwa-sw.js` (LIBS).
+- Data `xdb.cards.v1` = `{ cards: [{ id, name, code, format, note, fav, uses, lastUsed, createdAt, updatedAt }] }`;
+  sync doc `cards` (no rules change); in `TOOLS` in `assets/account.js`;
+  installable (manifest, icons, `pwa-sw.js` VERSION v77). Export / Import
+  .json (merges by id, newer wins).
+
+**Verified locally (mock database, Playwright Chromium)**
+- Photos of 8 real barcodes (EAN-13, Code 128, UPC-A, QR, Code 39, PDF417,
+  EAN-8, ITF — rotated, blurred, noisy) read correctly with the browser's
+  reader and with it switched off (ZXing, as on an iPhone). Camera: a fake
+  camera playing a card (EAN-13, QR) read with both readers; the camera
+  turns off after a read.
+- Typing picks EAN-13 vs Code 128; a wrong type is refused; QR, PDF417 and
+  EAN-13 draw full-screen. Found and fixed before release: PDF417 failed to
+  draw (bwip-js refuses `height: undefined`).
+- Two devices: nothing pushed from an empty wallet; a card from A appears
+  on B; B's rename shows on A live; reload writes nothing.
+- Installable, no manifest errors; with every host unreachable it opened,
+  read a barcode from a photo with ZXing and drew a card. 375 px: no
+  sideways scroll.
+
+**Not testable here:** a real phone camera and a real till scanner. Screen
+brightness can't be raised by a web page; the show view says to turn it up.
+
+---
+
 ## v76 — 2026-10-07
 
 **What's new** · Now syncs · [tools.html#maria]
