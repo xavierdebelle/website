@@ -5,6 +5,31 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v78 — 2026-10-07
+
+### Library — Import list, and tidier shelves
+- **Import list** (admin bar, signed in as Xavier): paste one book per line,
+  `Title, Author` (leading numbers ignored; author = after the last comma),
+  choose a shelf, one save. Books already in the library (title match,
+  case and punctuation ignored) are skipped and named. New books get
+  rotating spine colours, no genre/rating/notes.
+- Spine titles wrap onto two or three lines instead of being cut off;
+  spine width follows the title length.
+- The bottom row of every shelf now shows its yellow board (it sat just
+  outside the rack before).
+- Why: Xavier asked to add 17 books. His library already holds saved data
+  in Firebase (only his account can write it), so the page gets an import
+  rather than a new starter list.
+
+### Tested on the mock
+- Loaded a read-only copy of the live `pages/library` (12 books) into the
+  mock, signed in as owner, imported his 17-line list onto Read: 16 added,
+  $100M Offers skipped, the 12 existing books unchanged. No full titles
+  clipped at desktop; at 375px no sideways scroll, one long-word title
+  (The Photographer's Eye) clips by a few pixels.
+
+---
+
 ## v77 — 2026-10-07
 
 **What's new** · New tool · [tools.html#personal]

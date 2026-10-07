@@ -19,7 +19,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="description" content="The books Xavier de Belle has read, the ones he'd hand you, and the ones still waiting.">
 <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
-<link rel="stylesheet" href="assets/style.css?v=77">
+<link rel="stylesheet" href="assets/style.css?v=78">
 <script src="assets/account.js"></script>
 <script src="assets/site-index.js"></script>
 <style>
@@ -57,7 +57,7 @@
     --slot: 230px; --board: 12px;
     display: flex; flex-wrap: wrap; align-items: flex-end;
     gap: calc(var(--board) + 8px) 4px;
-    padding: 0 6px;
+    padding: 0 6px var(--board);          /* room for the last row's board */
     background: repeating-linear-gradient(to bottom,
       transparent 0, transparent var(--slot),
       var(--volt) var(--slot), var(--volt) calc(var(--slot) + var(--board)),
@@ -74,8 +74,8 @@
   }
   .spine:hover, .spine:focus-visible { transform: translateY(-10px); }
   .spine:focus-visible { outline: var(--edge) solid var(--paper); outline-offset: 3px; }
-  .spine__t { font-weight: 900; font-size: 14px; letter-spacing: -.01em; line-height: 1.1; max-height: 70%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .spine__a { font-family: var(--mono); font-size: 9.5px; letter-spacing: .08em; text-transform: uppercase; opacity: .8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-height: 40%; }
+  .spine__t { font-weight: 900; font-size: 13px; letter-spacing: -.01em; line-height: 1.1; max-height: 74%; overflow: hidden; }   /* wraps onto a second or third line rather than cutting off */
+  .spine__a { font-family: var(--mono); font-size: 9.5px; letter-spacing: .08em; text-transform: uppercase; opacity: .8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-height: 30%; flex: none; }
   .rack__empty { font-family: var(--mono); font-size: 12px; letter-spacing: .08em; color: var(--dust); height: var(--slot); display: flex; align-items: flex-end; padding-bottom: 14px; }
 
   /* ---------- dialogs: the book card and the editor ---------- */
@@ -126,7 +126,7 @@
 
   @media (max-width: 560px) {
     .rack { --slot: 190px; }
-    .spine__t { font-size: 12.5px; }
+    .spine__t { font-size: 12px; }
     .form .two { grid-template-columns: 1fr; }
   }
 </style>
@@ -157,6 +157,7 @@
   <div class="editbar" id="editbar" hidden>
     <span>Your library &mdash; changes are live for everyone</span>
     <button class="topbar__btn" type="button" id="b-add">Add book</button>
+    <button class="topbar__btn" type="button" id="b-import">Import list</button>
     <span class="editbar__msg" id="bar-msg" role="status" aria-live="polite"></span>
   </div>
 
@@ -190,6 +191,28 @@
       <button class="btn btn--solid" type="button" id="d-close">Close</button>
     </div>
   </div>
+</dialog>
+
+<!-- import a pasted list: Xavier only -->
+<dialog id="importer" aria-labelledby="i-head">
+  <div class="book__band" style="background:var(--volt)"></div>
+  <form class="book__in form" id="i-form" autocomplete="off" novalidate>
+    <p class="book__shelf" id="i-head">Import a list</p>
+    <label for="i-text">One book per line &mdash; Title, Author</label>
+    <textarea id="i-text" placeholder="1. The Power of Now, Eckhart Tolle&#10;Greenlights, Matthew McConaughey"></textarea>
+    <p class="form__msg" style="color:var(--dust);margin-top:8px">Numbers at the start are ignored. Everything after the last comma is the author; no comma, no author. Books already in the library are skipped.</p>
+    <label for="i-shelf">Put them on</label>
+    <select id="i-shelf">
+      <option value="read">Read</option>
+      <option value="recommended">Recommended</option>
+      <option value="want">Want to Read</option>
+    </select>
+    <div class="dlg__acts">
+      <button class="btn btn--solid" type="submit" id="i-save">Add books</button>
+      <button class="btn" type="button" id="i-cancel">Cancel</button>
+      <p class="form__msg" id="i-msg" role="status" aria-live="polite"></p>
+    </div>
+  </form>
 </dialog>
 
 <!-- the editor: Xavier only -->
@@ -249,7 +272,7 @@
       <a href="mailto:xavier@debellephotography.com">Email</a>
     </div>
   </div>
-  <p class="foot__sig">&copy; <span id="yr"></span> Xavier de Belle &middot; v77</p>
+  <p class="foot__sig">&copy; <span id="yr"></span> Xavier de Belle &middot; v78</p>
 </footer>
 
 <script>document.getElementById('yr').textContent = new Date().getFullYear();</script>
@@ -367,7 +390,8 @@
         var sp = document.createElement('button'); sp.type = 'button'; sp.className = 'spine'; sp.dataset.id = id;
         sp.style.background = b.color; sp.style.color = textOn(b.color);
         sp.style.height = (78 + h % 20) + '%';                                 // books are never all the same size
-        sp.style.width = Math.max(40, Math.min(64, 30 + b.title.length * 0.9 + h % 8)) + 'px';
+        var lines = Math.min(3, Math.ceil(b.title.length / 13));             // about 13 characters fit down a spine on a phone
+        sp.style.width = (24 + lines * 15 + h % 6) + 'px';
         sp.setAttribute('aria-label', b.title + (b.author ? ' by ' + b.author : ''));
         var t = document.createElement('span'); t.className = 'spine__t'; t.textContent = b.title;
         var a = document.createElement('span'); a.className = 'spine__a'; a.textContent = b.author;
@@ -419,7 +443,7 @@
     var sp = e.target.closest('.spine'); if (sp) showBook(sp.dataset.id);
   });
   // click on the backdrop closes either dialog
-  ['book', 'editor'].forEach(function (id) {
+  ['book', 'editor', 'importer'].forEach(function (id) {
     $(id).addEventListener('click', function (e) { if (e.target === $(id)) $(id).close(); });
   });
   $('book').addEventListener('close', function () { openId = null; });
@@ -443,6 +467,7 @@
     owner = on;
     $('editbar').hidden = !owner;
     if (!owner && $('editor').open) $('editor').close();
+    if (!owner && $('importer').open) $('importer').close();
     $('d-edit').hidden = $('d-delete').hidden = !owner;
   }
   function barSay(t, bad) { $('bar-msg').textContent = t || ''; $('bar-msg').className = 'editbar__msg' + (bad ? ' bad' : ''); }
@@ -504,6 +529,57 @@
   }
   $('e-shelf').addEventListener('change', syncShelfFields);
   $('b-add').addEventListener('click', function () { openEditor(null); });
+
+  /* ---- import a pasted list ---- */
+  function norm(t) { return t.toLowerCase().replace(/[\u2018\u2019']/g, "'").replace(/[^a-z0-9']+/g, ' ').trim(); }
+  function parseList(text) {
+    return text.split(/\r?\n/).map(function (line) {
+      line = line.replace(/^\s*(?:\d+[.)]|[-*\u2022])\s*/, '').trim();
+      if (!line) return null;
+      var i = line.lastIndexOf(',');
+      var title = (i > 0 ? line.slice(0, i) : line).trim(), author = i > 0 ? line.slice(i + 1).trim() : '';
+      return title ? { title: title.slice(0, 200), author: author.slice(0, 200) } : null;
+    }).filter(Boolean);
+  }
+  function importPreview() {
+    var list = parseList($('i-text').value), have = {}, n = 0;
+    Object.keys(books).forEach(function (k) { have[norm(books[k].title)] = 1; });
+    list.forEach(function (b) { if (!have[norm(b.title)]) { have[norm(b.title)] = 1; n++; } });
+    return { list: list, fresh: n };
+  }
+  function iSay(t, bad) { $('i-msg').textContent = t || ''; $('i-msg').className = 'form__msg' + (bad ? ' bad' : ''); }
+  $('i-text').addEventListener('input', function () {
+    var p = importPreview();
+    iSay(p.list.length ? p.fresh + ' new of ' + p.list.length + (p.list.length - p.fresh ? ' \u2014 ' + (p.list.length - p.fresh) + ' already here' : '') : '');
+  });
+  $('b-import').addEventListener('click', function () {
+    if (!owner) return;
+    $('i-text').value = ''; $('i-shelf').value = 'read'; iSay('');
+    $('importer').showModal(); $('i-text').focus();
+  });
+  $('i-cancel').addEventListener('click', function () { $('importer').close(); });
+  $('i-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (saving) return;
+    var shelf = $('i-shelf').value, list = parseList($('i-text').value), have = {}, next = JSON.parse(JSON.stringify(books));
+    Object.keys(books).forEach(function (k) { have[norm(books[k].title)] = 1; });
+    var added = [], skipped = [], base = Object.keys(books).length, now = Date.now();
+    list.forEach(function (b) {
+      if (have[norm(b.title)]) { skipped.push(b.title); return; }
+      have[norm(b.title)] = 1;
+      var id = 'b' + now.toString(36) + Math.random().toString(36).slice(2, 6) + added.length;
+      next[id] = { title: b.title, author: b.author, genre: '', shelf: shelf, notes: '', rating: 0, dateRead: '',
+                   color: COLORS[(base + added.length) % COLORS.length], added: now + added.length };
+      added.push(b.title);
+    });
+    if (!added.length) { iSay(list.length ? 'All of those are already in the library.' : 'Paste at least one book.', true); return; }
+    saving = true; $('i-save').disabled = true; iSay('Saving\u2026');
+    commit(next).then(function () {
+      $('importer').close();
+      barSay('Added ' + added.length + ' book' + (added.length === 1 ? '' : 's') + ' to ' + SHELVES[shelf] +
+        (skipped.length ? ' \u00b7 skipped, already here: ' + skipped.join(', ') : '') + '.');
+    }, function (err) { iSay(explain(err), true); }).then(function () { saving = false; $('i-save').disabled = false; });
+  });
   $('d-edit').addEventListener('click', function () { if (openId) openEditor(openId); });
   $('e-cancel').addEventListener('click', function () { $('editor').close(); });
   $('e-form').addEventListener('submit', function (e) {
