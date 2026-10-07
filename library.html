@@ -19,7 +19,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="description" content="The books Xavier de Belle has read, the ones he'd hand you, and the ones still waiting.">
 <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
-<link rel="stylesheet" href="assets/style.css?v=78">
+<link rel="stylesheet" href="assets/style.css?v=79">
 <script src="assets/account.js"></script>
 <script src="assets/site-index.js"></script>
 <style>
@@ -115,6 +115,7 @@
   .rate { display: flex; gap: 4px; flex-wrap: wrap; }
   .rate button { background: transparent; border: 2px solid var(--ash); color: var(--ash); font-size: 22px; width: 44px; height: 44px; cursor: pointer; }
   .rate button.on { color: var(--volt); border-color: var(--volt); }
+  .rate button.clear[aria-pressed="true"] { color: var(--volt); border-color: var(--volt); }
   .rate button.clear { font-family: var(--mono); font-size: 11px; width: auto; padding: 0 12px; letter-spacing: .1em; text-transform: uppercase; }
   .swatches { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
   .swatches button { width: 34px; height: 34px; border: 2px solid transparent; cursor: pointer; }
@@ -186,6 +187,7 @@
     <p class="book__notes" id="d-notes"></p>
     <div class="dlg__acts">
       <button class="btn" type="button" id="d-edit" hidden>Edit</button>
+      <button class="btn" type="button" id="d-rec" hidden>Recommend</button>
       <button class="btn btn--danger" type="button" id="d-delete" hidden>Delete</button>
       <span class="grow"></span>
       <button class="btn btn--solid" type="button" id="d-close">Close</button>
@@ -200,7 +202,7 @@
     <p class="book__shelf" id="i-head">Import a list</p>
     <label for="i-text">One book per line &mdash; Title, Author</label>
     <textarea id="i-text" placeholder="1. The Power of Now, Eckhart Tolle&#10;Greenlights, Matthew McConaughey"></textarea>
-    <p class="form__msg" style="color:var(--dust);margin-top:8px">Numbers at the start are ignored. Everything after the last comma is the author; no comma, no author. Books already in the library are skipped.</p>
+    <p class="form__msg" style="color:var(--dust);margin-top:8px">Numbers at the start are ignored. Everything after the last comma is the author; no comma, no author. A book already in the library isn&rsquo;t added twice &mdash; it&rsquo;s put on this shelf too.</p>
     <label for="i-shelf">Put them on</label>
     <select id="i-shelf">
       <option value="read">Read</option>
@@ -226,11 +228,11 @@
     <input id="e-author" maxlength="200">
     <div class="two">
       <div>
-        <label for="e-shelf">Shelf</label>
-        <select id="e-shelf">
+        <label for="e-status">Status</label>
+        <select id="e-status">
           <option value="read">Read</option>
-          <option value="recommended">Recommended</option>
           <option value="want">Want to Read</option>
+          <option value="">Neither</option>
         </select>
       </div>
       <div>
@@ -239,6 +241,8 @@
         <datalist id="genres"></datalist>
       </div>
     </div>
+    <label>Recommended shelf</label>
+    <div class="rate"><button type="button" class="clear" id="e-rec" aria-pressed="false"></button></div>
     <div id="e-read-only">
       <label for="e-date">Date read</label>
       <input id="e-date" type="date">
@@ -272,7 +276,7 @@
       <a href="mailto:xavier@debellephotography.com">Email</a>
     </div>
   </div>
-  <p class="foot__sig">&copy; <span id="yr"></span> Xavier de Belle &middot; v78</p>
+  <p class="foot__sig">&copy; <span id="yr"></span> Xavier de Belle &middot; v79</p>
 </footer>
 
 <script>document.getElementById('yr').textContent = new Date().getFullYear();</script>
@@ -321,7 +325,7 @@
   function seedBooks() {
     var o = {};
     SEED.forEach(function (b, i) {
-      o['s' + String(i + 1).padStart(2, '0')] = { title: b[0], author: b[1], genre: b[2], shelf: b[3], notes: b[4], rating: 0, dateRead: '', color: COLORS[i % COLORS.length], added: i };
+      o['s' + String(i + 1).padStart(2, '0')] = cleanBook({ title: b[0], author: b[1], genre: b[2], shelf: b[3], notes: b[4], rating: 0, dateRead: '', color: COLORS[i % COLORS.length], added: i }, i);
     });
     return o;
   }
@@ -338,13 +342,30 @@
       title: b.title.slice(0, 200),
       author: typeof b.author === 'string' ? b.author.slice(0, 200) : '',
       genre: typeof b.genre === 'string' ? b.genre.slice(0, 80) : '',
-      shelf: SHELVES[b.shelf] ? b.shelf : 'read',
+      /* a book has a status (read, want, or neither) and, separately, can be
+         recommended — so one entry sits on Read and Recommended at once.
+         Before v79 a book had a single `shelf`; that is still read as a
+         fallback and still written, so an older open page shows it somewhere. */
+      status: b.status === 'read' || b.status === 'want' || b.status === '' ? b.status
+            : b.shelf === 'want' ? 'want' : b.shelf === 'recommended' ? '' : 'read',
+      recommended: typeof b.recommended === 'boolean' ? b.recommended : b.shelf === 'recommended',
       notes: typeof b.notes === 'string' ? b.notes.slice(0, 5000) : '',
       rating: Math.max(0, Math.min(5, Math.round(+b.rating || 0))),
       dateRead: typeof b.dateRead === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(b.dateRead) ? b.dateRead : '',
       color: typeof b.color === 'string' && /^#[0-9a-f]{6}$/i.test(b.color) ? b.color : COLORS[i % COLORS.length],
       added: typeof b.added === 'number' ? b.added : i
     };
+  }
+  function onShelf(b, shelf) { return shelf === 'recommended' ? b.recommended : b.status === shelf; }
+  function shelvesOf(b) { return Object.keys(SHELVES).filter(function (k) { return onShelf(b, k); }); }
+  function withLegacy(b) {          // the single shelf a pre-v79 page understands
+    b.shelf = b.status || (b.recommended ? 'recommended' : 'read');
+    return b;
+  }
+  function forSaving(all) {
+    var out = {};
+    Object.keys(all).forEach(function (k) { out[k] = withLegacy(JSON.parse(JSON.stringify(all[k]))); });
+    return out;
   }
   function cleanAll(obj) {
     var out = {}, i = 0;
@@ -368,7 +389,7 @@
   }
   function hash(s) { var h = 7; for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0; return Math.abs(h); }
   function sorted(shelf) {
-    return Object.keys(books).filter(function (k) { return books[k].shelf === shelf; }).sort(function (a, b) {
+    return Object.keys(books).filter(function (k) { return onShelf(books[k], shelf); }).sort(function (a, b) {
       var A = books[a], B = books[b];
       if (shelf === 'read' && (A.dateRead || B.dateRead) && A.dateRead !== B.dateRead) return (B.dateRead || '') < (A.dateRead || '') ? -1 : 1;
       return A.added - B.added;
@@ -419,7 +440,7 @@
     var b = books[id]; if (!b) return;
     openId = id;
     $('d-band').style.background = b.color;
-    $('d-shelf').textContent = SHELVES[b.shelf] + (b.genre ? ' · ' + b.genre : '');
+    $('d-shelf').textContent = (shelvesOf(b).map(function (k) { return SHELVES[k]; }).join(' + ') || 'Off the shelves') + (b.genre ? ' · ' + b.genre : '');
     $('d-title').textContent = b.title;
     $('d-author').textContent = b.author ? 'by ' + b.author : '';
     var meta = $('d-meta'); meta.textContent = '';
@@ -431,11 +452,12 @@
     }
     row('Genre', b.genre || '—');
     row('Rating', b.rating ? stars(b.rating) : 'Not rated');
-    if (b.shelf === 'read') row('Date read', b.dateRead ? fmtDate(b.dateRead) : '—');
+    if (b.status === 'read') row('Date read', b.dateRead ? fmtDate(b.dateRead) : '—');
     var n = $('d-notes');
     n.textContent = b.notes || 'No notes yet.';
     n.className = 'book__notes' + (b.notes ? '' : ' none');
-    $('d-edit').hidden = $('d-delete').hidden = !owner;
+    $('d-edit').hidden = $('d-delete').hidden = $('d-rec').hidden = !owner;
+    $('d-rec').textContent = b.recommended ? 'Unrecommend' : 'Recommend';
     if (!$('book').open) $('book').showModal();
   }
   $('d-close').addEventListener('click', function () { $('book').close(); });
@@ -468,7 +490,7 @@
     $('editbar').hidden = !owner;
     if (!owner && $('editor').open) $('editor').close();
     if (!owner && $('importer').open) $('importer').close();
-    $('d-edit').hidden = $('d-delete').hidden = !owner;
+    $('d-edit').hidden = $('d-delete').hidden = $('d-rec').hidden = !owner;
   }
   function barSay(t, bad) { $('bar-msg').textContent = t || ''; $('bar-msg').className = 'editbar__msg' + (bad ? ' bad' : ''); }
   function say(t, bad) { $('e-msg').textContent = t || ''; $('e-msg').className = 'form__msg' + (bad ? ' bad' : ''); }
@@ -482,7 +504,7 @@
   function commit(next) {
     if (!owner || !window.xdbAccount) return Promise.reject({ code: 'permission' });
     return window.xdbAccount.sdk().then(function (fb) {
-      return withTimeout(fb.f.set(fb.f.ref(fb.db, PATH), { title: 'Library', books: next, updatedAt: Date.now() }), 12000);
+      return withTimeout(fb.f.set(fb.f.ref(fb.db, PATH), { title: 'Library', books: forSaving(next), updatedAt: Date.now() }), 12000);
     }).then(function () { books = next; cache(); render(); });
   }
 
@@ -513,21 +535,27 @@
     w.appendChild(pick);
     $('e-band').style.background = color;
   }
-  function syncShelfFields() { $('e-read-only').hidden = $('e-shelf').value !== 'read'; }
+  var rec = false;
+  function syncShelfFields() {
+    $('e-read-only').hidden = $('e-status').value !== 'read';
+    $('e-rec').setAttribute('aria-pressed', String(rec));
+    $('e-rec').textContent = rec ? '\u2713 On Recommended' : 'Not recommended';
+  }
+  $('e-rec').addEventListener('click', function () { rec = !rec; syncShelfFields(); });
   function openEditor(id) {
     if (!owner) return;
     editId = id || null;
-    var b = id ? books[id] : { title: '', author: '', genre: '', shelf: 'read', notes: '', rating: 0, dateRead: '', color: COLORS[Object.keys(books).length % COLORS.length] };
+    var b = id ? books[id] : { title: '', author: '', genre: '', status: 'read', recommended: false, notes: '', rating: 0, dateRead: '', color: COLORS[Object.keys(books).length % COLORS.length] };
     $('e-head').textContent = id ? 'Edit book' : 'Add a book';
     $('e-title').value = b.title; $('e-author').value = b.author; $('e-genre').value = b.genre;
-    $('e-shelf').value = b.shelf; $('e-notes').value = b.notes; $('e-date').value = b.dateRead;
-    rating = b.rating; color = b.color;
+    $('e-status').value = b.status; $('e-notes').value = b.notes; $('e-date').value = b.dateRead;
+    rating = b.rating; color = b.color; rec = b.recommended;
     drawRate(); drawSwatches(); syncShelfFields(); say('');
     if ($('book').open) $('book').close();
     $('editor').showModal();
     $('e-title').focus();
   }
-  $('e-shelf').addEventListener('change', syncShelfFields);
+  $('e-status').addEventListener('change', syncShelfFields);
   $('b-add').addEventListener('click', function () { openEditor(null); });
 
   /* ---- import a pasted list ---- */
@@ -541,16 +569,20 @@
       return title ? { title: title.slice(0, 200), author: author.slice(0, 200) } : null;
     }).filter(Boolean);
   }
+  function byTitle() {
+    var have = {};
+    Object.keys(books).forEach(function (k) { have[norm(books[k].title)] = k; });
+    return have;
+  }
   function importPreview() {
-    var list = parseList($('i-text').value), have = {}, n = 0;
-    Object.keys(books).forEach(function (k) { have[norm(books[k].title)] = 1; });
+    var list = parseList($('i-text').value), have = byTitle(), n = 0;
     list.forEach(function (b) { if (!have[norm(b.title)]) { have[norm(b.title)] = 1; n++; } });
     return { list: list, fresh: n };
   }
   function iSay(t, bad) { $('i-msg').textContent = t || ''; $('i-msg').className = 'form__msg' + (bad ? ' bad' : ''); }
   $('i-text').addEventListener('input', function () {
     var p = importPreview();
-    iSay(p.list.length ? p.fresh + ' new of ' + p.list.length + (p.list.length - p.fresh ? ' \u2014 ' + (p.list.length - p.fresh) + ' already here' : '') : '');
+    iSay(p.list.length ? p.fresh + ' new of ' + p.list.length + (p.list.length - p.fresh ? ' \u2014 ' + (p.list.length - p.fresh) + ' already in the library' : '') : '');
   });
   $('b-import').addEventListener('click', function () {
     if (!owner) return;
@@ -561,23 +593,29 @@
   $('i-form').addEventListener('submit', function (e) {
     e.preventDefault();
     if (saving) return;
-    var shelf = $('i-shelf').value, list = parseList($('i-text').value), have = {}, next = JSON.parse(JSON.stringify(books));
-    Object.keys(books).forEach(function (k) { have[norm(books[k].title)] = 1; });
-    var added = [], skipped = [], base = Object.keys(books).length, now = Date.now();
+    var shelf = $('i-shelf').value, list = parseList($('i-text').value), have = byTitle(), next = JSON.parse(JSON.stringify(books));
+    var added = [], joined = [], skipped = [], base = Object.keys(books).length, now = Date.now();
     list.forEach(function (b) {
-      if (have[norm(b.title)]) { skipped.push(b.title); return; }
-      have[norm(b.title)] = 1;
+      var k = have[norm(b.title)];
+      if (k) {
+        var x = next[k];
+        if (onShelf(x, shelf)) { skipped.push(x.title); return; }
+        if (shelf === 'recommended') x.recommended = true; else { x.status = shelf; if (shelf !== 'read') x.dateRead = ''; }
+        joined.push(x.title); return;
+      }
       var id = 'b' + now.toString(36) + Math.random().toString(36).slice(2, 6) + added.length;
-      next[id] = { title: b.title, author: b.author, genre: '', shelf: shelf, notes: '', rating: 0, dateRead: '',
-                   color: COLORS[(base + added.length) % COLORS.length], added: now + added.length };
+      next[id] = { title: b.title, author: b.author, genre: '', status: shelf === 'recommended' ? '' : shelf, recommended: shelf === 'recommended',
+                   notes: '', rating: 0, dateRead: '', color: COLORS[(base + added.length) % COLORS.length], added: now + added.length };
+      have[norm(b.title)] = id;
       added.push(b.title);
     });
-    if (!added.length) { iSay(list.length ? 'All of those are already in the library.' : 'Paste at least one book.', true); return; }
+    if (!added.length && !joined.length) { iSay(list.length ? 'All of those are already on ' + SHELVES[shelf] + '.' : 'Paste at least one book.', true); return; }
     saving = true; $('i-save').disabled = true; iSay('Saving\u2026');
     commit(next).then(function () {
       $('importer').close();
       barSay('Added ' + added.length + ' book' + (added.length === 1 ? '' : 's') + ' to ' + SHELVES[shelf] +
-        (skipped.length ? ' \u00b7 skipped, already here: ' + skipped.join(', ') : '') + '.');
+        (joined.length ? ' \u00b7 also put on it: ' + joined.join(', ') : '') +
+        (skipped.length ? ' \u00b7 already there: ' + skipped.join(', ') : '') + '.');
     }, function (err) { iSay(explain(err), true); }).then(function () { saving = false; $('i-save').disabled = false; });
   });
   $('d-edit').addEventListener('click', function () { if (openId) openEditor(openId); });
@@ -587,24 +625,36 @@
     if (saving) return;
     var title = $('e-title').value.trim();
     if (!title) { say('A book needs a title.', true); $('e-title').focus(); return; }
-    var shelf = $('e-shelf').value;
+    var status = $('e-status').value;
+    if (!status && !rec) { say('Put it on at least one shelf: Read, Want to Read, or Recommended.', true); return; }
     var id = editId || ('b' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6));
     var book = {
-      title: title, author: $('e-author').value.trim(), genre: $('e-genre').value.trim(), shelf: shelf,
+      title: title, author: $('e-author').value.trim(), genre: $('e-genre').value.trim(), status: status, recommended: rec,
       notes: $('e-notes').value.replace(/\s+$/, ''), rating: rating,
-      dateRead: shelf === 'read' ? $('e-date').value : '', color: color,
+      dateRead: status === 'read' ? $('e-date').value : '', color: color,
       added: editId ? books[editId].added : Date.now()
     };
     var next = JSON.parse(JSON.stringify(books)); next[id] = book;
     saving = true; $('e-save').disabled = true; say('Saving…');
     commit(next).then(function () {
-      $('editor').close(); barSay('Saved — “' + title + '” is on the ' + SHELVES[shelf] + ' shelf.');
+      $('editor').close(); barSay('Saved — \u201c' + title + '\u201d is on ' + shelvesOf(book).map(function (k) { return SHELVES[k]; }).join(' and ') + '.');
     }, function (err) { say(explain(err), true); }).then(function () { saving = false; $('e-save').disabled = false; });
+  });
+  $('d-rec').addEventListener('click', function () {
+    var id = openId; if (!id || !owner || saving) return;
+    var b = books[id];
+    if (b.recommended && !b.status) { barSay('\u201c' + b.title + '\u201d is only on Recommended \u2014 use Edit to move it, or Delete.', true); return; }
+    var next = JSON.parse(JSON.stringify(books)); next[id].recommended = !b.recommended;
+    saving = true;
+    commit(next).then(function () {
+      barSay(next[id].recommended ? 'Added \u201c' + b.title + '\u201d to Recommended.' : 'Took \u201c' + b.title + '\u201d off Recommended.');
+      if (openId === id) showBook(id);
+    }, function (err) { barSay(explain(err), true); }).then(function () { saving = false; });
   });
   $('d-delete').addEventListener('click', function () {
     var id = openId; if (!id || !owner) return;
     var title = books[id].title;
-    if (!confirm('Delete “' + title + '” from the library? Visitors will no longer see it.')) return;
+    if (!confirm('Delete \u201c' + title + '\u201d from the library' + (shelvesOf(books[id]).length > 1 ? ' (every shelf it is on)' : '') + '? Visitors will no longer see it.')) return;
     var next = JSON.parse(JSON.stringify(books)); delete next[id];
     $('book').close();
     commit(next).then(function () { barSay('Deleted “' + title + '”.'); }, function (err) { barSay(explain(err), true); });

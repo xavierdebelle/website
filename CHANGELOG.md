@@ -5,9 +5,42 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v79 — 2026-10-07
+
+**What's new** · Library · [library.html#recommended]
+### One book,<br>two shelves
+A book I've read and would hand you now sits on Read and on Recommended
+at the same time — one book, not two copies.
+
+**Library — Read and Recommended at once**
+- A book now has a **status** (Read / Want to Read / Neither) and,
+  separately, **Recommended** (yes/no). Read + Recommended shows the same
+  book on both shelves; editing it once changes both.
+- Card: **Recommend / Unrecommend** button (signed in). Refuses on a book
+  that is only on Recommended, so nothing ends up on no shelf; Edit moves it.
+- Editor: Status select + a Recommended toggle; must be on at least one
+  shelf. Delete says it removes the book from every shelf it's on.
+- Import: a book already in the library is put on the chosen shelf too
+  (instead of skipped); skipped only if it's already there.
+- Data: `books/{id}` gains `status` and `recommended`. Old books with only
+  `shelf` convert on read (read → Read, want → Want, recommended →
+  Recommended only); nothing to migrate by hand. `shelf` is still written
+  (status, else "recommended") so a pre-v79 tab shows each book somewhere —
+  but a save from a pre-v79 tab would drop the Recommended flag on books
+  that are also Read. Reload open tabs. No rules change.
+
+**Tested on the mock**
+- Read-only copy of the live library (18 books, all Read). Recommend from
+  the card → on both shelves, saved `status: read, recommended: true,
+  shelf: read`. Greenlights via Edit → both shelves. Neither + not
+  recommended → refused. Import onto Recommended of 2 existing + 1 new →
+  1 added, 1 joined, 1 already there. Recommended-only card button refuses.
+
+---
+
 ## v78 — 2026-10-07
 
-### Library — Import list, and tidier shelves
+**Library — Import list, and tidier shelves**
 - **Import list** (admin bar, signed in as Xavier): paste one book per line,
   `Title, Author` (leading numbers ignored; author = after the last comma),
   choose a shelf, one save. Books already in the library (title match,
@@ -21,7 +54,7 @@ Every previous release is frozen, complete and runnable, under `versions/`.
   in Firebase (only his account can write it), so the page gets an import
   rather than a new starter list.
 
-### Tested on the mock
+**Tested on the mock**
 - Loaded a read-only copy of the live `pages/library` (12 books) into the
   mock, signed in as owner, imported his 17-line list onto Read: 16 added,
   $100M Offers skipped, the 12 existing books unchanged. No full titles
@@ -88,7 +121,7 @@ brightness can't be raised by a web page; the show view says to turn it up.
 Sign in and the period log follows you between phone and computer, live.
 Signed out, it works exactly as before, on this device only.
 
-### Cycle Calendar — sync
+**Cycle Calendar — sync**
 - The shared sync core (`add-cloud-sync/assets/sync-core.js`) pasted
   verbatim inside the tool's IIFE; buttons bound with addEventListener
   rather than onclick. Adapter: doc `cycle-calendar` →
@@ -102,7 +135,7 @@ Signed out, it works exactly as before, on this device only.
 - Like Kitchen, it lives on **whoever signs in** — Maria on her own account
   once approved on Access. No rules change, no console step.
 
-### Tested on the mock (two devices, 127.0.0.1 and localhost)
+**Tested on the mock (two devices, 127.0.0.1 and localhost)**
 - Untouched device signs in → nothing written. A logs 3 periods → cloud has
   them; B signs in → takes them silently. B changes period length → A shows
   it live; A deletes every period (empty list) → B shows none, then B adds
@@ -127,7 +160,7 @@ Log the first day of each period. As the log grows it works out the real
 average cycle, then marks the next period, the fertile window and the peak
 day on a two-month calendar. Everything stays on the phone it's used on.
 
-### Library (`library.html`) — new page
+**Library (`library.html`) — new page**
 - Three shelves (Read, Recommended, Want to Read) drawn as spines on a
   yellow board, title and author in vertical text, one colour per book.
   Click a spine → card with title, author, genre, rating (1–5), notes, and
@@ -149,7 +182,7 @@ day on a two-month calendar. Everything stays on the phone it's used on.
 - Linked from: the map (Personal → Library — a new node, so the layout
   regrows), the Index, and every page footer beside Food for Thought.
 
-### Cycle Calendar (`tools/cycle-calendar.html`) — new tool, Maria's Tools
+**Cycle Calendar (`tools/cycle-calendar.html`) — new tool, Maria's Tools**
 - Asked for as "Baby Maker"; Xavier chose a neutral name and slug
   (2026-10-07) so the public site says nothing personal.
 - Period start dates in localStorage `debelle.cycle-calendar.v1`, local only,
@@ -164,7 +197,7 @@ day on a two-month calendar. Everything stays on the phone it's used on.
 - Card in Maria's Tools; Privacy page lists it among local-only tools and
   Google Fonts users.
 
-### Verified
+**Verified**
 - Both scripts parse (JavaScriptCore). Scan: library — the same Firebase
   config and pages rule as Who Am I? (already live); cycle calendar — no
   backend.
