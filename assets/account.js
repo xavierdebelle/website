@@ -54,7 +54,8 @@
     { doc: 'idea-bank',      name: 'Idea Bank',      href: 'tools/idea-bank.html',      meta: 'ideabank.v1.meta' },
     { doc: 'notes',          name: 'Notes',          href: 'tools/notes.html',          meta: 'xdb.notes.v1.meta' },
     { doc: 'journal',        name: 'Journal',        href: 'tools/journal.html',        meta: 'xdb.journal.v1.meta' },
-    { doc: 'kitchen',        name: 'Kitchen',        href: 'tools/kitchen.html',        meta: 'xdb.kitchen.v1.meta' }
+    { doc: 'kitchen',        name: 'Kitchen',        href: 'tools/kitchen.html',        meta: 'xdb.kitchen.v1.meta' },
+    { doc: 'cycle-calendar', name: 'Cycle Calendar', href: 'tools/cycle-calendar.html', meta: 'debelle.cycle-calendar.v1.meta' }
   ];
 
   var S = { status: 'signedout', user: null, pending: 0, msg: '' };

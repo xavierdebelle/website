@@ -5,6 +5,38 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v76 — 2026-10-07
+
+**What's new** · Now syncs · [tools.html#maria]
+### Cycle Calendar,<br>on every device
+Sign in and the period log follows you between phone and computer, live.
+Signed out, it works exactly as before, on this device only.
+
+### Cycle Calendar — sync
+- The shared sync core (`add-cloud-sync/assets/sync-core.js`) pasted
+  verbatim inside the tool's IIFE; buttons bound with addEventListener
+  rather than onclick. Adapter: doc `cycle-calendar` →
+  `users/{uid}/tools/cycle-calendar`, payload `{starts, manual, cycle,
+  period}`, storage key unchanged (`debelle.cycle-calendar.v1`, so data
+  already on a device carries over), `clean()` rebuilds a dropped empty list.
+- Added to `TOOLS` in `assets/account.js` (account panel, Sync now).
+- Card says Syncs. Privacy page: the sign-in & sync section now lists every
+  synced tool (Notes, Journal and Kitchen had been missing since v73/v74)
+  and Cycle Calendar left the local-only list.
+- Like Kitchen, it lives on **whoever signs in** — Maria on her own account
+  once approved on Access. No rules change, no console step.
+
+### Tested on the mock (two devices, 127.0.0.1 and localhost)
+- Untouched device signs in → nothing written. A logs 3 periods → cloud has
+  them; B signs in → takes them silently. B changes period length → A shows
+  it live; A deletes every period (empty list) → B shows none, then B adds
+  one → round trip fine.
+- Both edit offline → reload → conflict bar in plain words; "Use the other
+  Mac's" adopts it and keeps a 7-day backup. Reload → still Live, no write.
+- Non-owner signs in → Access requested, only a `requests` entry; approved
+  on access.html → goes live without reload, writes only under its own uid;
+  Xavier's copy untouched. Console clean; no sideways scroll at 375px.
+
 ## v75 — 2026-10-07
 
 **What's new** · New page · [library.html]

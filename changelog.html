@@ -19,7 +19,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="description" content="What changed on this site and in the tools — new builds, rebuilds and fixes, newest first.">
 <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
-<link rel="stylesheet" href="assets/style.css?v=75">
+<link rel="stylesheet" href="assets/style.css?v=76">
 <script src="assets/account.js"></script>
 <script src="assets/site-index.js"></script>
 <style>
@@ -157,6 +157,24 @@
 <main class="log" id="log">
 
 <!-- LOG:START — generated from CHANGELOG.md, do not edit by hand -->
+
+  <article class="entry">
+    <p class="entry__when"><b>7 Oct 2026</b>Now syncs</p>
+    <div>
+      <h2>Tested on the mock (two devices, 127.0.0.1 and localhost)</h2>
+      <p>Sign in and the period log follows you between phone and computer, live. Signed out, it works exactly as before, on this device only.</p>
+      <ul>
+        <li>The shared sync core (<code>add-cloud-sync/assets/sync-core.js</code>) pasted verbatim inside the tool's IIFE; buttons bound with addEventListener rather than onclick. Adapter: doc <code>cycle-calendar</code> → <code>users/{uid}/tools/cycle-calendar</code>, payload <code>{starts, manual, cycle, period}</code>, storage key unchanged (<code>debelle.cycle-calendar.v1</code>, so data already on a device carries over), <code>clean()</code> rebuilds a dropped empty list.</li>
+        <li>Added to <code>TOOLS</code> in <code>assets/account.js</code> (account panel, Sync now).</li>
+        <li>Card says Syncs. Privacy page: the sign-in &amp; sync section now lists every synced tool (Notes, Journal and Kitchen had been missing since v73/v74) and Cycle Calendar left the local-only list.</li>
+        <li>Like Kitchen, it lives on <strong>whoever signs in</strong> — Maria on her own account once approved on Access. No rules change, no console step.</li>
+        <li>Untouched device signs in → nothing written. A logs 3 periods → cloud has them; B signs in → takes them silently. B changes period length → A shows it live; A deletes every period (empty list) → B shows none, then B adds one → round trip fine.</li>
+        <li>Both edit offline → reload → conflict bar in plain words; "Use the other Mac's" adopts it and keeps a 7-day backup. Reload → still Live, no write.</li>
+        <li>Non-owner signs in → Access requested, only a <code>requests</code> entry; approved on access.html → goes live without reload, writes only under its own uid; Xavier's copy untouched. Console clean; no sideways scroll at 375px.</li>
+      </ul>
+      <a class="go" href="tools.html#maria">See it &rarr;</a>
+    </div>
+  </article>
 
   <article class="entry">
     <p class="entry__when"><b>7 Oct 2026</b>New page</p>
@@ -756,7 +774,7 @@
       <a href="mailto:xavier@debellephotography.com">Email</a>
     </div>
   </div>
-  <p class="foot__sig">&copy; <span id="yr"></span> Xavier de Belle &middot; v75</p>
+  <p class="foot__sig">&copy; <span id="yr"></span> Xavier de Belle &middot; v76</p>
 </footer>
 
 <script>document.getElementById('yr').textContent = new Date().getFullYear();</script>
