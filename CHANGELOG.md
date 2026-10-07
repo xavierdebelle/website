@@ -5,6 +5,47 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v80 — 2026-10-07
+
+**What's new** · Kitchen · [tools/kitchen.html]
+### Swap recipes<br>between kitchens
+Every recipe now has a **Share** button. It sends the recipe as tidy text,
+and the other person pastes it into *Paste a whole recipe*, where it sorts
+itself back into name, who it's from, ingredients and method.
+
+To swap the whole book, use **Send the book** at the bottom of the Book
+tab, and the other person taps **Import recipes**. New recipes are added
+and edited ones updated. Their menus, grocery lists, stars and favourites
+are left alone.
+
+**Kitchen — `tools/kitchen.html`, source `Tools files/Tools/kitchen_v2.html`**
+- Chosen over a shared cookbook (that would need a shared database path and
+  per-recipe sync): two accounts, each with its own Kitchen, swap recipes by
+  hand. No Firebase or rules change.
+- **Share** (recipe view): `recipeText()` writes name, `From:`, `Category:`,
+  serves, total time, link, Ingredients, Method (numbered), Notes. Phones
+  open the share sheet; elsewhere it copies. The paste reader now picks up
+  `From:` / `Category:` lines (also `By:`, `De:`, `Par:`, `Catégorie:`).
+- **Send the book (.json)**: `{ kitchenRecipes: 1, recipes }` without stars,
+  favourite or photo flag (personal). Phones share the file (AirDrop,
+  Messages, email); elsewhere it downloads.
+- **Import recipes** (also takes a full Kitchen backup, recipes only): same
+  id → updated if theirs is newer, keeping this side's stars, favourite and
+  photo; same name and same "from" under another id → left alone; anything
+  else added. Toast counts new / updated / already here, with Undo.
+  Deletions don't travel.
+- Taste → Backup is unchanged (everything, for your own devices).
+
+**Verified locally (mock database)**
+- Share text → Paste a whole recipe round-trips both test recipes exactly
+  (name, from, category, serves, time, link, every ingredient and step).
+- Import on a second device with its own book: older copy updated with its
+  own 3 stars kept; a separately typed recipe of the same name left alone,
+  then added once removed; third import → "Nothing new". Favourites
+  untouched. 375 px: no sideways scroll.
+
+---
+
 ## v79 — 2026-10-07
 
 **What's new** · Library · [library.html#recommended]

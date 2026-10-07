@@ -123,6 +123,8 @@ select.in{font-weight:700;padding-right:28px}
 .badge{display:inline-block;font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;padding:3px 6px;background:var(--ink);color:var(--paper)}
 .badge.y{background:var(--volt);color:var(--ink);outline:2px solid var(--ink)}
 .count{font-family:var(--mono);font-size:11px;color:var(--grey);margin:0 0 12px}
+.book-foot{margin-top:26px;padding-top:14px;border-top:2px solid var(--hair);gap:4px 14px}
+.book-foot .hint{flex:1 1 260px}
 
 /* ---------- sheet (recipe, editor, day) ---------- */
 .sheet{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.62);display:flex;align-items:flex-start;justify-content:center;
@@ -400,6 +402,11 @@ select.in{font-weight:700;padding-right:28px}
     <div class="chips catbar" id="b-cats"></div>
     <p class="count" id="b-count"></p>
     <div class="grid" id="b-grid"></div>
+    <div class="row book-foot">
+      <button class="ghost" type="button" data-act="book-export">Send the book (.json)</button>
+      <button class="ghost" type="button" data-act="book-import">Import recipes</button>
+      <span class="hint">Swap recipes with someone else’s Kitchen: send yours, import theirs. Only recipes travel — menus, lists and stars stay put.</span>
+    </div>
   </section>
 
   <!-- ============ IDEAS ============ -->
@@ -503,6 +510,7 @@ select.in{font-weight:700;padding-right:28px}
 <div class="sheet" id="sheet" hidden><div class="sheet-box" id="sheet-box" role="dialog" aria-modal="true"></div></div>
 <input type="file" id="card-file" accept="image/*" capture="environment" hidden>
 <input type="file" id="import-file" accept="application/json,.json" hidden>
+<input type="file" id="recipes-file" accept="application/json,.json" hidden>
 <div id="toast" role="status"><span id="toast-msg"></span><button id="toast-undo" type="button">Undo</button></div>
 
 <script>
@@ -1258,7 +1266,8 @@ function recipeHTML(r) {
     '<button class="btn solid" type="button" data-act="cooked">Cooked it today</button>' +
     '<button class="btn" type="button" data-act="plan" data-ref="r:' + esc(r.id) + '">Add to the menu</button>' +
     '<button class="btn" type="button" data-act="r-groc">Ingredients → groceries</button>' +
-    '<button class="btn" type="button" data-act="edit">Edit</button></div>' +
+    '<button class="btn" type="button" data-act="edit">Edit</button>' +
+    '<button class="btn" type="button" data-act="r-share">Share</button></div>' +
     (r.url ? '<a class="src-link" href="' + esc(/^https?:/i.test(r.url) ? r.url : 'https://' + r.url) + '" target="_blank" rel="noopener"><span>Open on ' + esc(site || 'the web') + '</span> ↗</a>' : '') +
     (r.hasPhoto ? '<div id="rv-photo"><p class="hint">The photo of the card is kept on the device that scanned it.</p></div>' : '') +
     '<div class="two">' +
@@ -1426,7 +1435,7 @@ function saveEditor() {
 /* "Paste a whole recipe" — split pasted text into its parts */
 function parseRecipeText(txt) {
   var lines = String(txt || '').replace(/\r/g, '').split('\n').map(function (l) { return l.trim(); });
-  var out = { title: '', ingredients: [], steps: [], notes: [], serves: 0, time: 0, url: '' };
+  var out = { title: '', ingredients: [], steps: [], notes: [], serves: 0, time: 0, url: '', from: '', cat: '' };
   var mode = '', sawHeader = false;
   var H_ING = /^(ingredients?|ingr[ée]dients?|what you(?:'|’)?ll need|you(?:'|’)?ll need|shopping list)\s*:?$/i;
   var H_STEP = /^(instructions?|method|directions?|steps?|preparation|pr[ée]paration|[ée]tapes?|how to make( it)?|m[ée]thode)\s*:?$/i;
@@ -1439,6 +1448,10 @@ function parseRecipeText(txt) {
     if (sv && !out.serves && l.length < 60) { out.serves = +sv[1]; return; }
     var tm = l.match(/(?:total|cook|prep)?\s*time\s*:?\s*(?:(\d+)\s*h(?:ours?|rs?)?\s*)?(?:(\d+)\s*m(?:in(?:utes?)?)?)?/i);
     if (tm && (tm[1] || tm[2]) && l.length < 60) { out.time = Math.max(out.time, (+tm[1] || 0) * 60 + (+tm[2] || 0)); return; }
+    var who = !mode && l.match(/^(?:from|by|de|par|recipe by|recette de)\s*:\s*(.{1,60})$/i);
+    if (who) { out.from = who[1].trim(); return; }
+    var cat = !mode && l.match(/^(?:category|catégorie)\s*:\s*(.{1,40})$/i);
+    if (cat) { out.cat = cat[1].trim(); return; }
     var bare = l.replace(/^#+\s*|^\*\*|\*\*$/g, '').trim();
     if (H_ING.test(bare)) { mode = 'i'; sawHeader = true; return; }
     if (H_STEP.test(bare)) { mode = 's'; sawHeader = true; return; }
@@ -2061,6 +2074,14 @@ function act(a, el, ev) {
       else ui.curStep = i;
       rerenderSheet(); break;
     case 'print': window.print(); break;
+    case 'r-share':
+      r = recipeById(s.id);
+      var txt = recipeText(r);
+      if (navigator.share) navigator.share({ title: r.title, text: txt }).catch(function () {});
+      else if (navigator.clipboard) navigator.clipboard.writeText(txt).then(function () { toast('Copied. In their Kitchen: New recipe → Paste a whole recipe.'); }, function () { toast('Could not copy'); });
+      break;
+    case 'book-export': exportRecipes(); break;
+    case 'book-import': $('recipes-file').click(); break;
     case 'photo-full': var w = window.open(); if (w) w.document.write('<title>Card</title><body style="margin:0;background:#000"><img src="' + el.src + '" style="width:100%">'); break;
     case 'plan':
       it = refItem(el.dataset.ref); if (!it) break;
@@ -2091,6 +2112,8 @@ function act(a, el, ev) {
       if (got.serves && !d.serves) d.serves = got.serves;
       if (got.time && !d.time) d.time = got.time;
       if (got.url && !d.url) { d.url = got.url; if (d.kind === 'home') d.kind = 'online'; }
+      if (got.from && !d.from) d.from = got.from;
+      if (got.cat && !d.cat) d.cat = got.cat;
       if (got.notes.length) d.notes = (d.notes ? d.notes + '\n' : '') + got.notes.join('\n');
       ed.paste = false; ed.dirty = true;
       paintEditor();
@@ -2300,9 +2323,92 @@ $('import-file').addEventListener('change', function () {
     toast('Imported ' + plural(add, 'new thing'), function () { restore(snap); });
   }).catch(function () { toast('That file isn’t a Kitchen backup'); });
 });
+$('recipes-file').addEventListener('change', function () {
+  var f = this.files && this.files[0]; this.value = '';
+  if (!f) return;
+  f.text().then(function (t) {
+    var j = JSON.parse(t);
+    var list = j && j.recipes ? listOf(j.recipes) : (j && j.data && j.data.recipes ? listOf(j.data.recipes) : null);   // a recipes file or a full backup
+    if (!list) throw new Error('bad');
+    var snap = snapshot(), n = importRecipes(list);
+    if (!n.added && !n.updated) { toast(n.same ? 'Nothing new: you already have all ' + plural(n.same, 'recipe') : 'No recipes in that file'); return; }
+    commit();
+    var bits = [];
+    if (n.added) bits.push(plural(n.added, 'new recipe'));
+    if (n.updated) bits.push(n.updated + ' updated');
+    if (n.same) bits.push(n.same + ' already here');
+    toast('Imported ' + bits.join(', '), function () { restore(snap); });
+  }).catch(function () { toast('That file isn’t a Kitchen recipes file'); });
+});
 // past midnight, "today" moves on
 var lastToday = todayKey();
 setInterval(function () { var t = todayKey(); if (t !== lastToday) { lastToday = t; ui.ideas.list = null; renderAll(); } }, 60000);
+
+/* ============================================================
+   Swapping recipes with another Kitchen — no shared account
+   needed. Share sends one recipe as text that "Paste a whole
+   recipe" reads back; the book travels as a recipes-only file.
+   Stars, favourites and photos are personal and stay behind.
+   ============================================================ */
+function recipeText(r) {
+  var head = [r.title];
+  if (r.from) head.push('From: ' + r.from);
+  if (r.cat) head.push('Category: ' + r.cat);
+  if (r.serves) head.push('Serves ' + r.serves);
+  if (r.time) head.push('Total time: ' + r.time + ' min');
+  if (r.url) head.push(/^https?:/i.test(r.url) ? r.url : 'https://' + r.url);
+  var t = head.join('\n');
+  if (r.ingredients.length) t += '\n\nIngredients\n' + r.ingredients.map(function (l) { return '- ' + l; }).join('\n');
+  if (r.steps.length) t += '\n\nMethod\n' + r.steps.map(function (l, i) { return (i + 1) + '. ' + l; }).join('\n');
+  if (r.notes.trim()) t += '\n\nNotes\n' + r.notes.trim();
+  return t;
+}
+function travelling(r) {
+  var c = JSON.parse(JSON.stringify(r));
+  delete c.fav; delete c.rating; delete c.hasPhoto;
+  return c;
+}
+function exportRecipes() {
+  if (!state.recipes.length) { toast('The book is empty'); return; }
+  var body = JSON.stringify({ kitchenRecipes: 1, exported: new Date().toISOString(), recipes: state.recipes.map(travelling) }, null, 2);
+  var name = 'kitchen-recipes-' + todayKey() + '.json';
+  var file = null;
+  try { file = new File([body], name, { type: 'application/json' }); } catch (e) {}
+  if (file && navigator.canShare && navigator.canShare({ files: [file] })) {   // phones: AirDrop, Messages, email
+    navigator.share({ files: [file], title: 'Recipes' }).catch(function () {});
+    return;
+  }
+  var link = document.createElement('a');
+  link.href = URL.createObjectURL(new Blob([body], { type: 'application/json' })); link.download = name;
+  document.body.appendChild(link); link.click(); link.remove();
+  setTimeout(function () { URL.revokeObjectURL(link.href); }, 2000);
+  toast('Saved ' + plural(state.recipes.length, 'recipe') + '. Send the file; they tap Import recipes.');
+}
+/* Merge recipes in: new ones are added, ones edited since are updated
+   (keeping this side's stars, favourite and photo), and one with the
+   same name and source as a recipe already here is left alone. */
+function importRecipes(list) {
+  var byId = {}, byName = {}, added = 0, updated = 0, same = 0;
+  state.recipes.forEach(function (r) { byId[r.id] = r; byName[slug(r.title) + '|' + slug(r.from)] = r; });
+  list.forEach(function (x) {
+    if (!x || !x.id) return;
+    var inc = normRecipe(x), mine = byId[inc.id];
+    if (mine) {
+      if (inc.updated > mine.updated) {
+        inc.fav = mine.fav; inc.rating = mine.rating; inc.hasPhoto = mine.hasPhoto;
+        state.recipes = state.recipes.map(function (r) { return r.id === inc.id ? inc : r; });
+        updated++;
+      } else same++;
+      return;
+    }
+    if (byName[slug(inc.title) + '|' + slug(inc.from)]) { same++; return; }
+    inc.fav = false; inc.rating = 0; inc.hasPhoto = false;
+    state.recipes.push(inc); byId[inc.id] = inc; added++;
+    if (inc.cat && state.prefs.cats.indexOf(inc.cat) < 0) state.prefs.cats.push(inc.cat);
+    if (inc.from && inc.kind !== 'online' && state.prefs.people.indexOf(inc.from) < 0) state.prefs.people.push(inc.from);
+  });
+  return { added: added, updated: updated, same: same };
+}
 
 /* ---------- sync adapter: what this tool hands the shared sync code ---------- */
 var SYNC = {
