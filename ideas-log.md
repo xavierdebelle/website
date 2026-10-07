@@ -208,3 +208,25 @@ its ID forever. Statuses: new, planned, in progress, done, dropped.
 ### IDEA-049 · "Pick your favourites" mode for client galleries
 - **Category:** Tool · **Effort:** L · **Impact:** ★★ · **Status:** new
 - The masonry wall already handles any photo shape, reordering and crops, but only the owner can see it. Add a Share button that creates a read-only link where a client taps a heart on their favourites and sends the picks back (saved in Firebase, with a note to Xavier). It turns the wall into a proofing tool for album and print selection, gives each wedding a reason to return to the site, and slots into the couple portal from IDEA-026.
+
+## 2026-10-07 — Monetization and offers
+
+### IDEA-050 · Three ready-made wedding bundles on top of the Package Builder
+- **Category:** Monetization · **Effort:** M · **Impact:** ★★★ · **Status:** new
+- tools/package-builder.html is 100% à la carte: PHOTO_OPTIONS, VIDEO_OPTIONS, VIDEO_ADDONS, GLAM_OPTIONS and OTHER_ADDONS (about 25 line items) with no anchor, so a couple faces a blank page and the total only goes up as fast as they dare to click. Add a row at the top with three one-click bundles (for example Essential, Signature, Full Story) that pre-fill the cart, show the price next to "if bought separately", and mark the middle one "Most booked". Bundles raise the average sale and make the decision a pick between three, not a build from scratch.
+
+### IDEA-051 · Engagement session as a $350 front-end offer that credits toward the wedding
+- **Category:** Monetization · **Effort:** S · **Impact:** ★★★ · **Status:** new
+- The engagement session already exists as one add-on in package-builder.html (oa_engagement, $350, 1 hour, top 50 images) but is buried at the bottom, and work.html's only first step is "Email me". Turn it into a stand-alone attraction offer on the de Belle chapter: "Meet me first: engagement session, $350, fully credited if you book your wedding within 60 days". Couples get to know Xavier at low risk, he is paid for his time, and the credit makes the wedding booking the natural next step.
+
+### IDEA-052 · Show "or $X a month" under the Package Builder total
+- **Category:** Monetization · **Effort:** S · **Impact:** ★★ · **Status:** new
+- The total shown in package-builder.html (renderSummary, total-display and total-tax-display) is a single lump sum that easily lands between $5,000 and $10,000 for photo plus video plus an album. Add a line under it, "or about $X a month over 10 months before your date", computed from the wedding date once entered, with a deposit-then-instalments schedule sent through GoHighLevel invoices. Price objections are mostly cash-flow objections, and a visible monthly figure removes the biggest one.
+
+### IDEA-053 · Anniversary club for past couples (continuity)
+- **Category:** Monetization · **Effort:** M · **Impact:** ★★★ · **Status:** new
+- Xavier has shot 3,000+ weddings (work.html spec list), yet nothing on the site invites those couples back; every product is a one-time sale. Create a yearly offer, for example "Anniversary session plus a printed 8x10, $149 a year or $99 for the first-year anniversary", sold by a GoHighLevel automation that fires on each couple's wedding date. It is the only continuity offer in the model, it reuses a contact list that already exists, and it brings family portraits and referrals as the couples grow.
+
+### IDEA-054 · Preferred-vendor spots inside the Wedding Schedule
+- **Category:** Monetization · **Effort:** M · **Impact:** ★★ · **Status:** new
+- tools/wedding-schedule.html already has a Vendors Information step (the VENDORS array: Venue, Planner, DJ, Hairdresser, Make-up, Florist, Cake, Boutique, Decor, Jewelry), so every couple tells the tool who they still need. Add a small "Need a florist? Xavier's trusted pick" card next to each empty row, linking to a partner vendor who pays a monthly listing fee or a referral fee per booked couple. It makes money from a free tool without charging couples, and the recommendations deepen Xavier's authority as the person who knows everyone in Montreal weddings.
