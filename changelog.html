@@ -19,7 +19,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="description" content="What changed on this site and in the tools — new builds, rebuilds and fixes, newest first.">
 <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
-<link rel="stylesheet" href="assets/style.css?v=80">
+<link rel="stylesheet" href="assets/style.css?v=81">
 <script src="assets/account.js"></script>
 <script src="assets/site-index.js"></script>
 <style>
@@ -157,6 +157,21 @@
 <main class="log" id="log">
 
 <!-- LOG:START — generated from CHANGELOG.md, do not edit by hand -->
+
+  <article class="entry">
+    <p class="entry__when"><b>7 Oct 2026</b>Kitchen</p>
+    <div>
+      <h2>Kitchen learns<br>to read</h2>
+      <p>With a Claude key added (Taste → Claude), Kitchen can now:</p>
+      <p>Nothing is sent unless you press one of those buttons. Without a key, Kitchen works exactly as before.</p>
+      <ul>
+        <li><strong>Read a recipe card.</strong> Photograph Grandma's card and tap *Read it for me*. It copies the card into the form as written, French stays French, and anything it can't make out is marked [?] for you to check against the photo beside it.</li>
+        <li><strong>See what's in the fridge.</strong> Snap the fridge and tap *What's in there?*. The food it recognises appears as chips; untick what's wrong, add the rest.</li>
+        <li><strong>Suggest new dishes.</strong> *Ideas from Claude* (in Leftovers and Ideas) gives three dishes that aren't in your book yet, built around what's in the fridge and what you like to cook. Save one, cook it tonight, or send what's missing to the grocery list.</li>
+      </ul>
+      <a class="go" href="tools/kitchen.html">See it &rarr;</a>
+    </div>
+  </article>
 
   <article class="entry">
     <p class="entry__when"><b>7 Oct 2026</b>Kitchen</p>
@@ -793,7 +808,7 @@
       <a href="mailto:xavier@debellephotography.com">Email</a>
     </div>
   </div>
-  <p class="foot__sig">&copy; <span id="yr"></span> Xavier de Belle &middot; v80</p>
+  <p class="foot__sig">&copy; <span id="yr"></span> Xavier de Belle &middot; v81</p>
 </footer>
 
 <script>document.getElementById('yr').textContent = new Date().getFullYear();</script>

@@ -5,6 +5,83 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v81 — 2026-10-07
+
+**What's new** · Kitchen · [tools/kitchen.html]
+### Kitchen learns<br>to read
+With a Claude key added (Taste → Claude), Kitchen can now:
+
+- **Read a recipe card.** Photograph Grandma's card and tap *Read it for
+  me*. It copies the card into the form as written, French stays French,
+  and anything it can't make out is marked [?] for you to check against the
+  photo beside it.
+- **See what's in the fridge.** Snap the fridge and tap *What's in there?*.
+  The food it recognises appears as chips; untick what's wrong, add the rest.
+- **Suggest new dishes.** *Ideas from Claude* (in Leftovers and Ideas) gives
+  three dishes that aren't in your book yet, built around what's in the
+  fridge and what you like to cook. Save one, cook it tonight, or send what's
+  missing to the grocery list.
+
+Nothing is sent unless you press one of those buttons. Without a key,
+Kitchen works exactly as before.
+
+**Kitchen — `tools/kitchen.html`, source `Tools files/Tools/kitchen_v3.html`**
+- Model `claude-sonnet-5-5` (Xavier's choice), official SDK
+  `@anthropic-ai/sdk@0.132.0` loaded from jsDelivr (`+esm`) the first time a
+  Claude button is used, `dangerouslyAllowBrowser: true` (the key is the
+  person's own, on their own device). Structured output
+  (`output_config.format` JSON schema) for each feature; server-side refusal
+  fallback on (`fallbacks: "default"`, beta `server-side-fallback-2026-07-01`).
+  Effort: card `medium`, fridge `low`, ideas `medium`.
+- **Key:** Xavier's, on his bill. Pasted once per account in Taste → Claude;
+  kept in `xdb.kitchen.ai` on the device and at
+  `users/{uid}/tools/kitchen-ai` = `{ key, updatedAt }` (newer copy wins,
+  watched live; the existing `users` rule covers it — **no rules change**).
+  Never in the page, the cookbook doc, a backup or Send the book. Until an
+  account is approved the key stays on the device. Replace / Remove / Test.
+  A per-device monthly count with a cost estimate ($2 / $10 per million
+  tokens).
+- **Read it for me** (card editor, with a photo): sends the stored card photo
+  (≤1800 px JPEG). Copies as written, no translating or correcting, `[?]` /
+  `[illegible]` where unsure, margins → notes. Fills empty name / from /
+  serves / minutes, replaces ingredients and method (asks first if you'd
+  typed some), appends notes; the toast counts the `[?]` marks.
+- **What's in there?** (Leftovers, with a photo): items as plain singular
+  English, `sure` flag; unsure ones start unticked; ones already listed shown
+  as ✓; Add puts the ticked ones in the fridge. A new photo clears it.
+- **Ideas from Claude** (Leftovers when the fridge has something; Ideas → Ask
+  Claude, mood applied): a text brief (on hand, mood, date and season,
+  top categories and ingredients, diet, never-use, pantry basics, loved / no
+  ideas, categories, book titles to avoid). Three dishes with why, uses,
+  ingredients with amounts and steps; Save to the book (from "Claude", tag
+  `ai`), Tonight, + Missing to the list.
+- Errors in plain words: no key, key refused (401), out of credit, rate or
+  spending limit (429), Claude busy (5xx), no connection, library didn't
+  load, declined, incomplete answer.
+
+**Privacy page:** a "Kitchen with Claude" entry (EN/FR) and Anthropic +
+jsDelivr in "Who else handles it"; updated October 7, 2026.
+
+**Scan.** No key anywhere in the published code (only the `sk-ant-…`
+placeholder). The scan's "email address" `sdk@0.132.0` is the SDK version.
+New outside hosts at use time: `cdn.jsdelivr.net`, `api.anthropic.com`.
+
+**Verified locally (mock database + a stand-in Claude endpoint)**
+- The request carries the key, `anthropic-version`, the browser-access
+  header, the fallback beta, `claude-sonnet-5-5`, the JSON schema, and the
+  photo as base64 JPEG.
+- Key: saved on a device whose account wasn't approved yet → stayed local;
+  approved → appeared at `users/{uid}/tools/kitchen-ai` (not in the cookbook
+  doc); cleared on the device and reloaded → came back from the account.
+- Card read filled every field and flagged the `[?]`; fridge list with an
+  unsure item unticked, untick + add; ideas in Leftovers and in Ideas with
+  a mood, save / tonight / missing to the list. Wrong key, no credit and no
+  connection each give their message. 375 px: no sideways scroll.
+- **Not tested against the real Claude API** (no key here): the first real
+  read is the live check.
+
+---
+
 ## v80 — 2026-10-07
 
 **What's new** · Kitchen · [tools/kitchen.html]

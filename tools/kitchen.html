@@ -224,6 +224,17 @@ select.in{font-weight:700;padding-right:28px}
 .match .m{font-size:13px;line-height:1.5;color:var(--grey)}
 .match .m strong{color:var(--ink)}
 .match .acts{margin:0;grid-column:1/-1}
+.ai-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;border:3px solid var(--ink);background:var(--volt);padding:12px 14px;margin-bottom:16px}
+.ai-row .hint{flex:1 1 200px;color:var(--ink)}
+.ai-found{border:3px solid var(--ink);padding:12px;margin-top:10px}
+.ai-found .k{display:block;color:var(--ink);margin-bottom:8px}
+.ai-ideas{margin-bottom:22px}
+.ai-ideas .match{border-color:var(--ink);box-shadow:6px 6px 0 var(--volt)}
+.ai-ideas details{grid-column:1/-1;font-size:14px;line-height:1.5}
+.ai-ideas summary{cursor:pointer;font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase}
+.ai-ideas details ul,.ai-ideas details ol{margin:8px 0 0;padding-left:20px}
+.ai-set code{font-family:var(--mono);font-size:12px;background:var(--mist);padding:2px 5px}
+.btn.busy{opacity:.6;cursor:progress}
 .pct{font-family:var(--mono);font-weight:700;font-size:13px;background:var(--ink);color:var(--volt);padding:6px 8px;white-space:nowrap}
 
 /* ---------- menu ---------- */
@@ -419,6 +430,7 @@ select.in{font-weight:700;padding-right:28px}
     <div id="i-hero"></div>
     <div class="subh"><b>Also good right now</b><button class="ghost" type="button" data-act="i-shuffle">Shuffle</button></div>
     <div class="minis" id="i-minis"></div>
+    <div id="i-ai"></div>
   </section>
 
   <!-- ============ LEFTOVERS ============ -->
@@ -433,7 +445,8 @@ select.in{font-weight:700;padding-right:28px}
           <span class="k">1 · Snap the fridge (optional)</span>
           <label class="btn" style="width:100%"><input type="file" id="l-photo" accept="image/*" capture="environment" hidden>Take or choose a photo</label>
           <div class="fridge-photo" id="l-photo-view"></div>
-          <p class="hint" style="margin:10px 0 0">The photo is only a reminder while you tap what you see. It isn't saved or sent anywhere.</p>
+          <div id="l-ai"></div>
+          <p class="hint" style="margin:10px 0 0" id="l-photo-hint"></p>
         </div>
         <div class="box">
           <span class="k">2 · What's in there</span>
@@ -443,6 +456,7 @@ select.in{font-weight:700;padding-right:28px}
         </div>
       </div>
       <div>
+        <div id="l-aiideas"></div>
         <div class="subh" style="margin-top:0"><b>You could make</b><span class="k" id="l-n"></span></div>
         <div id="l-results"></div>
       </div>
@@ -1374,8 +1388,9 @@ function paintEditor() {
   if (d.kind === 'card') {
     photoCol = '<div class="ed-photo">' + (ed.photo ?
       '<div class="frame" data-act="zoom" title="Tap to zoom"><img src="' + ed.photo + '" alt="The handwritten card"></div>' +
-      '<div class="row" style="margin-top:8px"><label class="btn sm" for="card-file">Retake</label><button class="ghost" type="button" data-act="ed-nophoto">Remove photo</button></div>' +
-      '<p class="hint">Tap the photo to zoom. Type it in on the ' + (innerWidth > 900 ? 'right' : 'form below') + '; the photo stays on this device with the recipe.</p>'
+      '<div class="row" style="margin-top:8px">' + (aiKey() ? '<button class="btn sm y' + (ed.reading ? ' busy' : '') + '" type="button" data-act="ai-card"' + (ed.reading ? ' disabled' : '') + '>' + (ed.reading ? 'Reading the card…' : 'Read it for me') + '</button>' : '') +
+      '<label class="btn sm" for="card-file">Retake</label><button class="ghost" type="button" data-act="ed-nophoto">Remove photo</button></div>' +
+      '<p class="hint">Tap the photo to zoom. ' + (aiKey() ? 'Claude can read it into the form, or type' : 'Type') + ' it in on the ' + (innerWidth > 900 ? 'right' : 'form below') + '; the photo stays on this device with the recipe.</p>'
       : '<label class="drop" for="card-file"><b>Take a photo of the card</b><span class="hint">It sits beside the form while you type it in, and stays with the recipe on this device.</span></label>') + '</div>';
   }
   var pasteBox = (d.kind !== 'card') ? (ed.paste ?
@@ -1538,6 +1553,7 @@ function renderIdeas() {
     if (j === ui.ideas.idx) break;
     minis.push(j);
   }
+  $('i-ai').innerHTML = aiKey() ? '<div class="subh"><b>Ask Claude</b><span class="k">' + (ui.ideas.mood ? 'Mood: ' + esc(moodName(ui.ideas.mood)) : 'Any mood') + '</span></div>' + aiIdeasHTML('ideas') : '';
   $('i-minis').innerHTML = minis.map(function (j) {
     var m = list[j];
     return '<button class="mini" type="button" data-act="i-pick" data-v="' + j + '"><span class="k">' + esc(m.cat) + (m.mins ? ' · ' + m.mins + ' min' : '') + (m.type === 'r' ? ' · Book' : '') + '</span>' +
@@ -1601,6 +1617,11 @@ function renderLeft() {
     }).join('') + '</div>';
   }).join('');
   $('l-photo-view').innerHTML = ui.fridgePhoto ? '<img src="' + ui.fridgePhoto + '" alt="Your fridge"><button class="ghost" type="button" data-act="l-nophoto">Remove photo</button>' : '';
+  $('l-photo-hint').textContent = aiKey()
+    ? 'Claude can list what it sees. The photo goes to Anthropic only when you tap the button, and isn’t kept here.'
+    : 'The photo is only a reminder while you tap what you see. It isn’t saved or sent anywhere.';
+  $('l-ai').innerHTML = fridgeAiHTML();
+  $('l-aiideas').innerHTML = aiKey() && have.length ? aiIdeasHTML('left') : '';
   var res = leftoverMatches();
   $('l-n').textContent = res.length ? res.length + ' found' : '';
   if (!have.length) { $('l-results').innerHTML = '<div class="empty"><b>Open the fridge</b>Add a few things on the left and the matches appear here, best first. Your own recipes come before the built-in ideas.</div>'; return; }
@@ -1935,7 +1956,7 @@ function tagEditor(key, label, hint, placeholder) {
 function renderSettings() {
   var p = state.prefs;
   var hidden = Object.keys(state.ideaFb).filter(function (k) { return state.ideaFb[k] < 0 && IDEA[k]; });
-  $('t-set').innerHTML =
+  $('t-set').innerHTML = aiSettingsHTML() +
     '<div class="box"><span class="k">Diet</span><p class="hint" style="margin:0 0 10px">Suggestions that don’t fit are left out everywhere.</p><div class="chips">' +
       DIETS.map(function (d) { var on = p.diet.indexOf(d[0]) >= 0; return '<button class="chip' + (on ? ' on' : '') + '" type="button" data-act="p-diet" data-v="' + d[0] + '">' + (on ? '✓ ' : '') + d[1] + '</button>'; }).join('') + '</div></div>' +
     '<div class="box"><span class="k">Meals on the menu</span><p class="hint" style="margin:0 0 10px">Which meals the month plans and fills.</p><div class="chips">' +
@@ -2081,6 +2102,60 @@ function act(a, el, ev) {
       else if (navigator.clipboard) navigator.clipboard.writeText(txt).then(function () { toast('Copied. In their Kitchen: New recipe → Paste a whole recipe.'); }, function () { toast('Could not copy'); });
       break;
     case 'book-export': exportRecipes(); break;
+
+    /* Claude */
+    case 'ai-save':
+      var kv = ($('ai-key') && $('ai-key').value || '').trim();
+      if (!kv) { $('ai-key') && $('ai-key').focus(); break; }
+      aiSetKey(kv); ui.aiEdit = false; renderAll();
+      toast('Key saved' + (cloud.uid ? ' and synced to your account' : ' on this device'));
+      break;
+    case 'ai-edit': ui.aiEdit = true; renderSettings(); setTimeout(function () { $('ai-key') && $('ai-key').focus(); }); break;
+    case 'ai-cancel': ui.aiEdit = false; renderSettings(); break;
+    case 'ai-remove':
+      if (!confirm('Remove the Claude key from ' + (cloud.uid ? 'this account and all its devices' : 'this device') + '?')) break;
+      aiSetKey(''); ui.aiEdit = false; ui.aiIdeas = null; ui.fridgeAi = null; renderAll(); toast('Key removed');
+      break;
+    case 'ai-test':
+      el.disabled = true; el.textContent = 'Testing…';
+      askClaude('test', { effort: 'low', max: 1000, system: 'Answer with {"ok": true}.', schema: { type: 'object', additionalProperties: false, required: ['ok'], properties: { ok: { type: 'boolean' } } },
+        content: [{ type: 'text', text: 'Are you there?' }] })
+        .then(function () { toast('Claude answered. The key works.'); }, function (e) { toast(aiError(e)); })
+        .then(function () { renderSettings(); });
+      break;
+    case 'ai-card': aiReadCard(); break;
+    case 'ai-fridge': aiReadFridge(); break;
+    case 'ai-f-tog': var fi = ui.fridgeAi && ui.fridgeAi.items[+v]; if (fi) { fi.on = !fi.on; renderLeft(); } break;
+    case 'ai-f-add':
+      var picked2 = ui.fridgeAi.items.filter(function (x) { return x.on; }).map(function (x) { return x.name; });
+      var before = state.fridge.length;
+      addFridge(picked2.join(', '));
+      ui.fridgeAi = null; commit();
+      toast('Added ' + plural(state.fridge.length - before, 'thing') + ' to the fridge');
+      break;
+    case 'ai-f-close': ui.fridgeAi = null; renderLeft(); break;
+    case 'ai-ideas': aiSuggest(v); break;
+    case 'ai-i-save':
+      var ai = ui.aiIdeas && ui.aiIdeas.list[+v];
+      if (ai) openEditor(null, { prefill: { title: ai.title, cat: ai.category, time: ai.minutes, serves: ai.serves, ingredients: ai.ingredients, steps: ai.steps,
+        notes: ai.why + '\nSuggested by Claude, ' + fmtDate(todayKey()) + '. Make it yours once you’ve cooked it.', from: 'Claude', kind: 'home', tags: ['ai'] } });
+      break;
+    case 'ai-i-tonight':
+      var ai2 = ui.aiIdeas && ui.aiIdeas.list[+v];
+      if (ai2) undoable('On tonight’s menu: ' + ai2.title, function () { addMenu(todayKey(), 'dinner', null, ai2.title); });
+      break;
+    case 'ai-i-missing':
+      var ai3 = ui.aiIdeas && ui.aiIdeas.list[+v];
+      if (!ai3) break;
+      var haveK = state.fridge.map(ingKey), snapM = snapshot(), nM = 0;
+      ai3.ingredients.forEach(function (l) {
+        var p = parseIng(l);
+        if (!p.key || isStaple(p.key) || haveK.some(function (h) { return matches(h, p.key); })) return;
+        if (addGrocery(cap(p.name || p.key), p.qty ? qtyUnit(p.qty, p.unit) : '', ai3.title.slice(0, 24), aisleFor(p))) nM++;
+      });
+      commit();
+      toast(nM ? 'Added ' + plural(nM, 'item') + ' to the grocery list' : 'You have everything for it', nM ? function () { restore(snapM); } : null);
+      break;
     case 'book-import': $('recipes-file').click(); break;
     case 'photo-full': var w = window.open(); if (w) w.document.write('<title>Card</title><body style="margin:0;background:#000"><img src="' + el.src + '" style="width:100%">'); break;
     case 'plan':
@@ -2158,7 +2233,7 @@ function act(a, el, ev) {
       commit(); break;
     case 'l-del': state.fridge.splice(+v, 1); commit(); break;
     case 'l-clear': undoable('Fridge emptied', function () { state.fridge = []; }); break;
-    case 'l-nophoto': ui.fridgePhoto = ''; renderLeft(); break;
+    case 'l-nophoto': ui.fridgePhoto = ''; ui.fridgeAi = null; renderLeft(); break;
     case 'l-missing':
       it = refItem(el.dataset.ref);
       var miss = (leftoverMatches().filter(function (x) { return x.key === it.key; })[0] || {}).miss || [];
@@ -2284,6 +2359,7 @@ $('b-sort').addEventListener('change', function () { ui.book.sort = this.value; 
 $('l-add').addEventListener('keydown', function (ev) { if (ev.key === 'Enter') { ev.preventDefault(); act('l-add', this); } });
 $('g-add').addEventListener('keydown', function (ev) { if (ev.key === 'Enter') { ev.preventDefault(); act('g-add', this); } });
 document.addEventListener('keydown', function (ev) {
+  if (ev.key === 'Enter' && ev.target.id === 'ai-key') { ev.preventDefault(); act('ai-save', ev.target); return; }
   if (ev.key === 'Enter' && ev.target.dataset && ev.target.dataset.padd) { ev.preventDefault(); act('p-add', { dataset: { key: ev.target.dataset.padd } }); return; }
   if (ev.key === 'Escape' && ui.sheet) { closeSheet(); return; }
   var typing = /INPUT|TEXTAREA|SELECT/.test((document.activeElement || {}).tagName || '');
@@ -2292,7 +2368,7 @@ document.addEventListener('keydown', function (ev) {
 $('l-photo').addEventListener('change', function () {
   var f = this.files && this.files[0]; this.value = '';
   if (!f) return;
-  shrink(f, 1400, 0.8).then(function (src) { ui.fridgePhoto = src; renderLeft(); }).catch(function (e) { toast(e.message); });
+  shrink(f, 1400, 0.8).then(function (src) { ui.fridgePhoto = src; ui.fridgeAi = null; renderLeft(); }).catch(function (e) { toast(e.message); });
 });
 $('card-file').addEventListener('change', function () {
   var f = this.files && this.files[0]; this.value = '';
@@ -2343,6 +2419,289 @@ $('recipes-file').addEventListener('change', function () {
 // past midnight, "today" moves on
 var lastToday = todayKey();
 setInterval(function () { var t = todayKey(); if (t !== lastToday) { lastToday = t; ui.ideas.list = null; renderAll(); } }, 60000);
+
+/* ============================================================
+   Claude — reads recipe cards and fridge photos, and suggests
+   new dishes. Xavier's API key, pasted once per account: kept
+   on the device and in that account's private data
+   (users/{uid}/tools/kitchen-ai, so it follows the person to
+   their other devices) — never in the page, a backup or Send the
+   book. Nothing is sent until a button is pressed. The official
+   SDK is fetched the first time it's needed.
+   ============================================================ */
+var AI = {
+  model: 'claude-sonnet-5-5',
+  sdk: 'https://cdn.jsdelivr.net/npm/@anthropic-ai/sdk@0.132.0/+esm',
+  KEY: 'xdb.kitchen.ai',             // { key, updatedAt } on this device
+  USE: 'xdb.kitchen.ai.usage',       // this device's count for the month
+  DOC: 'kitchen-ai',
+  IN: 2, OUT: 10                     // $ per million tokens, input / output, for the running estimate
+};
+function aiLocal() {
+  try { var v = JSON.parse(localStorage.getItem(AI.KEY) || 'null'); if (v && typeof v.key === 'string') return { key: v.key, updatedAt: +v.updatedAt || 0 }; } catch (e) {}
+  return { key: '', updatedAt: 0 };
+}
+function aiKey() { return aiLocal().key; }
+function aiStoreLocal(v) { try { localStorage.setItem(AI.KEY, JSON.stringify(v)); } catch (e) {} aiClientP = null; }
+function aiRef(uid) { return cloud.fb.f.ref(cloud.fb.db, 'users/' + uid + '/tools/' + AI.DOC); }
+function aiPush(v) { if (cloud.uid && cloud.fb) cloud.fb.f.set(aiRef(cloud.uid), { key: v.key, updatedAt: v.updatedAt }).catch(function () {}); }
+function aiSetKey(k) { var v = { key: k, updatedAt: Date.now() }; aiStoreLocal(v); aiPush(v); }
+/* Follow the signed-in account: newer copy wins, either way. */
+var aiLink = { uid: null, off: null };
+function aiWatch() {
+  var uid = cloud.uid && cloud.fb ? cloud.uid : null;
+  if (uid === aiLink.uid) return;
+  if (aiLink.off) { try { aiLink.off(); } catch (e) {} aiLink.off = null; }
+  aiLink.uid = uid;
+  if (!uid) return;
+  aiLink.off = cloud.fb.f.onValue(aiRef(uid), function (snap) {
+    var c = snap.val(), mine = aiLocal();
+    if (!c || !c.updatedAt) { if (mine.updatedAt) aiPush(mine); return; }
+    if (+c.updatedAt > mine.updatedAt) { aiStoreLocal({ key: String(c.key || ''), updatedAt: +c.updatedAt }); renderAll(); }
+    else if (+c.updatedAt < mine.updatedAt) aiPush(mine);
+  }, function () {});
+}
+setInterval(aiWatch, 1500);
+
+var aiClientP = null, aiClientFor = '';
+function aiClient() {
+  var k = aiKey();
+  if (!k) return Promise.reject({ kitchen: 'nokey' });
+  if (aiClientP && aiClientFor === k) return aiClientP;
+  aiClientFor = k;
+  aiClientP = import(AI.sdk).then(function (m) {
+    var Anthropic = m.default || m.Anthropic;
+    var opts = { apiKey: k, dangerouslyAllowBrowser: true, maxRetries: 1, timeout: 120000 };   // the key is the person's own, on their own device
+    if (window.__kitchenAiBase) opts.baseURL = window.__kitchenAiBase;                       // test hook: a stand-in server
+    return new Anthropic(opts);
+  });
+  aiClientP.catch(function () { aiClientP = null; });
+  return aiClientP;
+}
+function aiUse(kind, usage) {
+  var month = todayKey().slice(0, 7), u = {};
+  try { u = JSON.parse(localStorage.getItem(AI.USE) || '{}') || {}; } catch (e) {}
+  if (u.month !== month) u = { month: month, card: 0, fridge: 0, ideas: 0, test: 0, inTok: 0, outTok: 0 };
+  u[kind] = (u[kind] || 0) + 1;
+  if (usage) { u.inTok += usage.input_tokens || 0; u.outTok += usage.output_tokens || 0; }
+  try { localStorage.setItem(AI.USE, JSON.stringify(u)); } catch (e) {}
+}
+function aiUsageText() {
+  var u = {};
+  try { u = JSON.parse(localStorage.getItem(AI.USE) || '{}') || {}; } catch (e) {}
+  if (u.month !== todayKey().slice(0, 7)) return 'Nothing sent from this device this month.';
+  var cost = (u.inTok * AI.IN + u.outTok * AI.OUT) / 1e6;
+  var bits = [];
+  if (u.card) bits.push(plural(u.card, 'card'));
+  if (u.fridge) bits.push(plural(u.fridge, 'fridge photo'));
+  if (u.ideas) bits.push(plural(u.ideas, 'round', 'rounds') + ' of ideas');
+  return 'This device, ' + parse(todayKey()).toLocaleDateString(undefined, { month: 'long' }) + ': ' + (bits.join(', ') || 'a test') +
+    ' · about $' + (cost < 0.01 && cost > 0 ? '0.01' : cost.toFixed(2)) + ' (estimate)';
+}
+function askClaude(kind, o) {
+  return aiClient().then(function (client) {
+    return client.beta.messages.create({
+      model: AI.model,
+      max_tokens: o.max || 8000,
+      betas: ['server-side-fallback-2026-07-01'],
+      fallbacks: 'default',            // a request the model declines is retried on another model where the API allows it
+      output_config: { effort: o.effort, format: { type: 'json_schema', schema: o.schema } },
+      system: o.system,
+      messages: [{ role: 'user', content: o.content }]
+    });
+  }).then(function (res) {
+    aiUse(kind, res.usage);
+    if (res.stop_reason === 'refusal') throw { kitchen: 'refusal' };
+    if (res.stop_reason === 'max_tokens') throw { kitchen: 'cut' };
+    var text = (res.content || []).filter(function (b) { return b.type === 'text'; }).map(function (b) { return b.text; }).join('');
+    try { return JSON.parse(text); } catch (e) { throw { kitchen: 'cut' }; }
+  });
+}
+function aiError(e) {
+  var k = e && e.kitchen, st = e && e.status, msg = String((e && e.message) || '');
+  if (k === 'nokey') return 'Add the Claude key in Taste first.';
+  if (k === 'refusal') return 'Claude declined this one.';
+  if (k === 'cut') return 'The answer came back incomplete. Try again.';
+  if (navigator.onLine === false || (!st && /connection|network|failed to fetch/i.test(msg))) return 'No connection. Claude needs the internet; everything else still works.';
+  if (st === 401) return 'Claude didn’t accept the key. Check it in Taste.';
+  if (st === 403) return 'This key isn’t allowed to do that. Check it in the Anthropic Console.';
+  if (/credit balance/i.test(msg)) return 'The Claude account is out of credit. Top it up in the Anthropic Console.';
+  if (st === 429) return 'Too many requests, or the key’s monthly limit is reached. Try again later.';
+  if (st >= 500) return 'Claude is busy right now. Try again in a moment.';
+  if (!st && /import|module/i.test(msg)) return 'Couldn’t load the Claude library. Check the connection.';
+  return 'Something went wrong talking to Claude' + (st ? ' (' + st + ')' : '') + '.';
+}
+function imgBlock(dataUrl) {
+  var m = /^data:(image\/[a-z+.-]+);base64,(.*)$/.exec(dataUrl || '');
+  return m ? { type: 'image', source: { type: 'base64', media_type: m[1], data: m[2] } } : null;
+}
+var STRINGS = { type: 'array', items: { type: 'string' } };
+
+/* ---------- reading a recipe card ---------- */
+var CARD_SYSTEM = 'You transcribe photos of recipes (handwritten cards, notebook pages, cookbook pages, screenshots) into a family recipe app. ' +
+  'Copy what is written. Do not invent, complete or correct amounts, temperatures or steps, and do not translate: French stays French, in the writer’s own words. ' +
+  'If a word or amount is hard to read, give your best reading followed by [?]. If a line can’t be read at all, write [illegible]. ' +
+  'Ingredients: one per entry, amount first as written. Steps: one instruction per entry, in order, without numbering. ' +
+  'Anything else on the card (who it is from, a date, tips, variations, notes in the margin) goes in notes. ' +
+  'from is the person the card names as the source, if any. serves and minutes are 0 when the card doesn’t say. Use an empty string or empty list for anything missing.';
+var CARD_SCHEMA = { type: 'object', additionalProperties: false, required: ['title', 'from', 'serves', 'minutes', 'ingredients', 'steps', 'notes'],
+  properties: { title: { type: 'string' }, from: { type: 'string' }, serves: { type: 'integer' }, minutes: { type: 'integer' }, ingredients: STRINGS, steps: STRINGS, notes: { type: 'string' } } };
+function aiReadCard() {
+  if (!ed || !ed.photo || ed.reading) return;
+  readEditor();
+  var draft = ed.draft, img = imgBlock(ed.photo);
+  if (!img) { toast('That photo can’t be sent. Retake it.'); return; }
+  ed.reading = true; paintEditor();
+  askClaude('card', { effort: 'medium', max: 8000, system: CARD_SYSTEM, schema: CARD_SCHEMA,
+    content: [img, { type: 'text', text: 'Transcribe this recipe.' }] }).then(function (r) {
+    if (!ed || ed.draft !== draft) return;          // the editor was closed meanwhile
+    ed.reading = false;
+    readEditor();
+    var d = ed.draft, typed = d.ingredients.length || d.steps.length;
+    if (typed && !confirm('Replace the ingredients and method you’ve typed with Claude’s reading?')) { paintEditor(); return; }
+    if (r.title && (!d.title || d.title === 'Untitled')) d.title = r.title;
+    if (r.from && !d.from) d.from = r.from;
+    if (r.serves > 0 && !d.serves) d.serves = r.serves;
+    if (r.minutes > 0 && !d.time) d.time = r.minutes;
+    d.ingredients = strList(r.ingredients);
+    d.steps = strList(r.steps);
+    if (r.notes && r.notes.trim()) d.notes = (d.notes ? d.notes + '\n' : '') + r.notes.trim();
+    ed.dirty = true;
+    paintEditor();
+    var unsure = (JSON.stringify(r).match(/\[\?\]|\[illegible\]/g) || []).length;
+    toast(unsure ? 'Read. ' + plural(unsure, 'spot') + ' marked [?] — check against the card.' : 'Read. Check it against the card, then save.');
+  }, function (e) {
+    if (ed && ed.draft === draft) { ed.reading = false; paintEditor(); }
+    toast(aiError(e));
+  });
+}
+
+/* ---------- what's in the fridge ---------- */
+var FRIDGE_SYSTEM = 'You look at a photo of a fridge, freezer, pantry or kitchen counter for a home cooking app and list the food you can identify. ' +
+  'Name each item the way it would appear in a recipe’s ingredient list: plain, singular, in English, generic unless the kind matters ' +
+  '(“chicken”, “bell pepper”, “cheddar”, “milk”, “rice”). One entry per kind of food, no duplicates. ' +
+  'Include sauces and condiments only when you can read the label. Leave out drinks other than milk and cream, and anything you can’t identify. ' +
+  'Set sure to false when you are guessing.';
+var FRIDGE_SCHEMA = { type: 'object', additionalProperties: false, required: ['items'],
+  properties: { items: { type: 'array', items: { type: 'object', additionalProperties: false, required: ['name', 'sure'], properties: { name: { type: 'string' }, sure: { type: 'boolean' } } } } } };
+function aiReadFridge() {
+  var img = imgBlock(ui.fridgePhoto);
+  if (!img || ui.fridgeReading) return;
+  ui.fridgeReading = true; renderLeft();
+  var photo = ui.fridgePhoto;
+  askClaude('fridge', { effort: 'low', max: 4000, system: FRIDGE_SYSTEM, schema: FRIDGE_SCHEMA,
+    content: [img, { type: 'text', text: 'What food is in this photo?' }] }).then(function (r) {
+    ui.fridgeReading = false;
+    if (ui.fridgePhoto !== photo) return;
+    var have = state.fridge.map(ingKey), seen = {};
+    var items = listOf(r.items).filter(function (x) {
+      var k = x && x.name && ingKey(x.name);
+      if (!k || seen[k]) return false;
+      seen[k] = 1; return true;
+    }).map(function (x) {
+      var k = ingKey(x.name);
+      return { name: k, sure: !!x.sure, on: !!x.sure, had: have.indexOf(k) >= 0 };
+    });
+    ui.fridgeAi = { items: items };
+    renderLeft();
+    if (!items.length) toast('Claude couldn’t make out any food in that photo.');
+  }, function (e) { ui.fridgeReading = false; renderLeft(); toast(aiError(e)); });
+}
+function fridgeAiHTML() {
+  if (!aiKey() || !ui.fridgePhoto) return '';
+  var f = ui.fridgeAi;
+  if (!f) return '<button class="btn y' + (ui.fridgeReading ? ' busy' : '') + '" type="button" data-act="ai-fridge" style="width:100%;margin-top:10px"' + (ui.fridgeReading ? ' disabled' : '') + '>' +
+    (ui.fridgeReading ? 'Looking…' : 'What’s in there? Ask Claude') + '</button>';
+  var fresh = f.items.filter(function (x) { return !x.had; });
+  return '<div class="ai-found"><span class="k">Claude sees · tap to untick what’s wrong</span><div class="chips">' +
+    f.items.map(function (x, i) {
+      if (x.had) return '<span class="chip" title="Already on your list">' + esc(x.name) + ' ✓</span>';
+      return '<button class="chip' + (x.on ? ' on' : '') + '" type="button" data-act="ai-f-tog" data-v="' + i + '">' + esc(x.name) + (x.sure ? '' : ' ?') + '</button>';
+    }).join('') + '</div><div class="row" style="margin-top:10px">' +
+    (fresh.length ? '<button class="btn sm solid" type="button" data-act="ai-f-add">Add ' + fresh.filter(function (x) { return x.on; }).length + ' to the fridge</button>' : '<span class="hint">All already on your list.</span>') +
+    '<button class="ghost" type="button" data-act="ai-f-close">Close</button></div></div>';
+}
+
+/* ---------- new dishes from Claude ---------- */
+var IDEAS_SYSTEM = 'You suggest dishes for a family’s home-cooking app. Suggest exactly 3 dishes that: fit their diet and never use anything they avoid; ' +
+  'are not already in their book; differ from each other; suit the mood if one is given, and otherwise are realistic for a weeknight at home. ' +
+  'When food on hand is listed, build each dish around it, favour what spoils first, and list in uses which of those items it uses (empty list if none). ' +
+  'Lean on what they like to cook, but make at least one of the three something new to them. ' +
+  'Write ingredients with amounts for the servings you give, and short clear steps without numbering. ' +
+  'why is one plain sentence on why this dish suits them now. category must be one of their categories. Write in English.';
+var IDEAS_SCHEMA = { type: 'object', additionalProperties: false, required: ['ideas'],
+  properties: { ideas: { type: 'array', items: { type: 'object', additionalProperties: false,
+    required: ['title', 'category', 'minutes', 'serves', 'why', 'uses', 'ingredients', 'steps'],
+    properties: { title: { type: 'string' }, category: { type: 'string' }, minutes: { type: 'integer' }, serves: { type: 'integer' }, why: { type: 'string' },
+      uses: STRINGS, ingredients: STRINGS, steps: STRINGS } } } } };
+function moodName(k) { var m = MOODS.filter(function (x) { return x[0] === k; })[0]; return m ? m[1] : ''; }
+function aiBrief(where) {
+  var P = profile(), p = state.prefs, t = todayKey();
+  var lines = [];
+  if (state.fridge.length) lines.push('Food on hand: ' + state.fridge.join(', '));
+  if (where === 'ideas' && ui.ideas.mood) lines.push('Mood: ' + moodName(ui.ideas.mood));
+  lines.push('Today: ' + parse(t).toLocaleDateString('en', { weekday: 'long', month: 'long', day: 'numeric' }) + ', ' + (coldSeason(t) ? 'the cold half of the year' : 'the warm half of the year') + ' in Montréal');
+  var cats = topOf(P.cat, 5), ings = topOf(P.ing, 12);
+  if (cats.length) lines.push('What they cook most: ' + cats.join(', '));
+  if (ings.length) lines.push('Ingredients they use a lot: ' + ings.join(', '));
+  lines.push('Diet: ' + (p.diet.length ? DIETS.filter(function (d) { return p.diet.indexOf(d[0]) >= 0; }).map(function (d) { return d[1]; }).join(', ') : 'no restrictions'));
+  if (p.avoid.length) lines.push('Never use: ' + p.avoid.join(', '));
+  if (p.staples.length) lines.push('Always in the house: ' + p.staples.join(', '));
+  var loved = Object.keys(state.ideaFb).filter(function (k) { return state.ideaFb[k] > 0 && IDEA[k]; }).map(function (k) { return IDEA[k].name; });
+  var nope = Object.keys(state.ideaFb).filter(function (k) { return state.ideaFb[k] < 0 && IDEA[k]; }).map(function (k) { return IDEA[k].name; });
+  if (loved.length) lines.push('Dishes they loved: ' + loved.join(', '));
+  if (nope.length) lines.push('Dishes they said no to: ' + nope.join(', '));
+  lines.push('Their categories: ' + catList().join(', '));
+  if (state.recipes.length) lines.push('Already in their book (don’t suggest these): ' + state.recipes.slice(0, 200).map(function (r) { return r.title; }).join('; '));
+  return lines.join('\n');
+}
+function aiSuggest(where) {
+  if (ui.aiBusy) return;
+  ui.aiBusy = where; renderView();
+  askClaude('ideas', { effort: 'medium', max: 12000, system: IDEAS_SYSTEM, schema: IDEAS_SCHEMA,
+    content: [{ type: 'text', text: aiBrief(where) }] }).then(function (r) {
+    ui.aiBusy = null;
+    ui.aiIdeas = { where: where, list: listOf(r.ideas).slice(0, 3).map(function (x) {
+      return { title: str(x.title).trim() || 'Untitled', category: str(x.category), minutes: numOr0(x.minutes), serves: numOr0(x.serves), why: str(x.why),
+               uses: strList(x.uses), ingredients: strList(x.ingredients), steps: strList(x.steps) };
+    }) };
+    renderView();
+  }, function (e) { ui.aiBusy = null; renderView(); toast(aiError(e)); });
+}
+function aiIdeasHTML(where) {
+  var busy = ui.aiBusy === where, got = ui.aiIdeas && ui.aiIdeas.where === where ? ui.aiIdeas.list : null;
+  var ask = '<button class="btn ' + (got ? '' : 'y') + (busy ? ' busy' : '') + '" type="button" data-act="ai-ideas" data-v="' + where + '"' + (busy ? ' disabled' : '') + '>' +
+    (busy ? 'Thinking…' : got ? 'Three more' : where === 'left' ? 'Ideas from Claude' : 'Three new ideas') + '</button>';
+  if (!got) return '<div class="ai-row">' + ask + '<span class="hint">' + (where === 'left'
+    ? 'Three new dishes built around what’s in the fridge, to your taste.'
+    : 'Three dishes that aren’t in your book yet, picked for your taste' + (ui.ideas.mood ? ' and the mood' : '') + '.') + '</span></div>';
+  return '<div class="ai-ideas">' + got.map(function (x, i) {
+    return '<div class="match"><div><span class="k">' + esc(x.category || 'Idea') + (x.minutes ? ' · ' + x.minutes + ' min' : '') + (x.serves ? ' · serves ' + x.serves : '') + ' · From Claude</span><br><b>' + esc(x.title) + '</b></div><span></span>' +
+      '<div class="m" style="grid-column:1/-1">' + esc(x.why) + (x.uses.length ? '<br>Uses <strong>' + esc(x.uses.join(', ')) + '</strong>' : '') + '</div>' +
+      '<details><summary>Ingredients and method</summary><ul>' + x.ingredients.map(function (l) { return '<li>' + esc(l) + '</li>'; }).join('') + '</ul><ol>' +
+      x.steps.map(function (l) { return '<li>' + esc(l) + '</li>'; }).join('') + '</ol></details>' +
+      '<div class="acts"><button class="btn sm" type="button" data-act="ai-i-save" data-v="' + i + '">Save to the book</button>' +
+      '<button class="btn sm solid" type="button" data-act="ai-i-tonight" data-v="' + i + '">Tonight</button>' +
+      '<button class="btn sm" type="button" data-act="ai-i-missing" data-v="' + i + '">+ Missing to the list</button></div></div>';
+  }).join('') + '<div class="row" style="margin-top:10px">' + ask + '<span class="hint">Claude’s suggestions, not from your book. Save one to keep it.</span></div></div>';
+}
+
+/* ---------- the key, in Taste ---------- */
+function aiSettingsHTML() {
+  var k = aiKey();
+  var head = '<div class="box ai-set"><span class="k">Claude (AI)</span>';
+  if (!k || ui.aiEdit) return head +
+    '<p class="hint" style="margin:0 0 10px">Reads recipe cards and fridge photos, and suggests new dishes. Paste a Claude API key ' +
+    '(console.anthropic.com → API keys). It’s kept on this device and in your account’s private data, so your other devices pick it up — never in the website, a backup or Send the book. ' +
+    'Give the key a monthly spending limit in the Console.</p>' +
+    '<div class="row"><input class="in grow" type="password" id="ai-key" placeholder="sk-ant-…" autocomplete="off" spellcheck="false" aria-label="Claude API key">' +
+    '<button class="btn sm solid" type="button" data-act="ai-save">Save</button>' + (k ? '<button class="ghost" type="button" data-act="ai-cancel">Cancel</button>' : '') + '</div></div>';
+  return head + '<p style="margin:0 0 6px;font-weight:700">Connected · key ending <code>…' + esc(k.slice(-4)) + '</code></p>' +
+    '<p class="hint" style="margin:0 0 6px">' + (cloud.uid ? 'Synced to your account: your other devices have it too.' : cloud.authed ? 'On this device until your access is approved; then it syncs to your account.' : 'On this device only. Sign in to sync it to your other devices.') + '</p>' +
+    '<p class="hint" style="margin:0 0 10px">' + esc(aiUsageText()) + '</p>' +
+    '<div class="row"><button class="btn sm" type="button" data-act="ai-test">Test</button><button class="btn sm" type="button" data-act="ai-edit">Replace key</button>' +
+    '<button class="ghost" type="button" data-act="ai-remove">Remove</button></div></div>';
+}
 
 /* ============================================================
    Swapping recipes with another Kitchen — no shared account

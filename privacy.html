@@ -20,7 +20,7 @@
 <meta property="og:image:alt" content="Privacy — Xavier de Belle">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
-<link rel="stylesheet" href="assets/style.css?v=80">
+<link rel="stylesheet" href="assets/style.css?v=81">
 <script src="assets/account.js"></script>
 <script src="assets/site-index.js"></script>
 <style>
@@ -126,8 +126,8 @@
 <section class="mast">
   <p class="kicker">Law 25 &mdash; Qu&eacute;bec</p>
   <h1 class="display"><span lang="en">Privacy</span><span lang="fr" hidden>Confidentialit&eacute;</span></h1>
-  <p class="mast__sub" lang="en">One policy for the whole site and every tool on it. Last updated October 5, 2026.</p>
-  <p class="mast__sub" lang="fr" hidden>Une seule politique pour tout le site et chacun de ses outils. Derni&egrave;re mise &agrave; jour&nbsp;: 5&nbsp;octobre&nbsp;2026.</p>
+  <p class="mast__sub" lang="en">One policy for the whole site and every tool on it. Last updated October 7, 2026.</p>
+  <p class="mast__sub" lang="fr" hidden>Une seule politique pour tout le site et chacun de ses outils. Derni&egrave;re mise &agrave; jour&nbsp;: 7&nbsp;octobre&nbsp;2026.</p>
   <div class="lang" role="group" aria-label="Language / Langue">
     <button class="topbar__btn" type="button" data-lang="en" aria-pressed="true">English</button>
     <button class="topbar__btn" type="button" data-lang="fr" aria-pressed="false" lang="fr">Fran&ccedil;ais</button>
@@ -183,6 +183,12 @@
         </dd>
       </div>
       <div>
+        <dt>Kitchen with Claude<small>Optional &middot; only when a Claude key is added</small></dt>
+        <dd>
+          <p>If a Claude API key is added in Kitchen, three buttons send things to Anthropic to be read: <b>Read it for me</b> sends the photo of a recipe card, <b>What&rsquo;s in there?</b> sends the fridge photo, and <b>Ideas from Claude</b> sends a short text summary of your kitchen (what&rsquo;s in the fridge, your diet and dislikes, what you cook most, and your recipe titles). Nothing is sent unless you press one. Anthropic returns the answer and handles what it receives under its own commercial terms and privacy policy. The key itself is kept on your device and in your account&rsquo;s private synced data.</p>
+        </dd>
+      </div>
+      <div>
         <dt>Activity Planner<small>Events</small></dt>
         <dd>
           <p>Organisers sign in with Google (see above). Guests give their first and last name, email, phone number, an optional note, the activities they pick and how many spots.</p>
@@ -235,6 +241,8 @@
       <li><b>HighLevel</b> &mdash; de Belle Photography&rsquo;s client system (Video Corrections) and the Wedding Activities page</li>
       <li><b>Cloudflare</b> &mdash; visit counts on the Wedding Activities page</li>
       <li><b>Adobe Fonts</b> &mdash; typefaces in Project Phases</li>
+      <li><b>Anthropic</b> &mdash; reads photos and suggests dishes in Kitchen, only when a Claude key is added and a Claude button is pressed</li>
+      <li><b>jsDelivr</b> &mdash; serves the code Kitchen uses to talk to Claude, the first time a Claude button is used</li>
     </ul>
     <p>Their servers are outside Qu&eacute;bec, mostly in the United States, so your information may be stored there and be subject to the laws of that country. I chose providers with strong security and privacy commitments.</p>
   </div>
@@ -361,6 +369,12 @@
         </dd>
       </div>
       <div>
+        <dt>Kitchen avec Claude<small>Facultatif &middot; seulement si une cl&eacute; Claude est ajout&eacute;e</small></dt>
+        <dd>
+          <p>Si une cl&eacute; d&rsquo;API Claude est ajout&eacute;e dans Kitchen, trois boutons envoient des &eacute;l&eacute;ments &agrave; Anthropic pour qu&rsquo;ils soient lus&nbsp;: <b>Read it for me</b> envoie la photo d&rsquo;une fiche de recette, <b>What&rsquo;s in there?</b> envoie la photo du frigo, et <b>Ideas from Claude</b> envoie un court r&eacute;sum&eacute; texte de votre cuisine (ce qu&rsquo;il y a dans le frigo, votre r&eacute;gime et ce que vous &eacute;vitez, ce que vous cuisinez le plus et les titres de vos recettes). Rien n&rsquo;est envoy&eacute; tant que vous n&rsquo;appuyez pas sur l&rsquo;un d&rsquo;eux. Anthropic renvoie la r&eacute;ponse et traite ce qu&rsquo;elle re&ccedil;oit selon ses propres conditions commerciales et sa politique de confidentialit&eacute;. La cl&eacute; elle-m&ecirc;me est conserv&eacute;e sur votre appareil et dans les donn&eacute;es priv&eacute;es synchronis&eacute;es de votre compte.</p>
+        </dd>
+      </div>
+      <div>
         <dt>Activity Planner<small>&Eacute;v&eacute;nements</small></dt>
         <dd>
           <p>Les organisateurs se connectent avec Google (voir plus haut). Les invit&eacute;s fournissent leur pr&eacute;nom et leur nom, leur courriel, leur num&eacute;ro de t&eacute;l&eacute;phone, une note facultative, les activit&eacute;s choisies et le nombre de places.</p>
@@ -413,6 +427,8 @@
       <li><b>HighLevel</b> &mdash; syst&egrave;me client de de Belle Photography (Video Corrections) et page Wedding Activities</li>
       <li><b>Cloudflare</b> &mdash; comptage des visites sur la page Wedding Activities</li>
       <li><b>Adobe Fonts</b> &mdash; polices de Project Phases</li>
+      <li><b>Anthropic</b> &mdash; lit les photos et sugg&egrave;re des plats dans Kitchen, seulement si une cl&eacute; Claude est ajout&eacute;e et qu&rsquo;un bouton Claude est utilis&eacute;</li>
+      <li><b>jsDelivr</b> &mdash; fournit le code dont Kitchen se sert pour parler &agrave; Claude, la premi&egrave;re fois qu&rsquo;un bouton Claude est utilis&eacute;</li>
     </ul>
     <p>Leurs serveurs sont situ&eacute;s &agrave; l&rsquo;ext&eacute;rieur du Qu&eacute;bec, surtout aux &Eacute;tats-Unis&nbsp;; vos renseignements peuvent donc y &ecirc;tre conserv&eacute;s et &ecirc;tre soumis aux lois de ce pays. J&rsquo;ai choisi des fournisseurs qui ont de solides engagements en mati&egrave;re de s&eacute;curit&eacute; et de confidentialit&eacute;.</p>
   </div>
@@ -507,7 +523,7 @@
       <a href="mailto:xavier@debellephotography.com">Email</a>
     </div>
   </div>
-  <p class="foot__sig">&copy; <span id="yr"></span> Xavier de Belle &middot; v80</p>
+  <p class="foot__sig">&copy; <span id="yr"></span> Xavier de Belle &middot; v81</p>
 </footer>
 
 <script>
