@@ -230,3 +230,21 @@ its ID forever. Statuses: new, planned, in progress, done, dropped.
 ### IDEA-054 · Preferred-vendor spots inside the Wedding Schedule
 - **Category:** Monetization · **Effort:** M · **Impact:** ★★ · **Status:** new
 - tools/wedding-schedule.html already has a Vendors Information step (the VENDORS array: Venue, Planner, DJ, Hairdresser, Make-up, Florist, Cake, Boutique, Decor, Jewelry), so every couple tells the tool who they still need. Add a small "Need a florist? Xavier's trusted pick" card next to each empty row, linking to a partner vendor who pays a monthly listing fee or a referral fee per booked couple. It makes money from a free tool without charging couples, and the recommendations deepen Xavier's authority as the person who knows everyone in Montreal weddings.
+
+## 2026-10-08 — SEO, performance, accessibility, mobile
+
+### IDEA-055 · Raise the tiny 9–11px labels to a readable minimum
+- **Category:** Fix · **Effort:** S · **Impact:** ★★ · **Status:** new
+- The small uppercase labels that carry real information are set at 9–11px: tools.html (lines ~77, 188, 214, 235 at 9–10px), work.html (lines ~93 and ~137 at 10–11px) and food-for-thought.html (lines ~70, 101, 124). On a phone in daylight, grey (--dust) on black at that size is hard to read, and it is exactly where the chapter tags, tool categories and post dates live. Set a 12px floor (13px on mobile) with a shared CSS variable in assets/style.css so every page gets it at once, keeping the letter-spacing look.
+
+### IDEA-056 · Pause and calm the two WebGL art pages
+- **Category:** Fix · **Effort:** S · **Impact:** ★★ · **Status:** new
+- tools/organic-loops.html draws six live shader canvases at once and its visibilitychange handler restarts the animation loop even when the tab is hidden; liquid-silver.html has no prefers-reduced-motion rule at all (the count is 0 in both). On a phone this drains battery and heats the device, and for visitors who have reduced motion turned on it is the one thing that ignores their setting. Stop the loop when the tab is hidden or the tiles are off-screen, draw one still frame when reduced motion is on, and render only the focused tile when one is open.
+
+### IDEA-057 · Make the domain switch a one-line change
+- **Category:** SEO · **Effort:** S · **Impact:** ★★ · **Status:** new
+- Builds on IDEA-016. The address xavierdebelle.github.io/website is written into every page: the canonical link, og:image and og:url (for example work.html line ~15) and the `<base href="/website/">` in 404.html. The day a custom domain goes live, all of those would point at the old address and split search credit. Before the switch, move the site address into one build-time or search-and-replace constant, and add a short checklist (CNAME file, update sitemap, Search Console address change) so the move loses no ranking.
+
+### IDEA-058 · Automatic Lighthouse and accessibility check on every push
+- **Category:** Fix · **Effort:** M · **Impact:** ★★ · **Status:** new
+- The site ships a new version every day or two (v71 to v81 in under a week), and speed and accessibility have only been fixed by hand, one page at a time. Add a GitHub Action that runs Lighthouse CI and pa11y against index, work, tools, food-for-thought and the Package Builder, and fails the push if scores drop below a set floor. The same pass can add `defer` to the assets/account.js script tag that currently blocks rendering at the top of every page.
