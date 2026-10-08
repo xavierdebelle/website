@@ -5,6 +5,49 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v82 — 2026-10-08
+
+**What's new** · Kitchen · [tools/kitchen.html]
+### Snap a dish,<br>get the recipe
+Cooked something good? Tap **Snap a dish** in the Book and photograph the
+plate. Claude works out what it is and writes the ingredients and method
+into a new recipe card, ready for you to adjust to how you actually made it.
+If you've already typed its name, it writes the recipe for that dish. The
+photo stays with the recipe.
+
+Also: the "Take a photo of the card" box in handwritten recipes now looks
+like a box.
+
+**Kitchen — `tools/kitchen.html`, source `Tools files/Tools/kitchen_v4.html`**
+- **Snap a dish** (Book header, shown only with a Claude key) opens a new
+  home-made recipe with a dish photo panel and the camera. Any home-made
+  recipe without a photo gets **+ Photo of the dish** in the editor.
+  Recipes with a dish photo reopen with it; Retake no longer turns a dish
+  photo into a handwritten card.
+- **Guess the recipe:** `claude-sonnet-5-5`, effort `medium`, JSON schema
+  (title, category, serves, minutes, ingredients, steps, notes, confidence
+  high / medium / low). The brief carries their categories and, if typed,
+  "The cook says it's: …". Fills an empty name, category (only one of
+  theirs), serves, minutes and "from" (Me); replaces ingredients and
+  method (asks first if some were typed); notes get "Claude's guess from
+  the photo (sure / fairly sure / not sure): …". The toast names the dish.
+- Dish photos are kept like card photos (IndexedDB, this device only). The
+  recipe view says "The photo is kept on the device that took it" for both.
+  The monthly count in Taste lists dishes.
+- **Fix:** the empty photo box was a `<label>` left inline, so its dashed
+  border wrapped the text in pieces; now a full-width box. On phones only a
+  real photo stays pinned under the header while typing.
+
+**Verified locally (mock database + the stand-in Claude endpoint)**
+- Snap a dish → photo → Guess the recipe: every field filled, confidence in
+  the notes, saved as home made with its photo shown in the recipe view.
+- Typed name first → + Photo of the dish → the request carried "The cook
+  says it's: Mom's lasagna", the name kept. Box fix at 375 px and desktop.
+- Not tried against the real API; same call as v81's features, which
+  Xavier confirmed work.
+
+---
+
 ## v81 — 2026-10-07
 
 **What's new** · Kitchen · [tools/kitchen.html]
