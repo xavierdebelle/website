@@ -5,6 +5,30 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v85 — 2026-10-08
+
+**What's new** · Kitchen · [tools/kitchen.html]
+### No more sideways<br>in the recipe window
+The window for adding or editing a recipe no longer slides from side to
+side on a phone.
+
+**Kitchen — `tools/kitchen.html`, source `Tools files/Tools/kitchen_v7.html`**
+- Cause: iOS Safari draws `<input type="date">` at its own native width,
+  ignoring `width:100%`, so on a phone the Date field ran past the column;
+  the popup (`.sheet-box`, `overflow-y:auto`, which makes x scrollable too)
+  then scrolled sideways. Xavier reported it after v84; it doesn't show in
+  desktop Chromium.
+- Date fields: `appearance:none`, block, `min-width:0`, `max-width:100%`,
+  46 px tall, value left-aligned (editor date and the Plan it day).
+- Popups: `overflow-x:hidden`, so nothing inside can scroll them sideways.
+  The zoomed card photo still pans inside its own frame.
+
+**Verified locally (375 px):** Date field inside the column, popup width =
+screen, zoomed photo pans in its frame, header stays pinned. The iOS date
+quirk itself can't be reproduced here.
+
+---
+
 ## v84 — 2026-10-08
 
 **What's new** · Kitchen · [tools/kitchen.html]
