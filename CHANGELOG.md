@@ -5,6 +5,40 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v84 — 2026-10-08
+
+**What's new** · Kitchen · [tools/kitchen.html]
+### Steadier<br>on phones
+Kitchen sits still on a phone now. Tapping a field no longer zooms the page
+or lets it slide sideways, the bottom bar stays out of the way while you
+type, and an open recipe or editor always keeps its × in view, keyboard or
+not.
+
+**Kitchen — `tools/kitchen.html`, source `Tools files/Tools/kitchen_v6.html`**
+- **Jumps and sideways scroll:** fields were 13–15px; iOS zooms the page
+  into any field under 16px. Phones (≤ 760 px) now use 16px for every
+  input, select and textarea. `body{overflow-x:clip}` as a backstop, and
+  `overscroll-behavior-y:none` stops the rubber-band bounce.
+- **The × out of view:** with the keyboard up, iOS keeps the page full
+  height and slides the visible part, so a full-height popup lost its top.
+  A small `visualViewport` watcher sets `--vvh` / `--vvt`; on phones the
+  popup takes exactly the visible area. Its header also respects the
+  status-bar inset.
+- **Bottom bar bouncing up:** it rode up on the keyboard. It now hides
+  while the keyboard is open (`body.kb`, visible height > 140 px short) and
+  under a popup.
+- **Overflow:** the photo buttons row (forced onto one line in v83) ran
+  19 px past a 320 px screen; it wraps again.
+
+**Verified locally (320 × 640 and 375 px)**
+- Every tab, the recipe, editor (with a card photo), day and grocery popups:
+  page width = screen width. Fields compute to 16px. Popup = visible height;
+  bottom bar hidden under it and back after closing.
+- Not testable here: a real iPhone keyboard. The watcher is the standard
+  `visualViewport` approach; worth a quick try on the phone.
+
+---
+
 ## v83 — 2026-10-08
 
 **What's new** · Kitchen · [tools/kitchen.html]

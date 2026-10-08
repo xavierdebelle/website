@@ -25,7 +25,8 @@
 }
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
-html,body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--stack)}
+html,body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--stack);overscroll-behavior-y:none}
+body{overflow-x:clip}
 button,input,select,textarea{font:inherit;color:inherit}
 a{color:inherit}
 [hidden]{display:none!important}
@@ -322,7 +323,7 @@ select.in{font-weight:700;padding-right:28px}
   .ed-photo{position:static}
   .ed-photo.card-photo.has-photo{position:sticky;top:var(--head-h,86px);z-index:1;background:var(--paper);padding:8px 0 8px;margin-top:-8px;border-bottom:3px solid var(--ink)}
   .ed-photo.card-photo .frame{max-height:22vh}
-  .ed-photo.has-photo .row{margin-top:6px!important;flex-wrap:nowrap;gap:8px}
+  .ed-photo.has-photo .row{margin-top:6px!important;gap:6px 8px}
   .ed-photo.has-photo .row .ghost{padding:8px 2px}
   .ed-photo.dish-photo .frame{max-height:34vh}
   .fold-btn{display:inline-flex!important}
@@ -330,6 +331,11 @@ select.in{font-weight:700;padding-right:28px}
   .ed-photo .hint{display:none}
 }
 @media (max-width:760px){
+  /* iPhones zoom the whole page into any field under 16px: the jumps and the sideways scroll */
+  input,select,textarea,.in,select.in,textarea.in,.toolbar select.in{font-size:16px}
+  /* the bottom bar steps aside while typing (the keyboard would push it up) and under a popup */
+  body.kb .tabs,body.sheet-open .tabs{display:none}
+  body.kb{padding-bottom:0}
   body{padding-bottom:calc(64px + env(safe-area-inset-bottom))}
   .tabs{position:fixed;top:auto;bottom:0;left:0;right:0;padding:0 0 env(safe-area-inset-bottom);gap:0;justify-content:space-between;overflow:hidden;border-top:3px solid var(--ink)}
   .tab{flex:1 1 0;flex-direction:column;gap:3px;padding:9px 0 8px;font-size:8.5px;letter-spacing:.06em;border-bottom:0;border-top:4px solid transparent;min-width:0}
@@ -347,8 +353,10 @@ select.in{font-weight:700;padding-right:28px}
   .ed-fields .f3,.ed-fields .f2{grid-column:span 6}
   .seg button{flex:1 1 0;padding:10px 4px;font-size:10px;letter-spacing:.04em}
   .ed-fields .f2.half{grid-column:span 3}
-  .sheet{padding:0}
+  /* a popup fills exactly what's visible, keyboard or not, so its × stays on screen */
+  .sheet{padding:0;inset:auto 0 auto 0;top:var(--vvt,0px);height:var(--vvh,100dvh)}
   .sheet-box{border:0;height:100%;max-height:none;padding-bottom:env(safe-area-inset-bottom)}
+  .sheet-head{padding-top:max(14px,env(safe-area-inset-top))}
   .stat-row{grid-template-columns:repeat(3,minmax(0,1fr))}
   .stat b{font-size:26px}
   .bar{grid-template-columns:92px minmax(0,1fr) 28px}
@@ -1156,6 +1164,26 @@ function renderCounts() {
   var g = state.grocery.filter(function (x) { return !x.done; }).length;
   $('n-groc').textContent = g || '';
 }
+
+/* ---------- phones: follow the visible part of the screen ----------
+   With the keyboard open, iOS keeps the page full height and slides
+   what's visible; a popup sized to the whole page then hides its top
+   (the ×) and the bottom bar rides up on the keyboard. */
+(function () {
+  var vv = window.visualViewport, root = document.documentElement;
+  if (!vv) return;
+  var raf = 0;
+  function fit() {
+    raf = 0;
+    root.style.setProperty('--vvh', Math.round(vv.height) + 'px');
+    root.style.setProperty('--vvt', Math.round(vv.offsetTop) + 'px');
+    document.body.classList.toggle('kb', window.innerHeight - vv.height > 140);
+  }
+  function soon() { if (!raf) raf = requestAnimationFrame(fit); }
+  vv.addEventListener('resize', soon);
+  vv.addEventListener('scroll', soon);
+  fit();
+})();
 
 /* ---------- toast with undo ---------- */
 var toastT = null, toastUndo = null, toastExpire = null;
