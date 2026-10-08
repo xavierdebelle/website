@@ -177,6 +177,10 @@ select.in{font-weight:700;padding-right:28px}
 .ed-photo .frame img{display:block;width:100%}
 .ed-photo .frame.zoom{cursor:zoom-out}
 .ed-photo .frame.zoom img{width:220%;max-width:none}
+.ed-photo.folded .frame{display:none}
+.fold-btn{display:none!important}
+.dish-name{margin-bottom:12px}
+.dish-name .hint{margin-top:2px}
 .ed-fields{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:14px}
 .ed-fields .f6{grid-column:span 6}.ed-fields .f3{grid-column:span 3}.ed-fields .f2{grid-column:span 2}
 .seg{display:flex;flex-wrap:wrap;border:3px solid var(--ink)}
@@ -314,9 +318,15 @@ select.in{font-weight:700;padding-right:28px}
   .hero-side{border-left:0;border-top:3px solid var(--ink)}
   .ed.with-photo{grid-template-columns:minmax(0,1fr)}
   /* the card stays in view under the header while you type it in */
-  .ed-photo.has-photo{position:sticky;top:var(--head-h,86px);z-index:1;background:var(--paper);padding:8px 0 10px;margin-top:-8px;border-bottom:3px solid var(--ink)}
+  /* phones: a card stays pinned (small, and foldable) while you type it in; a dish photo scrolls away */
+  .ed-photo{position:static}
+  .ed-photo.card-photo.has-photo{position:sticky;top:var(--head-h,86px);z-index:1;background:var(--paper);padding:8px 0 8px;margin-top:-8px;border-bottom:3px solid var(--ink)}
+  .ed-photo.card-photo .frame{max-height:22vh}
+  .ed-photo.has-photo .row{margin-top:6px!important;flex-wrap:nowrap;gap:8px}
+  .ed-photo.has-photo .row .ghost{padding:8px 2px}
+  .ed-photo.dish-photo .frame{max-height:34vh}
+  .fold-btn{display:inline-flex!important}
   .drop{min-height:120px}
-  .ed-photo .frame{max-height:32vh}
   .ed-photo .hint{display:none}
 }
 @media (max-width:760px){
@@ -1368,6 +1378,7 @@ function openEditor(r, opts) {
 function readEditor() {
   if (!ed || !$('ed-title')) return;
   var d = ed.draft;
+  if ($('ed-dishname')) ed.dishHint = $('ed-dishname').value;
   d.title = $('ed-title').value;
   d.cat = $('ed-cat').value;
   d.from = $('ed-from').value.trim();
@@ -1390,18 +1401,22 @@ function paintEditor() {
     return '<button type="button" data-act="ed-kind" data-v="' + k + '" class="' + (d.kind === k ? 'on' : '') + '">' + KINDS[k] + '</button>';
   }).join('');
   var photoCol = '';
+  var fold = '<button class="ghost fold-btn" type="button" data-act="ed-fold">' + (ed.fold ? 'Show photo' : 'Hide photo') + '</button>';
   if (d.kind !== 'card' && ed.dish) {
-    photoCol = '<div class="ed-photo' + (ed.photo ? ' has-photo' : '') + '">' + (ed.photo ?
+    photoCol = '<div class="ed-photo dish-photo' + (ed.photo ? ' has-photo' : '') + (ed.fold ? ' folded' : '') + '">' +
+      (aiKey() ? '<label class="field dish-name"><span class="k">What is it?</span><input class="in" id="ed-dishname" value="' + esc(ed.dishHint || '') + '" placeholder="Mom’s lasagna, made with ground turkey" autocomplete="off">' +
+        '<span class="hint">Tell Claude what it is, and anything special about how you made it. Leave it empty and Claude guesses.</span></label>' : '') +
+      (ed.photo ?
       '<div class="frame" data-act="zoom" title="Tap to zoom"><img src="' + ed.photo + '" alt="The dish"></div>' +
       '<div class="row" style="margin-top:8px">' + (aiKey() ? '<button class="btn sm y' + (ed.reading ? ' busy' : '') + '" type="button" data-act="ai-dish"' + (ed.reading ? ' disabled' : '') + '>' + (ed.reading ? 'Looking at it…' : 'Guess the recipe') + '</button>' : '') +
-      '<label class="btn sm" for="card-file">Retake</label><button class="ghost" type="button" data-act="ed-nophoto">Remove photo</button></div>' +
+      '<label class="btn sm" for="card-file">Retake</label><button class="ghost" type="button" data-act="ed-nophoto">Remove</button>' + fold + '</div>' +
       '<p class="hint">' + (aiKey() ? 'Claude works out what it is and writes a recipe for it; you adjust it to how you made it.' : 'Add a Claude key in Taste and it can guess the recipe from the photo.') + ' The photo stays on this device with the recipe.</p>'
       : '<label class="drop" for="card-file"><b>Take a photo of the dish</b><span class="hint">' + (aiKey() ? 'Claude guesses what it is and fills in the ingredients and method.' : 'It’s kept with the recipe on this device.') + '</span></label>') + '</div>';
   } else if (d.kind === 'card') {
-    photoCol = '<div class="ed-photo' + (ed.photo ? ' has-photo' : '') + '">' + (ed.photo ?
+    photoCol = '<div class="ed-photo card-photo' + (ed.photo ? ' has-photo' : '') + (ed.fold ? ' folded' : '') + '">' + (ed.photo ?
       '<div class="frame" data-act="zoom" title="Tap to zoom"><img src="' + ed.photo + '" alt="The handwritten card"></div>' +
       '<div class="row" style="margin-top:8px">' + (aiKey() ? '<button class="btn sm y' + (ed.reading ? ' busy' : '') + '" type="button" data-act="ai-card"' + (ed.reading ? ' disabled' : '') + '>' + (ed.reading ? 'Reading the card…' : 'Read it for me') + '</button>' : '') +
-      '<label class="btn sm" for="card-file">Retake</label><button class="ghost" type="button" data-act="ed-nophoto">Remove photo</button></div>' +
+      '<label class="btn sm" for="card-file">Retake</label><button class="ghost" type="button" data-act="ed-nophoto">Remove</button>' + fold + '</div>' +
       '<p class="hint">Tap the photo to zoom. ' + (aiKey() ? 'Claude can read it into the form, or type' : 'Type') + ' it in on the ' + (innerWidth > 900 ? 'right' : 'form below') + '; the photo stays on this device with the recipe.</p>'
       : '<label class="drop" for="card-file"><b>Take a photo of the card</b><span class="hint">It sits beside the form while you type it in, and stays with the recipe on this device.</span></label>') + '</div>';
   }
@@ -2068,6 +2083,7 @@ function act(a, el, ev) {
     case 'new-card': openEditor(null, { kind: 'card' }); $('card-file').click(); break;
     case 'new-dish': openEditor(null, { kind: 'home', dish: true, from: 'Me' }); $('card-file').click(); break;
     case 'ed-dish': readEditor(); ed.dish = true; paintEditor(); break;
+    case 'ed-fold': readEditor(); ed.fold = !ed.fold; paintEditor(); break;
     case 'ai-dish': aiGuessDish(); break;
     case 'b-cat': ui.book.cat = v; ui.book.fav = false; renderBook(); break;
     case 'b-fav': ui.book.fav = !ui.book.fav; ui.book.cat = ''; renderBook(); break;
@@ -2595,7 +2611,7 @@ function aiReadCard() {
 
 /* ---------- a photo of the cooked dish → a recipe ---------- */
 var DISH_SYSTEM = 'You look at a photo of a finished dish someone cooked at home and write the recipe for it, for their family recipe app. ' +
-  'First decide what the dish most likely is from what you can see (its shape, colour, sauce, garnish, sides). If the cook has said what it is, trust that. ' +
+  'First decide what the dish most likely is from what you can see (its shape, colour, sauce, garnish, sides). If the cook has said what it is, trust that, and follow any details they give about how they made it. ' +
   'Then write a realistic home version: ingredients with amounts for the servings you give (4 if you can’t tell), and short clear steps in order without numbering. ' +
   'Base the ingredients on what is visible plus what the dish normally needs; leave out things that clearly aren’t there. ' +
   'In notes, say in one sentence what you based the guess on and, if you weren’t sure, what else it could be. ' +
@@ -2608,7 +2624,7 @@ function aiGuessDish() {
   readEditor();
   var draft = ed.draft, img = imgBlock(ed.photo);
   if (!img) { toast('That photo can’t be sent. Retake it.'); return; }
-  var named = draft.title && draft.title !== 'Untitled' ? draft.title.trim() : '';
+  var named = (ed.dishHint || '').trim() || (draft.title && draft.title !== 'Untitled' ? draft.title.trim() : '');
   ed.reading = true; paintEditor();
   askClaude('dish', { effort: 'medium', max: 8000, system: DISH_SYSTEM, schema: DISH_SCHEMA,
     content: [img, { type: 'text', text: 'Their categories: ' + catList().join(', ') + '\n' + (named ? 'The cook says it’s: ' + named + '\n' : '') + 'What is this, and how is it made?' }] }).then(function (r) {
@@ -2628,7 +2644,7 @@ function aiGuessDish() {
     if (!d.from) d.from = 'Me';
     ed.dirty = true;
     paintEditor();
-    toast(named ? 'Recipe written for ' + named + '. Adjust it to how you made it, then save.'
+    toast(named ? 'Recipe written for ' + d.title + '. Adjust it to how you made it, then save.'
       : r.confidence === 'low' ? 'Best guess: ' + r.title + '. Not sure — see the notes, and fix it before saving.'
       : 'Looks like ' + r.title + '. Adjust it to how you made it, then save.');
   }, function (e) {

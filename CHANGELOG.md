@@ -5,6 +5,37 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v83 — 2026-10-08
+
+**What's new** · Kitchen · [tools/kitchen.html]
+### Say what it is,<br>and room to edit
+**Snap a dish** now has a *What is it?* box above the photo. Tell Claude
+the dish, and anything special about how you made it ("lasagna, with
+ground turkey"), and it writes that recipe instead of guessing. Leave it
+empty and it still guesses.
+
+On phones, the photo no longer takes over the screen while you fix the
+recipe. A dish photo scrolls away like the rest of the page. A handwritten
+card stays pinned so you can read it while typing, but smaller, and
+**Hide photo** folds it out of the way.
+
+**Kitchen — `tools/kitchen.html`, source `Tools files/Tools/kitchen_v5.html`**
+- *What is it?* (`#ed-dishname`, kept in `ed.dishHint` across redraws)
+  shown in the dish panel when a Claude key is set. Sent as "The cook says
+  it's: …" (falls back to a typed name); the system prompt now also says to
+  follow details about how they made it. Toast names the recipe's title.
+- Phones (≤ 900 px): only `.card-photo` is sticky, frame 22vh (was 32vh,
+  plus the row and padding: ~410 px of an 812 px screen → 242 px); dish
+  frame 34vh, not pinned. Hide photo / Show photo (`ed.fold`) on phones
+  only; folded = 63 px. "Remove photo" → "Remove" so the row stays on one
+  line.
+
+**Verified locally (mock + stand-in Claude endpoint, 375 px)**
+- What-is-it text reached the request; dish photo scrolls off; card pinned
+  at 242 px, folded 63 px, no sideways scroll.
+
+---
+
 ## v82 — 2026-10-08
 
 **What's new** · Kitchen · [tools/kitchen.html]
