@@ -248,3 +248,21 @@ its ID forever. Statuses: new, planned, in progress, done, dropped.
 ### IDEA-058 · Automatic Lighthouse and accessibility check on every push
 - **Category:** Fix · **Effort:** M · **Impact:** ★★ · **Status:** new
 - The site ships a new version every day or two (v71 to v81 in under a week), and speed and accessibility have only been fixed by hand, one page at a time. Add a GitHub Action that runs Lighthouse CI and pa11y against index, work, tools, food-for-thought and the Package Builder, and fails the push if scores drop below a set floor. The same pass can add `defer` to the assets/account.js script tag that currently blocks rendering at the top of every page.
+
+## 2026-10-09 — New tool ideas for photographers, couples, creators and real estate
+
+### IDEA-059 · Sunset and golden-hour finder inside the Wedding Schedule
+- **Category:** Tool · **Effort:** S · **Impact:** ★★★ · **Status:** new
+- tools/wedding-schedule.html builds the day from fixed stages (ceremony, etc.) but never tells the couple when the light is best. Add a date and city field that shows sunset and golden-hour times (a small sunrise/sunset calculation, no server) and flags where the couple portraits fall against it. Couples constantly ask "when should we do portraits?", and it makes the free schedule a reason to hire a photographer who plans around light.
+
+### IDEA-060 · Saved caption and hashtag sets in the Feed Planner
+- **Category:** Tool · **Effort:** S · **Impact:** ★★ · **Status:** new
+- tools/feed-planner.html lets you arrange posts and write captions, but has no hashtag support at all. Add named sets (Wedding, 333 Commercial, Real estate) that insert in one tap, plus a character counter for Instagram's limits. It saves Xavier repeat typing and is a feature other creators would actually share.
+
+### IDEA-061 · Real-estate listing shoot brief for agents
+- **Category:** Tool · **Effort:** M · **Impact:** ★★ · **Status:** new
+- The real-estate chapter on work.html has no entry point for agents. Build a one-page form where the agent enters address, square footage, property type and must-have shots (twilight, drone, floor plan), shows a price from the same fixed-rate logic as IDEA-027, and sends the brief to Xavier. This is different from the investor tools in IDEA-029: it targets agents who book repeatedly, which is natural continuity revenue.
+
+### IDEA-062 · Model release and image-usage licence generator
+- **Category:** Tool · **Effort:** M · **Impact:** ★★ · **Status:** new
+- No page on the site covers releases or licences, yet 333 Photo commercial and real-estate work depends on both. Add a tool that fills in a model release or a usage licence (term, territory, media) and exports a signable PDF. It protects Xavier, gives clients a professional touch, and licence length becomes a clear upsell lever (longer usage costs more).
