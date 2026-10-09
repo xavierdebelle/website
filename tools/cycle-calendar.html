@@ -15,7 +15,14 @@
 <meta property="og:description" content="Log the first day of each period. It learns the cycle and marks the fertile window and the peak day on a two-month calendar.">
 <meta property="og:url" content="https://xavierdebelle.github.io/website/tools/cycle-calendar.html">
 <meta name="twitter:card" content="summary">
+<!-- installable app: works offline once opened, syncs when back online (pwa.js, pwa-sw.js) -->
+<link rel="manifest" href="cycle-calendar.webmanifest">
+<link rel="apple-touch-icon" href="icons/cycle-calendar-180.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Cycle">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#0d1117">
+<script src="pwa.js" data-app="cycle-calendar"></script>
 <link rel="icon" href="../assets/logo.svg" type="image/svg+xml">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap');
@@ -157,6 +164,7 @@
       <button class="btn pink" id="b-today" type="button">Period started today</button>
       <button class="btn sync-btn" id="btn-sync" type="button" style="display:none">Sign in to sync</button>
       <button class="btn ghost" id="btn-signout" type="button" style="display:none" title="Sign out of sync">Sign out</button>
+      <button class="btn ghost" type="button" data-pwa-install style="display:none" title="Install as an app: its own icon, works offline">Install app</button>
       <button class="btn ghost" id="b-export" type="button">Back up</button>
       <button class="btn ghost" id="b-import" type="button">Restore</button>
       <input type="file" id="f-import" accept="application/json,.json" hidden>
@@ -404,7 +412,7 @@
       note.textContent = 'The period is ' + plural(-toN, 'day') + ' later than expected. Log it on the day it starts and the predictions catch up.';
     } else if (!state.manual && !l) {
       note.hidden = false;
-      note.textContent = 'Using a ' + L + '-day cycle until a second period is logged — then it uses her real average.';
+      note.textContent = 'Using a ' + L + '-day cycle until a second period is logged — then it uses the real average.';
     }
   }
 

@@ -28,7 +28,7 @@
    ============================================================ */
 'use strict';
 
-var VERSION = 'v77';
+var VERSION = 'v86';
 var NET_WAIT = 3500; // ms before a slow network gives way to the kept copy
 
 var APPS = {
@@ -73,6 +73,10 @@ var APPS = {
     'kitchen.html', 'kitchen.webmanifest', 'pwa.js', '../assets/account.js', '../assets/logo.svg',
     'icons/kitchen-180.png', 'icons/kitchen-192.png', 'icons/kitchen-512.png', 'icons/kitchen-maskable-512.png'
   ],
+  'cycle-calendar': [
+    'cycle-calendar.html', 'cycle-calendar.webmanifest', 'pwa.js', '../assets/account.js', '../assets/logo.svg',
+    'icons/cycle-calendar-180.png', 'icons/cycle-calendar-192.png', 'icons/cycle-calendar-512.png', 'icons/cycle-calendar-maskable-512.png'
+  ],
   'cards': [
     'cards.html', 'cards.webmanifest', 'pwa.js', '../assets/account.js', '../assets/logo.svg',
     'icons/cards-180.png', 'icons/cards-192.png', 'icons/cards-512.png', 'icons/cards-maskable-512.png'
@@ -99,6 +103,9 @@ var LIBS = {
   'notes': FIREBASE,
   'journal': FIREBASE,
   'kitchen': FIREBASE,
+  'cycle-calendar': FIREBASE.concat([
+    'https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap'
+  ]),
   // the barcode drawer and the barcode reader for iPhone/Safari
   'cards': FIREBASE.concat([
     'https://unpkg.com/bwip-js@4.11.4/dist/bwip-js-min.js',

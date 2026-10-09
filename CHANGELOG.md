@@ -5,6 +5,35 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v86 — 2026-10-09
+
+**What's new** · Installs · [tools.html#maria]
+### Cycle Calendar<br>works offline
+Install it from its Install app button and it gets its own icon on the
+home screen, opens with no connection, and syncs the moment it's back.
+
+**Cycle Calendar — installable, offline**
+- Manifest `tools/cycle-calendar.webmanifest` (short name "Cycle",
+  #0d1117), icons `tools/icons/cycle-calendar-{180,192,512,maskable-512}.png`
+  (a small calendar grid in the tool's pink / teal / yellow, drawn with
+  PIL), head block + `pwa.js data-app="cycle-calendar"`, Install app button.
+- `pwa-sw.js`: APPS + LIBS entries (Firebase library and the DM Mono / Syne
+  Google Fonts stylesheet); VERSION v77 → v86.
+- Card mentions offline; README lists every installable tool.
+- Copy: "then it uses her real average" → "the real average".
+
+**Tested (Playwright Chromium, fresh profile)**
+- Online twice: no installability or manifest errors, worker active and
+  controlling, app cache holds the page, manifest, icons, pwa.js,
+  account.js, logo; shared cache holds the three Firebase files and both
+  fonts. Logged a period.
+- Server stopped and every host unreachable: opens, shows Day 20 and the
+  logged period, fonts loaded, Install app shown, no console errors.
+- Playwright reinstalled in this session's scratchpad venv (the earlier
+  one had been cleared from /tmp).
+
+---
+
 ## v85 — 2026-10-08
 
 **What's new** · Kitchen · [tools/kitchen.html]
