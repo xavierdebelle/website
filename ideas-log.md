@@ -266,3 +266,25 @@ its ID forever. Statuses: new, planned, in progress, done, dropped.
 ### IDEA-062 · Model release and image-usage licence generator
 - **Category:** Tool · **Effort:** M · **Impact:** ★★ · **Status:** new
 - No page on the site covers releases or licences, yet 333 Photo commercial and real-estate work depends on both. Add a tool that fills in a model release or a usage licence (term, territory, media) and exports a signable PDF. It protects Xavier, gives clients a professional touch, and licence length becomes a clear upsell lever (longer usage costs more).
+
+## 2026-10-10 — Content, the blog, newsletter, Instagram, audience growth
+
+### IDEA-063 · Let blog posts carry photos
+- **Category:** Content · **Effort:** M · **Impact:** ★★★ · **Status:** new
+- In food-for-thought.html, bodyNodes() turns the post text into paragraphs and links only; the composer has no way to add an image, so a photographer's blog is text-only. Let the composer accept a photo line (an uploaded image or a pasted URL, with a caption and alt text) and render it full-width in the post. Photo-led posts are the ones people save and share, and they double as portfolio proof.
+
+### IDEA-064 · Share button on every blog post
+- **Category:** Content · **Effort:** S · **Impact:** ★★ · **Status:** new
+- Each post's meta row in food-for-thought.html offers only a "Link" anchor (#post-id). Replace or sit beside it with a "Share" button that calls the phone's native share sheet (navigator.share, with a copy-link fallback) carrying the post title. Sharing to WhatsApp, Instagram DMs and iMessage is how Montreal couples pass things around, and today it takes three taps and a hand-copied URL.
+
+### IDEA-065 · "Turn this post into a carousel" button
+- **Category:** Feature · **Effort:** M · **Impact:** ★★ · **Status:** new
+- Xavier already owns tools/carousel-planner.html and tools/feed-planner.html, but a blog post never reaches them. In the composer on food-for-thought.html, add a button that splits the post into slide-sized chunks (title slide, one point per slide, final "read more" slide) and opens them as a draft in the Carousel Planner. One piece of writing then becomes a week of Instagram content, and the planner gets a real use inside Xavier's own workflow.
+
+### IDEA-066 · A "Montreal wedding venues" guide series that ends in a booking nudge
+- **Category:** Content · **Effort:** M · **Impact:** ★★★ · **Status:** new
+- food-for-thought.html is all personal essays (reading, building, arguing), so nothing on the site answers what an engaged Montreal couple actually searches for. Write a recurring series of one post per venue or neighbourhood (light at golden hour, best photo spots, rain plan, a sample timeline from the Wedding Schedule tool) and end each with the date check or enquiry link. Xavier already knows these venues from shooting them, which makes this the cheapest high-intent content he can publish.
+
+### IDEA-067 · A link-in-bio page for Instagram
+- **Category:** Conversion · **Effort:** S · **Impact:** ★★★ · **Status:** new
+- The site links out to instagram.com/xavierdebelle in every footer, but nothing receives traffic coming the other way: the bio link has to land on the full mind map in index.html. Add a small mobile-first links.html with four big buttons (latest post, book de Belle, 333 Photo, free tools), each tagged so GoHighLevel knows it came from Instagram. It gives every story and reel one short address to point at and shows which content actually sends people.
