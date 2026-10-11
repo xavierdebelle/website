@@ -288,3 +288,25 @@ its ID forever. Statuses: new, planned, in progress, done, dropped.
 ### IDEA-067 · A link-in-bio page for Instagram
 - **Category:** Conversion · **Effort:** S · **Impact:** ★★★ · **Status:** new
 - The site links out to instagram.com/xavierdebelle in every footer, but nothing receives traffic coming the other way: the bio link has to land on the full mind map in index.html. Add a small mobile-first links.html with four big buttons (latest post, book de Belle, 333 Photo, free tools), each tagged so GoHighLevel knows it came from Instagram. It gives every story and reel one short address to point at and shows which content actually sends people.
+
+## 2026-10-11 — Wildcard (what the best photographer, creator and tool sites do that this one doesn't)
+
+### IDEA-068 · FAQ block on work.html that answers the questions couples and clients actually ask
+- **Category:** Conversion · **Effort:** S · **Impact:** ★★★ · **Status:** new
+- No page of the public site (work.html, index.html, who-am-i.html) carries a FAQ; the only FAQ text lives inside tools like potluck.html. Top photographer sites answer the same 8 questions near the contact step: how far ahead to book, deposit and payment schedule, travel outside Montreal, how long until photos and video arrive, what happens if you are sick, can we meet first, do you shoot in French, what about raw files. Add a collapsible FAQ above the "Email me" call in each chapter (one set for de Belle, one for 333 Photo) and mark it up as FAQPage structured data, so the answers can also appear directly in Google. It removes the doubts that stop people writing.
+
+### IDEA-069 · Referral link for past couples and vendors, with a thank-you gift
+- **Category:** Monetization · **Effort:** M · **Impact:** ★★★ · **Status:** new
+- Referrals are the biggest source for a 30-year wedding studio, yet nothing on work.html, in the tools or in the footers asks for one, and IDEA-053 only brings past couples back for themselves. Give each past couple and favourite vendor a personal link (work.html?ref=anna-and-marc) that GoHighLevel stores on the new lead, and automatically thank the referrer when that lead books, for example a free print or credit toward an anniversary session. The attraction cost drops to a gift, and the referrer is reminded of Xavier every time they share the link.
+
+### IDEA-070 · "One job, start to finish" case studies for 333 Photo
+- **Category:** Content · **Effort:** M · **Impact:** ★★★ · **Status:** new
+- The 333 Photo chapter of work.html describes services in a spec list but never shows a job. Commercial buyers (restaurants, developers, agencies) choose on proof that the supplier delivers on time, so write three short pages: the brief, the shot list, a handful of finished images, turnaround time and the price range, ending in the 333 estimate request. Each one also becomes a LinkedIn post and a sales-outreach attachment, and it is the one kind of content the other photographer sites in Montreal rarely publish.
+
+### IDEA-071 · Sticky "Check my date / Enquire" bar on phones
+- **Category:** Conversion · **Effort:** S · **Impact:** ★★ · **Status:** new
+- work.html is a long vertical scroll (de Belle, 333 Photo, real estate) and the only contact link sits at the bottom of each chapter, so a visitor who is convinced halfway down has to scroll to find it. Best photographer sites keep a slim bar fixed at the bottom of the phone screen with one button that follows you down, and it changes its wording to match the chapter on screen ("Check my wedding date", "Get a 333 estimate", "Talk property"). Pair it with the source tags from IDEA-041 so each bar button is measurable.
+
+### IDEA-072 · "Ask Xavier" assistant that answers questions and books the call
+- **Category:** Feature · **Effort:** L · **Impact:** ★★ · **Status:** new
+- Kitchen (tools/kitchen.html) already shows the site can call Claude, but visitors to work.html get no instant answer outside office hours. Add a small chat on work.html, fed only by Xavier's own packages, FAQ (IDEA-068) and availability, that answers a couple's question, then asks for name, date and email and creates the GoHighLevel lead. It runs through a Firebase function so no key sits in the page, and it answers at 11pm on a Sunday when couples do most of their wedding planning.
