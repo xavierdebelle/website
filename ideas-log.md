@@ -70,7 +70,7 @@ its ID forever. Statuses: new, planned, in progress, done, dropped.
 - 17 of the 18 pages in tools/ have no meta description (only neural-mind-map.html has one), so search results show random text. Write one outcome-led sentence per tool.
 
 ### IDEA-016 · Move to a custom domain
-- **Category:** SEO · **Effort:** S · **Impact:** ★★★ · **Status:** new
+- **Category:** SEO · **Effort:** S · **Impact:** ★★★ · **Status:** done (done in v87, 2026-10-12)
 - The site lives at xavierdebelle.github.io/website. A domain such as xavierdebelle.com is easier to remember, builds search authority that you own, and looks more credible on cards and in emails. Set it up with a CNAME on GitHub Pages (or on the new host from IDEA-039).
 
 ### IDEA-017 · Home page that says who it's for, with three doors
@@ -310,3 +310,21 @@ its ID forever. Statuses: new, planned, in progress, done, dropped.
 ### IDEA-072 · "Ask Xavier" assistant that answers questions and books the call
 - **Category:** Feature · **Effort:** L · **Impact:** ★★ · **Status:** new
 - Kitchen (tools/kitchen.html) already shows the site can call Claude, but visitors to work.html get no instant answer outside office hours. Add a small chat on work.html, fed only by Xavier's own packages, FAQ (IDEA-068) and availability, that answers a couple's question, then asks for name, date and email and creates the GoHighLevel lead. It runs through a Firebase function so no key sits in the page, and it answers at 11pm on a Sunday when couples do most of their wedding planning.
+
+## 2026-10-12 — Conversion and lead capture
+
+### IDEA-073 · Tap-to-call and tap-to-text beside every "Email me"
+- **Category:** Conversion · **Effort:** S · **Impact:** ★★ · **Status:** new
+- The only way to reach Xavier from work.html (lines ~319 and ~342), the footers and the mind map is an email link, yet tools/package-builder.html already prints a phone number (514.887.4686) in its export. Many couples and small-business owners would rather text from their phone than compose an email. Add "Call or text" buttons (tel: and sms: links, with a pre-filled "Hi Xavier, I found you through your site" body) next to each email button, and tag them like IDEA-041 so GoHighLevel's conversation inbox sees the source.
+
+### IDEA-074 · "Add $X more to unlock the next discount" nudge in the Package Builder
+- **Category:** Conversion · **Effort:** S · **Impact:** ★★★ · **Status:** new
+- tools/package-builder.html has a volume-discount ladder (getDiscount(), rising from 1% above $2,500 to 12% above $11,000) but the couple only sees the discount after reaching it. Show a quiet line under the total, "You're $180 away from 4% off ($150 saved)", that updates as they tick options. Couples nudged just below a threshold tend to add one more item, which lifts the average booking without Xavier saying a word.
+
+### IDEA-075 · Turn the Get Access request into a tagged lead
+- **Category:** Conversion · **Effort:** M · **Impact:** ★★ · **Status:** new
+- access.html collects a Google sign-in from every person who wants Sync, which is a warm, self-selected list of people who like the tools, but today it only reaches Xavier as an approval request. Add one question ("I'm a couple / photographer / agent / just curious") and an optional checkbox to hear from Xavier, then send the answer to GoHighLevel as a contact with a tag. Only people who tick the box get contacted, which keeps it in line with the privacy policy (Law 25) and still gives the tools a real lead source.
+
+### IDEA-076 · Give the Real Estate chapter its own two-way contact
+- **Category:** Conversion · **Effort:** S · **Impact:** ★ · **Status:** new
+- The Real Estate chapter in work.html (around line 319) ends in a generic "Talk property" mailto, but this lane is Xavier's own duplex project, so visitors are sellers, contractors, partners and agents, not clients. Replace the button with a short "I'm looking for: off-market duplexes in Montreal · renovation trades I can trust · investors to compare notes with" list and a mailto with a pre-filled subject for each. It attracts the people the lane needs and keeps property leads from mixing with wedding enquiries in GoHighLevel.
