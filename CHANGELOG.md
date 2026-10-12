@@ -5,6 +5,43 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v87 — 2026-10-12
+
+**What's new** · The whole site
+### Now at<br>xavierdebelle.com
+The site has its own address. Old links to xavierdebelle.github.io/website
+forward here on their own. Signed in to a synced tool? Sign in once more at
+the new address and everything comes back. Installed one of the tools as an
+app? Install it again from here.
+
+**Domain move — GitHub Pages serves the site at `xavierdebelle.com`**
+- DNS at InMotion (cPanel Zone Editor), done by Xavier: apex A →
+  185.199.108/109/110/111.153; `www` CNAME → `xavierdebelle.github.io`;
+  GitHub domain verification TXT `_github-pages-challenge-xavierdebelle`.
+  Email kept on InMotion: `mail` and `ftp` became A records → 198.46.83.203
+  (they were CNAMEs to the apex), MX → `mail.xavierdebelle.com`, Email
+  Routing → Local. The WordPress site that lived there was backed up and
+  retired.
+- Repo: `CNAME` file (`xavierdebelle.com`), so a push never unsets the
+  custom domain. `404.html` `<base href>` `/website/` → `/`.
+- Every absolute address (canonical, Open Graph, Twitter, README, privacy
+  policy text, Project Phases' client-link fallback) →
+  `https://xavierdebelle.com/` — 88 references in 30 files. History
+  (CHANGELOG, ideas log) keeps the old address.
+- `release.py` LIVE → `https://xavierdebelle.com`.
+
+**Outstanding — Xavier**
+- Firebase → Authentication → Settings → Authorized domains: add
+  `xavierdebelle.com` and `www.xavierdebelle.com`, or sign-in fails there.
+- GitHub → repo → Settings → Pages: Enforce HTTPS once the certificate is
+  issued.
+
+**Note:** browser-saved data belongs to an address. Tools that save only in
+the browser start empty at the new address (export at the old one, import
+here); synced tools fill up after sign-in; installed apps need reinstalling.
+
+---
+
 ## v86 — 2026-10-09
 
 **What's new** · Installs · [tools.html#maria]

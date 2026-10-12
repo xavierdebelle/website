@@ -3,7 +3,7 @@
 Personal site — an interactive mind map, a portfolio, and a hub for the
 browser tools I've built. Plain HTML/CSS/JS, no build step, no dependencies.
 
-**Live:** https://xavierdebelle.github.io/website/
+**Live:** https://xavierdebelle.com/
 
 ## Structure
 
