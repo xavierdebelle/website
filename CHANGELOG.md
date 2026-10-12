@@ -5,6 +5,27 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v88 — 2026-10-12
+
+**Publishing moves to a private workspace (no visible change)**
+- Everything behind the site now lives in the private repo
+  `xavierdebelle/xdb-workspace`: `Website Files/`, the skills and scripts,
+  `CLAUDE.md`, `Instructions/` (STATUS.md, recaps, Claude's working notes),
+  `Tools files/` and `App design files/`. A Claude Code cloud session can
+  open that one repo and publish like the Mac does.
+- On every push to its `main` that touches `Website Files/`, the GitHub
+  Action `.github/workflows/publish-site.yml` copies that folder (and only
+  that) into this public repo with the same message and author; Pages then
+  serves it. Key: deploy key with write access here, private half as
+  `SITE_DEPLOY_KEY` in the workspace.
+- `release.py` and `verify_deploy.py` find the site as a folder of the
+  workspace (snapshot from `HEAD:Website Files/`, live check against
+  `HEAD:./<path>`). The old local `.git` of this folder is kept as
+  `website-public-git-backup-2026-10-12` beside the project.
+- This release is the end-to-end test of that route.
+
+---
+
 ## v87 — 2026-10-12
 
 **What's new** · The whole site

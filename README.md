@@ -5,6 +5,9 @@ browser tools I've built. Plain HTML/CSS/JS, no build step, no dependencies.
 
 **Live:** https://xavierdebelle.com/
 
+This repo is published automatically from a private workspace (with the
+tools' originals and the publishing scripts); edit there, not here.
+
 ## Structure
 
     index.html      the mind map — the entry point
