@@ -5,6 +5,22 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v89 — 2026-10-12
+
+**What's new** · What Is This Website? · [what-is-this.html]
+### Signed,<br>Xavier de Belle
+The What Is This Website? page now ends with my signature.
+
+**What Is This Website? — signed at the bottom**
+- `what-is-this.html`: "— XAVIER DE BELLE" under the text (heavy caps,
+  yellow dash), Xavier's request. It sits outside the editable text, so
+  saving the page with Edit page never removes it.
+- Verified in Playwright at 1280px and 375px: signature shows, no sideways
+  scroll. Only console errors are the Firebase SDK blocked by the cloud
+  session's network (the page falls back to its built-in words, as designed).
+
+---
+
 ## v88 — 2026-10-12
 
 **Publishing moves to a private workspace (no visible change)**
