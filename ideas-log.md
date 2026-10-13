@@ -328,3 +328,21 @@ its ID forever. Statuses: new, planned, in progress, done, dropped.
 ### IDEA-076 · Give the Real Estate chapter its own two-way contact
 - **Category:** Conversion · **Effort:** S · **Impact:** ★ · **Status:** new
 - The Real Estate chapter in work.html (around line 319) ends in a generic "Talk property" mailto, but this lane is Xavier's own duplex project, so visitors are sellers, contractors, partners and agents, not clients. Replace the button with a short "I'm looking for: off-market duplexes in Montreal · renovation trades I can trust · investors to compare notes with" list and a mailto with a pre-filled subject for each. It attracts the people the lane needs and keeps property leads from mixing with wedding enquiries in GoHighLevel.
+
+## 2026-10-13 — Monetization and offers
+
+### IDEA-077 · Sell Glam Studio on its own to 333 Photo clients for corporate events
+- **Category:** Monetization · **Effort:** S · **Impact:** ★★★ · **Status:** new
+- tools/package-builder.html already prices Glam Studio as a standalone booking (glam_standalone, $2,000 for 5 hours with instant 4x6 B&W prints), described as "a full editorial portrait experience", but it only appears inside the wedding builder. The 333 Photo chapter of work.html lists fashion, product and lifestyle and never mentions events. Add an "Event portrait studio" line to that chapter and a short page for company parties, launches and galas, priced from the same $2,000 and sent to the 333 estimate request. The product, price and equipment exist already, so it is a new B2B buyer for an offer that needs no build.
+
+### IDEA-078 · Parents' album and print reorder offer after the gallery is delivered
+- **Category:** Monetization · **Effort:** M · **Impact:** ★★★ · **Status:** new
+- package-builder.html sells Parent Album Duplicates ($500) and a Graphi Sleeve ($150) as add-ons chosen months before the wedding, when couples are not thinking about albums yet. Add a post-delivery step: a GoHighLevel email and text sequence, starting about 3 weeks after the gallery goes out, saying "Your parents will want these", with a link to a one-page order of parent albums, framed prints and canvases. This reaches the people who actually pay for it (parents, grandparents) at the moment the photos are exciting, and it is an upsell that needs no discount.
+
+### IDEA-079 · Put a named guarantee beside the Package Builder total
+- **Category:** Monetization · **Effort:** S · **Impact:** ★★ · **Status:** new
+- The total in tools/package-builder.html is followed only by the export button, and no page on the site (work.html, the builder, who-am-i.html) states any promise that lowers a couple's risk. A $6,000 purchase from a person they have never met needs one. Add a short, specific guarantee under the total, for example "Every key moment on your schedule is covered, or the album design is free", and repeat it in the de Belle chapter of work.html. It is the cheapest way to raise the share of couples who go from pricing to enquiring, and it sets the studio apart from competitors that promise nothing.
+
+### IDEA-080 · "Team headshot day" as a fixed-price 333 Photo offer
+- **Category:** Monetization · **Effort:** M · **Impact:** ★★★ · **Status:** new
+- The 333 Photo chapter in work.html leads with fashion, product and lifestyle, but small companies, clinics and real-estate offices mostly need one thing: current headshots for their whole team. Productize it in a single page: "Team headshot day, from $X per person, minimum 6 people, on-site, edited files in 48 hours", with a per-head price that drops at 10 and 20 people and a headcount field that sends the request into GoHighLevel. It is easy to understand, sells repeatedly as people join the team (continuity), and every attendee is a possible lead for the rest of 333 Photo.
