@@ -5,6 +5,29 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v91 — 2026-10-14
+
+**What's new** · Project Phases · [tools/project-tracker.html]
+### Homework stays<br>until you clear it
+A ticked homework item now stays in the list, struck through, until you
+press Clear done. The Report's period filter gains This month.
+
+**Project Phases v17 — `tools/project-tracker.html`, source `Tools files/Tools/project_tracker_v17.html`**
+- Homework: the 2.5 s strike-out from v90 is gone. Ticked items stay in
+  the list struck through; **Clear done** (appears when there are any)
+  moves them to Done. New field `homework[].cleared`; items done before
+  this count as cleared, so nothing reappears. Unticking (in the list or
+  in Done) puts an item back as open. `cleared` travels in the client
+  link, so the client sees the same list. Client view has no button.
+- Report: Period gains **This month** (1st of the month to today).
+
+**Verified locally**
+- Tick → still struck after 3 s, Clear done shows → Done; untick from Done
+  → back in the list; old done item stays in Done; This month counts the
+  right entries. No console errors.
+
+---
+
 ## v90 — 2026-10-14
 
 **What's new** · Project Phases · [tools/project-tracker.html]
