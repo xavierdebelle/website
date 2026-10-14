@@ -5,6 +5,42 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v92 — 2026-10-14
+
+**What's new** · New piece · [tools.html#art]
+### Galaxy Map
+The site as a galaxy you scroll through. The camera dives through the X and
+visits each branch in turn — every one a constellation, its name standing
+huge behind it — then pulls back to show the whole map. Move the mouse and it
+throws sparks. Best full screen, with a mouse or trackpad.
+
+**Galaxy Map — `tools/galaxy-map.html`, source `Tools files/Art/galaxy-map-v1.html`**
+- New Art & Experiments piece: homepage redesign experiment v9 (built
+  locally in `website homepage redesign/`, which stays out of git). three.js
+  0.169.0 from jsDelivr; scroll-driven camera path through five
+  constellations (Work, Tools, Connect, About, Personal) with giant
+  Helvetica type behind each; a render-target pass turns the letters white
+  and whatever sits in front of them black. Topic labels link to the live
+  pages. Nothing is stored.
+- Site copy only: title + social tags, site favicon, the "Prototype · local
+  only" tag became an **All tools** link, caption reads Galaxy Map.
+- **The homepage is unchanged** (Xavier's instruction): `index.html` was
+  left out of this release, so its HUD still reads v91 — the one
+  version-marker mismatch `verify_deploy.py` reports is that, on purpose.
+
+**Scan**
+- External hosts are only links to his own sites (already on the live
+  map) and xavierdebelle.com; the email is the one already public. New
+  runtime dependency: three.js from cdn.jsdelivr.net (jsDelivr already
+  used by Kitchen).
+
+**Verified locally**
+- Served from `Website Files/`: page loads, scrolls through all five
+  constellations and the finale, cursor trail and topic links work, no
+  console errors; card appears under Art & Experiments.
+
+---
+
 ## v91 — 2026-10-14
 
 **What's new** · Project Phases · [tools/project-tracker.html]

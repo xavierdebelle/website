@@ -1,0 +1,1396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5">
+<title>Galaxy Map — XAVIER DE BELLE</title>
+<!-- social preview: link cards on Instagram, iMessage, WhatsApp, Facebook, X -->
+<meta name="description" content="Scroll through a slowly turning galaxy, branch by branch. Each part of the site is a constellation with its name standing huge behind it.">
+<link rel="canonical" href="https://xavierdebelle.com/tools/galaxy-map.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Xavier de Belle">
+<meta property="og:locale" content="en_CA">
+<meta property="og:title" content="Galaxy Map — Xavier de Belle">
+<meta property="og:description" content="Scroll through a slowly turning galaxy, branch by branch. Each part of the site is a constellation with its name standing huge behind it.">
+<meta property="og:url" content="https://xavierdebelle.com/tools/galaxy-map.html">
+<meta property="og:image" content="https://xavierdebelle.com/assets/og/home.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Galaxy Map — Xavier de Belle">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="../assets/logo.svg" type="image/svg+xml">
+<!--
+  Galaxy Map — a scroll-driven three.js flight through the site's map, kept
+  as an Art piece. Source: Tools files/Art/galaxy-map-v1.html (homepage
+  redesign experiment v9); the live homepage is unchanged.
+-->
+<style>
+  :root {
+    --ink: #000000;
+    --paper: #ffffff;
+    --volt: #ffe800;
+    --ash: #2a2a2a;
+    --dust: #8a8a8a;
+    --stack: "Helvetica Neue", Helvetica, Arial, "Segoe UI", system-ui, sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    --gut: clamp(16px, 4vw, 40px);
+  }
+  * { box-sizing: border-box; }
+  html { background: var(--ink); }
+  body {
+    margin: 0;
+    background: var(--ink);
+    color: var(--paper);
+    font-family: var(--stack);
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  /* the scene is fixed; the page scrolls a tall empty track that drives it */
+  #gl {
+    position: fixed; inset: 0;
+    width: 100%; height: 100%;
+    display: block;
+    pointer-events: none;
+  }
+  #track { position: relative; width: 1px; pointer-events: none; }
+
+  /* ============ HUD ============ */
+  .hud {
+    position: fixed; z-index: 40;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: var(--dust);
+  }
+  .hud--brand { top: 0; left: 0; padding: var(--gut); pointer-events: none; }
+  .hud--brand h1 {
+    font-weight: 900; text-transform: uppercase;
+    letter-spacing: -0.05em; line-height: .84;
+    font-size: clamp(30px, 5.2vw, 62px);
+    margin: 0 0 10px; color: var(--paper);
+    transition: font-size .5s ease;
+  }
+  .hud--brand h1 i { font-style: normal; display: block; }
+  .hud--brand h1 em { font-style: normal; color: var(--volt); display: block; }
+  .hud--brand p { margin: 0; line-height: 1.9; transition: opacity .5s; }
+  body.is-deep .hud--brand h1 { font-size: clamp(20px, 2.6vw, 30px); }
+  body.is-deep .hud--brand p { opacity: 0; }
+
+  .hud--tag { top: 0; right: 0; padding: var(--gut); }
+  .tag {
+    display: inline-block; text-decoration: none;
+    padding: 9px 14px;
+    border: 3px solid var(--volt);
+    color: var(--volt);
+    font-weight: 700;
+  }
+
+  a.tag { transition: background .15s, color .15s; }
+  a.tag:hover, a.tag:focus-visible { background: var(--volt); color: var(--ink); outline: none; }
+
+  .hud--caption {
+    bottom: 0; left: 0;
+    padding: var(--gut);
+    line-height: 2;
+    pointer-events: none;
+    max-width: 70vw;
+  }
+  .hud--caption b { color: var(--paper); font-weight: 700; }
+  .hud--caption .step { color: var(--volt); font-weight: 700; }
+
+  .hud--ctl { bottom: 0; right: 0; padding: var(--gut); display: flex; gap: 8px; }
+  .ctl {
+    height: 42px; padding: 0 16px;
+    display: grid; place-items: center;
+    background: var(--ink);
+    border: 3px solid var(--paper);
+    color: var(--paper);
+    font-family: var(--mono); font-weight: 700;
+    font-size: 11px; letter-spacing: .16em; text-transform: uppercase;
+    cursor: pointer;
+    transition: background .15s, color .15s, border-color .15s;
+  }
+  .ctl:hover, .ctl:focus-visible { background: var(--volt); border-color: var(--volt); color: var(--ink); outline: none; }
+
+  /* section rail */
+  .rail {
+    position: fixed; z-index: 40;
+    right: var(--gut); top: 50%;
+    transform: translateY(-50%);
+    display: flex; flex-direction: column; gap: 14px;
+    align-items: flex-end;
+  }
+  .rail button {
+    display: flex; align-items: center; gap: 10px;
+    background: none; border: 0; padding: 2px 0;
+    font-family: var(--mono); font-size: 10px; letter-spacing: .22em;
+    text-transform: uppercase; color: var(--dust);
+    cursor: pointer;
+  }
+  .rail button span { opacity: 0; transform: translateX(6px); transition: opacity .2s, transform .2s; }
+  .rail button i {
+    display: block; width: 14px; height: 3px;
+    background: var(--dust);
+    transition: width .25s, background .25s;
+  }
+  .rail button:hover span, .rail button:focus-visible span { opacity: 1; transform: none; }
+  .rail button.is-on { color: var(--paper); }
+  .rail button.is-on i { width: 30px; background: var(--volt); }
+  .rail button:focus-visible { outline: none; color: var(--paper); }
+
+  /* scroll cue */
+  .cue {
+    position: fixed; z-index: 30;
+    left: 50%; bottom: calc(var(--gut) + 64px);
+    transform: translateX(-50%);
+    display: flex; flex-direction: column; align-items: center; gap: 10px;
+    font-family: var(--mono); font-size: 10px; letter-spacing: .3em;
+    color: var(--paper); text-transform: uppercase;
+    pointer-events: none;
+    transition: opacity .4s;
+  }
+  .cue::after {
+    content: ""; width: 3px; height: 34px; background: var(--volt);
+    animation: cue 1.6s ease-in-out infinite;
+    transform-origin: top;
+  }
+  @keyframes cue { 0% { transform: scaleY(0); } 50% { transform: scaleY(1); } 100% { transform: scaleY(0); transform-origin: bottom; } }
+
+  /* topic labels — real text pinned to the particle orbs */
+  .branch {
+    position: absolute; left: 0; top: 0;
+    display: flex; align-items: baseline; gap: 10px;
+    background: none; border: 0; padding: 4px 6px;
+    font-family: var(--mono); font-weight: 800;
+    font-size: clamp(20px, 2.4vw, 32px); letter-spacing: .14em;
+    text-transform: uppercase; color: var(--paper);
+    text-shadow: 0 0 10px #000, 0 0 3px #000, 0 0 1px #000;
+    white-space: nowrap; opacity: 0; cursor: default;
+    will-change: transform, opacity;
+    transition: font-size .4s ease, color .15s;
+  }
+  .branch i { font-style: normal; font-size: .38em; color: var(--volt); letter-spacing: .1em; }
+  body.is-finale .branch { font-size: 13px; letter-spacing: .2em; cursor: pointer; }
+  body.is-finale .branch:hover, .branch:focus-visible { color: var(--volt); outline: none; }
+  #ink { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 34; pointer-events: none; }
+  #labels { position: fixed; inset: 0; z-index: 35; pointer-events: none; mix-blend-mode: difference; }   /* white text turns black over the giant type */
+  .node {
+    position: absolute; left: 0; top: 0;
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px;
+    font-family: var(--mono); font-size: 11px; font-weight: 700;
+    letter-spacing: .18em; text-transform: uppercase;
+    color: var(--paper); text-decoration: none; white-space: nowrap;
+    text-shadow: 0 0 8px #000, 0 0 2px #000;
+    opacity: 0;
+    will-change: transform, opacity;
+  }
+  .node::before {
+    content: ""; width: 22px; height: 2px; background: var(--paper);
+    transition: width .2s, background .2s;
+  }
+  .node.is-left { flex-direction: row-reverse; }
+  .node sup { font-size: 9px; color: var(--dust); letter-spacing: 0; }
+  .node:hover, .node:focus-visible { color: var(--volt); outline: none; }
+  .node:hover::before, .node:focus-visible::before { width: 36px; background: var(--volt); }
+
+  /* text index overlay */
+  .index {
+    position: fixed; inset: 0; z-index: 70;
+    background: var(--ink);
+    overflow-y: auto;
+    padding: var(--gut);
+    display: none;
+  }
+  .index.is-on { display: block; }
+  .index h2 {
+    font-weight: 900; text-transform: uppercase; letter-spacing: -.04em;
+    font-size: clamp(34px, 8vw, 76px); line-height: .85; margin: 0 0 8px;
+  }
+  .index__close { position: absolute; top: var(--gut); right: var(--gut); }
+  .index__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 2px; margin-top: 34px;
+    background: var(--paper); border: 3px solid var(--paper);
+  }
+  .index__col { background: var(--ink); padding: 24px; }
+  .index__col h3 {
+    font-family: var(--mono); font-size: 11px; letter-spacing: .24em;
+    color: var(--volt); margin: 0 0 18px; text-transform: uppercase;
+  }
+  .index__col a {
+    display: block; text-decoration: none; font-weight: 900; text-transform: uppercase;
+    font-size: 15px; padding: 9px 0; border-bottom: 2px solid var(--ash);
+    color: var(--paper);
+  }
+  .index__col a:hover { color: var(--volt); }
+
+  .sr {
+    position: absolute; width: 1px; height: 1px; overflow: hidden;
+    clip: rect(0 0 0 0); white-space: nowrap;
+  }
+
+  .fail {
+    position: fixed; inset: 0; display: none; place-items: center;
+    padding: var(--gut); text-align: center;
+    font-family: var(--mono); font-size: 12px; letter-spacing: .2em; text-transform: uppercase;
+  }
+
+  @media (max-width: 820px) {
+    .hud--brand { padding: 16px var(--gut); }
+    .hud--brand h1 { font-size: clamp(21px, 6.4vw, 30px); margin-bottom: 6px; }
+    .hud--brand h1 i, .hud--brand h1 em { display: inline; }
+    body.is-deep .hud--brand h1 { font-size: 18px; }
+    .hud--brand p { font-size: 9px; letter-spacing: .18em; line-height: 1.7; }
+    .hud--tag { display: none; }
+    .rail { right: 10px; gap: 12px; }
+    .rail button span { display: none; }
+    .hud--caption { max-width: 100%; right: 0; padding-bottom: 76px; font-size: 9px; }
+    .hud--ctl { left: 0; justify-content: center; padding: 0 12px 16px; }
+    .cue { bottom: 130px; }
+    .node { flex-direction: column; gap: 6px; font-size: 10px; letter-spacing: .14em; padding: 6px; text-align: center; }
+    .node.is-left { flex-direction: column; }
+    .node::before { width: 2px; height: 14px; }
+    .node:hover::before { width: 2px; }
+  }
+</style>
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js" } }
+</script>
+</head>
+<body>
+
+<canvas id="gl" aria-hidden="true"></canvas>
+<div id="track"></div>
+<canvas id="ink" aria-hidden="true"></canvas>
+<div id="labels"></div>
+
+<header class="hud hud--brand">
+  <h1><i>Xavier</i> <i>de</i> <em>Belle</em></h1>
+  <p>Photographer &middot; Cinematographer &middot;<br>Professional fun maker &middot; Montreal</p>
+</header>
+
+<div class="hud hud--tag"><a class="tag" href="../tools.html#art">All tools</a></div>
+
+<nav class="rail" id="rail" aria-label="Sections"></nav>
+
+<div class="cue" id="cue">Scroll</div>
+
+<div class="hud hud--caption" id="caption" aria-live="polite"></div>
+
+<div class="hud hud--ctl">
+  <button class="ctl" id="indexBtn" type="button">Index</button>
+</div>
+
+<section class="index" id="index" aria-label="Text index">
+  <button class="ctl index__close" id="indexClose" type="button">Close</button>
+  <h2>Index</h2>
+  <div class="index__grid" id="indexGrid"></div>
+</section>
+
+<div class="fail" id="fail">This experiment needs WebGL. Use the Index button for every link.</div>
+
+<script type="module">
+import * as THREE from "three";
+
+/* ==========================================================================
+   1 · CONTENT — the same branches as the live mind map
+   ========================================================================== */
+const VERSION = "v9";   // redesign experiment v9 (local versions live in "website homepage redesign/")
+const SITE = "https://xavierdebelle.com/";
+const MAP = [
+  { label:"Work", children:[
+      { label:"Real Estate",    href:"work.html#real-estate" },
+      { label:"333 Photo",      href:"https://333photo.com/", external:true },
+      { label:"De Belle Photo", href:"https://debellephotography.com/", external:true } ]},
+  { label:"Tools", children:[
+      { label:"Portfolio Makers", href:"tools.html#portfolio" },
+      { label:"De Belle Tools",   href:"tools.html#debelle" },
+      { label:"Personal",         href:"tools.html#personal" },
+      { label:"Maria's Tools",    href:"tools.html#maria" },
+      { label:"Events",           href:"tools.html#events" },
+      { label:"Art",              href:"tools.html#art" } ]},
+  { label:"Connect", children:[
+      { label:"Email",          href:"mailto:xavier@debellephotography.com" },
+      { label:"Instagram",      href:"https://www.instagram.com/xavierdebelle/", external:true },
+      { label:"Submit a Tool",  href:"soon.html#submit-a-tool" } ]},
+  { label:"About", children:[
+      { label:"Who am I?",             href:"who-am-i.html" },
+      { label:"Changelog",             href:"changelog.html" },
+      { label:"What is this website?", href:"what-is-this.html" } ]},
+  { label:"Personal", children:[
+      { label:"Food for Thought", href:"food-for-thought.html" },
+      { label:"Library",          href:"library.html" },
+      { label:"Digital Archives", href:"soon.html#digital-archives" },
+      { label:"Self Improvement", href:"soon.html#self-improvement" } ]}
+];
+const abs = h => /^(https?:|mailto:)/.test(h) ? h : SITE + h;
+
+/* ==========================================================================
+   2 · TUNING — every number worth playing with lives here
+   ========================================================================== */
+const T = {
+  fov         : 50,
+  Z0          : -800,     // depth of the first branch
+  dz          : -700,     // depth step between branches
+  ZF          : 1500,     // finale camera depth: from here all branches form one ring
+  ringK       : 0.33,     // ring radius as a share of distance to the finale camera
+  introZ      : 700,
+  sectionVh   : 1.5,      // scroll length of one move, in screen heights
+  scrollEase  : 5.0,      // how quickly the camera catches up with the wheel
+  pointSize   : 1.8,      // particle size, world units at the first branch
+  wakeRadius  : 0.075,     // cursor wake radius, share of screen height
+  wakeForce   : 0.016,    // only used if uWake is switched back on
+  wakeDecay   : 1.7,      // how fast the water settles, per second
+  spin        : 0.022,    // galaxy rotation, radians per second (≈4 min per turn at the core, ≈6.5 at the rim)
+  tilt        : 0.42,     // tilt of the spin axis, radians: 0 = flat circling, higher = more front-to-back
+  sparkRate   : 0.9993,   // threshold — higher = rarer random yellow sparks
+  gold        : [243/255, 201/255, 63/255],   // the live site's spark gold
+};
+
+const small = Math.min(innerWidth, innerHeight) < 700;
+const COUNT = small
+  ? { dust:9300,  orb:0, sub:40, main:506 }    // orb 0: topics are single clean stars
+  : { dust:21100, orb:0, sub:80, main:956 };
+const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* ==========================================================================
+   3 · SMALL HELPERS
+   ========================================================================== */
+const V = (x,y,z) => new THREE.Vector3(x,y,z);
+const rnd = Math.random;
+const gauss = () => { let u=0,v=0; while(!u) u=rnd(); while(!v) v=rnd(); return Math.sqrt(-2*Math.log(u))*Math.cos(6.2831853*v); };
+const clamp = (x,a,b) => Math.min(b, Math.max(a, x));
+const smooth = (a,b,x) => { const t = clamp((x-a)/(b-a),0,1); return t*t*(3-2*t); };
+const gz = z => Math.max(1, (T.ZF - z)/(T.ZF - T.Z0));   // scale grows with depth
+
+/* the mark's four triangles, from the source SVG, centred, height 1 */
+const LOGO = [
+  [[184,81],[555,81],[749,693]],
+  [[1015,81],[1386,81],[821,693]],
+  [[184,1503],[563,1503],[762,876]],
+  [[1007,1503],[1386,1503],[808,876]]
+].map(tri => tri.map(p => [(p[0]-785.5)/1584, -(p[1]-792)/1584]));
+
+/* ==========================================================================
+   4 · LAYOUT — constellations spiral into depth; from the finale camera they
+       read as a ring around the X (the old map, alive)
+   ========================================================================== */
+let L;   // current layout
+function buildLayout(portrait){
+  const stations = MAP.map((b,i) => {
+    const z = T.Z0 + T.dz*i;
+    const g = gz(z);
+    const R = T.ringK*(T.ZF - z);
+    const a = (90 - 72*i)*Math.PI/180;
+    const c = V(Math.cos(a)*R, Math.sin(a)*R, z);
+    const wW = 300;                            // room for the branch name beside its main star
+    const n = b.children.length;
+    const rx = portrait ? Math.max(wW*0.40, 110) : Math.max(wW*0.55 + 90, 290);
+    const ry = portrait ? 235 : 178;
+    const top = Math.ceil(n/2), bot = n - top;
+    const angles = [];
+    for(let k=0;k<top;k++) angles.push(top===1 ? 90 : 150 - 120*k/(top-1));
+    for(let k=0;k<bot;k++) angles.push(bot===1 ? 270 : 210 + 120*k/(bot-1));
+    const nodes = b.children.map((ch,k) => {
+      const an = (angles[k] + (rnd() - 0.5)*24)*Math.PI/180;    // a little irregular, like a real constellation
+      const f = 0.82 + rnd()*0.34;
+      const off = V(Math.cos(an)*rx*f, Math.sin(an)*ry*f, (rnd()-0.5)*80).multiplyScalar(g);
+      return { ...ch, pos: c.clone().add(off), side: Math.cos(an) < -0.01 ? -1 : 1, station:i };
+    });
+    /* how much world must fit on screen around this branch */
+    const boxW = portrait ? Math.max(wW*1.3, 2*rx*0.87 + 150) : Math.max(wW*1.1, 2*rx + 440);
+    const boxH = 2*ry + (portrait ? 170 : 130);
+    /* the constellation: a main star, a star per topic, a few unnamed stars that
+       bend the lines, and here and there a line joining two neighbouring topics */
+    const stars = [{ p:c.clone(), kind:0 }], lines = [];
+    nodes.forEach(nd => {
+      stars.push({ p:nd.pos, kind:1 });
+      const d = nd.pos.clone().sub(c);
+      if(rnd() < 0.6){
+        const perp = V(-d.y, d.x, 0).normalize().multiplyScalar(d.length()*(0.08 + rnd()*0.12)*(rnd() < 0.5 ? -1 : 1));
+        const m = c.clone().addScaledVector(d, 0.42 + rnd()*0.16).add(perp).add(V(0, 0, (rnd()-0.5)*40*g));
+        stars.push({ p:m, kind:2 });
+        lines.push({ a:c, b:m, seg:rnd()*0.2 }, { a:m, b:nd.pos, seg:0.4 + rnd()*0.15 });
+      } else lines.push({ a:c, b:nd.pos, seg:rnd()*0.3 });
+    });
+    for(let k = 0; k < nodes.length - 1; k++) if(rnd() < 0.4) lines.push({ a:nodes[k].pos, b:nodes[k+1].pos, seg:0.7 + rnd()*0.1 });
+    for(let k = 0; k < 4; k++) stars.push({ p:c.clone().add(V(gauss()*rx*0.55, gauss()*ry*0.6, gauss()*40).multiplyScalar(g)), kind:2 });
+    return { label:b.label, c, g, R, wW, nodes, stars, lines, boxW, boxH };
+  });
+  return { portrait, stations };
+}
+
+/* ==========================================================================
+   5 · THREE SETUP
+   ========================================================================== */
+const canvas = document.getElementById("gl");
+let renderer;
+try {
+  renderer = new THREE.WebGLRenderer({ canvas, antialias:true, alpha:false, powerPreference:"high-performance" });
+} catch(e){
+  document.getElementById("fail").style.display = "grid";
+  throw e;
+}
+renderer.setClearColor(0x000000, 1);
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(T.fov, innerWidth/innerHeight, 1, 14000);
+
+const GOLD = new THREE.Color().setRGB(...T.gold);
+const TRAIL_N = 16;
+const uniforms = {
+  uTime:  { value: 0 },
+  uMotion:{ value: reduced ? 0.25 : 1 },
+  uForm:  { value: new Array(6).fill(0) },
+  uTrail: { value: Array.from({length:TRAIL_N}, () => new THREE.Vector4(0,0,0,0)) },
+  uRes:   { value: new THREE.Vector2(innerWidth, innerHeight) },
+  uPx:    { value: 1 },
+  uDpr:   { value: 1 },
+  uSize:  { value: T.pointSize },
+  uLead:  { value: new THREE.Vector3(-1, 0, 0) },
+  uHover: { value: new THREE.Vector4(0,0,0,0) },
+  uZF:    { value: T.ZF },
+  uZ0:    { value: T.Z0 },
+  uWake:  { value: 0 },          // the cursor wake is off (Xavier, 2026-10-14); 1 brings it back
+  uSpin:  { value: T.spin },
+  uTilt:  { value: T.tilt },
+  uWakeR: { value: T.wakeRadius },
+  uWakeF: { value: T.wakeForce },
+  uSpark: { value: T.sparkRate },
+  uGold:  { value: GOLD },
+  uVel:   { value: new THREE.Vector3() },
+  uStreak:{ value: 0 },
+};
+
+/* GLSL shared by the particles and the warp streaks */
+const CHUNK = /* glsl */`
+  uniform float uTime, uMotion, uZF, uZ0, uSpin, uTilt;
+  float hash(float n){ return fract(sin(n)*43758.5453123); }
+  float gz(float z){ return max(1.0, (uZF - z)/(uZF - uZ0)); }
+  vec3 drift(vec3 p, float s, float amp){
+    float t = uTime*uMotion;
+    return vec3(
+      sin(t*0.13 + s*6.283 + p.y*0.0021),
+      cos(t*0.11 + s*4.100 + p.x*0.0019),
+      sin(t*0.09 + s*2.700 + p.z*0.0017)) * amp;
+  }
+  vec3 dustPos(vec3 p, float s){
+    /* the galaxy turns on a tilted axis through the X: it circles round the mark
+       and, at the same time, each side swings toward you and away (Rodrigues) */
+    float a = uTime*uMotion*uSpin*(0.7 + 0.6/(1.0 + length(p.xy)/900.0))*(0.94 + 0.12*s);
+    vec3 k = vec3(0.0, sin(uTilt), cos(uTilt));
+    vec3 v = vec3(p.xy, 0.0);
+    float c = cos(a), sn = sin(a);
+    vec3 q = v*c + cross(k, v)*sn + k*dot(k, v)*(1.0 - c) + vec3(0.0, 0.0, p.z);
+    return q + drift(p, s, 15.0*gz(p.z));
+  }
+`;
+
+const VERT = /* glsl */`
+  attribute vec3 aTarget;
+  attribute vec3 aC2;
+  attribute vec3 aC3;
+  attribute vec4 aInfo;   // kind, station, seed, streamId
+  attribute vec4 aRand;
+  uniform float uForm[6];
+  uniform vec4  uTrail[${TRAIL_N}];
+  uniform vec2  uRes;
+  uniform float uPx, uDpr, uSize, uWake, uWakeR, uWakeF, uSpark;
+  uniform vec3  uLead;
+  uniform vec4  uHover;
+  varying float vAlpha;
+  varying float vGold;
+  ${CHUNK}
+
+  vec3 bez(vec3 a, vec3 b, vec3 c, vec3 d, float t){
+    float u = 1.0 - t;
+    return u*u*u*a + 3.0*u*u*t*b + 3.0*u*t*t*c + t*t*t*d;
+  }
+  vec3 bezd(vec3 a, vec3 b, vec3 c, vec3 d, float t){
+    float u = 1.0 - t;
+    return 3.0*u*u*(b-a) + 6.0*u*t*(c-b) + 3.0*t*t*(d-c);
+  }
+  float formAt(float f, float delay){
+    float x = clamp(f*1.7 - delay*0.7, 0.0, 1.0);
+    return x*x*(3.0 - 2.0*x);
+  }
+
+  void main(){
+    float kind = aInfo.x;
+    int   st   = int(aInfo.y + 0.5);
+    float seed = aInfo.z;
+    float t    = uTime*uMotion;
+    vec3  p;
+    float alpha, size, gold = 0.0;
+
+    if(kind < 0.5){                                   /* 0 · dust */
+      p = dustPos(position, seed);
+      alpha = 0.55 + 0.45*aRand.x;
+      size  = 0.6 + 1.0*aRand.y*aRand.y;
+
+    } else if(kind < 1.5 || kind > 4.5){              /* 1 · word, 5 · the big X */
+      float f = formAt(uForm[st], aRand.w);
+      float g = gz(aTarget.z);
+      vec3 home = dustPos(position, seed);
+      vec3 tgt  = aTarget + drift(aTarget, seed, 1.1*g);
+      p = mix(home, tgt, f);
+      /* the swarm: particles arc in rather than slide in */
+      p += vec3(sin(seed*40.0 + t*0.7), cos(seed*31.0 + t*0.6), sin(seed*17.0)) * sin(3.14159*f) * 95.0*g;
+      alpha = mix(0.4 + 0.5*aRand.x, 0.95, f);
+      size  = mix(0.7 + 0.9*aRand.y, 1.12, f);
+
+    } else if(kind < 2.5){                            /* 2 · topic orb */
+      float f = formAt(uForm[st], aRand.w);
+      float g = gz(aTarget.z);
+      float a = aRand.x*6.2832 + t*(0.25 + aRand.y*0.6);
+      float r = (3.0 + aRand.z*8.0)*g;
+      vec3 orb = aTarget + vec3(cos(a)*r, sin(a)*r*0.5, sin(a)*r*0.6 + (aRand.w - 0.5)*6.0*g);
+      p = mix(dustPos(position, seed), orb, f);
+      alpha = mix(0.4, 1.0, f);
+      size  = mix(0.8, 1.2, f);
+
+    } else {                                          /* 3 · main stream, 4 · topic stream */
+      bool sub = kind > 3.5;
+      float sid = aInfo.w;
+      float spd = sub ? 0.10 : 0.020;
+      float tt = fract(aRand.x + t*spd*(0.6 + 0.8*aRand.y));
+      vec3 c = bez(position, aTarget, aC2, aC3, tt);
+      vec3 d = normalize(bezd(position, aTarget, aC2, aC3, tt) + vec3(1e-4));
+      vec3 n1 = normalize(cross(d, abs(d.y) > 0.9 ? vec3(1.0,0.0,0.0) : vec3(0.0,1.0,0.0)));
+      vec3 n2 = cross(d, n1);
+      float ang = aRand.z*6.2832 + tt*9.0 + t*0.2;
+      float g = gz(c.z);
+      float thick = (sub ? 2.0 : 46.0) * g * sqrt(aRand.w) * (0.3 + 0.7*sin(3.14159*tt));
+      p = c + (n1*cos(ang) + n2*sin(ang))*thick + drift(c, seed, 2.5*g);
+      alpha = (sub ? 0.6 : 0.42) * smoothstep(0.0, 0.1, tt) * (1.0 - smoothstep(0.9, 1.0, tt));
+      size  = sub ? 0.85 : 0.8 + 0.5*aRand.y;
+      if(sub){
+        float F = uForm[st];
+        alpha *= F * (1.0 - smoothstep(F*1.15 - 0.12, F*1.15, tt));   /* grows out of the word */
+      }
+      /* a spark now and then rides the current */
+      float cyc = floor(t*(sub ? 0.3 : 0.07) + hash(sid)*7.0);
+      float pp  = fract(t*(sub ? 0.3 : 0.07) + hash(sid)*7.0);
+      float on  = step(sub ? 0.7 : 0.45, hash(sid*13.0 + cyc*3.1));
+      gold = on * (1.0 - smoothstep(0.0, sub ? 0.06 : 0.025, abs(tt - pp)));
+      if(sub) gold *= uForm[st];
+      /* the lead spark: runs ahead of the camera toward the next branch */
+      if(abs(sid - uLead.x) < 0.5){
+        gold = max(gold, uLead.z * (1.0 - smoothstep(0.0, 0.035, abs(tt - uLead.y))));
+      }
+      size += gold*1.4;
+      alpha = max(alpha, gold);
+    }
+
+    /* random yellow sparks in the cloud */
+    if(kind < 1.5){
+      float rate = 0.22 + 0.1*hash(seed*7.0);
+      float cyc = floor(t*rate + seed*97.0);
+      float ph  = fract(t*rate + seed*97.0);
+      float on  = step(uSpark, hash(seed*311.0 + cyc*1.7));
+      float env = on * smoothstep(0.0, 0.06, ph) * (1.0 - smoothstep(0.06, 0.55, ph));
+      gold = max(gold, env);
+      size += env*2.4;
+      alpha = max(alpha, env);
+    }
+
+    /* hovering a topic lights up its orb */
+    if(uHover.w > 0.0){
+      float hd = length(p - uHover.xyz) / (40.0*gz(uHover.z));
+      float h = uHover.w * (1.0 - smoothstep(0.4, 1.0, hd));
+      alpha = min(1.0, alpha + h*0.6);
+      gold = max(gold, h*0.75);
+    }
+
+    vec4 mv = modelViewMatrix * vec4(p, 1.0);
+
+    /* the wake: the cursor parts the particles like a hand through water */
+    if(uWake > 0.0){
+      vec4 clip = projectionMatrix * mv;
+      vec2 ndc = clip.xy / max(clip.w, 0.001);
+      vec2 asp = vec2(uRes.x/uRes.y, 1.0);
+      vec2 push = vec2(0.0);
+      for(int i = 0; i < ${TRAIL_N}; i++){
+        vec4 tr = uTrail[i];
+        if(tr.w <= 0.001) continue;
+        vec2 dv = (ndc - tr.xy)*asp;
+        float dd = length(dv);
+        float fall = exp(-dd*dd/(uWakeR*uWakeR));
+        vec2 dir = dv/(dd + 1e-4);
+        push += (dir + vec2(-dir.y, dir.x)*0.35*tr.z) * fall * tr.w;
+      }
+      float pl = length(push);
+      push /= 1.0 + pl;                                         /* soft limit: stacked sweeps part the water, never punch a hole */
+      mv.xy += push * (-mv.z) * uWakeF * uWake;
+      alpha = min(1.0, alpha + length(push)*0.08);
+    }
+
+    gl_Position = projectionMatrix * mv;
+    float dist = -mv.z;
+    float ps = size * uSize * gz(p.z) * uPx / max(dist, 1.0);
+    alpha *= smoothstep(30.0, 190.0*gz(p.z), dist);            /* no blobs in your face */
+    alpha *= 1.0 - 0.7*smoothstep(1800.0, 7500.0, dist);       /* depth haze */
+    if(ps < 1.6){ alpha *= ps/1.6; ps = 1.6; }
+    gl_PointSize = min(ps, 34.0*uDpr);
+    vAlpha = alpha;
+    vGold = gold;
+  }
+`;
+
+const FRAG = /* glsl */`
+  uniform vec3 uGold;
+  varying float vAlpha;
+  varying float vGold;
+  void main(){
+    vec2 c = gl_PointCoord - 0.5;
+    float d = length(c);
+    if(d > 0.5) discard;
+    float a = smoothstep(0.5, 0.32, d) * vAlpha;           /* crisp dots, like the live map */
+    vec3 col = mix(vec3(1.0), uGold, clamp(vGold*1.3, 0.0, 1.0));
+    gl_FragColor = vec4(col, a);
+  }
+`;
+
+const STREAK_VERT = /* glsl */`
+  attribute vec4 aInfo;
+  attribute float aEnd;
+  uniform vec3 uVel;
+  uniform float uStreak;
+  varying float vA;
+  ${CHUNK}
+  void main(){
+    vec3 p = dustPos(position, aInfo.z);
+    p -= uVel * 0.055 * aEnd;
+    vec4 mv = modelViewMatrix * vec4(p, 1.0);
+    gl_Position = projectionMatrix * mv;
+    float dist = -mv.z;
+    vA = uStreak * (1.0 - 0.6*aEnd) * smoothstep(10.0, 120.0, dist) * (1.0 - smoothstep(700.0, 2200.0, dist));
+  }
+`;
+const STREAK_FRAG = /* glsl */`
+  varying float vA;
+  void main(){ gl_FragColor = vec4(1.0, 1.0, 1.0, vA*0.55); }
+`;
+
+const STAR_VERT = /* glsl */`
+  attribute float aStation;
+  attribute float aKind;     // 0 main star, 1 topic star, 2 unnamed star
+  uniform float uForm[6];
+  uniform float uPx, uDpr, uTime, uZF, uZ0;
+  uniform vec4 uHover;
+  varying float vA, vKind, vGold;
+  void main(){
+    float F = uForm[int(aStation + 0.5)];
+    vec4 mv = modelViewMatrix * vec4(position, 1.0);
+    gl_Position = projectionMatrix * mv;
+    float g = max(1.0, (uZF - position.z)/(uZF - uZ0));
+    float base = aKind < 0.5 ? 44.0 : (aKind < 1.5 ? 28.0 : 11.0);
+    float tw = 0.88 + 0.12*sin(uTime*(1.1 + aKind*0.7) + position.x*0.013);       /* gentle twinkle */
+    gl_PointSize = clamp(base*g*uPx/max(-mv.z, 1.0) * mix(0.6, 1.0, F) * tw, 2.0*uDpr, 96.0*uDpr);
+    vA = mix(aKind > 1.5 ? 0.0 : 0.45, 1.0, F);
+    vKind = aKind;
+    vGold = uHover.w * (1.0 - smoothstep(0.0, 30.0*g, length(position - uHover.xyz)));
+  }
+`;
+const STAR_FRAG = /* glsl */`
+  uniform vec3 uGold;
+  varying float vA, vKind, vGold;
+  void main(){
+    vec2 c = gl_PointCoord - 0.5;
+    float d = length(c);
+    float core = smoothstep(0.11, 0.02, d);
+    float halo = exp(-d*d*38.0)*0.6;
+    float spikes = vKind < 1.5
+      ? exp(-abs(c.x)*70.0)*exp(-abs(c.y)*7.0) + exp(-abs(c.y)*70.0)*exp(-abs(c.x)*7.0)
+      : 0.0;
+    float a = clamp(core + halo + spikes*0.85, 0.0, 1.0) * vA;
+    gl_FragColor = vec4(mix(vec3(1.0), uGold, vGold), a);
+  }
+`;
+const LINE_VERT = /* glsl */`
+  attribute float aStation;
+  attribute float aEnd;
+  attribute float aSeg;
+  uniform float uForm[6];
+  varying float vEnd, vP, vF;
+  void main(){
+    float F = uForm[int(aStation + 0.5)];
+    vP = clamp(F*1.8 - aSeg*0.8, 0.0, 1.0);      /* how far this line has drawn itself */
+    vEnd = aEnd;
+    vF = F;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  }
+`;
+const LINE_FRAG = /* glsl */`
+  varying float vEnd, vP, vF;
+  void main(){
+    if(vEnd > vP) discard;
+    gl_FragColor = vec4(1.0, 1.0, 1.0, 0.42*smoothstep(0.0, 0.3, vF));
+  }
+`;
+
+/* ==========================================================================
+   6 · BUILD THE PARTICLES
+   ========================================================================== */
+let points, streaks, stars, starLines, logoMesh;
+
+function buildParticles(){
+  const S = L.stations;
+
+  /* --- dust: filaments, clumps and a thin even haze ----------------------- */
+  const dust = [];
+  /* almost half the dust sits where the first view looks, the rest trails off into depth */
+  const zOf = r => rnd() < 0.45 ? 350 - 1500*r : 1200 - 6000*Math.pow(r, 0.85);
+  const cone = z => z > -1200 ? 950 + (300 - z)*0.25 : T.ringK*(T.ZF - z)*1.6 + 300;
+  const fil = Array.from({length:130}, () => {
+    const z = zOf(rnd()), R = cone(z), g = gz(z);
+    const a = rnd()*6.283, r = Math.sqrt(rnd())*R;
+    const p0 = V(Math.cos(a)*r, Math.sin(a)*r, z);
+    const dir = V(gauss(), gauss(), gauss()*0.6).normalize();
+    const len = (350 + rnd()*900)*g;
+    const bend = V(gauss(), gauss(), gauss()).multiplyScalar(len*0.25);
+    return { p0, p1: p0.clone().addScaledVector(dir, len*0.5).add(bend), p2: p0.clone().addScaledVector(dir, len), g };
+  });
+  const clumps = Array.from({length:220}, () => {
+    const z = zOf(rnd()), R = cone(z);
+    const a = rnd()*6.283, r = Math.sqrt(rnd())*R;
+    return { c: V(Math.cos(a)*r, Math.sin(a)*r, z), s: (50 + rnd()*120)*gz(z) };
+  });
+  for(let i=0;i<COUNT.dust;i++){
+    const k = rnd();
+    if(k < 0.42){
+      const f = fil[(rnd()*fil.length)|0], t = rnd(), u = 1-t;
+      const p = f.p0.clone().multiplyScalar(u*u).addScaledVector(f.p1, 2*u*t).addScaledVector(f.p2, t*t);
+      p.add(V(gauss(), gauss(), gauss()).multiplyScalar(11*f.g*(0.4 + rnd())));
+      dust.push(p);
+    } else if(k < 0.68){
+      const c = clumps[(rnd()*clumps.length)|0];
+      dust.push(c.c.clone().add(V(gauss()*c.s, gauss()*c.s, gauss()*c.s*0.6)));
+    } else {
+      const z = zOf(rnd()), R = cone(z), a = rnd()*6.283, r = Math.sqrt(rnd())*R;
+      dust.push(V(Math.cos(a)*r, Math.sin(a)*r, z));
+    }
+  }
+
+  /* --- allocate ------------------------------------------------------------ */
+  const nNodes = S.reduce((n,s) => n + s.nodes.length, 0);
+  const nLines = S.reduce((n,s) => n + s.lines.length, 0);
+  const total = COUNT.dust + nNodes*COUNT.orb + nLines*COUNT.sub + 6*COUNT.main;
+  const pos = new Float32Array(total*3), tgt = new Float32Array(total*3),
+        c2  = new Float32Array(total*3), c3  = new Float32Array(total*3),
+        info= new Float32Array(total*4), rd  = new Float32Array(total*4);
+  let n = 0;
+  const put = (kind, station, p, t, b2, b3, stream) => {
+    pos.set([p.x,p.y,p.z], n*3);
+    if(t)  tgt.set([t.x,t.y,t.z], n*3);
+    if(b2) c2.set([b2.x,b2.y,b2.z], n*3);
+    if(b3) c3.set([b3.x,b3.y,b3.z], n*3);
+    info.set([kind, station, rnd(), stream ?? 0], n*4);
+    rd.set([rnd(), rnd(), rnd(), rnd()], n*4);
+    n++;
+  };
+  const cloudAround = (c, s) => c.clone().add(V(gauss()*s, gauss()*s, gauss()*s*0.7));
+
+  dust.forEach(p => put(0, 0, p));
+
+  /* --- a soft glow round each topic star, and particles drifting along the lines */
+  let sid = 10;
+  S.forEach((s,i) => {
+    s.nodes.forEach(nd => { for(let k=0;k<COUNT.orb;k++) put(2, i, cloudAround(s.c, 210*s.g), nd.pos); });
+    s.lines.forEach(ln => {
+      const ab = ln.b.clone().sub(ln.a);
+      const b1 = ln.a.clone().addScaledVector(ab, 1/3), b2 = ln.a.clone().addScaledVector(ab, 2/3);
+      for(let k=0;k<COUNT.sub;k++) put(4, i, ln.a, b1, b2, ln.b, sid);
+      sid++;
+    });
+  });
+
+  /* --- the main currents: X → Work → Tools → Connect → About → Personal → Work */
+  const ends = [[V(0,0,0), S[0].c], [S[0].c,S[1].c], [S[1].c,S[2].c], [S[2].c,S[3].c], [S[3].c,S[4].c], [S[4].c,S[0].c]];
+  ends.forEach(([A,B], k) => {
+    const AB = B.clone().sub(A), mid = A.clone().add(B).multiplyScalar(0.5);
+    const out = V(mid.x, mid.y, 0); if(out.lengthSq() < 1) out.set(B.x, B.y, 0); out.normalize();
+    const side = V(-out.y, out.x, 0);                       // a sideways arc, so no current reads as a ruler line
+    const bulge = out.clone().multiplyScalar(AB.length()*0.12).addScaledVector(side, AB.length()*(k===0 ? 0.32 : 0.14)).add(V(0,0, k===0 ? -150 : 60));
+    const b1 = A.clone().addScaledVector(AB, 0.33).add(bulge);
+    const b2 = A.clone().addScaledVector(AB, 0.66).add(bulge);
+    for(let j=0;j<COUNT.main;j++) put(3, 0, A, b1, b2, B, k);
+  });
+
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute("position", new THREE.BufferAttribute(pos.subarray(0, n*3), 3));
+  geo.setAttribute("aTarget",  new THREE.BufferAttribute(tgt.subarray(0, n*3), 3));
+  geo.setAttribute("aC2",      new THREE.BufferAttribute(c2.subarray(0, n*3), 3));
+  geo.setAttribute("aC3",      new THREE.BufferAttribute(c3.subarray(0, n*3), 3));
+  geo.setAttribute("aInfo",    new THREE.BufferAttribute(info.subarray(0, n*4), 4));
+  geo.setAttribute("aRand",    new THREE.BufferAttribute(rd.subarray(0, n*4), 4));
+  geo.boundingSphere = new THREE.Sphere(V(0,0,-1500), 20000);   // never frustum-cull
+  points = new THREE.Points(geo, new THREE.ShaderMaterial({
+    uniforms, vertexShader: VERT, fragmentShader: FRAG,
+    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+  }));
+  scene.add(points);
+
+  /* --- warp streaks: a subset of the dust drawn as lines while you move fast */
+  const ns = Math.min(small ? 2500 : 6000, dust.length);
+  const sp = new Float32Array(ns*6), si = new Float32Array(ns*8), se = new Float32Array(ns*2);
+  for(let k=0;k<ns;k++){
+    const d = dust[(rnd()*dust.length)|0], seed = info[k*4+2];
+    for(let e=0;e<2;e++){
+      sp.set([d.x,d.y,d.z], (k*2+e)*3);
+      si.set([0,0,rnd(),0], (k*2+e)*4);
+      se[k*2+e] = e;
+    }
+    si[(k*2+1)*4+2] = si[(k*2)*4+2];
+  }
+  const sg = new THREE.BufferGeometry();
+  sg.setAttribute("position", new THREE.BufferAttribute(sp, 3));
+  sg.setAttribute("aInfo", new THREE.BufferAttribute(si, 4));
+  sg.setAttribute("aEnd", new THREE.BufferAttribute(se, 1));
+  sg.boundingSphere = geo.boundingSphere.clone();
+  streaks = new THREE.LineSegments(sg, new THREE.ShaderMaterial({
+    uniforms, vertexShader: STREAK_VERT, fragmentShader: STREAK_FRAG,
+    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+  }));
+  scene.add(streaks);
+
+  /* --- constellations: crisp stars with a glint, joined by lines that draw on */
+  const stp = [], sts = [], stk = [], lp = [], ls = [], le = [], lg = [];
+  S.forEach((s,i) => {
+    s.stars.forEach(st => { stp.push(st.p.x, st.p.y, st.p.z); sts.push(i); stk.push(st.kind); });
+    s.lines.forEach(ln => {
+      lp.push(ln.a.x, ln.a.y, ln.a.z, ln.b.x, ln.b.y, ln.b.z);
+      ls.push(i, i); le.push(0, 1); lg.push(ln.seg, ln.seg);
+    });
+  });
+  const cg = new THREE.BufferGeometry();
+  cg.setAttribute("position", new THREE.Float32BufferAttribute(stp, 3));
+  cg.setAttribute("aStation", new THREE.Float32BufferAttribute(sts, 1));
+  cg.setAttribute("aKind", new THREE.Float32BufferAttribute(stk, 1));
+  cg.boundingSphere = geo.boundingSphere.clone();
+  stars = new THREE.Points(cg, new THREE.ShaderMaterial({
+    uniforms, vertexShader: STAR_VERT, fragmentShader: STAR_FRAG,
+    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+  }));
+  scene.add(stars);
+  const lgeo = new THREE.BufferGeometry();
+  lgeo.setAttribute("position", new THREE.Float32BufferAttribute(lp, 3));
+  lgeo.setAttribute("aStation", new THREE.Float32BufferAttribute(ls, 1));
+  lgeo.setAttribute("aEnd", new THREE.Float32BufferAttribute(le, 1));
+  lgeo.setAttribute("aSeg", new THREE.Float32BufferAttribute(lg, 1));
+  lgeo.boundingSphere = geo.boundingSphere.clone();
+  starLines = new THREE.LineSegments(lgeo, new THREE.ShaderMaterial({
+    uniforms, vertexShader: LINE_VERT, fragmentShader: LINE_FRAG,
+    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+  }));
+  scene.add(starLines);
+}
+
+/* ==========================================================================
+   GIANT TYPE — each branch name, huge and solid in bold Swiss type, set
+   behind its constellation. Two copies of each word: one writes depth so the
+   stars further back are hidden by the letters, one paints a mask. A last
+   pass turns the masked area white and everything drifting in front of the
+   letters black — brand colours only, never a tinted mix.
+   ========================================================================== */
+const maskScene = new THREE.Scene();
+const postScene = new THREE.Scene(), postCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+const post = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), new THREE.ShaderMaterial({
+  uniforms: { tScene:{ value:null }, tMask:{ value:null } },
+  vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }`,
+  fragmentShader: `
+    uniform sampler2D tScene, tMask; varying vec2 vUv;
+    void main(){
+      vec3 c = texture2D(tScene, vUv).rgb;
+      float m = texture2D(tMask, vUv).r;
+      float l = max(max(c.r, c.g), c.b);
+      gl_FragColor = vec4(mix(c, vec3(1.0 - l), m), 1.0);   /* inside the letters: white paper, black stars */
+    }`,
+  depthTest: false, depthWrite: false,
+}));
+postScene.add(post);
+let rtScene = null, rtMask = null, types = [];
+
+function typeTexture(word){
+  const cv = document.createElement("canvas"), ctx = cv.getContext("2d");
+  const px = 360, font = `900 ${px}px "Helvetica Neue", Helvetica, Arial, sans-serif`;
+  const track = () => { ctx.font = font; if("letterSpacing" in ctx) ctx.letterSpacing = `${-0.045*px}px`; };
+  track();
+  const w = Math.ceil(ctx.measureText(word).width + px*0.12), h = Math.ceil(px*0.86);
+  cv.width = w; cv.height = h;
+  track();
+  ctx.fillStyle = "#fff"; ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
+  ctx.fillText(word, w/2, h/2 + px*0.358);                 // cap height ≈ 0.717 em, centred
+  const tex = new THREE.CanvasTexture(cv);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 4;
+  return { tex, ratio: w/h };
+}
+function buildTypes(){
+  types.forEach(t => { scene.remove(t.occ); maskScene.remove(t.mask); t.occ.geometry.dispose(); t.tex.dispose(); });
+  const aspect = Math.max(innerWidth, 1)/Math.max(innerHeight, 1), tanH = Math.tan(T.fov*Math.PI/360);
+  types = L.stations.map((s, i) => {
+    const key = keys.find(k => k.station === i);
+    const back = 260*s.g;                                  // how far behind the constellation the word stands
+    const dist = key.p.z - (s.c.z - back);
+    const visH = 2*tanH*dist, visW = visH*aspect;
+    const { tex, ratio } = typeTexture(s.label.toUpperCase());
+    let W = visW*(L.portrait ? 0.82 : 0.8), H = W/ratio;     // phones leave room for the section rail
+    if(H > visH*0.42){ H = visH*0.42; W = H*ratio; }
+    const geo = new THREE.PlaneGeometry(W, H);
+    const occ = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ map:tex, alphaTest:0.5, colorWrite:false }));
+    const mask = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ map:tex, transparent:true, opacity:0, depthTest:false, depthWrite:false }));
+    occ.position.set(s.c.x, s.c.y, s.c.z - back);
+    mask.position.copy(occ.position);
+    occ.visible = false;
+    scene.add(occ); maskScene.add(mask);
+    return { occ, mask, tex, i };
+  });
+}
+function sizeTargets(w, h, dpr){
+  [rtScene, rtMask].forEach(t => t && t.dispose());
+  rtScene = new THREE.WebGLRenderTarget(Math.round(w*dpr), Math.round(h*dpr), { samples: 4 });
+  rtMask  = new THREE.WebGLRenderTarget(Math.round(w*dpr), Math.round(h*dpr));
+  post.material.uniforms.tScene.value = rtScene.texture;
+  post.material.uniforms.tMask.value = rtMask.texture;
+}
+
+/* the mark: sharp white triangles, never particles — soft cloud, hard mark */
+function buildLogo(){
+  const shapes = LOGO.map(tri => new THREE.Shape(tri.map(p => new THREE.Vector2(p[0], p[1]))));
+  logoMesh = new THREE.Mesh(new THREE.ShapeGeometry(shapes), new THREE.MeshBasicMaterial({ color:0xffffff, side:THREE.DoubleSide }));
+  logoMesh.scale.setScalar(72);
+  scene.add(logoMesh);
+}
+
+/* ==========================================================================
+   7 · SPARK TRAIL — yellow sparks shed by a fast-moving cursor
+   ========================================================================== */
+const SP_N = 260;
+const spark = {
+  pos: new Float32Array(SP_N*3), vel: new Float32Array(SP_N*3),
+  life: new Float32Array(SP_N), max: new Float32Array(SP_N), size: new Float32Array(SP_N),
+  alpha: new Float32Array(SP_N), head: 0,
+};
+const sparkGeo = new THREE.BufferGeometry();
+sparkGeo.setAttribute("position", new THREE.BufferAttribute(spark.pos, 3).setUsage(THREE.DynamicDrawUsage));
+sparkGeo.setAttribute("aA", new THREE.BufferAttribute(spark.alpha, 1).setUsage(THREE.DynamicDrawUsage));
+sparkGeo.setAttribute("aS", new THREE.BufferAttribute(spark.size, 1));
+sparkGeo.boundingSphere = new THREE.Sphere(V(0,0,0), 1e6);
+const sparkPts = new THREE.Points(sparkGeo, new THREE.ShaderMaterial({
+  uniforms: { uDpr: uniforms.uDpr, uGold: uniforms.uGold },
+  vertexShader: `
+    attribute float aA; attribute float aS; uniform float uDpr; varying float vA;
+    void main(){ vA = aA; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); gl_PointSize = aS*uDpr*(0.4 + 0.6*aA); }`,
+  fragmentShader: `
+    uniform vec3 uGold; varying float vA;
+    void main(){ float d = length(gl_PointCoord - 0.5); if(d > 0.5) discard;
+      float a = smoothstep(0.5, 0.0, d)*vA; gl_FragColor = vec4(mix(uGold, vec3(1.0), smoothstep(0.25,0.0,d)*0.6), a); }`,
+  transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+}));
+scene.add(sparkPts);
+
+const ray = new THREE.Raycaster();
+function emitSparks(ndcX, ndcY, count, dist, dirX, dirY){
+  ray.setFromCamera(new THREE.Vector2(ndcX, ndcY), camera);
+  const o = ray.ray.origin, d = ray.ray.direction;
+  const right = V(1,0,0).applyQuaternion(camera.quaternion), up = V(0,1,0).applyQuaternion(camera.quaternion);
+  const k = dist/600;                                     // world speed that reads the same at any depth
+  for(let i=0;i<count;i++){
+    const j = spark.head; spark.head = (spark.head + 1) % SP_N;
+    spark.pos.set([o.x + d.x*dist, o.y + d.y*dist, o.z + d.z*dist], j*3);
+    const vx = (gauss()*40 - dirX*50)*k, vy = (gauss()*40 - dirY*50 - 10)*k, vz = gauss()*30*k;
+    spark.vel.set([right.x*vx + up.x*vy + vz*d.x, right.y*vx + up.y*vy + vz*d.y, right.z*vx + up.z*vy + vz*d.z], j*3);
+    spark.max[j] = spark.life[j] = 0.6 + rnd()*0.8;
+    spark.size[j] = 4 + rnd()*6;
+  }
+  sparkGeo.attributes.aS.needsUpdate = true;
+}
+function stepSparks(dt){
+  const drag = Math.pow(0.12, dt);
+  for(let j=0;j<SP_N;j++){
+    if(spark.life[j] <= 0){ spark.alpha[j] = 0; continue; }
+    spark.life[j] -= dt;
+    for(let a=0;a<3;a++){ spark.pos[j*3+a] += spark.vel[j*3+a]*dt; spark.vel[j*3+a] *= drag; }
+    const t = clamp(spark.life[j]/spark.max[j], 0, 1);
+    spark.alpha[j] = t*t*(0.7 + 0.3*Math.sin(j*12.9 + now*40));   // a little flicker
+  }
+  sparkGeo.attributes.position.needsUpdate = true;
+  sparkGeo.attributes.aA.needsUpdate = true;
+}
+
+/* ==========================================================================
+   8 · THE CAMERA PATH — keyframes; the wheel scrubs along them
+   ========================================================================== */
+let keys = [], holds = [];
+function buildKeys(){
+  const aspect = Math.max(innerWidth, 1)/Math.max(innerHeight, 1), tanH = Math.tan(T.fov*Math.PI/360);
+  const S = L.stations;
+  const fit = s => Math.max(470, (s.boxW/2)/(tanH*aspect)*1.04, (s.boxH/2)/tanH*1.06);
+  /* finale: back far enough that the whole ring fits the screen */
+  let zf = T.ZF;
+  S.forEach(s => {
+    const ex = Math.abs(s.c.x) + (s.wW*0.5 + 70)*s.g, ey = Math.abs(s.c.y) + 90*s.g;
+    zf = Math.max(zf, s.c.z + ex/(tanH*aspect*0.9), s.c.z + ey/(tanH*0.82));
+  });
+  const introZ = T.introZ * (aspect < 1 ? 1.35 : 1);
+  keys = [
+    { p:V(0,0,introZ), l:V(0,0,0),     hold:true,  name:"X" },
+    { p:V(0,0,0),      l:V(0,0,-600) },                       // straight through the gap in the mark
+    { p:V(0,0,-170),   l:V(S[0].c.x*0.3, S[0].c.y*0.3, -900) },
+    ...S.map((s,i) => ({ p: s.c.clone().add(V(0,0,fit(s)*s.g)), l: s.c.clone(), hold:true, name:s.label, station:i })),
+    { p:V(0,0,zf),     l:V(0,0,-1500), hold:true,  name:"Map", finale:true },
+  ];
+  holds = keys.map((k,i) => k.hold ? i : -1).filter(i => i >= 0);
+}
+function catmull(arr, u, out){
+  const n = arr.length - 1;
+  const i = clamp(Math.floor(u), 0, n - 1), t = clamp(u - i, 0, 1);
+  const p0 = arr[Math.max(i-1, 0)], p1 = arr[i], p2 = arr[i+1], p3 = arr[Math.min(i+2, n)];
+  const t2 = t*t, t3 = t2*t;
+  return out.set(
+    0.5*((2*p1.x) + (-p0.x+p2.x)*t + (2*p0.x-5*p1.x+4*p2.x-p3.x)*t2 + (-p0.x+3*p1.x-3*p2.x+p3.x)*t3),
+    0.5*((2*p1.y) + (-p0.y+p2.y)*t + (2*p0.y-5*p1.y+4*p2.y-p3.y)*t2 + (-p0.y+3*p1.y-3*p2.y+p3.y)*t3),
+    0.5*((2*p1.z) + (-p0.z+p2.z)*t + (2*p0.z-5*p1.z+4*p2.z-p3.z)*t2 + (-p0.z+3*p1.z-3*p2.z+p3.z)*t3));
+}
+/* scroll (in sections) → path parameter, resting a while at every stop */
+function pathU(s){
+  const j = clamp(Math.floor(s), 0, holds.length - 2);
+  const f = clamp(s - j, 0, 1);
+  const e = smooth(0.18, 0.82, f);
+  return { u: holds[j] + e*(holds[j+1] - holds[j]), j, f, e };
+}
+
+/* ==========================================================================
+   9 · DOM — rail, labels, index, caption
+   ========================================================================== */
+const railEl = document.getElementById("rail");
+const labelsEl = document.getElementById("labels");
+const captionEl = document.getElementById("caption");
+const cueEl = document.getElementById("cue");
+let secPx = Math.max(innerHeight, 1)*T.sectionVh;
+const goTo = i => scrollTo({ top: i*secPx, behavior: reduced ? "auto" : "smooth" });
+
+const RAIL = ["The mark", ...MAP.map(b => b.label), "The map"];
+RAIL.forEach((name,i) => {
+  const b = document.createElement("button");
+  b.type = "button";
+  b.innerHTML = `<span>${String(i).padStart(2,"0")} ${name}</span><i></i>`;
+  b.setAttribute("aria-label", name);
+  b.addEventListener("click", () => goTo(i));
+  railEl.appendChild(b);
+});
+
+let labelEls = [], branchEls = [];
+function buildLabels(){
+  labelsEl.innerHTML = "";
+  labelEls = [];
+  branchEls = L.stations.map((s,i) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "branch";
+    b.innerHTML = `<i>${String(i+1).padStart(2,"0")}</i>${s.label}`;
+    b.tabIndex = -1;
+    b.addEventListener("click", () => goTo(i + 1));
+    labelsEl.appendChild(b);
+    return { el:b, s, i, op:0, shown:false };
+  });
+  L.stations.forEach(s => s.nodes.forEach(nd => {
+    const a = document.createElement("a");
+    a.className = "node" + (nd.side < 0 ? " is-left" : "");
+    a.href = abs(nd.href);
+    if(nd.external){ a.target = "_blank"; a.rel = "noopener"; }
+    a.innerHTML = `<span>${nd.label}</span>${nd.external ? "<sup>↗</sup>" : ""}`;
+    a.tabIndex = -1;
+    a.addEventListener("mouseenter", () => { hoverNode = nd; emitAtNode(nd); });
+    a.addEventListener("focus",      () => { hoverNode = nd; });
+    a.addEventListener("mouseleave", () => { if(hoverNode === nd) hoverNode = null; });
+    a.addEventListener("blur",       () => { if(hoverNode === nd) hoverNode = null; });
+    labelsEl.appendChild(a);
+    labelEls.push({ el:a, nd, op:0, shown:false });
+  }));
+}
+let hoverNode = null, hoverAmt = 0;
+const tmpV = V(0,0,0);
+function emitAtNode(nd){
+  if(reduced) return;
+  tmpV.copy(nd.pos).project(camera);
+  emitSparks(tmpV.x, tmpV.y, 14, camera.position.distanceTo(nd.pos), 0, 0);
+}
+
+const grid = document.getElementById("indexGrid");
+grid.innerHTML = MAP.map(b => `<div class="index__col"><h3>${b.label}</h3>${
+  b.children.map(c => `<a href="${abs(c.href)}"${c.external ? ' target="_blank" rel="noopener"' : ""}>${c.label}</a>`).join("")}</div>`).join("");
+const indexEl = document.getElementById("index");
+document.getElementById("indexBtn").addEventListener("click", () => indexEl.classList.add("is-on"));
+document.getElementById("indexClose").addEventListener("click", () => indexEl.classList.remove("is-on"));
+addEventListener("keydown", e => { if(e.key === "Escape") indexEl.classList.remove("is-on"); });
+
+let lastCaption = -1;
+function setCaption(i){
+  if(i === lastCaption) return;
+  lastCaption = i;
+  const n = MAP.length;
+  if(i === 0) captionEl.innerHTML = `<b>Scroll</b> to fly into the map<br>Galaxy Map`;
+  else if(i <= n) captionEl.innerHTML = `<span class="step">${String(i).padStart(2,"0")} / ${String(n).padStart(2,"0")}</span> &middot; <b>${MAP[i-1].label}</b><br><b>Click</b> a topic to open it &middot; <b>scroll</b> to the next`;
+  else captionEl.innerHTML = `<b>The whole map</b><br><b>Click</b> a name to fly back to it`;
+  [...railEl.children].forEach((b,k) => b.classList.toggle("is-on", k === i));
+}
+
+/* ==========================================================================
+   10 · INPUT — scroll, cursor wake, sparks, finale clicks
+   ========================================================================== */
+const trail = Array.from({length:TRAIL_N}, () => ({ x:0, y:0, s:0, c:0 }));
+let trailHead = 0, lastMove = null, mouseNdc = { x:0, y:0 }, par = { x:0, y:0 };
+
+addEventListener("pointermove", e => {
+  const now2 = performance.now();
+  const x = e.clientX/innerWidth*2 - 1, y = -(e.clientY/innerHeight*2 - 1);
+  mouseNdc.x = x; mouseNdc.y = y;
+  if(!reduced && e.pointerType !== "touch") addInk(e.clientX, e.clientY);
+  if(lastMove){
+    const dt = Math.max(1, now2 - lastMove.t)/1000;
+    const dx = e.clientX - lastMove.x, dy = e.clientY - lastMove.y;
+    const pxs = Math.hypot(dx, dy)/dt;
+    if(now2 - lastMove.t > 14 || pxs > 2500){
+      const tr = trail[trailHead]; trailHead = (trailHead + 1) % TRAIL_N;
+      tr.x = x; tr.y = y;
+      tr.s = clamp(pxs/1400, 0, 1) * (e.pointerType === "touch" ? 0.8 : 1);
+      tr.c = Math.sign(dx*0.3 + dy) || 1;         // which way the water curls
+      lastMove = { x:e.clientX, y:e.clientY, t:now2 };
+    }
+  } else lastMove = { x:e.clientX, y:e.clientY, t:now2 };
+}, { passive:true });
+
+/* the yellow trail: round particles burst out along the cursor's path — strong at
+   the cursor, thinning and fading down the tail, gone within about a second */
+const inkCv = document.getElementById("ink"), ictx = inkCv.getContext("2d");
+const ink = [], INK_MAX = 1400;
+let inkLast = null;
+function sizeInk(){
+  const d = Math.min(devicePixelRatio || 1, 2);
+  inkCv.width = Math.max(innerWidth, 1)*d; inkCv.height = Math.max(innerHeight, 1)*d;
+  ictx.setTransform(d, 0, 0, d, 0, 0);
+}
+function addInk(x, y){
+  if(!inkLast || now - inkLast.t > 0.15){ inkLast = { x, y, t:now }; return; }   // no spray across a jump
+  const dx = x - inkLast.x, dy = y - inkLast.y, dist = Math.hypot(dx, dy);
+  const steps = Math.min(30, Math.floor(dist/6));
+  if(!steps){ inkLast.t = now; return; }
+  const speed = dist/Math.max(now - inkLast.t, 1/120);             // px per second
+  const burst = clamp(speed/900, 0.5, 2.4);                         // faster cursor, bigger bang
+  const nx = dx/dist, ny = dy/dist;
+  for(let i = 1; i <= steps; i++){
+    const t = i/steps;
+    for(let k = 2 + ((burst*1.6)|0); k > 0; k--){
+      const a = rnd()*6.2832, v = (40 + rnd()*190)*burst;
+      const big = rnd() < 0.06;
+      ink.push({
+        x: inkLast.x + dx*t, y: inkLast.y + dy*t,
+        vx: Math.cos(a)*v + nx*speed*0.07, vy: Math.sin(a)*v + ny*speed*0.07,
+        t: now, life: 0.6 + rnd()*0.7,
+        s: big ? 4 + rnd()*2 : 1.1 + rnd()*2.6,
+        white: rnd() < 0.2,
+      });
+    }
+  }
+  inkLast = { x, y, t:now };
+  if(ink.length > INK_MAX) ink.splice(0, ink.length - INK_MAX);
+}
+addEventListener("pointerleave", () => { inkLast = null; });
+function drawInk(dt){
+  ictx.clearRect(0, 0, innerWidth, innerHeight);
+  ictx.globalCompositeOperation = "lighter";
+  const drag = Math.pow(0.06, dt);                                  // a fast burst that settles quickly
+  let w = 0;
+  for(let i = 0; i < ink.length; i++){
+    const p = ink[i];
+    const age = (now - p.t)/p.life;
+    if(age >= 1) continue;
+    ink[w++] = p;
+    p.x += p.vx*dt; p.y += p.vy*dt; p.vx *= drag; p.vy *= drag;
+    const f = 1 - age;
+    const a = Math.pow(f, 1.4);
+    ictx.fillStyle = p.white ? `rgba(255,255,255,${(a*0.85).toFixed(3)})` : `rgba(255,232,0,${a.toFixed(3)})`;
+    ictx.beginPath(); ictx.arc(p.x, p.y, p.s*(0.45 + 0.55*f), 0, 6.2832); ictx.fill();
+  }
+  ink.length = w;
+}
+
+let finale = 0;
+
+/* ==========================================================================
+   11 · SIZE
+   ========================================================================== */
+function resize(first){
+  const w = Math.max(innerWidth, 1), h = Math.max(innerHeight, 1), dpr = Math.min(devicePixelRatio || 1, 2);
+  renderer.setPixelRatio(dpr);
+  renderer.setSize(w, h, false);
+  camera.aspect = w/h;
+  uniforms.uRes.value.set(w, h);
+  uniforms.uDpr.value = dpr;
+  const portrait = w/h < 0.9;
+  if(first || portrait !== L.portrait){
+    if(points) [points, streaks, stars, starLines].forEach(o => { scene.remove(o); o.geometry.dispose(); });
+    L = buildLayout(portrait);
+    buildParticles();
+    buildLabels();
+  }
+  buildKeys();
+  buildTypes();
+  sizeTargets(w, h, dpr);
+  secPx = h*T.sectionVh;
+  sizeInk();
+  document.getElementById("track").style.height = (secPx*(holds.length - 1) + h) + "px";
+}
+
+/* ==========================================================================
+   12 · THE LOOP
+   ========================================================================== */
+let now = 0, sNow = 0, prevCam = V(0,0,0), vel = V(0,0,0), focusDist = 700;
+const camPos = V(0,0,0), camLook = V(0,0,0), keyP = [], keyL = [];
+const clock = new THREE.Clock();
+
+function frame(){
+  const dt = Math.min(clock.getDelta(), 0.05);
+  now += dt;
+  uniforms.uTime.value = now;
+
+  /* scroll → smoothed section position */
+  const sTarget = scrollY/secPx;
+  sNow += (sTarget - sNow)*(1 - Math.exp(-dt*T.scrollEase));
+  if(Math.abs(sTarget - sNow) < 1e-4) sNow = sTarget;
+  const P = pathU(sNow);
+
+  keyP.length = keyL.length = 0;
+  keys.forEach(k => { keyP.push(k.p); keyL.push(k.l); });
+  catmull(keyP, P.u, camPos);
+  catmull(keyL, P.u, camLook);
+  focusDist = camPos.distanceTo(camLook);
+
+  /* a little parallax from the cursor, bigger the deeper we are */
+  par.x += (mouseNdc.x - par.x)*(1 - Math.exp(-dt*2));
+  par.y += (mouseNdc.y - par.y)*(1 - Math.exp(-dt*2));
+  const pk = reduced ? 0 : focusDist*0.035;
+  camera.position.set(camPos.x + par.x*pk, camPos.y + par.y*pk*0.6, camPos.z);
+  camera.lookAt(camLook);
+
+  /* speed → warp streaks and a small field-of-view kick */
+  vel.copy(camera.position).sub(prevCam).divideScalar(Math.max(dt, 1e-3));
+  prevCam.copy(camera.position);
+  const speed = vel.length();
+  uniforms.uVel.value.lerp(vel, 1 - Math.exp(-dt*8));
+  const streak = reduced ? 0 : smooth(500, 3500, speed);
+  uniforms.uStreak.value += (streak - uniforms.uStreak.value)*(1 - Math.exp(-dt*6));
+  const fov = T.fov + (reduced ? 0 : smooth(600, 4500, speed)*14);
+  camera.fov += (fov - camera.fov)*(1 - Math.exp(-dt*5));
+  camera.updateProjectionMatrix();
+  uniforms.uPx.value = innerHeight*uniforms.uDpr.value/(2*Math.tan(camera.fov*Math.PI/360));
+
+  /* how formed each branch is: by closeness on the path, all of them at the finale */
+  const fk = keys.length - 1;
+  finale = smooth(0.25, 1.0, 1 - Math.abs(P.u - fk)/(fk - holds[holds.length-2]));
+  const form = uniforms.uForm.value;
+  keys.forEach((k, i) => {
+    if(k.station === undefined) return;
+    const d = Math.abs(P.u - i);
+    form[k.station] = Math.max(1 - smooth(0.3, 1.0, d), finale);
+  });
+  form[5] = finale;
+  uniforms.uSize.value = T.pointSize*(1 + finale*(L.portrait ? 0.9 : 0.25));   // the far finale view stays bright
+
+  /* the lead spark runs ahead along the current we're travelling */
+  const moving = smooth(0.0, 0.08, P.f)*(1 - smooth(0.85, 1.0, P.f));
+  if(P.j < MAP.length && moving > 0){
+    uniforms.uLead.value.set(P.j, Math.min(1, P.e*0.85 + 0.2), moving);
+  } else uniforms.uLead.value.z = 0;
+
+  /* water settles */
+  const decay = Math.exp(-dt*T.wakeDecay);
+  trail.forEach((tr, i) => { tr.s *= decay; uniforms.uTrail.value[i].set(tr.x, tr.y, tr.c, tr.s); });
+
+  /* hover glow */
+  hoverAmt += ((hoverNode ? 1 : 0) - hoverAmt)*(1 - Math.exp(-dt*8));
+  if(hoverNode) uniforms.uHover.value.set(hoverNode.pos.x, hoverNode.pos.y, hoverNode.pos.z, hoverAmt);
+  else uniforms.uHover.value.w = hoverAmt;
+
+  stepSparks(dt);
+  logoMesh.rotation.y = Math.sin(now*0.3)*0.04*(reduced ? 0 : 1);
+
+  /* labels follow their orbs */
+  const wpx = innerWidth, hpx = innerHeight;
+  labelEls.forEach(o => {
+    const F = form[o.nd.station] * (1 - finale);
+    const show = smooth(0.6, 0.92, F);
+    tmpV.copy(o.nd.pos).project(camera);
+    if(show < 0.01 || tmpV.z > 1){
+      if(o.op !== 0){ o.el.style.opacity = 0; o.op = 0; }
+      if(o.shown){ o.el.style.pointerEvents = "none"; o.el.tabIndex = -1; o.shown = false; }
+      return;
+    }
+    const x = (tmpV.x + 1)/2*wpx, y = (1 - tmpV.y)/2*hpx;
+    if(L.portrait){
+      o.el.style.transform = `translate(${x}px, ${y + 14}px) translate(-50%, 0)`;
+    } else if(o.nd.side < 0){
+      o.el.style.transform = `translate(${x - 14}px, ${y}px) translate(-100%, -50%)`;
+    } else {
+      o.el.style.transform = `translate(${x + 14}px, ${y}px) translate(0, -50%)`;
+    }
+    o.el.style.opacity = o.op = +show.toFixed(3);
+    const live = show > 0.5;
+    if(live !== o.shown){ o.el.style.pointerEvents = live ? "auto" : "none"; o.el.tabIndex = live ? 0 : -1; o.shown = live; }
+  });
+
+  /* branch names sit beside their main star; in the finale they fly you back */
+  branchEls.forEach(o => {
+    const show = smooth(0.35, 0.85, form[o.i])*smooth(0.3, 0.8, finale);   // at a stop the giant word is the name
+    tmpV.copy(o.s.c).project(camera);
+    if(show < 0.01 || tmpV.z > 1){
+      if(o.op !== 0){ o.el.style.opacity = 0; o.op = 0; }
+      if(o.shown){ o.el.style.pointerEvents = "none"; o.el.tabIndex = -1; o.shown = false; }
+      return;
+    }
+    const x = (tmpV.x + 1)/2*wpx, y = (1 - tmpV.y)/2*hpx;
+    o.el.style.transform = L.portrait || finale > 0.5
+      ? `translate(${x}px, ${y + 18}px) translate(-50%, 0)`
+      : `translate(${x + 26}px, ${y}px) translate(0, -50%)`;
+    o.el.style.opacity = o.op = +show.toFixed(3);
+    const live = show > 0.5;
+    if(live !== o.shown){ o.el.style.pointerEvents = live ? "auto" : "none"; o.el.tabIndex = live ? 0 : -1; o.shown = live; }
+  });
+  document.body.classList.toggle("is-finale", finale > 0.5);
+
+  /* HUD */
+  const near = Math.round(sNow);
+  setCaption(clamp(near, 0, holds.length - 1));
+  cueEl.style.opacity = (1 - smooth(0.02, 0.15, sNow)).toFixed(3);
+  document.body.classList.toggle("is-deep", sNow > 0.5);
+
+  types.forEach(t => {
+    const op = smooth(0.55, 0.95, form[t.i])*(1 - finale);
+    t.mask.material.opacity = op;
+    t.mask.visible = op > 0.002;
+    t.occ.visible = op > 0.6;                              // only a fully-there word hides what's behind it
+  });
+  renderer.setRenderTarget(rtScene); renderer.render(scene, camera);
+  renderer.setRenderTarget(rtMask);  renderer.render(maskScene, camera);
+  renderer.setRenderTarget(null);    renderer.render(postScene, postCam);
+  drawInk(dt);
+  requestAnimationFrame(frame);
+}
+
+/* ==========================================================================
+   13 · GO
+   ========================================================================== */
+buildLogo();
+resize(true);
+sNow = scrollY/secPx;
+addEventListener("resize", () => resize(false));
+requestAnimationFrame(frame);
+window.__redesign = { T, uniforms, camera, keys: () => keys, L: () => L };   // for tinkering in the console
+</script>
+</body>
+</html>
