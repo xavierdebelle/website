@@ -346,3 +346,21 @@ its ID forever. Statuses: new, planned, in progress, done, dropped.
 ### IDEA-080 · "Team headshot day" as a fixed-price 333 Photo offer
 - **Category:** Monetization · **Effort:** M · **Impact:** ★★★ · **Status:** new
 - The 333 Photo chapter in work.html leads with fashion, product and lifestyle, but small companies, clinics and real-estate offices mostly need one thing: current headshots for their whole team. Productize it in a single page: "Team headshot day, from $X per person, minimum 6 people, on-site, edited files in 48 hours", with a per-head price that drops at 10 and 20 people and a headcount field that sends the request into GoHighLevel. It is easy to understand, sells repeatedly as people join the team (continuity), and every attendee is a possible lead for the rest of 333 Photo.
+
+## 2026-10-14 — Monetization and offers
+
+### IDEA-081 · Two correction rounds included, Round 3+ becomes a paid revision
+- **Category:** Monetization · **Effort:** S · **Impact:** ★★ · **Status:** new
+- tools/video-corrections.html offers "Round 1", "Round 2" and an open-ended "Round 3+ — Further refinements" as equal choices, with no limit or price anywhere, so every extra round is unpaid editor time. Say on the form that two rounds are included, and when a couple picks Round 3+ show "Additional revision round: $150" with a checkbox to accept before the form submits (the amount goes to GoHighLevel as an invoice). State the same "2 rounds included" line on every video item in package-builder.html so it is agreed before the wedding, not argued after it.
+
+### IDEA-082 · "Love it? Add a reel" upgrade on the Video Corrections thank-you screen
+- **Category:** Monetization · **Effort:** S · **Impact:** ★★★ · **Status:** new
+- When a couple ticks "Looking great — minor polishes only" in tools/video-corrections.html, they have just watched their film and are at their happiest, yet the thank-you screen only offers "Submit another correction". Show a one-tap upgrade there, priced from the existing builder items: a Social Media Reel ($150, va_reel), Video Supplements with the speeches and first dance ($300, va_supplements), or the step up from the 3–5 to the 8–10 minute film (the $200 difference). Footage is already shot and in the editor's hands, so each yes is nearly pure margin; it is a different product and moment from the album reorder in IDEA-078.
+
+### IDEA-083 · Gift certificates for sessions, sold to parents, friends and companies
+- **Category:** Feature · **Effort:** M · **Impact:** ★★ · **Status:** new
+- Nothing on work.html or in tools/package-builder.html lets someone other than the couple pay, yet parents and the wedding party are often the ones looking for a meaningful gift, and the engagement session ($350, oa_engagement) and Glam Studio already have fixed prices. Add a small gift.html with three fixed cards (engagement session, anniversary portrait, $250 toward an album), each a Stripe or GoHighLevel payment link that emails a printable certificate with a code. It brings in buyers who were never in the funnel, peaks at Christmas and Valentine's Day, and every redeemed card puts a new couple in front of Xavier.
+
+### IDEA-084 · Sneak peek in 48 hours and priority delivery as paid add-ons
+- **Category:** Monetization · **Effort:** S · **Impact:** ★★★ · **Status:** new
+- The OTHER_ADDONS list in tools/package-builder.html (assistant, engagement, slideshow, parent albums, sleeve, layflat) has nothing about speed, and no page on the site says when photos or video arrive. Waiting is the part couples hate most, so sell it away: a "Sneak peek, 30 edited photos within 48 hours" add-on (about $150, ready to post while guests are still talking about it) and "Priority delivery, full gallery in 2 weeks" (about $400). They cost Xavier only scheduling, lift the average booking, and the sneak peek doubles as the couple sharing his work to their whole guest list the same weekend.
