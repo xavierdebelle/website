@@ -25,8 +25,10 @@ throws sparks. Best full screen, with a mouse or trackpad.
 - Site copy only: title + social tags, site favicon, the "Prototype · local
   only" tag became an **All tools** link, caption reads Galaxy Map.
 - **The homepage is unchanged** (Xavier's instruction): `index.html` was
-  left out of this release, so its HUD still reads v91 — the one
-  version-marker mismatch `verify_deploy.py` reports is that, on purpose.
+  left out of this release. Follow-up the same day, with his OK: only its
+  corner label moved v91 → v92 so it matches the other pages (nothing else
+  on the homepage changed; `style.css?v=91` left as is — the stylesheet
+  didn't change).
 
 **Scan**
 - External hosts are only links to his own sites (already on the live
