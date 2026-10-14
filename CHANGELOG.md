@@ -5,6 +5,59 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v90 — 2026-10-14
+
+**What's new** · Project Phases · [tools/project-tracker.html]
+### Project Phases:<br>notes, bold, lists and one Report
+Steps can carry notes, and a click on a step's name renames it. ⌘B makes
+text bold and a dash and a space starts a list, in every box of the app.
+A line in a meeting note can become a step. Ticked homework is struck
+through for a moment before it moves to Done. The Time log and the Report
+are now one Report tab with a period filter — last 30 days, last week,
+last month, last year, year to date or your own dates — that drives the
+totals, the log and the chart.
+
+**Project Phases v16 — `tools/project-tracker.html`, source `Tools files/Tools/project_tracker_v16.html`**
+- Step notes (`steps[].notes`): note icon in each step's actions (red when
+  there are notes) opens the step dialog at Notes; a NOTES tag beside the
+  name shows them under the step. Private — not in the client link; found
+  by search.
+- Click a step's name to rename it in place: Enter / click away keeps it,
+  Escape cancels. Client view can't.
+- Homework: ticking an item strikes it through where it is for 2.5 s, then
+  it moves to Done (unticking in that time keeps it).
+- Text, everywhere: ⌘B / Ctrl+B wraps the selection in `**…**`, shown bold
+  (step and phase names, homework, points and their notes, meeting notes,
+  log notes); markers are stripped in titles, menus, CSV and search.
+  "- " → "• " in any multi-line box, Enter continues the list, Enter on an
+  empty bullet ends it, Tab / Shift+Tab indent / outdent (the Notes tool's
+  code). Plain text underneath, so sync and export are unchanged.
+- Meeting note → step: **+ Make a step** under the note takes the selected
+  text (or the cursor's line, bullet stripped), pick a phase, Add step.
+  Added straight away, so the note can stay open.
+- Report: Time log and Report merged into one **Report** tab (the Time log
+  tab is gone). Filters: Period (All time, Last 30 days, Last week, Last
+  month, Last year, Year to date, Custom → from/to), Phase, Step. Cards:
+  Logged hours, Steps done, Entries; then the log; then the chart (by day
+  up to two months, by week up to a year, by month beyond). Every filter
+  drives all three. Last week / month / year are the previous calendar
+  ones (weeks start Monday). "Time by phase" and the Estimated card are
+  gone (estimates still show on the Board).
+- Steps done for a period counts steps finished in it — `steps[].doneAt`,
+  recorded from now on; steps finished earlier count under All time only.
+  `doneAt` goes in the client link (the client's Report counts the same).
+- Fix: the big project title showed "— timer running" from the picker.
+
+**Verified locally (browser storage, not signed in; test data via Import)**
+- Rename + Escape; step notes add / show / hide; bullets, Enter, Tab and
+  ending the list typed key by key; ⌘B; Make a step from a note line;
+  homework strike-out then Done; every period's totals checked by hand
+  against 11 dated entries; chart by day / week / month, fits a 375 px
+  phone; search into a log note resets the period. No errors apart from
+  the offline-app script the preview pane can't run.
+
+---
+
 ## v89 — 2026-10-12
 
 **What's new** · What Is This Website? · [what-is-this.html]

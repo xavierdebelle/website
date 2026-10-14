@@ -161,10 +161,16 @@ select:focus,input:focus,textarea:focus{outline:2px solid var(--ttt-red);outline
 .phase-actions{display:flex;gap:2px}
 
 .steps{list-style:none;margin:0;padding:0}
-.step{display:flex;align-items:center;gap:10px;padding:10px 18px;border-bottom:1px solid var(--line)}
+.step{display:flex;align-items:center;flex-wrap:wrap;gap:10px;padding:10px 18px;border-bottom:1px solid var(--line)}
 .step:last-child{border-bottom:0}
 .step.running{background:var(--run-soft)}
-.step-name{flex:1;min-width:0;color:var(--ink)}
+.step-name{flex:1;min-width:0;color:var(--ink);cursor:text}
+.step-name:hover{text-decoration:underline dotted var(--muted);text-underline-offset:3px}
+input.step-rename{flex:1;min-width:120px;padding:4px 8px;font:inherit}
+.step-tag{display:inline-block;margin-left:8px;padding:3px 5px;border:0;font:700 9px/1 var(--ttt-font-wide);letter-spacing:.06em;text-transform:uppercase;background:var(--bg);color:var(--ttt-black);vertical-align:1px;white-space:nowrap;cursor:pointer}
+.step-tag:hover,.step.notes-open .step-tag{background:var(--ttt-black);color:var(--ttt-white)}
+.step-notes{flex:1 0 100%;order:9;white-space:pre-wrap;overflow-wrap:anywhere;padding:8px 12px;margin:0 0 2px 30px;border-left:3px solid var(--ttt-red);background:var(--bg);font-size:14px;line-height:1.5;color:var(--ink)}
+.icon.has-note{color:var(--ttt-red)}
 .step.done .step-name{color:var(--muted);text-decoration:line-through}
 .step-time{font-variant-numeric:tabular-nums;font-weight:700;min-width:64px;text-align:right;color:var(--ttt-black)}
 .step-est{font-variant-numeric:tabular-nums;min-width:58px;font-size:13px}
@@ -222,7 +228,16 @@ tfoot td{font-weight:800;background:var(--card);border-top:2px solid var(--ttt-b
 .table-wrap{overflow-x:auto}
 
 /* ---------- report ---------- */
-.cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:12px}
+.cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:28px}
+.range-note{margin:-8px 0 18px;font-size:13px;color:var(--muted)}
+.daily .day.now i{background:var(--ttt-black)}
+.daily .day{min-width:0}
+.daily .day span{min-height:1.2em;width:0;display:flex;justify-content:center}   /* a label may spill past its thin bar */
+.daily.dense{gap:2px}
+#f-custom{display:flex;gap:12px;flex-wrap:wrap}
+#f-custom[hidden]{display:none}
+#panel-report .section-title{margin-top:28px}
+#panel-report .cards + .section-title{margin-top:0}
 .stat{background:var(--card);border:1px solid var(--line);border-top:4px solid var(--ttt-black);padding:16px 18px}
 .stat:first-child{background:var(--ttt-black);border-color:var(--ttt-black);border-top-color:var(--ttt-red)}
 .stat:first-child .k{color:var(--ttt-yellow)}
@@ -235,7 +250,6 @@ tfoot td{font-weight:800;background:var(--card);border-top:2px solid var(--ttt-b
 .daily .day{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:6px;height:100%}
 .daily .day i{display:block;width:100%;background:var(--ttt-red);min-height:2px}
 .daily .day.zero i{background:var(--line)}
-.daily .day:last-child i{background:var(--ttt-black)}
 .daily .day span{font-size:11px;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
 
 /* ---------- modal ---------- */
@@ -262,6 +276,8 @@ tfoot td{font-weight:800;background:var(--card);border-top:2px solid var(--ttt-b
   .hero{padding:28px 0 4px}
   #panel-log.on,#panel-report.on{padding:18px}
   .cards{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .cards .stat:first-child{grid-column:1 / -1}
+  .step-notes{margin-left:0}
   .phase-head{gap:8px;padding:14px}
   .phase-meta{width:100%;margin-left:0}
   .phase-actions{margin-left:auto}
@@ -368,6 +384,12 @@ body.view #running-split{display:none!important}
 .note-more{margin-top:6px;padding:0;background:none;border:0;color:var(--ttt-red);font:700 11px/1 var(--ttt-font-wide);letter-spacing:.06em;text-transform:uppercase}
 .note textarea{width:100%}
 #nt-body{width:100%;min-height:260px;line-height:1.5}
+.nt-step{margin-top:10px;padding:12px;background:var(--bg);display:none}
+.nt-step.on{display:block}
+.nt-step-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.nt-step-row input{flex:1 1 220px}
+.nt-step-msg{font-size:13px;margin-top:6px;min-height:1.2em;color:var(--muted)}
+.nt-step-msg.ok{color:var(--ttt-black);font-weight:700}
 body.view .quick,body.view #ag-block,body.view #nt-block,body.view .citem .cacts,body.view #ag-clear{display:none!important}
 body.view .client-grid{grid-template-columns:1fr}
 @media (max-width:760px){.client-grid{grid-template-columns:1fr}#panel-client.on{padding:22px 16px}}
@@ -444,7 +466,6 @@ body.view .client-grid{grid-template-columns:1fr}
 
   <div class="tabs">
     <button class="tab on" id="tab-board">Board</button>
-    <button class="tab" id="tab-log">Time log</button>
     <button class="tab" id="tab-report">Report</button>
     <button class="tab" id="tab-client"><span id="tab-client-label">Client</span><span class="tab-count" id="tab-client-count" hidden></span></button>
   </div>
@@ -457,8 +478,30 @@ body.view .client-grid{grid-template-columns:1fr}
     </div>
   </section>
 
-  <section class="panel" id="panel-log">
+  <section class="panel" id="panel-report">
     <div class="filters">
+      <div>
+        <label for="f-range">Period</label>
+        <select id="f-range">
+          <option value="all">All time</option>
+          <option value="30d">Last 30 days</option>
+          <option value="lastweek">Last week</option>
+          <option value="lastmonth">Last month</option>
+          <option value="lastyear">Last year</option>
+          <option value="ytd">Year to date</option>
+          <option value="custom">Custom…</option>
+        </select>
+      </div>
+      <div id="f-custom" hidden>
+        <div>
+          <label for="f-from">From</label>
+          <input type="date" id="f-from">
+        </div>
+        <div>
+          <label for="f-to">To</label>
+          <input type="date" id="f-to">
+        </div>
+      </div>
       <div>
         <label for="f-phase">Phase</label>
         <select id="f-phase"><option value="">All phases</option></select>
@@ -467,18 +510,17 @@ body.view .client-grid{grid-template-columns:1fr}
         <label for="f-step">Step</label>
         <select id="f-step"><option value="">All steps</option></select>
       </div>
-      <div>
-        <label for="f-from">From</label>
-        <input type="date" id="f-from">
-      </div>
-      <div>
-        <label for="f-to">To</label>
-        <input type="date" id="f-to">
-      </div>
       <button class="btn ghost" id="f-clear">Clear</button>
       <button class="btn" id="btn-log-add" style="margin-left:auto">+ Log time</button>
       <button class="btn" id="btn-log-csv">Export CSV</button>
     </div>
+    <p class="range-note" id="range-note"></p>
+    <div class="cards">
+      <div class="stat"><div class="k">Logged hours</div><div class="v" id="stat-logged">0m</div></div>
+      <div class="stat"><div class="k">Steps done</div><div class="v" id="stat-steps">0/0</div></div>
+      <div class="stat"><div class="k">Entries</div><div class="v" id="stat-entries">0</div></div>
+    </div>
+    <h3 class="section-title">Time log</h3>
     <div class="table-wrap">
       <table id="log-table">
         <thead><tr>
@@ -488,25 +530,7 @@ body.view .client-grid{grid-template-columns:1fr}
         <tfoot><tr><td colspan="3">Total</td><td class="num" id="log-total">0m</td><td colspan="2"></td></tr></tfoot>
       </table>
     </div>
-  </section>
-
-  <section class="panel" id="panel-report">
-    <div class="cards">
-      <div class="stat"><div class="k">Logged</div><div class="v" id="stat-logged">0m</div></div>
-      <div class="stat"><div class="k">Estimated</div><div class="v" id="stat-est">0m</div></div>
-      <div class="stat"><div class="k">Steps done</div><div class="v" id="stat-steps">0/0</div></div>
-      <div class="stat"><div class="k">Entries</div><div class="v" id="stat-entries">0</div></div>
-    </div>
-    <h3 class="section-title">Time by phase</h3>
-    <div class="table-wrap">
-      <table id="report-table">
-        <thead><tr>
-          <th>Phase / step</th><th class="num">Logged</th><th class="num">Estimate</th><th class="num">Δ</th><th style="width:160px">Share</th>
-        </tr></thead>
-        <tbody id="report-body"></tbody>
-      </table>
-    </div>
-    <h3 class="section-title">Last 14 days</h3>
+    <h3 class="section-title" id="chart-title">Work by day</h3>
     <div class="daily" id="daily"></div>
   </section>
 
@@ -657,7 +681,9 @@ function normalise(s) {
               id: st.id || uid('st'),
               name: String(st.name == null ? 'Step' : st.name),
               status: st.status === 'doing' || st.status === 'done' ? st.status : 'todo',
-              estimate: Number(st.estimate) || 0
+              estimate: Number(st.estimate) || 0,
+              notes: String(st.notes || '').replace(/\s+$/, ''),
+              doneAt: st.status === 'done' ? (Number(st.doneAt) || 0) : 0
             };
           })
         };
@@ -871,6 +897,7 @@ var ICO = {
   up: svgIcon('M8 12.8V3.6M4.4 7.2L8 3.6l3.6 3.6'),
   down: svgIcon('M8 3.2v9.2M4.4 8.8L8 12.4l3.6-3.6'),
   chev: svgIcon('M6.2 3.4L10.8 8l-4.6 4.6'),
+  note: svgIcon('M3.5 2.5h9v11h-9zM5.6 5.6h4.8M5.6 8h4.8M5.6 10.4h3'),
   split: svgIcon('M4.4 5.6a1.7 1.7 0 1 1 0-3.4 1.7 1.7 0 0 1 0 3.4zM4.4 13.8a1.7 1.7 0 1 1 0-3.4 1.7 1.7 0 0 1 0 3.4zM5.9 4.9l7.6 6.6M5.9 11.1l7.6-6.6'),
   grip: '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false">' +
     '<path d="M6 4.2h.01M10 4.2h.01M6 8h.01M10 8h.01M6 11.8h.01M10 11.8h.01" fill="none" ' +
@@ -883,6 +910,108 @@ function esc(s) {
   });
 }
 function $(id) { return document.getElementById(id); }
+
+/* ============================================================
+   Text — the same two habits in every box of the app
+   - ⌘B / Ctrl+B wraps the selection in **…**, shown in bold
+   - a dash and a space starts a bullet; Enter keeps the list
+     going (Enter on an empty bullet ends it); Tab / Shift+Tab
+     indent and outdent a list line (same as the Notes tool)
+   Everything stays plain text, so sync, export and client links
+   carry it unchanged.
+   ============================================================ */
+// escaped text with **bold** shown as bold
+function fmt(s) {
+  return esc(s).replace(/\*\*([^\s*](?:[^*\n]*?[^\s*])?)\*\*/g, '<strong>$1</strong>');
+}
+// the same text without the markers — titles, CSV, search, the tab title
+function plain(s) { return String(s == null ? '' : s).replace(/\*\*([^*\n]+?)\*\*/g, '$1'); }
+
+var BULLET = '• ', listBusy = false;
+function lineStart(v, i) { return v.lastIndexOf('\n', i - 1) + 1; }
+// through execCommand so Undo still works; setRangeText where it doesn't
+function replaceRange(el, from, to, text) {
+  var before = el.value;
+  el.setSelectionRange(from, to);
+  var ok = false;
+  try { ok = document.execCommand('insertText', false, text); } catch (e) {}
+  if (!ok || el.value === before && (to > from || text)) {
+    el.value = before;
+    el.setRangeText(text, from, to, 'end');
+  }
+  el.setSelectionRange(from + text.length, from + text.length);
+}
+function listTyping(ta, ev) {
+  if (listBusy) return;
+  var v = ta.value, c = ta.selectionStart;
+  if (c !== ta.selectionEnd) return;
+  var type = ev.inputType || '', ls = lineStart(v, c), before = v.slice(ls, c);
+  listBusy = true;
+  if (type === 'insertText' && /^\s*- $/.test(before)) {
+    replaceRange(ta, ls, c, before.match(/^\s*/)[0] + BULLET);
+  } else if ((type === 'insertLineBreak' || type === 'insertParagraph' || (type === 'insertText' && ev.data == null)) && v.charAt(c - 1) === '\n') {
+    var pls = lineStart(v, c - 1), prev = v.slice(pls, c - 1);
+    var m = prev.match(/^(\s*)(• |(\d+)([.)]) )(.*)$/);
+    if (m) {
+      if (!m[5].trim()) replaceRange(ta, pls, c, '');                       // empty item: end the list
+      else replaceRange(ta, c, c, m[1] + (m[3] ? (parseInt(m[3], 10) + 1) + m[4] + ' ' : BULLET));
+    }
+  } else if (type === 'deleteContentBackward' && /^\s*•$/.test(before)) {
+    replaceRange(ta, c - 1, c, '');
+  }
+  listBusy = false;
+}
+function listTab(ta, ev) {
+  var v = ta.value, c = ta.selectionStart, ls = lineStart(v, c);
+  var le = v.indexOf('\n', c); if (le < 0) le = v.length;
+  var line = v.slice(ls, le);
+  if (!/^\s*(• |\d+[.)] )/.test(line)) return false;          // Tab means Tab only inside a list
+  ev.preventDefault();
+  var keep = ta.selectionEnd - c;
+  listBusy = true;
+  if (ev.shiftKey) {
+    var cut = Math.min(2, line.match(/^ */)[0].length);
+    if (cut) { replaceRange(ta, ls, ls + cut, ''); ta.setSelectionRange(c - cut, c - cut + keep); }
+  } else {
+    replaceRange(ta, ls, ls, '  '); ta.setSelectionRange(c + 2, c + 2 + keep);
+  }
+  listBusy = false;
+  return true;
+}
+function toggleBold(el) {
+  var v = el.value, a = el.selectionStart, b = el.selectionEnd;
+  while (a < b && /\s/.test(v.charAt(a))) a++;
+  while (b > a && /\s/.test(v.charAt(b - 1))) b--;
+  listBusy = true;
+  if (v.slice(a - 2, a) === '**' && v.slice(b, b + 2) === '**') {            // already bold: unwrap
+    replaceRange(el, b, b + 2, ''); replaceRange(el, a - 2, a, '');
+    el.setSelectionRange(a - 2, b - 2);
+  } else if (b - a >= 4 && v.slice(a, a + 2) === '**' && v.slice(b - 2, b) === '**') {
+    replaceRange(el, a, b, v.slice(a + 2, b - 2));
+    el.setSelectionRange(a, b - 4);
+  } else {
+    replaceRange(el, a, b, '**' + v.slice(a, b) + '**');
+    el.setSelectionRange(a + 2, b + 2);                // nothing selected: type straight into the bold
+  }
+  listBusy = false;
+}
+function isTextBox(el) {
+  return el && (el.tagName === 'TEXTAREA' || (el.tagName === 'INPUT' && el.type === 'text')) && !el.readOnly && !el.disabled;
+}
+document.addEventListener('input', function (ev) {
+  if (ev.target.tagName === 'TEXTAREA' && !listBusy) listTyping(ev.target, ev);
+});
+document.addEventListener('keydown', function (ev) {
+  var el = ev.target;
+  if (!isTextBox(el) || VIEW) return;
+  if ((ev.metaKey || ev.ctrlKey) && !ev.altKey && !ev.shiftKey && (ev.key === 'b' || ev.key === 'B')) {
+    ev.preventDefault();
+    toggleBold(el);
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+  } else if (ev.key === 'Tab' && !ev.altKey && !ev.metaKey && !ev.ctrlKey && el.tagName === 'TEXTAREA') {
+    if (listTab(el, ev)) el.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+});
 
 /* ============================================================
    Modal
@@ -963,7 +1092,7 @@ function startTimer(stepId) {
     note: '',
     source: 'timer'
   });
-  if (st.status === 'todo') st.status = 'doing';
+  if (st.status === 'todo') setStepStatus(st, 'doing');
   save();
   render();
 }
@@ -979,6 +1108,7 @@ function stopTimer() {
    Render
    ============================================================ */
 var activeTab = 'board';
+var stepOpen = {};     // steps whose notes are showing — per visit, not saved
 
 function render() {
   renderProjects();
@@ -996,7 +1126,7 @@ function renderProjects() {
   var open = runningEntry(), at = open && locateStep(open.stepId);
   sel.innerHTML = state.projects.map(function (p) {
     var running = !!(at && at.project.id === p.id);
-    return '<option value="' + esc(p.id) + '"' + (p.id === state.currentId ? ' selected' : '') + '>' + esc(p.name) + (running ? ' — timer running' : '') + '</option>';
+    return '<option value="' + esc(p.id) + '" data-name="' + esc(plain(p.name)) + '"' + (p.id === state.currentId ? ' selected' : '') + '>' + esc(plain(p.name)) + (running ? ' — timer running' : '') + '</option>';
   }).join('');
 }
 
@@ -1014,14 +1144,20 @@ function renderRunning() {
   bar.classList.add('on');
   bar.classList.toggle('elsewhere', elsewhere);
   $('running-where').hidden = !elsewhere;
-  $('running-where').textContent = elsewhere ? 'Running in ' + at.project.name : '';
+  $('running-where').textContent = elsewhere ? 'Running in ' + plain(at.project.name) : '';
   $('running-where').title = elsewhere ? 'This timer belongs to ' + at.project.name : '';
-  $('running-what').textContent = at ? at.phase.name + ' · ' + at.step.name : 'step';
+  $('running-what').textContent = at ? plain(at.phase.name + ' · ' + at.step.name) : 'step';
   $('running-go').hidden = !elsewhere;
   $('running-split').hidden = elsewhere;      // splitting works inside the timer's own project
   tick();
 }
 
+// `doneAt` dates a step's finish, for "Steps done" in a period (0 = before it was recorded)
+function setStepStatus(st, status) {
+  if (status === 'done' && st.status !== 'done') st.doneAt = Date.now();
+  if (status !== 'done') st.doneAt = 0;
+  st.status = status;
+}
 function statusLabel(s) { return s === 'done' ? 'Done' : s === 'doing' ? 'In progress' : 'To do'; }
 
 function renderBoard() {
@@ -1032,7 +1168,7 @@ function renderBoard() {
   var board = $('board');
   if (!p) { board.innerHTML = '<div class="empty">No project yet. Create one to get started.</div>'; return; }
   if (!p.phases.length) {
-    board.innerHTML = '<div class="empty">No phases yet — add the first phase of <strong>' + esc(p.name) + '</strong>.</div>';
+    board.innerHTML = '<div class="empty">No phases yet — add the first phase of <strong>' + esc(plain(p.name)) + '</strong>.</div>';
     return;
   }
   var open = runningEntry();
@@ -1050,21 +1186,24 @@ function renderBoard() {
       var isRunning = !!(open && open.stepId === st.id);
       var stepOver = st.estimate > 0 && sSec > st.estimate;
       return '' +
-        '<li class="step ' + st.status + (isRunning ? ' running' : '') + '" data-step="' + esc(st.id) + '">' +
+        '<li class="step ' + st.status + (isRunning ? ' running' : '') + (st.notes && stepOpen[st.id] ? ' notes-open' : '') + '" data-step="' + esc(st.id) + '">' +
           '<button type="button" class="icon handle" data-act="handle" ' +
             'title="Drag to reorder or drop into another phase — or use the arrow keys" ' +
             'aria-label="Move step">' + ICO.grip + '</button>' +
           '<button type="button" class="chip ' + st.status + '" data-act="cycle" title="Change status">' + statusLabel(st.status) + '</button>' +
-          '<span class="step-name">' + esc(st.name) + '</span>' +
+          '<span class="step-name" data-act="rename-step" title="Click to rename">' + fmt(st.name) + '</span>' +
+          (st.notes ? '<button type="button" class="step-tag" data-act="step-tag" aria-expanded="' + (stepOpen[st.id] ? 'true' : 'false') + '">' + (stepOpen[st.id] ? 'Hide notes' : 'Notes') + '</button>' : '') +
           '<span class="step-time"' + (isRunning ? ' id="live-step-time"' : '') + '>' + fmtHM(sSec) + '</span>' +
           '<span class="step-est muted' + (stepOver ? ' over' : '') + '">' + (st.estimate ? '/ ' + fmtHM(st.estimate) : '&nbsp;') + '</span>' +
           '<button type="button" class="timer-btn' + (isRunning ? ' on' : '') + '" data-act="timer" title="' + (isRunning ? 'Stop timer' : 'Start timer') + '">' +
             (isRunning ? '■' : '▶') + '<span class="tb-label">' + (isRunning ? 'Stop' : 'Start') + '</span></button>' +
           '<span class="step-actions">' +
+            '<button type="button" class="icon' + (st.notes ? ' has-note' : '') + '" data-act="step-note" title="' + (st.notes ? 'Edit notes' : 'Add notes') + '">' + ICO.note + '</button>' +
             '<button type="button" class="icon" data-act="manual" title="Log time by hand">' + ICO.plus + '</button>' +
             '<button type="button" class="icon" data-act="edit-step" title="Edit step">' + ICO.pencil + '</button>' +
             '<button type="button" class="icon del" data-act="del-step" title="Delete step">' + ICO.trash + '</button>' +
           '</span>' +
+          (st.notes && stepOpen[st.id] ? '<div class="step-notes">' + fmt(st.notes) + '</div>' : '') +
         '</li>';
     }).join('');
 
@@ -1078,7 +1217,7 @@ function renderBoard() {
             '<button type="button" class="phase-toggle" data-act="toggle-phase" ' +
               'aria-expanded="' + (ph.collapsed ? 'false' : 'true') + '" ' +
               'title="' + (ph.collapsed ? 'Expand' : 'Collapse') + ' this phase">' +
-              '<span class="chev">' + ICO.chev + '</span><h2>' + esc(ph.name) + '</h2></button>' +
+              '<span class="chev">' + ICO.chev + '</span><h2>' + fmt(ph.name) + '</h2></button>' +
             '<span class="pill">' + done + '/' + ph.steps.length + ' steps</span></div>' +
           '<div class="phase-meta">' +
             '<span class="phase-time">' + fmtHM(logged) + '</span>' +
@@ -1093,31 +1232,55 @@ function renderBoard() {
           '</div>' +
         '</header>' +
         '<ul class="steps">' + steps + '</ul>' +
-        '<button type="button" class="add-step" data-act="add-step">+ Add step to ' + esc(ph.name) + '</button>' +
+        '<button type="button" class="add-step" data-act="add-step">+ Add step to ' + esc(plain(ph.name)) + '</button>' +
       '</section>';
   }).join('');
 }
 
 /* ---------- log ---------- */
-var filters = { phaseId: '', stepId: '', from: '', to: '' };
+function blankFilters() { return { range: 'all', phaseId: '', stepId: '', from: '', to: '' }; }
+var filters = blankFilters();
+
+/* The Report's period. Last week / month / year are the previous
+   calendar ones (weeks start on Monday); `to` is exclusive. */
+function dayStart(d) { d = new Date(d); d.setHours(0, 0, 0, 0); return d; }
+function rangeBounds() {
+  var today = dayStart(Date.now()), y = today.getFullYear(), m = today.getMonth();
+  switch (filters.range) {
+    case '30d': return { from: new Date(y, m, today.getDate() - 29).getTime(), to: null };
+    case 'lastweek':
+      var monday = new Date(y, m, today.getDate() - (today.getDay() + 6) % 7);
+      return { from: new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() - 7).getTime(), to: monday.getTime() };
+    case 'lastmonth': return { from: new Date(y, m - 1, 1).getTime(), to: new Date(y, m, 1).getTime() };
+    case 'lastyear': return { from: new Date(y - 1, 0, 1).getTime(), to: new Date(y, 0, 1).getTime() };
+    case 'ytd': return { from: new Date(y, 0, 1).getTime(), to: null };
+    case 'custom':
+      return { from: filters.from ? keyToMs(filters.from) : null,
+               to: filters.to ? keyToMs(filters.to) + 864e5 : null };
+    default: return { from: null, to: null };
+  }
+}
+function inRange(ms, b) { return (b.from == null || ms >= b.from) && (b.to == null || ms < b.to); }
 
 function renderLogFilters() {
   var p = currentProject();
   var fp = $('f-phase'), fs = $('f-step');
   var phases = p ? p.phases : [];
   fp.innerHTML = '<option value="">All phases</option>' + phases.map(function (ph) {
-    return '<option value="' + esc(ph.id) + '"' + (filters.phaseId === ph.id ? ' selected' : '') + '>' + esc(ph.name) + '</option>';
+    return '<option value="' + esc(ph.id) + '"' + (filters.phaseId === ph.id ? ' selected' : '') + '>' + esc(plain(ph.name)) + '</option>';
   }).join('');
 
   var stepSource = filters.phaseId ? phases.filter(function (ph) { return ph.id === filters.phaseId; }) : phases;
   var opts = '';
   stepSource.forEach(function (ph) {
     ph.steps.forEach(function (st) {
-      opts += '<option value="' + esc(st.id) + '"' + (filters.stepId === st.id ? ' selected' : '') + '>' + esc(ph.name) + ' · ' + esc(st.name) + '</option>';
+      opts += '<option value="' + esc(st.id) + '"' + (filters.stepId === st.id ? ' selected' : '') + '>' + esc(plain(ph.name)) + ' · ' + esc(plain(st.name)) + '</option>';
     });
   });
   fs.innerHTML = '<option value="">All steps</option>' + opts;
   if (filters.stepId && !findStep(filters.stepId)) filters.stepId = '';
+  $('f-range').value = filters.range;
+  $('f-custom').hidden = filters.range !== 'custom';
   $('f-from').value = filters.from;
   $('f-to').value = filters.to;
 }
@@ -1125,7 +1288,7 @@ function renderLogFilters() {
 function visibleEntries() {
   var p = currentProject();
   if (!p) return [];
-  var now = Date.now();
+  var now = Date.now(), b = rangeBounds();
   return state.log.filter(function (e) {
     if (!findStep(e.stepId)) return false;                       // belongs to another project
     if (filters.stepId && e.stepId !== filters.stepId) return false;
@@ -1133,10 +1296,7 @@ function visibleEntries() {
       var ph = phaseOfStep(e.stepId);
       if (!ph || ph.id !== filters.phaseId) return false;
     }
-    var key = dateKey(e.start);
-    if (filters.from && key < filters.from) return false;
-    if (filters.to && key > filters.to) return false;
-    return true;
+    return inRange(e.start, b);
   }).sort(function (a, b) { return b.start - a.start; }).map(function (e) {
     return { e: e, sec: entrySeconds(e, now) };
   });
@@ -1158,10 +1318,10 @@ function renderLog() {
       '<tr class="log-row" data-entry="' + esc(e.id) + '">' +
         '<td class="nowrap">' + fmtDate(e.start) + '<br><span class="muted" style="font-size:12px">' +
           fmtTime(e.start) + '–' + (running ? 'now' : fmtTime(e.end)) + '</span></td>' +
-        '<td>' + esc(ph ? ph.name : '—') + '</td>' +
-        '<td>' + esc(st ? st.name : '—') + '</td>' +
+        '<td>' + fmt(ph ? ph.name : '—') + '</td>' +
+        '<td>' + fmt(st ? st.name : '—') + '</td>' +
         '<td class="num">' + fmtHM(r.sec) + (running ? ' <span class="muted">(running)</span>' : '') + '</td>' +
-        '<td>' + esc(e.note) + '</td>' +
+        '<td>' + fmt(e.note) + '</td>' +
         '<td class="num">' +
           '<button type="button" class="icon" data-act="split-entry" title="Split between steps">' + ICO.split + '</button>' +
           '<button type="button" class="icon" data-act="edit-entry" title="Edit entry">' + ICO.pencil + '</button>' +
@@ -1175,65 +1335,76 @@ function renderLog() {
 /* ---------- report ---------- */
 function renderReport() {
   var p = currentProject();
-  var body = $('report-body');
-  if (!p) { body.innerHTML = ''; return; }
-  var now = Date.now();
-  var total = secondsOfProject(p, now);
-  var estTotal = p.phases.reduce(function (s, ph) { return s + estimateOfPhase(ph); }, 0);
-  var allSteps = p.phases.reduce(function (a, ph) { return a.concat(ph.steps); }, []);
-  var doneSteps = allSteps.filter(function (s) { return s.status === 'done'; }).length;
-  var entries = state.log.filter(function (e) { return !!findStep(e.stepId); });
+  if (!p) return;
+  var now = Date.now(), b = rangeBounds();
+  var rows = visibleEntries();
+  var total = rows.reduce(function (t, r) { return t + r.sec; }, 0);
 
-  $('stat-logged').textContent = fmtHM(total);
-  $('stat-est').textContent = fmtHM(estTotal);
-  $('stat-steps').textContent = doneSteps + '/' + allSteps.length;
-  $('stat-entries').textContent = String(entries.length);
-
-  var html = '';
+  // the steps the phase / step filters point at
+  var steps = [];
   p.phases.forEach(function (ph) {
-    var logged = secondsOfPhase(ph, now), est = estimateOfPhase(ph);
-    var share = total > 0 ? Math.round(logged / total * 100) : 0;
-    html += '<tr>' +
-      '<td><strong>' + esc(ph.name) + '</strong></td>' +
-      '<td class="num"><strong>' + fmtHM(logged) + '</strong></td>' +
-      '<td class="num">' + (est ? fmtHM(est) : '—') + '</td>' +
-      '<td class="num">' + deltaCell(logged, est) + '</td>' +
-      '<td><div class="bar"><i style="width:' + share + '%"></i></div></td>' +
-      '</tr>';
-    ph.steps.forEach(function (st) {
-      var s = secondsOfStep(st.id, now);
-      var sShare = total > 0 ? Math.round(s / total * 100) : 0;
-      html += '<tr>' +
-        '<td style="padding-left:26px" class="muted">' + esc(st.name) + '</td>' +
-        '<td class="num">' + fmtHM(s) + '</td>' +
-        '<td class="num muted">' + (st.estimate ? fmtHM(st.estimate) : '—') + '</td>' +
-        '<td class="num">' + deltaCell(s, st.estimate) + '</td>' +
-        '<td><div class="bar"><i style="width:' + sShare + '%"></i></div></td>' +
-        '</tr>';
-    });
+    if (filters.phaseId && ph.id !== filters.phaseId) return;
+    ph.steps.forEach(function (st) { if (!filters.stepId || st.id === filters.stepId) steps.push(st); });
   });
-  body.innerHTML = html;
+  var done = steps.filter(function (st) { return st.status === 'done'; });
+  $('stat-logged').textContent = fmtHM(total);
+  $('stat-entries').textContent = String(rows.length);
+  if (filters.range === 'all') $('stat-steps').textContent = done.length + '/' + steps.length;
+  else $('stat-steps').textContent = String(done.filter(function (st) { return st.doneAt && inRange(st.doneAt, b); }).length);
 
-  // last 14 days
-  var buckets = {};
-  entries.forEach(function (e) {
-    var k = dateKey(e.start);
-    buckets[k] = (buckets[k] || 0) + entrySeconds(e, now);
-  });
-  var days = [], max = 0;
-  for (var i = 13; i >= 0; i--) {
-    var d = new Date();
-    d.setHours(12, 0, 0, 0);
-    d.setDate(d.getDate() - i);
-    var k = dateKey(d.getTime());
-    var sec = buckets[k] || 0;
-    if (sec > max) max = sec;
-    days.push({ d: d, sec: sec });
+  // the period in words
+  var first = b.from, last = b.to == null ? now : b.to - 1;
+  if (first == null) {
+    first = rows.length ? rows.reduce(function (m, r) { return Math.min(m, r.e.start); }, now) : now - 13 * 864e5;
+    first = Math.min(first, now - 6 * 864e5);
   }
-  $('daily').innerHTML = days.map(function (x) {
+  if (b.to == null) last = Math.max(last, rows.reduce(function (m, r) { return Math.max(m, r.e.start); }, 0));
+  if (last < first) last = first;
+  $('range-note').textContent = (filters.range === 'all' ? 'All time' : fmtDate(first) + ' – ' + fmtDate(last)) +
+    (filters.range !== 'all' ? ' · steps done counts steps finished in this period' : '');
+
+  // the chart: days for up to two months, then weeks, then months
+  var span = Math.round((dayStart(last) - dayStart(first)) / 864e5) + 1;
+  var unit = span <= 62 ? 'day' : span <= 371 ? 'week' : 'month';
+  function bucketStart(ms) {
+    var d = dayStart(ms);
+    if (unit === 'week') d.setDate(d.getDate() - (d.getDay() + 6) % 7);
+    if (unit === 'month') d.setDate(1);
+    return d;
+  }
+  function next(d) {
+    d = new Date(d);
+    if (unit === 'day') d.setDate(d.getDate() + 1);
+    else if (unit === 'week') d.setDate(d.getDate() + 7);
+    else d.setMonth(d.getMonth() + 1);
+    return d;
+  }
+  var sums = {};
+  rows.forEach(function (r) { var k = bucketStart(r.e.start).getTime(); sums[k] = (sums[k] || 0) + r.sec; });
+  var bars = [], max = 0, todayB = bucketStart(now).getTime();
+  for (var d = bucketStart(first); d.getTime() <= last; d = next(d)) {
+    var sec = sums[d.getTime()] || 0;
+    if (sec > max) max = sec;
+    bars.push({ d: d, sec: sec });
+  }
+  var every = Math.max(1, Math.ceil(bars.length / (innerWidth < 600 ? 7 : 16)));   // keep the labels readable
+  var multiYear = bars.length && bars[0].d.getFullYear() !== bars[bars.length - 1].d.getFullYear();
+  function label(d) {
+    if (unit === 'day') return String(d.getDate());
+    if (unit === 'week') return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+    return d.toLocaleDateString(undefined, multiYear ? { month: 'short', year: '2-digit' } : { month: 'short' });
+  }
+  function tip(d) {
+    if (unit === 'day') return fmtDate(d.getTime());
+    if (unit === 'week') return 'Week of ' + fmtDate(d.getTime());
+    return d.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+  }
+  $('chart-title').textContent = 'Work by ' + unit;
+  $('daily').classList.toggle('dense', bars.length > 20);
+  $('daily').innerHTML = bars.map(function (x, i) {
     var h = max > 0 ? Math.round(x.sec / max * 100) : 0;
-    return '<div class="day' + (x.sec ? '' : ' zero') + '" title="' + fmtHM(x.sec) + '">' +
-      '<i style="height:' + h + '%"></i><span>' + x.d.getDate() + '</span></div>';
+    return '<div class="day' + (x.sec ? '' : ' zero') + (x.d.getTime() === todayB ? ' now' : '') + '" title="' + esc(tip(x.d)) + ' · ' + fmtHM(x.sec) + '">' +
+      '<i style="height:' + h + '%"></i><span>' + (i % every === 0 ? esc(label(x.d)) : '') + '</span></div>';
   }).join('');
 }
 
@@ -1518,6 +1689,9 @@ $('board').addEventListener('click', function (ev) {
   resetSaveBtn();
 
   if (act === 'timer') return startTimer(stepId);
+  if (act === 'rename-step') return renameInline(btn, stepId);
+  if (act === 'step-tag') { stepOpen[stepId] = !stepOpen[stepId]; renderBoard(); return; }
+  if (act === 'step-note') return editStep(stepId, null, 'st-notes');
 
   if (act === 'toggle-phase') {
     var tph = findPhase(phaseId);
@@ -1530,7 +1704,7 @@ $('board').addEventListener('click', function (ev) {
   if (act === 'cycle') {
     var st = findStep(stepId);
     if (!st) return;
-    st.status = st.status === 'todo' ? 'doing' : st.status === 'doing' ? 'done' : 'todo';
+    setStepStatus(st, st.status === 'todo' ? 'doing' : st.status === 'doing' ? 'done' : 'todo');
     var open = runningEntry();
     if (st.status === 'done' && open && open.stepId === stepId) stopTimer();
     save(); render();
@@ -1542,7 +1716,7 @@ $('board').addEventListener('click', function (ev) {
   if (act === 'del-step') {
     var s = findStep(stepId);
     var n = entriesOfStep(stepId).length;
-    return confirmModal('Delete step', 'Delete “' + (s ? s.name : 'step') + '”' +
+    return confirmModal('Delete step', 'Delete “' + (s ? plain(s.name) : 'step') + '”' +
       (n ? ' and its ' + n + ' time ' + (n === 1 ? 'entry' : 'entries') : '') + '?', function () {
       var ph = phaseOfStep(stepId);
       if (ph) ph.steps = ph.steps.filter(function (x) { return x.id !== stepId; });
@@ -1555,7 +1729,7 @@ $('board').addEventListener('click', function (ev) {
     var ph2 = findPhase(phaseId);
     if (!ph2) return;
     var count = ph2.steps.reduce(function (s, st2) { return s + entriesOfStep(st2.id).length; }, 0);
-    return confirmModal('Delete phase', 'Delete “' + ph2.name + '”, its ' + ph2.steps.length + ' steps' +
+    return confirmModal('Delete phase', 'Delete “' + plain(ph2.name) + '”, its ' + ph2.steps.length + ' steps' +
       (count ? ' and ' + count + ' time ' + (count === 1 ? 'entry' : 'entries') : '') + '?', function () {
       var p = currentProject();
       var ids = ph2.steps.map(function (s) { return s.id; });
@@ -1588,17 +1762,45 @@ function editPhase(phaseId) {
     }, 'ph-name');
 }
 
-function editStep(stepId, phaseId) {
+/* Click a step's name to rename it where it is: Enter or clicking away
+   keeps it, Escape leaves it as it was. */
+function renameInline(span, stepId) {
+  var st = findStep(stepId);
+  if (!st || VIEW || span.tagName !== 'SPAN') return;
+  var input = document.createElement('input');
+  input.type = 'text';
+  input.className = 'step-rename';
+  input.value = st.name;
+  input.setAttribute('aria-label', 'Step name');
+  span.replaceWith(input);
+  input.focus();
+  input.select();
+  var done = false;
+  function finish(keep) {
+    if (done) return;
+    done = true;
+    var name = input.value.trim();
+    if (keep && name && name !== st.name) { st.name = name; save(); }
+    render();
+  }
+  input.addEventListener('keydown', function (ev) {
+    if (ev.key === 'Enter') { ev.preventDefault(); finish(true); }
+    else if (ev.key === 'Escape') { ev.preventDefault(); ev.stopPropagation(); finish(false); }
+  });
+  input.addEventListener('blur', function () { finish(true); });
+}
+
+function editStep(stepId, phaseId, focusId) {
   var st = stepId ? findStep(stepId) : null;
   var ph = st ? phaseOfStep(stepId) : findPhase(phaseId);
   if (!ph) return;
   var phases = currentProject().phases;
-  openModal(st ? 'Edit step' : 'New step in ' + ph.name,
+  openModal(st ? 'Edit step' : 'New step in ' + plain(ph.name),
     '<div class="row"><label for="st-name">Step name</label>' +
       '<input type="text" id="st-name" value="' + esc(st ? st.name : '') + '" placeholder="Wireframes"></div>' +
     '<div class="row"><label for="st-phase">Phase</label><select id="st-phase">' +
       phases.map(function (x) {
-        return '<option value="' + esc(x.id) + '"' + (x.id === ph.id ? ' selected' : '') + '>' + esc(x.name) + '</option>';
+        return '<option value="' + esc(x.id) + '"' + (x.id === ph.id ? ' selected' : '') + '>' + esc(plain(x.name)) + '</option>';
       }).join('') + '</select>' +
       '<div class="hint">Move this step to another phase — its logged time moves with it.</div></div>' +
     '<div class="row"><label for="st-est">Estimate</label>' +
@@ -1607,7 +1809,10 @@ function editStep(stepId, phaseId) {
     '<div class="row"><label for="st-status">Status</label><select id="st-status">' +
       ['todo', 'doing', 'done'].map(function (v) {
         return '<option value="' + v + '"' + (st && st.status === v ? ' selected' : '') + '>' + statusLabel(v) + '</option>';
-      }).join('') + '</select></div>',
+      }).join('') + '</select></div>' +
+    '<div class="row"><label for="st-notes">Notes</label>' +
+      '<textarea id="st-notes" rows="6" style="width:100%;line-height:1.5" placeholder="Anything worth remembering about this step">' + esc(st ? st.notes || '' : '') + '</textarea>' +
+      '<div class="hint">Private: never on the client link. ⌘B for bold, a dash and a space for a list.</div></div>',
     function () {
       var name = $('st-name').value.trim();
       if (!name) { modalError('Give the step a name.'); return false; }
@@ -1619,15 +1824,20 @@ function editStep(stepId, phaseId) {
       }
       var status = $('st-status').value;
       var target = $('st-phase').value;
+      var notes = $('st-notes').value.replace(/\s+$/, '');
       if (st) {
-        st.name = name; st.estimate = est; st.status = status;
+        st.name = name; st.estimate = est; st.notes = notes;
+        setStepStatus(st, status);
+        if (notes && focusId === 'st-notes') stepOpen[st.id] = true;
         if (target && target !== ph.id) moveStep(st.id, target, null);
       } else {
-        (findPhase(target) || ph).steps.push({ id: uid('st'), name: name, status: status, estimate: est });
+        (findPhase(target) || ph).steps.push({ id: uid('st'), name: name, status: status, estimate: est, notes: notes,
+                                              doneAt: status === 'done' ? Date.now() : 0 });
       }
       save();
       return true;
-    }, 'st-name');
+    }, focusId || 'st-name');
+  if (focusId) { var fe = $(focusId); fe.setSelectionRange(fe.value.length, fe.value.length); }
 }
 
 /* ============================================================
@@ -1640,7 +1850,7 @@ function stepOptions(selectedId) {
   p.phases.forEach(function (ph) {
     ph.steps.forEach(function (st) {
       out += '<option value="' + esc(st.id) + '"' + (st.id === selectedId ? ' selected' : '') + '>' +
-        esc(ph.name) + ' · ' + esc(st.name) + '</option>';
+        esc(plain(ph.name)) + ' · ' + esc(plain(st.name)) + '</option>';
     });
   });
   return out;
@@ -1691,7 +1901,7 @@ function openTimeEntry(entryId, stepId) {
           start: t.start, end: t.end, note: $('te-note').value.trim(), source: 'manual'
         });
         var st = findStep(target);
-        if (st && st.status === 'todo') st.status = 'doing';
+        if (st && st.status === 'todo') setStepStatus(st, 'doing');
       }
       save();
       return true;
@@ -1786,8 +1996,10 @@ $('log-body').addEventListener('click', function (ev) {
 
 $('btn-log-add').addEventListener('click', function () { resetSaveBtn(); openTimeEntry(null, null); });
 
-['f-phase', 'f-step', 'f-from', 'f-to'].forEach(function (id) {
+// every filter drives the whole Report: cards, log and chart
+['f-range', 'f-phase', 'f-step', 'f-from', 'f-to'].forEach(function (id) {
   $(id).addEventListener('change', function () {
+    filters.range = $('f-range').value;
     filters.phaseId = $('f-phase').value;
     filters.stepId = $('f-step').value;
     filters.from = $('f-from').value;
@@ -1795,12 +2007,15 @@ $('btn-log-add').addEventListener('click', function () { resetSaveBtn(); openTim
     if (id === 'f-phase') filters.stepId = '';
     renderLogFilters();
     renderLog();
+    renderReport();
+    if (id === 'f-range' && filters.range === 'custom' && !filters.from) $('f-from').focus();
   });
 });
 $('f-clear').addEventListener('click', function () {
-  filters = { phaseId: '', stepId: '', from: '', to: '' };
+  filters = blankFilters();
   renderLogFilters();
   renderLog();
+  renderReport();
 });
 
 
@@ -2058,7 +2273,7 @@ function saveSplit() {
 
   var entries = pieces.map(function (p, i) {
     var ph = phaseOfStep(p.stepId), st = findStep(p.stepId);
-    if (st && st.status === 'todo') st.status = 'doing';
+    if (st && st.status === 'todo') setStepStatus(st, 'doing');
     return {
       id: i === 0 ? e.id : uid('e'),
       projectId: e.projectId, phaseId: ph ? ph.id : null, stepId: p.stepId,
@@ -2105,6 +2320,7 @@ function openHomework(p) {
 function gripButton(what) {
   return '<button type="button" class="icon handle" data-act="handle" title="Drag to reorder — or use the arrow keys" aria-label="Move ' + what + '">' + ICO.grip + '</button>';
 }
+var hwLinger = {};    // homework just ticked: id → timer before it moves to Done
 var agOpen = {};      // points whose note is showing — per visit, not saved
 
 function renderClient() {
@@ -2121,18 +2337,21 @@ function renderClient() {
 
   // homework
   if (VIEW) { $('hw-title').textContent = 'Your homework'; $('hw-sub').textContent = 'What we need from you to keep this moving.'; }
-  $('hw-list').innerHTML = open.length ? open.map(function (h) {
-    return '<li class="citem" data-id="' + esc(h.id) + '">' + (VIEW ? '' : gripButton('homework item')) +
-      '<input type="checkbox" data-act="hw-toggle" aria-label="Done"' + (VIEW ? ' disabled' : '') + '>' +
-      '<span class="ctext">' + esc(h.text) + dueChip(h) + '</span>' + itemActs('hw') + '</li>';
+  // a ticked item stays in place, struck out, for a moment before it moves to Done
+  var shown = p.homework.filter(function (h) { return !h.done || hwLinger[h.id]; })
+    .sort(function (a, b) { return (a.pos || 0) - (b.pos || 0) || a.at - b.at; });
+  $('hw-list').innerHTML = shown.length ? shown.map(function (h) {
+    return '<li class="citem' + (h.done ? ' done' : '') + '" data-id="' + esc(h.id) + '">' + (VIEW ? '' : gripButton('homework item')) +
+      '<input type="checkbox" data-act="hw-toggle" aria-label="Done"' + (h.done ? ' checked' : '') + (VIEW ? ' disabled' : '') + '>' +
+      '<span class="ctext">' + fmt(h.text) + dueChip(h) + '</span>' + itemActs('hw') + '</li>';
   }).join('') : '<li class="cempty">' + (VIEW ? 'Nothing needed from you right now.' : 'Nothing outstanding. Add what the client owes you — files, approvals, answers.') + '</li>';
-  var done = p.homework.filter(function (h) { return h.done; }).sort(function (a, b) { return b.doneAt - a.doneAt; });
+  var done = p.homework.filter(function (h) { return h.done && !hwLinger[h.id]; }).sort(function (a, b) { return b.doneAt - a.doneAt; });
   $('hw-done-wrap').hidden = !done.length;
   $('hw-done-sum').textContent = 'Done — ' + done.length;
   $('hw-done').innerHTML = done.map(function (h) {
     return '<li class="citem done" data-id="' + esc(h.id) + '">' +
       '<input type="checkbox" data-act="hw-toggle" checked aria-label="Done"' + (VIEW ? ' disabled' : '') + '>' +
-      '<span class="ctext">' + esc(h.text) + (h.doneAt ? '<span class="when">' + esc(fmtDate(h.doneAt)) + '</span>' : '') + '</span>' +
+      '<span class="ctext">' + fmt(h.text) + (h.doneAt ? '<span class="when">' + esc(fmtDate(h.doneAt)) + '</span>' : '') + '</span>' +
       itemActs('hw') + '</li>';
   }).join('');
   if (VIEW) return;
@@ -2144,9 +2363,9 @@ function renderClient() {
     return '<li class="citem' + (a.done ? ' done' : '') + (open ? ' open' : '') + '" data-id="' + esc(a.id) + '">' + gripButton('point') +
       '<input type="checkbox" data-act="ag-toggle" aria-label="Discussed"' + (a.done ? ' checked' : '') + '>' +
       '<div class="ctext">' + (a.body
-        ? '<button type="button" class="ag-title" data-act="ag-open" aria-expanded="' + (open ? 'true' : 'false') + '">' + esc(a.text) +
-            '<span class="ag-tag">' + (open ? 'Hide note' : 'Note') + '</span></button><div class="ag-body">' + esc(a.body) + '</div>'
-        : esc(a.text)) + '</div>' + itemActs('ag') + '</li>';
+        ? '<button type="button" class="ag-title" data-act="ag-open" aria-expanded="' + (open ? 'true' : 'false') + '">' + fmt(a.text) +
+            '<span class="ag-tag">' + (open ? 'Hide note' : 'Note') + '</span></button><div class="ag-body">' + fmt(a.body) + '</div>'
+        : fmt(a.text)) + '</div>' + itemActs('ag') + '</li>';
   }).join('') : '<li class="cempty">Nothing to raise yet.</li>';
   $('ag-clear').hidden = !p.agenda.some(function (a) { return a.done; });
 
@@ -2155,8 +2374,8 @@ function renderClient() {
   $('nt-list').innerHTML = notes.length ? notes.map(function (n) {
     return '<article class="note" data-id="' + esc(n.id) + '">' +
       '<div class="note-head"><span class="note-date">' + esc(fmtDate(keyToMs(n.date))) + '</span>' +
-      '<span class="note-title">' + esc(n.title || 'Meeting') + '</span>' + itemActs('nt') + '</div>' +
-      (n.body.trim() ? '<div class="note-body">' + esc(n.body) + '</div><button type="button" class="note-more" data-act="nt-more" hidden>Show all</button>' : '') +
+      '<span class="note-title">' + fmt(n.title || 'Meeting') + '</span>' + itemActs('nt') + '</div>' +
+      (n.body.trim() ? '<div class="note-body">' + fmt(n.body) + '</div><button type="button" class="note-more" data-act="nt-more" hidden>Show all</button>' : '') +
       '</article>';
   }).join('') : '<div class="cempty">No notes yet. Start one before or during your next meeting.</div>';
   Array.prototype.forEach.call(document.querySelectorAll('#nt-list .note'), function (el) {
@@ -2212,7 +2431,14 @@ $('panel-client').addEventListener('change', function (ev) {
   var act = box.getAttribute('data-act');
   if (act === 'hw-toggle') {
     var h = projectItem(p.homework, id);
-    if (h) { h.done = box.checked; h.doneAt = box.checked ? Date.now() : 0; }
+    if (h) {
+      h.done = box.checked; h.doneAt = box.checked ? Date.now() : 0;
+      clearTimeout(hwLinger[id]);
+      delete hwLinger[id];
+      if (h.done && box.closest('#hw-list')) {
+        hwLinger[id] = setTimeout(function () { delete hwLinger[id]; renderClient(); }, 2500);
+      }
+    }
   } else if (act === 'ag-toggle') {
     var a = projectItem(p.agenda, id);
     if (a) a.done = box.checked;
@@ -2274,6 +2500,41 @@ function openAgendaItem(a) {
       return true;
     }, a.body ? 'ag-e-body' : 'ag-e-text');
 }
+/* A meeting note → a step on the board. The name comes from the selected
+   text, or the line the cursor is on. The step is added at once, so the
+   note can stay open (and Cancel doesn't take the step back). */
+function wireNoteToStep(p) {
+  var box = $('nt-step'), msg = $('nt-step-msg');
+  if (!p.phases.length) $('nt-step-phase').outerHTML = '';
+  $('nt-step-open').addEventListener('click', function () {
+    var ta = $('nt-body'), v = ta.value, a = ta.selectionStart, b = ta.selectionEnd;
+    var text = a !== b ? v.slice(a, b) : v.slice(lineStart(v, a), (v.indexOf('\n', a) + 1 || v.length + 1) - 1);
+    text = text.split('\n').filter(function (l) { return l.trim(); })[0] || '';
+    $('nt-step-name').value = text.replace(/^\s*(• |- |\d+[.)] )/, '').trim();
+    box.classList.add('on');
+    msg.textContent = p.phases.length ? '' : 'This project has no phases yet — add one on the Board first.';
+    msg.className = 'nt-step-msg';
+    $('nt-step-name').focus();
+  });
+  function add() {
+    var name = $('nt-step-name').value.trim(), sel = $('nt-step-phase');
+    var ph = sel && findPhase(sel.value);
+    msg.className = 'nt-step-msg';
+    if (!ph) { msg.textContent = 'Add a phase on the Board first.'; return; }
+    if (!name) { msg.textContent = 'Give the step a name.'; $('nt-step-name').focus(); return; }
+    ph.steps.push({ id: uid('st'), name: name, status: 'todo', estimate: 0, notes: '', doneAt: 0 });
+    save();
+    renderBoard();
+    msg.textContent = 'Added “' + plain(name) + '” to ' + plain(ph.name) + '.';
+    msg.className = 'nt-step-msg ok';
+    $('nt-step-name').value = '';
+    $('nt-body').focus();
+  }
+  $('nt-step-add').addEventListener('click', add);
+  $('nt-step-name').addEventListener('keydown', function (ev) {
+    if (ev.key === 'Enter') { ev.preventDefault(); add(); }      // not the note's Save
+  });
+}
 function openNote(n) {
   var p = clientProject();
   if (!p) return;
@@ -2284,7 +2545,17 @@ function openNote(n) {
       '<div><label for="nt-title">Title</label><input type="text" id="nt-title" maxlength="140" style="width:100%" placeholder="Meeting with the client" value="' + esc(n ? n.title : '') + '"></div>' +
     '</div>' +
     '<div class="row"><label for="nt-body">Notes</label><textarea id="nt-body">' + esc(n ? n.body : '') + '</textarea>' +
+      '<div style="display:flex;gap:4px 16px;flex-wrap:wrap">' +
       (points.length ? '<button type="button" class="btn ghost" id="nt-insert" style="padding-left:0">Insert the ' + points.length + ' point' + (points.length === 1 ? '' : 's') + ' to discuss</button>' : '') +
+      '<button type="button" class="btn ghost" id="nt-step-open" style="padding-left:0" title="Select text in the note first, or put the cursor on its line">+ Make a step</button></div>' +
+      '<div class="nt-step" id="nt-step">' +
+        '<div class="nt-step-row">' +
+          '<input type="text" id="nt-step-name" placeholder="Step name" aria-label="New step name">' +
+          '<select id="nt-step-phase" aria-label="Phase">' + p.phases.map(function (ph) {
+            return '<option value="' + esc(ph.id) + '">' + esc(plain(ph.name)) + '</option>'; }).join('') + '</select>' +
+          '<button type="button" class="btn" id="nt-step-add">Add step</button>' +
+        '</div><div class="nt-step-msg" id="nt-step-msg"></div>' +
+      '</div>' +
     '</div>',
     function () {
       var title = $('nt-title').value.trim(), body = $('nt-body').value.replace(/\s+$/, '');
@@ -2296,6 +2567,7 @@ function openNote(n) {
       return true;
     }, n ? 'nt-body' : 'nt-title');
   $('modal').classList.add('wide');
+  wireNoteToStep(p);
   var ins = $('nt-insert');
   if (ins) ins.addEventListener('click', function () {
     var ta = $('nt-body');
@@ -2421,7 +2693,7 @@ function searchAll(q) {
     p.phases.forEach(function (ph) {
       if (hit(ph.name)) out.push({ p: p, kind: 'Phase', text: ph.name, tab: 'board', phase: ph, sel: '.phase[data-phase="' + ph.id + '"]' });
       ph.steps.forEach(function (st) {
-        if (hit(st.name)) out.push({ p: p, kind: 'Step · ' + ph.name, text: st.name, tab: 'board', phase: ph, sel: '.step[data-step="' + st.id + '"]' });
+        if (hit(st.name, st.notes)) out.push({ p: p, kind: 'Step · ' + ph.name, text: st.name, snip: st.notes, tab: 'board', phase: ph, step: st.notes ? st.id : null, sel: '.step[data-step="' + st.id + '"]' });
       });
     });
     (p.homework || []).forEach(function (h) {
@@ -2437,7 +2709,7 @@ function searchAll(q) {
   state.log.forEach(function (e) {
     if (!e.note || !hit(e.note)) return;
     var at = locateStep(e.stepId);
-    if (at) out.push({ p: at.project, kind: 'Time log · ' + fmtDate(e.start), text: at.step.name, snip: e.note, tab: 'log', sel: '.log-row[data-entry="' + e.id + '"]' });
+    if (at) out.push({ p: at.project, kind: 'Time log · ' + fmtDate(e.start), text: at.step.name, snip: e.note, tab: 'report', log: true, sel: '.log-row[data-entry="' + e.id + '"]' });
   });
   // the open project first, then the rest in project order
   var order = state.projects.map(function (p) { return p.id; });
@@ -2468,9 +2740,9 @@ function paintSearch() {
   var multi = state.projects.length > 1;
   box.innerHTML = searchHits.length ? searchHits.map(function (r, i) {
     return '<button type="button" class="sr' + (i === searchOn ? ' on' : '') + '" role="option" data-i="' + i + '">' +
-      '<span class="sr-kind">' + esc(r.kind) + (multi && r.kind !== 'Project' ? ' · ' + esc(r.p.name) : '') + '</span>' +
-      '<span class="sr-text">' + markWords(r.text, words) + '</span>' +
-      (r.snip ? '<span class="sr-snip">' + markWords(snippet(r.snip, words), words) + '</span>' : '') + '</button>';
+      '<span class="sr-kind">' + esc(plain(r.kind)) + (multi && r.kind !== 'Project' ? ' · ' + esc(plain(r.p.name)) : '') + '</span>' +
+      '<span class="sr-text">' + markWords(plain(r.text), words) + '</span>' +
+      (r.snip ? '<span class="sr-snip">' + markWords(plain(snippet(r.snip, words)), words) + '</span>' : '') + '</button>';
   }).join('') : '<div class="sr-none">Nothing matches “' + esc(q.trim()) + '”.</div>';
   box.hidden = false;
 }
@@ -2479,6 +2751,8 @@ function goToResult(r) {
   openProject(r.p.id);
   if (r.phase) r.phase.collapsed = false;
   if (r.point) agOpen[r.point] = true;
+  if (r.step) stepOpen[r.step] = true;
+  if (r.log) filters = blankFilters();          // the entry may sit outside the chosen period
   save();
   showTab(r.tab);
   render();
@@ -2526,13 +2800,14 @@ document.addEventListener('keydown', function (ev) {
    Tabs
    ============================================================ */
 function showTab(name) {
+  if (name === 'log') name = 'report';      // the time log lives in the Report since v16
   activeTab = name;
-  ['board', 'log', 'report', 'client'].forEach(function (x) {
+  ['board', 'report', 'client'].forEach(function (x) {
     $('tab-' + x).classList.toggle('on', x === name);
     $('panel-' + x).classList.toggle('on', x === name);
   });
 }
-['board', 'log', 'report', 'client'].forEach(function (x) {
+['board', 'report', 'client'].forEach(function (x) {
   $('tab-' + x).addEventListener('click', function () { showTab(x); render(); });
 });
 
@@ -2540,7 +2815,7 @@ function showTab(name) {
    Projects, import / export
    ============================================================ */
 function openProject(id) {
-  if (state.currentId !== id) filters = { phaseId: '', stepId: '', from: '', to: '' };
+  if (state.currentId !== id) filters = blankFilters();
   state.currentId = id;
 }
 $('project-select').addEventListener('change', function () {
@@ -2563,7 +2838,7 @@ $('btn-add-project').addEventListener('click', function () {
       p.name = name;
       state.projects.push(p);
       state.currentId = p.id;
-      filters = { phaseId: '', stepId: '', from: '', to: '' };
+      filters = blankFilters();
       save();
       return true;
     }, 'pr-name');
@@ -2591,13 +2866,13 @@ $('btn-delete-project').addEventListener('click', function () {
   resetSaveBtn();
   var ids = p.phases.reduce(function (a, ph) { return a.concat(ph.steps.map(function (s) { return s.id; })); }, []);
   var token = p.shareId;
-  confirmModal('Delete project', 'Delete “' + p.name + '” with everything logged against it?' +
+  confirmModal('Delete project', 'Delete “' + plain(p.name) + '” with everything logged against it?' +
     (token ? ' Its client link stops working too.' : ''), function () {
     if (token) revokeShare(token).catch(shareFail);
     state.projects = state.projects.filter(function (x) { return x.id !== p.id; });
     state.log = state.log.filter(function (e) { return ids.indexOf(e.stepId) === -1; });
     state.currentId = state.projects.length ? state.projects[0].id : null;
-    filters = { phaseId: '', stepId: '', from: '', to: '' };
+    filters = blankFilters();
   });
 });
 
@@ -2623,9 +2898,9 @@ function logCSV() {
   visibleEntries().forEach(function (r) {
     var e = r.e, ph = phaseOfStep(e.stepId), st = findStep(e.stepId);
     rows.push([
-      p ? p.name : '', ph ? ph.name : '', st ? st.name : '',
+      plain(p ? p.name : ''), plain(ph ? ph.name : ''), plain(st ? st.name : ''),
       dateKey(e.start), fmtTime(e.start), e.end == null ? '' : fmtTime(e.end),
-      fmtHours(r.sec), fmtHM(r.sec), e.source, e.note
+      fmtHours(r.sec), fmtHM(r.sec), e.source, plain(e.note)
     ]);
   });
   return rows.map(function (r) { return r.map(csvCell).join(','); }).join('\n');
@@ -2693,7 +2968,7 @@ $('btn-import').addEventListener('click', function () {
       state = pendingImport;
       pendingImport = null;
       if (!currentProject()) state.currentId = state.projects[0].id;
-      filters = { phaseId: '', stepId: '', from: '', to: '' };
+      filters = blankFilters();
       save();
       return true;
     });
@@ -3453,7 +3728,8 @@ function sharePayload(p) {
         id: ph.id, name: ph.name,
         steps: ph.steps.map(function (st) {
           ids[st.id] = true;
-          return { id: st.id, name: st.name, status: st.status, estimate: st.estimate };
+          // step notes stay private; doneAt lets the client's Report count steps by period
+          return { id: st.id, name: st.name, status: st.status, estimate: st.estimate, doneAt: st.doneAt || 0 };
         })
       };
     })
@@ -3558,13 +3834,13 @@ function openShare() {
 
   if (!p.shareId) {
     openModal('Client link',
-      '<p class="share-note">Create a read-only link to <strong>' + esc(p.name) + '</strong> for your client. ' +
+      '<p class="share-note">Create a read-only link to <strong>' + esc(plain(p.name)) + '</strong> for your client. ' +
       'They will see its phases, steps, estimates, logged time, log notes and their homework, updating as you work — ' +
       'and nothing they do can change it. Every project gets its own link, and you can turn it off at any time.</p>',
       function () { createShare(p); return false; });
     $('modal-save').textContent = 'Create link';
   } else {
-    openModal('Client link — ' + p.name,
+    openModal('Client link — ' + plain(p.name),
       '<p class="share-note">Anyone with this link can see this project and watch it update. ' +
       'They cannot change, add or remove anything.</p>' +
       '<div class="row"><label for="share-url">Link</label><div class="share-row">' +
@@ -3661,7 +3937,7 @@ function bootView() {
   /* Nothing a client can press changes anything. Hidden controls are also
      refused here, before any handler sees them. Allowed: tabs, expanding a
      phase, the log filters and the CSV download. */
-  var allowedIds = /^(tab-board|tab-log|tab-report|tab-client|btn-collapse-all|f-clear|btn-log-csv)$/;
+  var allowedIds = /^(tab-board|tab-report|tab-client|btn-collapse-all|f-clear|btn-log-csv)$/;
   document.addEventListener('click', function (ev) {
     var el = ev.target.closest && ev.target.closest('button, [data-act]');
     if (!el) return;
@@ -3806,7 +4082,7 @@ window.__sync = { cloud: cloud, meta: meta, setMeta: setMeta, reconcile: reconci
 <script>
 (function () {
   var sel = document.getElementById('project-select'), out = document.getElementById('project-title');
-  function sync() { var o = sel.options[sel.selectedIndex]; out.textContent = o ? o.textContent : 'No project yet'; }
+  function sync() { var o = sel.options[sel.selectedIndex]; out.textContent = o ? (o.getAttribute('data-name') || o.textContent) : 'No project yet'; }
   new MutationObserver(sync).observe(sel, { childList: true, subtree: true, characterData: true });
   sel.addEventListener('change', sync); sync();
 })();
