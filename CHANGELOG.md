@@ -5,6 +5,56 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v93 — 2026-10-15
+
+**What's new** · FreeCanvas · [tools/freecanvas.html]
+### Text, video<br>and a lock for presenting
+FreeCanvas now takes GIFs and videos as well as photos, and text boxes you
+can style. Pick any background colour, zoom in and out, then press Lock &
+present to hide every control and show the canvas full screen.
+
+**FreeCanvas v5 — `tools/freecanvas.html`, source `Tools files/Tools/portfolio_freecanvas_v5.html`**
+- **Background:** swatches, a custom colour and Default (`state.bg`).
+  Exports fill with it; Default still exports white, as before.
+- **Zoom:** − / % / + / Fit in the top bar, trackpad pinch, ⌘/Ctrl + scroll,
+  two-finger pinch on phones, ⌘ + − 0 (`state.zoom`, 10–400%). The canvas
+  became a scrolling viewport with a scaled world inside; tile controls keep
+  their screen size at any zoom. Items can be placed in the extra room when
+  zoomed out.
+- **Text boxes:** Add text; double-click or the pencil to type
+  (plain text); corner handle sets the width; the Aa panel sets font
+  (sans/serif/mono), size, weight, alignment, colour. Empty boxes are
+  removed. Exports redraw the text with the same wrapping.
+- **GIFs and videos:** Add media / drop accepts `video/*`; GIFs keep their
+  original file so they animate. Both are stored as files in IndexedDB
+  (`freecanvas-media`), only `mediaId` goes in localStorage. Videos loop
+  muted with a sound button; crop and replace work on both. Exports draw
+  a GIF's first frame and a video's current frame.
+- **Lock & present:** hides the top bar and every control, locks
+  everything (each item's own lock is untouched), asks for full screen;
+  Esc or the corner lock button leaves (`state.present`).
+- Same storage key `freecanvas-state-v1` — v4 canvases open unchanged.
+  Items gained `id` and `type` (missing → image).
+- Card + social description updated. Homepage: its stale
+  `style.css?v=91` marker (left in v92) is now in step with the other
+  pages; nothing else on it changed.
+
+**Scan**
+- Clean — no outside hosts, endpoints or personal data. Privacy page
+  copy still true (everything stays in the browser).
+
+**Verified locally**
+- Photos, a GIF and an MP4 added by drop; reload keeps all three, the
+  text box, background and zoom. Drag at 80% zoom moves by the right
+  amount; double-click edits text at the click point; style panel
+  changes apply live; videos keep playing through re-renders; present
+  mode hides controls and blocks dragging, Esc leaves; PNG export matches
+  the screen (background, wrapped serif text, video frame). No console
+  errors; no sideways scroll at phone width. Full screen itself couldn't
+  be tested in the preview pane (blocked there).
+
+---
+
 ## v92 — 2026-10-14
 
 **What's new** · New piece · [tools.html#art]

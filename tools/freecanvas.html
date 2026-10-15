@@ -1,13 +1,13 @@
 <meta charset="utf-8" />
 <title>FreeCanvas</title>
 <!-- social preview: link cards on Instagram, iMessage, WhatsApp, Facebook, X -->
-<meta name="description" content="No grid at all. Drag photos anywhere, resize from the corner, lock them when the composition feels right.">
+<meta name="description" content="No grid at all. Drag photos, GIFs, videos and text anywhere, pick the background, zoom out to see it whole, then lock it and present.">
 <link rel="canonical" href="https://xavierdebelle.com/tools/freecanvas.html">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Xavier de Belle">
 <meta property="og:locale" content="en_CA">
 <meta property="og:title" content="FreeCanvas — Xavier de Belle">
-<meta property="og:description" content="No grid at all. Drag photos anywhere, resize from the corner, lock them when the composition feels right.">
+<meta property="og:description" content="No grid at all. Drag photos, GIFs, videos and text anywhere, pick the background, zoom out to see it whole, then lock it and present.">
 <meta property="og:url" content="https://xavierdebelle.com/tools/freecanvas.html">
 <meta property="og:image" content="https://xavierdebelle.com/assets/og/freecanvas.png">
 <meta property="og:image:width" content="1200">
@@ -76,12 +76,17 @@
   }
 
   * { box-sizing: border-box; }
-  html, body { margin: 0; padding: 0; }
+  html, body { margin: 0; padding: 0; height: 100%; }
   body {
     background: var(--bg);
     color: var(--ink);
     font-family: var(--font-ui);
     -webkit-font-smoothing: antialiased;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
   }
   ::selection { background: var(--accent); color: var(--accent-ink); }
 
@@ -95,6 +100,7 @@
     padding: .5rem .8rem;
   }
   button:hover { border-color: var(--ink-faint); }
+  button:disabled { opacity: .4; cursor: default; }
   button:focus-visible, [tabindex]:focus-visible {
     outline: 2px solid var(--accent);
     outline-offset: 2px;
@@ -108,17 +114,31 @@
   button.primary:hover { filter: brightness(1.08); }
   button.ghost { border-color: transparent; color: var(--ink-dim); }
   button.ghost:hover { color: var(--ink); border-color: var(--line); }
+  button svg { vertical-align: -2px; }
+  .icon-label svg { margin-right: .4em; }
+
+  input[type="color"] {
+    width: 2.1rem;
+    height: 1.7rem;
+    padding: 0 2px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-s);
+    background: none;
+    cursor: pointer;
+    flex: none;
+  }
 
   /* ---- topbar ---- */
   .topbar {
-    position: sticky;
-    top: 0;
+    flex: none;
+    position: relative;
     z-index: 100;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 1rem;
-    padding: .7rem 1rem;
+    flex-wrap: wrap;
+    gap: .5rem 1rem;
+    padding: .6rem 1rem;
     background: var(--surface);
     border-bottom: 1px solid var(--line);
   }
@@ -136,7 +156,39 @@
     font-weight: 400;
     margin-left: .6em;
   }
-  .topbar .actions { display: flex; gap: .5rem; }
+  .topbar .actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: .4rem;
+  }
+  @media (max-width: 720px) {
+    .topbar { padding: .5rem .6rem; }
+    .topbar button { padding: .4rem .55rem; font-size: .85rem; }
+  }
+
+  .zoom-group {
+    display: inline-flex;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-s);
+    overflow: hidden;
+  }
+  .zoom-group button {
+    border: none;
+    border-radius: 0;
+    padding: .5rem .6rem;
+    color: var(--ink-dim);
+    line-height: 1;
+  }
+  .zoom-group button + button { border-left: 1px solid var(--line); }
+  .zoom-group button:hover:not(:disabled) { color: var(--ink); background: var(--surface-sunken); }
+  #zoomLabel {
+    min-width: 5.4ch;
+    font-family: var(--font-mono);
+    font-size: .72rem;
+    font-variant-numeric: tabular-nums;
+  }
 
   .dropdown { position: relative; }
   .dropdown-menu {
@@ -163,38 +215,163 @@
   .dropdown-menu button + button { border-top: 1px solid var(--line); }
   .dropdown-menu button:hover { background: var(--surface-sunken); }
 
-  /* ---- canvas ---- */
-  .canvas {
-    position: relative;
-    width: 100%;
+  /* ---- background picker ---- */
+  .swatch-dot {
+    display: inline-block;
+    width: .85em; height: .85em;
+    border-radius: 50%;
+    border: 1px solid var(--ink-faint);
     background: var(--surface-sunken);
-    overflow: hidden;
+    vertical-align: -1px;
+    margin-right: .45em;
+  }
+  .bg-menu {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    width: 224px;
+    padding: .8rem;
+    display: flex;
+    flex-direction: column;
+    gap: .7rem;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    box-shadow: 0 8px 24px rgba(20,18,16,.16);
+    z-index: 30;
+  }
+  .bg-menu[hidden] { display: none; }
+  .menu-label, .pop-label {
+    font-family: var(--font-mono);
+    font-size: .6rem;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+  .swatches {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 7px;
+  }
+  .swatch {
+    width: 100%;
+    aspect-ratio: 1;
+    padding: 0;
+    border-radius: 50%;
+    border: 1px solid rgba(128,120,110,.45);
+  }
+  .swatch:hover { border-color: var(--ink-dim); }
+  .swatch.on { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .bg-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .5rem;
+  }
+  .bg-row label {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    font-size: .82rem;
+    color: var(--ink-dim);
+    cursor: pointer;
+  }
+  .bg-row button { padding: .35rem .6rem; font-size: .82rem; }
+
+  /* ---- canvas ----
+     .canvas is the scrolling viewport, .sizer is as big as the zoomed world
+     (so the scrollbars are right), and .world holds the items in unzoomed
+     canvas pixels, scaled as one piece. --inv (1 / zoom) keeps the editing
+     controls the same size on screen at any zoom. */
+  .canvas {
+    flex: 1;
+    min-height: 0;
+    position: relative;
+    overflow: auto;
+    background: var(--canvas-bg, var(--surface-sunken));
+    touch-action: pan-x pan-y;
   }
   body.drag-over .canvas { outline: 2px dashed var(--accent); outline-offset: -2px; }
+  .sizer { position: relative; }
+  .world {
+    position: absolute;
+    left: 0; top: 0;
+    transform-origin: 0 0;
+  }
 
   .tile {
     position: absolute;
-    overflow: hidden;
-    background: var(--surface);
     touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
   }
-  .tile img {
+  .tile.media { background: var(--surface); }
+  .media-clip {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+  }
+  .tile .media {
     width: 100%; height: 100%;
     object-fit: cover;
     display: block;
     pointer-events: none;
   }
+  .tile .media.missing {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    text-align: center;
+    font-size: .75rem;
+    color: var(--ink-faint);
+    background: var(--surface-sunken);
+  }
   .tile.unlocked {
-    outline: 1.5px dashed var(--accent);
-    outline-offset: -1.5px;
+    outline: calc(1.5px * var(--inv, 1)) dashed var(--accent);
+    outline-offset: calc(-1.5px * var(--inv, 1));
     cursor: grab;
   }
+  .tile.text.unlocked { outline-offset: 0; }
   .tile.unlocked.dragging-active { cursor: grabbing; }
   .tile.locked { cursor: default; }
 
-  .tile-btn {
+  /* ---- text boxes ---- */
+  .text-body {
+    padding: 4px 6px;
+    min-height: 1.2em;
+    line-height: 1.2;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    outline: none;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  .tile.text.editing { outline-style: solid; cursor: text; }
+  .tile.editing .text-body { user-select: text; -webkit-user-select: text; cursor: text; }
+  .tile.editing .text-body:empty::before {
+    content: "Type something";
+    opacity: .4;
+  }
+
+  /* ---- tile controls ---- */
+  .tile-tools {
     position: absolute;
-    top: 5px;
+    top: calc(5px * var(--inv, 1));
+    display: flex;
+    gap: 5px;
+    z-index: 3;
+    transform: scale(var(--inv, 1));
+  }
+  .tile-tools.left { left: calc(5px * var(--inv, 1)); transform-origin: 0 0; }
+  .tile-tools.right { right: calc(5px * var(--inv, 1)); transform-origin: 100% 0; }
+  /* text boxes keep their controls above the box, off the words */
+  .tile.text .tile-tools { top: auto; bottom: calc(100% + 4px * var(--inv, 1)); }
+  .tile.text .tile-tools.left { left: 0; transform-origin: 0 100%; }
+  .tile.text .tile-tools.right { right: 0; transform-origin: 100% 100%; }
+
+  .tile-btn {
+    position: relative;
     width: 22px; height: 22px;
     border-radius: 50%;
     border: none;
@@ -204,18 +381,21 @@
     padding: 0;
     opacity: 0;
     transition: opacity .12s;
-    z-index: 2;
   }
-  .tile:hover .tile-btn, .tile-btn:focus-visible { opacity: 1; }
+  .tile:hover .tile-btn, .tile.editing .tile-btn, .tile-btn:focus-visible { opacity: 1; }
   .tile.locked .lock-btn { opacity: .82; }
-  .tile .lock-btn { left: 5px; }
-  .tile .lock-btn:hover { background: var(--accent); }
-  .tile .replace-btn { left: 32px; }
-  .tile .replace-btn:hover { background: var(--accent); }
-  .tile .crop-btn { left: 59px; }
-  .tile .crop-btn:hover { background: var(--accent); }
-  .tile .remove { right: 5px; }
-  .tile .remove:hover { background: var(--danger); }
+  .tile-btn:hover { background: var(--accent); }
+  .tile-btn.remove:hover { background: var(--danger); }
+  .tile-btn.on { background: var(--accent); }
+
+  .sound-btn {
+    position: absolute;
+    right: calc(5px * var(--inv, 1));
+    bottom: calc(5px * var(--inv, 1));
+    transform: scale(var(--inv, 1));
+    transform-origin: 100% 100%;
+    z-index: 3;
+  }
 
   /* dropping a file from outside onto an unlocked photo swaps it */
   .tile.replace-target::after {
@@ -231,8 +411,8 @@
     content: "Replace";
     position: absolute;
     left: 50%; top: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 3;
+    transform: translate(-50%, -50%) scale(var(--inv, 1));
+    z-index: 4;
     font-family: var(--font-mono);
     font-size: .56rem;
     letter-spacing: .08em;
@@ -251,8 +431,6 @@
       width: 26px;
       height: 26px;
     }
-    .tile .replace-btn { left: 36px; }
-    .tile .crop-btn { left: 67px; }
   }
 
   .resize-handle {
@@ -264,23 +442,111 @@
     border: 2px solid var(--surface);
     cursor: nwse-resize;
     box-shadow: 0 1px 4px rgba(0,0,0,.35);
-    z-index: 2;
+    transform: scale(var(--inv, 1));
+    z-index: 3;
   }
+  .tile.text .resize-handle { cursor: ew-resize; }
 
   /* ---- empty state ---- */
   .empty {
-    min-height: 72vh;
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    pointer-events: none;
+  }
+  .empty[hidden] { display: none; }
+  .empty-card {
+    pointer-events: auto;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
     gap: 1rem;
+    max-width: 27rem;
+    padding: 1.6rem 1.8rem;
     text-align: center;
-    padding: 2rem;
+    color: var(--ink-dim);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+  }
+  .empty-card p { margin: 0; font-size: .9rem; }
+  .empty-actions { display: flex; gap: .5rem; flex-wrap: wrap; justify-content: center; }
+
+  /* ---- presentation mode ---- */
+  body.presenting .topbar,
+  body.presenting .tile-tools,
+  body.presenting .resize-handle,
+  body.presenting .empty { display: none; }
+  body.presenting .tile { outline: none; cursor: default; }
+  .present-exit {
+    position: fixed;
+    top: 14px; right: 14px;
+    z-index: 120;
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    border: none;
+    padding: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(20,18,16,.62);
+    color: #fff;
+    opacity: .18;
+    transition: opacity .2s;
+  }
+  body.presenting .present-exit { display: flex; }
+  .present-exit:hover, .present-exit:focus-visible { opacity: 1; background: var(--accent); }
+  @media (hover: none) { .present-exit { opacity: .55; } }
+
+  /* ---- text style popover ---- */
+  .pop {
+    position: fixed;
+    z-index: 150;
+    width: 272px;
+    max-width: calc(100vw - 16px);
+    padding: .8rem;
+    display: flex;
+    flex-direction: column;
+    gap: .7rem;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    box-shadow: 0 10px 28px rgba(20,18,16,.22);
+  }
+  .pop[hidden] { display: none; }
+  .pop-row { display: flex; align-items: center; gap: .6rem; }
+  .pop-label { width: 3.9rem; flex: none; }
+  .seg {
+    display: flex;
+    flex: 1;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-s);
+    overflow: hidden;
+  }
+  .seg button {
+    flex: 1;
+    border: none;
+    border-radius: 0;
+    padding: .35rem .3rem;
+    font-size: .78rem;
     color: var(--ink-dim);
   }
-  .empty p { margin: 0; font-size: .9rem; max-width: 34ch; }
-  .empty input { display: none; }
+  .seg button + button { border-left: 1px solid var(--line); }
+  .seg button:hover { color: var(--ink); background: var(--surface-sunken); }
+  .seg button.on { background: var(--accent); color: var(--accent-ink); }
+  .pop input[type="range"] { flex: 1; min-width: 0; accent-color: var(--accent); }
+  .pop-value {
+    font-family: var(--font-mono);
+    font-size: .7rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink-dim);
+    width: 3.5ch;
+    text-align: right;
+  }
+  .pop .swatches { flex: 1; grid-template-columns: repeat(6, 1fr); gap: 5px; }
 
   /* ---- crop modal ---- */
   .modal-backdrop {
@@ -441,8 +707,26 @@
 <div class="topbar">
   <span class="brand">FreeCanvas<span class="count" id="brandCount">0</span></span>
   <div class="actions">
-    <button class="ghost" id="addBtn" type="button">Add photos</button>
-    <input type="file" id="photoInput" accept="image/*" multiple hidden />
+    <button class="ghost" id="addBtn" type="button">Add media</button>
+    <input type="file" id="photoInput" accept="image/*,video/*" multiple hidden />
+    <button class="ghost" id="addTextBtn" type="button">Add text</button>
+    <div class="dropdown" id="bgDropdown">
+      <button class="ghost" id="bgBtn" type="button" aria-haspopup="true" aria-expanded="false"><span class="swatch-dot" id="bgDot"></span>Background</button>
+      <div class="bg-menu" id="bgMenu" hidden>
+        <span class="menu-label">Canvas background</span>
+        <div class="swatches" id="bgSwatches"></div>
+        <div class="bg-row">
+          <label><input type="color" id="bgCustom" value="#ffffff" />Custom</label>
+          <button class="ghost" id="bgDefault" type="button">Default</button>
+        </div>
+      </div>
+    </div>
+    <div class="zoom-group" role="group" aria-label="Zoom">
+      <button id="zoomOut" type="button" aria-label="Zoom out" title="Zoom out (⌘ −)">−</button>
+      <button id="zoomLabel" type="button" title="Back to 100% (⌘ 0)">100%</button>
+      <button id="zoomIn" type="button" aria-label="Zoom in" title="Zoom in (⌘ +)">+</button>
+      <button id="zoomFit" type="button" title="Fit everything on screen">Fit</button>
+    </div>
     <div class="dropdown" id="exportDropdown">
       <button class="ghost" id="exportBtn" type="button" aria-haspopup="true" aria-expanded="false">Export</button>
       <div class="dropdown-menu" id="exportMenu" hidden>
@@ -452,25 +736,70 @@
       </div>
     </div>
     <button class="ghost" id="clearBtn" type="button">Clear all</button>
+    <button class="primary icon-label" id="presentBtn" type="button" title="Lock everything and present"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="1.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>Lock &amp; present</button>
   </div>
 </div>
 
-<div class="canvas" id="canvas"></div>
-
-<div class="empty" id="emptyState">
-  <p>Drop images anywhere on the canvas. Drag to place them, drag the corner handle to resize, then lock them in when you're happy.</p>
-  <button class="primary" id="emptyAddBtn" type="button">Add photos</button>
+<div class="canvas" id="canvas">
+  <div class="sizer" id="sizer"><div class="world" id="world"></div></div>
+  <div class="empty" id="emptyState">
+    <div class="empty-card">
+      <p>Drop photos, GIFs or videos anywhere on the canvas, or add a text box. Drag to place them, drag the corner handle to resize, then lock them in when you're happy.</p>
+      <div class="empty-actions">
+        <button class="primary" id="emptyAddBtn" type="button">Add media</button>
+        <button class="ghost" id="emptyTextBtn" type="button">Add text</button>
+      </div>
+    </div>
+  </div>
 </div>
 
-<input type="file" id="replaceInput" accept="image/*" hidden />
+<button class="present-exit" id="presentExit" type="button" aria-label="Unlock and leave presentation" title="Unlock (Esc)"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="1.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></button>
+
+<input type="file" id="replaceInput" accept="image/*,video/*" hidden />
+
+<div class="pop" id="textPop" role="dialog" aria-label="Text style" hidden>
+  <div class="pop-row">
+    <span class="pop-label">Font</span>
+    <div class="seg" data-key="font">
+      <button type="button" data-v="sans" style="font-family: var(--font-ui)">Sans</button>
+      <button type="button" data-v="serif" style="font-family: Georgia, serif">Serif</button>
+      <button type="button" data-v="mono" style="font-family: var(--font-mono)">Mono</button>
+    </div>
+  </div>
+  <div class="pop-row">
+    <span class="pop-label">Size</span>
+    <input type="range" id="popSize" min="8" max="240" step="1" value="32" aria-label="Text size" />
+    <span class="pop-value" id="popSizeValue">32</span>
+  </div>
+  <div class="pop-row">
+    <span class="pop-label">Weight</span>
+    <div class="seg" data-key="weight">
+      <button type="button" data-v="400">Regular</button>
+      <button type="button" data-v="700">Bold</button>
+    </div>
+  </div>
+  <div class="pop-row">
+    <span class="pop-label">Align</span>
+    <div class="seg" data-key="align">
+      <button type="button" data-v="left">Left</button>
+      <button type="button" data-v="center">Centre</button>
+      <button type="button" data-v="right">Right</button>
+    </div>
+  </div>
+  <div class="pop-row">
+    <span class="pop-label">Colour</span>
+    <div class="swatches" id="popSwatches"></div>
+    <input type="color" id="popColor" aria-label="Custom text colour" />
+  </div>
+</div>
 
 <div class="modal-backdrop" id="cropBackdrop" hidden>
-  <div class="modal" role="dialog" aria-modal="true" aria-label="Crop photo">
+  <div class="modal" role="dialog" aria-modal="true" aria-label="Crop">
     <div class="modal-head">
-      <span>Crop photo</span>
+      <span>Crop</span>
       <button class="ghost" id="cropClose" type="button" aria-label="Close">×</button>
     </div>
-    <p class="modal-hint">Zoom in, then drag the frame to choose what shows. The photo keeps its place and shape on the canvas.</p>
+    <p class="modal-hint">Zoom in, then drag the frame to choose what shows. It keeps its place and shape on the canvas.</p>
     <div class="crop-stage" id="cropStage">
       <img id="cropImg" alt="" draggable="false" />
       <div class="crop-frame" id="cropFrame"></div>
@@ -497,28 +826,75 @@
 
 <script>
 (() => {
+  // the key keeps its v1 name (and items stay in state.photos) so canvases
+  // made with earlier versions open unchanged
   const STORAGE_KEY = "freecanvas-state-v1";
   const MAX_DIM = 1400;
   const DEFAULT_W = 320;
   const MIN_W = 60;
+  const MIN_TEXT_W = 40;
+  const MIN_VIEW_ZOOM = 0.1;
+  const MAX_VIEW_ZOOM = 4;
+  const ZOOM_STEP = 1.25;
 
-  const LOCK_CLOSED_SVG = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="1.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
-  const LOCK_OPEN_SVG = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="1.5"/><path d="M8 11V7a4 4 0 0 1 7.5-2.5"/></svg>';
+  const FONTS = {
+    sans: '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif',
+    serif: 'Georgia, "Times New Roman", Times, serif',
+    mono: 'ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace'
+  };
+  // must match .text-body's padding and line-height — export redraws text from these
+  const TEXT_PAD_X = 6, TEXT_PAD_Y = 4, TEXT_LINE = 1.2;
+
+  const BG_SWATCHES = ["#ffffff", "#f3f1ec", "#e9e6df", "#cfc8bb", "#8a8378",
+                       "#3a3633", "#18171b", "#000000", "#ffe800", "#a8641f"];
+  const TEXT_SWATCHES = ["#000000", "#ffffff", "#726b62", "#ffe800", "#a8641f", "#a13a2f"];
+
+  const svg = (inner, size = 12) => `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">${inner}</svg>`;
+  const LOCK_CLOSED_SVG = svg('<rect x="5" y="11" width="14" height="10" rx="1.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>');
+  const LOCK_OPEN_SVG = svg('<rect x="5" y="11" width="14" height="10" rx="1.5"/><path d="M8 11V7a4 4 0 0 1 7.5-2.5"/>');
+  const REPLACE_SVG = svg('<path d="M3 8h14"/><path d="M14 5l3 3-3 3"/><path d="M21 16H7"/><path d="M10 13l-3 3 3 3"/>');
+  const CROP_SVG = svg('<path d="M6 2v14a2 2 0 0 0 2 2h14"/><path d="M18 22V8a2 2 0 0 0-2-2H2"/>');
+  const EDIT_SVG = svg('<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/>');
+  const STYLE_SVG = svg('<path d="M4 19l5-14h1l5 14"/><path d="M6.5 13h7"/><path d="M17 19v-6"/><path d="M15 13h4"/>');
+  const SOUND_OFF_SVG = svg('<path d="M4 9v6h4l5 4V5L8 9z"/><path d="M17 9l4 6"/><path d="M21 9l-4 6"/>');
+  const SOUND_ON_SVG = svg('<path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/><path d="M19 6a8.5 8.5 0 0 1 0 12"/>');
 
   const state = loadState();
 
   const canvasEl = document.getElementById("canvas");
+  const sizer = document.getElementById("sizer");
+  const world = document.getElementById("world");
   const emptyState = document.getElementById("emptyState");
   const topbar = document.querySelector(".topbar");
   const brandCount = document.getElementById("brandCount");
   const addBtn = document.getElementById("addBtn");
   const emptyAddBtn = document.getElementById("emptyAddBtn");
+  const addTextBtn = document.getElementById("addTextBtn");
+  const emptyTextBtn = document.getElementById("emptyTextBtn");
   const photoInput = document.getElementById("photoInput");
   const replaceInput = document.getElementById("replaceInput");
   const clearBtn = document.getElementById("clearBtn");
   const exportBtn = document.getElementById("exportBtn");
   const exportMenu = document.getElementById("exportMenu");
   const exportDropdown = document.getElementById("exportDropdown");
+  const bgDropdown = document.getElementById("bgDropdown");
+  const bgBtn = document.getElementById("bgBtn");
+  const bgMenu = document.getElementById("bgMenu");
+  const bgDot = document.getElementById("bgDot");
+  const bgSwatches = document.getElementById("bgSwatches");
+  const bgCustom = document.getElementById("bgCustom");
+  const bgDefault = document.getElementById("bgDefault");
+  const zoomOutBtn = document.getElementById("zoomOut");
+  const zoomInBtn = document.getElementById("zoomIn");
+  const zoomLabel = document.getElementById("zoomLabel");
+  const zoomFitBtn = document.getElementById("zoomFit");
+  const presentBtn = document.getElementById("presentBtn");
+  const presentExit = document.getElementById("presentExit");
+  const textPop = document.getElementById("textPop");
+  const popSize = document.getElementById("popSize");
+  const popSizeValue = document.getElementById("popSizeValue");
+  const popSwatches = document.getElementById("popSwatches");
+  const popColor = document.getElementById("popColor");
   const cropBackdrop = document.getElementById("cropBackdrop");
   const cropStage = document.getElementById("cropStage");
   const cropImg = document.getElementById("cropImg");
@@ -548,30 +924,117 @@
     imgEl.style.transform = z > 1 ? `scale(${z})` : "";
   }
 
-  function loadState() {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) return JSON.parse(raw);
-    } catch (e) {}
-    return { photos: [] };
+  function newId() {
+    return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
   }
 
+  // Items: type "image" (dataUrl, as before), "gif" and "video" (the file
+  // itself lives in IndexedDB under mediaId — too big for localStorage), and
+  // "text". item.zoom/focus are the crop; state.zoom is the view zoom.
+  function loadState() {
+    let s = null;
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) s = JSON.parse(raw);
+    } catch (e) {}
+    if (!s || !Array.isArray(s.photos)) s = { photos: [] };
+    s.photos = s.photos.filter(p => p.type !== "text" || (p.text || "").trim());
+    s.photos.forEach(p => {
+      if (!p.id) p.id = newId();
+      if (!p.type) p.type = "image";
+    });
+    if (typeof s.zoom !== "number" || !isFinite(s.zoom)) s.zoom = 1;
+    return s;
+  }
+
+  let saveTimer = null;
   function saveState() {
+    clearTimeout(saveTimer);
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     } catch (e) {
       console.warn("Storage full — try removing a few photos.", e);
     }
   }
+  function scheduleSave() {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(saveState, 300);
+  }
+  window.addEventListener("pagehide", saveState);
 
   function clamp(v, min, max) { return Math.min(Math.max(v, min), max); }
 
-  // canvasEl.clientWidth reads 0 while the empty state has it display:none —
-  // fall back to the viewport width, which the canvas always matches anyway.
-  function getCanvasWidth() { return canvasEl.clientWidth || window.innerWidth; }
+  function viewW() { return canvasEl.clientWidth || window.innerWidth; }
+  function viewH() { return canvasEl.clientHeight || (window.innerHeight - topbar.offsetHeight); }
+
+  // How far right things may be dragged: the screen width at 100%, or all of
+  // what's visible when zoomed out.
+  function placeLimitW() { return viewW() * Math.max(1, 1 / state.zoom); }
 
   function nextZ() {
     return state.photos.reduce((m, p) => Math.max(m, p.z || 0), 0) + 1;
+  }
+
+  function isLocked(item) { return !!(state.present || item.locked); }
+
+  function findItem(id) { return state.photos.find(p => p.id === id); }
+  function tileFor(id) { return world.querySelector(`.tile[data-id="${id}"]`); }
+
+  // ---- media storage (GIFs and videos) ----
+  let dbPromise = null;
+  function openDb() {
+    if (!dbPromise) {
+      dbPromise = new Promise((resolve, reject) => {
+        const req = indexedDB.open("freecanvas-media", 1);
+        req.onupgradeneeded = () => req.result.createObjectStore("media");
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    }
+    return dbPromise;
+  }
+  async function mediaTx(mode, fn) {
+    const db = await openDb();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction("media", mode);
+      const req = fn(tx.objectStore("media"));
+      tx.oncomplete = () => resolve(req && req.result);
+      tx.onerror = tx.onabort = () => reject(tx.error);
+    });
+  }
+  const putMedia = (id, blob) => mediaTx("readwrite", s => s.put(blob, id));
+  const getMedia = id => mediaTx("readonly", s => s.get(id));
+  const deleteMedia = id => mediaTx("readwrite", s => s.delete(id)).catch(() => {});
+  const clearMedia = () => mediaTx("readwrite", s => s.clear()).catch(() => {});
+
+  const mediaUrls = new Map();   // mediaId → object URL
+  const mediaEls = new Map();    // item id → <img>/<video>, reused so videos keep playing across re-renders
+  let mediaReady = false;
+
+  async function loadStoredMedia() {
+    await Promise.all(state.photos.filter(p => p.mediaId).map(async p => {
+      try {
+        const blob = await getMedia(p.mediaId);
+        if (blob) mediaUrls.set(p.mediaId, URL.createObjectURL(blob));
+      } catch (e) {}
+    }));
+    mediaReady = true;
+  }
+
+  function forgetMedia(item) {
+    if (!item.mediaId) return;
+    const url = mediaUrls.get(item.mediaId);
+    if (url) URL.revokeObjectURL(url);
+    mediaUrls.delete(item.mediaId);
+    deleteMedia(item.mediaId);
+  }
+
+  function mediaSrc(item) {
+    return item.type === "image" ? item.dataUrl : mediaUrls.get(item.mediaId);
+  }
+
+  function isMediaFile(f) {
+    return !!f && (f.type.startsWith("image/") || f.type.startsWith("video/"));
   }
 
   function resizeToDataURL(file, maxDim) {
@@ -601,126 +1064,659 @@
     });
   }
 
-  function recomputeCanvasHeight() {
-    const minH = window.innerHeight - topbar.offsetHeight;
-    let maxBottom = 0;
-    state.photos.forEach(p => { maxBottom = Math.max(maxBottom, p.y + p.h); });
-    canvasEl.style.height = Math.max(minH, maxBottom + 80) + "px";
+  function videoRatio(url) {
+    return new Promise((resolve, reject) => {
+      const v = document.createElement("video");
+      v.preload = "metadata";
+      v.muted = true;
+      v.onloadedmetadata = () => v.videoWidth ? resolve(v.videoWidth / v.videoHeight) : reject(new Error("no picture"));
+      v.onerror = () => reject(v.error || new Error("unreadable"));
+      v.src = url;
+    });
+  }
+
+  async function storeBlob(file) {
+    const mediaId = newId();
+    try {
+      await putMedia(mediaId, file);
+    } catch (e) {
+      throw new Error("there isn't enough storage space in this browser");
+    }
+    return mediaId;
+  }
+
+  // Photos are shrunk to JPEG as before; GIFs keep their original file so
+  // they stay animated, and videos are kept whole.
+  async function importMedia(file) {
+    if (file.type === "image/gif") {
+      const url = URL.createObjectURL(file);
+      try {
+        const img = await loadImageEl(url);
+        const ratio = img.naturalWidth / img.naturalHeight;
+        const mediaId = await storeBlob(file);
+        mediaUrls.set(mediaId, url);
+        return { type: "gif", mediaId, ratio };
+      } catch (e) {
+        URL.revokeObjectURL(url);
+        throw e instanceof Error ? e : new Error("this GIF couldn't be read");
+      }
+    }
+    if (file.type.startsWith("video/")) {
+      const url = URL.createObjectURL(file);
+      try {
+        let ratio;
+        try { ratio = await videoRatio(url); }
+        catch (e) { throw new Error("this browser can't play that video format"); }
+        const mediaId = await storeBlob(file);
+        mediaUrls.set(mediaId, url);
+        return { type: "video", mediaId, ratio };
+      } catch (e) {
+        URL.revokeObjectURL(url);
+        throw e;
+      }
+    }
+    try {
+      const { dataUrl, ratio } = await resizeToDataURL(file, MAX_DIM);
+      return { type: "image", dataUrl, ratio };
+    } catch (e) {
+      throw new Error("this browser can't open that image format");
+    }
+  }
+
+  // ---- view: world size and zoom ----
+  function updateWorldSize() {
+    const z = state.zoom;
+    let maxR = 0, maxB = 0;
+    state.photos.forEach(p => {
+      maxR = Math.max(maxR, p.x + p.w);
+      maxB = Math.max(maxB, p.y + (p.h || 0));
+    });
+    const ww = Math.max(viewW() / z, maxR);
+    const wh = Math.max(viewH() / z, maxB + 80);
+    world.style.width = ww + "px";
+    world.style.height = wh + "px";
+    world.style.transform = `scale(${z})`;
+    world.style.setProperty("--inv", 1 / z);
+    sizer.style.width = Math.floor(ww * z) + "px";
+    sizer.style.height = Math.floor(wh * z) + "px";
+  }
+
+  function updateZoomUi() {
+    zoomLabel.textContent = Math.round(state.zoom * 100) + "%";
+    zoomOutBtn.disabled = state.zoom <= MIN_VIEW_ZOOM + 1e-6;
+    zoomInBtn.disabled = state.zoom >= MAX_VIEW_ZOOM - 1e-6;
+  }
+
+  // zoom about a point on screen (the middle of the view by default), so
+  // whatever is under it stays put
+  function setViewZoom(next, cx, cy) {
+    if (state.present) return;
+    next = clamp(next, MIN_VIEW_ZOOM, MAX_VIEW_ZOOM);
+    const z0 = state.zoom;
+    if (Math.abs(next - z0) < 1e-4) return;
+    const rect = canvasEl.getBoundingClientRect();
+    const px = cx == null ? canvasEl.clientWidth / 2 : cx - rect.left;
+    const py = cy == null ? canvasEl.clientHeight / 2 : cy - rect.top;
+    const wx = (canvasEl.scrollLeft + px) / z0;
+    const wy = (canvasEl.scrollTop + py) / z0;
+    state.zoom = next;
+    updateWorldSize();
+    canvasEl.scrollLeft = wx * next - px;
+    canvasEl.scrollTop = wy * next - py;
+    updateZoomUi();
+    scheduleSave();
+  }
+
+  function contentBounds() {
+    if (!state.photos.length) return null;
+    return {
+      minX: Math.min(...state.photos.map(p => p.x)),
+      minY: Math.min(...state.photos.map(p => p.y)),
+      maxX: Math.max(...state.photos.map(p => p.x + p.w)),
+      maxY: Math.max(...state.photos.map(p => p.y + (p.h || 0)))
+    };
+  }
+
+  function fitView() {
+    if (state.present) return;
+    const b = contentBounds();
+    if (!b) { setViewZoom(1); return; }
+    const pad = 32;
+    const bw = Math.max(1, b.maxX - b.minX), bh = Math.max(1, b.maxY - b.minY);
+    const z = clamp(Math.min((viewW() - pad * 2) / bw, (viewH() - pad * 2) / bh), MIN_VIEW_ZOOM, MAX_VIEW_ZOOM);
+    state.zoom = z;
+    updateWorldSize();
+    canvasEl.scrollLeft = (b.minX + bw / 2) * z - viewW() / 2;
+    canvasEl.scrollTop = (b.minY + bh / 2) * z - viewH() / 2;
+    updateZoomUi();
+    saveState();
+  }
+
+  function clientToWorld(cx, cy) {
+    const r = world.getBoundingClientRect();
+    return { x: (cx - r.left) / state.zoom, y: (cy - r.top) / state.zoom };
+  }
+
+  zoomInBtn.addEventListener("click", () => setViewZoom(state.zoom * ZOOM_STEP));
+  zoomOutBtn.addEventListener("click", () => setViewZoom(state.zoom / ZOOM_STEP));
+  zoomLabel.addEventListener("click", () => setViewZoom(1));
+  zoomFitBtn.addEventListener("click", fitView);
+
+  // trackpad pinch and ⌘/Ctrl + scroll (Chrome, Firefox, Edge)
+  canvasEl.addEventListener("wheel", (e) => {
+    if (!e.ctrlKey && !e.metaKey) return;
+    e.preventDefault();
+    const d = clamp(e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY, -50, 50);
+    setViewZoom(state.zoom * Math.exp(-d * 0.006), e.clientX, e.clientY);
+  }, { passive: false });
+
+  // two-finger pinch on phones and tablets
+  let pinch = null;
+  const touchDist = (a, b) => Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+  canvasEl.addEventListener("touchstart", (e) => {
+    if (e.touches.length === 2 && !state.present) {
+      pinch = { d: touchDist(e.touches[0], e.touches[1]) || 1, z: state.zoom };
+    }
+  }, { passive: true });
+  canvasEl.addEventListener("touchmove", (e) => {
+    if (!pinch || e.touches.length !== 2) return;
+    e.preventDefault();
+    const [a, b] = e.touches;
+    setViewZoom(pinch.z * touchDist(a, b) / pinch.d, (a.clientX + b.clientX) / 2, (a.clientY + b.clientY) / 2);
+  }, { passive: false });
+  canvasEl.addEventListener("touchend", (e) => { if (e.touches.length < 2) pinch = null; });
+  canvasEl.addEventListener("touchcancel", () => { pinch = null; });
+
+  // Safari's trackpad pinch (on iOS the touch handlers above do the work)
+  let gestureZoom = 1;
+  canvasEl.addEventListener("gesturestart", (e) => { e.preventDefault(); gestureZoom = state.zoom; });
+  canvasEl.addEventListener("gesturechange", (e) => {
+    e.preventDefault();
+    if (!pinch) setViewZoom(gestureZoom * e.scale, e.clientX, e.clientY);
+  });
+
+  // ---- background ----
+  BG_SWATCHES.forEach(c => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "swatch";
+    b.style.background = c;
+    b.dataset.colour = c;
+    b.setAttribute("aria-label", "Background " + c);
+    b.addEventListener("click", () => setBackground(c));
+    bgSwatches.appendChild(b);
+  });
+
+  function setBackground(c) {
+    state.bg = c || null;
+    applyBackground();
+    saveState();
+  }
+
+  function applyBackground() {
+    if (state.bg) canvasEl.style.setProperty("--canvas-bg", state.bg);
+    else canvasEl.style.removeProperty("--canvas-bg");
+    bgDot.style.background = state.bg || "";
+    bgSwatches.querySelectorAll(".swatch").forEach(s => s.classList.toggle("on", s.dataset.colour === state.bg));
+    if (state.bg && /^#[0-9a-f]{6}$/i.test(state.bg)) bgCustom.value = state.bg;
+  }
+
+  bgCustom.addEventListener("input", () => setBackground(bgCustom.value));
+  bgDefault.addEventListener("click", () => setBackground(null));
+  bgBtn.addEventListener("click", () => {
+    const willOpen = bgMenu.hidden;
+    closeMenus();
+    bgMenu.hidden = !willOpen;
+    bgBtn.setAttribute("aria-expanded", String(willOpen));
+  });
+
+  function canvasColour() {
+    return state.bg || getComputedStyle(canvasEl).backgroundColor;
+  }
+
+  function isDarkColour(c) {
+    const ctx = document.createElement("canvas").getContext("2d");
+    ctx.fillStyle = "#ffffff";
+    ctx.fillStyle = c;
+    const v = ctx.fillStyle;
+    let r, g, b;
+    if (v[0] === "#") {
+      r = parseInt(v.slice(1, 3), 16); g = parseInt(v.slice(3, 5), 16); b = parseInt(v.slice(5, 7), 16);
+    } else {
+      [r, g, b] = (v.match(/[\d.]+/g) || [255, 255, 255]).map(Number);
+    }
+    return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255 < 0.5;
   }
 
   // ---- rendering ----
-  function render() {
-    canvasEl.innerHTML = "";
+  function tileButton(cls, label, icon, onClick) {
+    const b = document.createElement("button");
+    b.className = "tile-btn " + cls;
+    b.type = "button";
+    b.setAttribute("aria-label", label);
+    b.title = label;
+    b.innerHTML = icon;
+    b.addEventListener("click", (e) => {
+      e.stopPropagation();
+      onClick(e, b);
+    });
+    return b;
+  }
 
-    state.photos.forEach((photo, i) => {
-      const tile = document.createElement("div");
-      tile.className = "tile " + (photo.locked ? "locked" : "unlocked");
-      tile.style.left = photo.x + "px";
-      tile.style.top = photo.y + "px";
-      tile.style.width = photo.w + "px";
-      tile.style.height = photo.h + "px";
-      tile.style.zIndex = photo.z || 1;
-      tile.dataset.index = i;
-      tile.title = photo.locked
-        ? "Locked — click the lock to edit"
-        : "Drag to move · corner handle to resize · arrows to replace";
+  function toolGroup(side) {
+    const g = document.createElement("div");
+    g.className = "tile-tools " + side;
+    return g;
+  }
 
-      const img = document.createElement("img");
-      img.src = photo.dataUrl;
-      img.alt = "";
-      img.draggable = false;
-      applyPhotoStyle(img, photo);
-      tile.appendChild(img);
+  function baseTile(item, i) {
+    const tile = document.createElement("div");
+    tile.className = `tile ${item.type === "text" ? "text" : "media"} ${item.locked ? "locked" : "unlocked"}`;
+    tile.style.left = item.x + "px";
+    tile.style.top = item.y + "px";
+    tile.style.width = item.w + "px";
+    tile.style.zIndex = item.z || 1;
+    tile.dataset.index = i;
+    tile.dataset.id = item.id;
+    return tile;
+  }
 
-      const lockBtn = document.createElement("button");
-      lockBtn.className = "tile-btn lock-btn";
-      lockBtn.type = "button";
-      lockBtn.setAttribute("aria-label", photo.locked ? "Unlock photo" : "Lock photo");
-      lockBtn.innerHTML = photo.locked ? LOCK_CLOSED_SVG : LOCK_OPEN_SVG;
-      lockBtn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        photo.locked = !photo.locked;
+  function lockButton(item) {
+    return tileButton("lock-btn", item.locked ? "Unlock" : "Lock",
+      item.locked ? LOCK_CLOSED_SVG : LOCK_OPEN_SVG, () => {
+        item.locked = !item.locked;
+        if (item.locked && popItemId === item.id) closeTextPop();
         saveState();
         render();
       });
-      tile.appendChild(lockBtn);
+  }
 
-      // replacing is an edit, so it follows the same rule as dragging and resizing
-      if (!photo.locked) {
-        const replaceBtn = document.createElement("button");
-        replaceBtn.className = "tile-btn replace-btn";
-        replaceBtn.type = "button";
-        replaceBtn.setAttribute("aria-label", "Replace photo");
-        replaceBtn.innerHTML = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h14"/><path d="M14 5l3 3-3 3"/><path d="M21 16H7"/><path d="M10 13l-3 3 3 3"/></svg>';
-        replaceBtn.addEventListener("click", (e) => {
-          e.stopPropagation();
-          replaceIndex = i;
-          replaceInput.click();
+  function removeButton(i) {
+    return tileButton("remove", "Remove", "×", () => removeItemAt(i));
+  }
+
+  function mediaElementFor(item) {
+    const src = mediaSrc(item);
+    if (!src) {
+      const ph = document.createElement("div");
+      ph.className = "media missing";
+      if (mediaReady) ph.textContent = "This file isn't saved in this browser";
+      return ph;
+    }
+    let el = mediaEls.get(item.id);
+    if (el && el._src === src) return el;
+    if (item.type === "video") {
+      el = document.createElement("video");
+      el.muted = true;
+      el.loop = true;
+      el.autoplay = true;
+      el.playsInline = true;
+      el.setAttribute("muted", "");
+      el.setAttribute("playsinline", "");
+      el.preload = "auto";
+    } else {
+      el = document.createElement("img");
+      el.alt = "";
+      el.draggable = false;
+    }
+    el.className = "media";
+    el.src = src;
+    el._src = src;
+    mediaEls.set(item.id, el);
+    return el;
+  }
+
+  function buildMediaTile(item, i) {
+    const tile = baseTile(item, i);
+    tile.style.height = item.h + "px";
+    if (!state.present) {
+      tile.title = item.locked
+        ? "Locked — click the lock to edit"
+        : "Drag to move · corner handle to resize · arrows to replace";
+    }
+
+    const clip = document.createElement("div");
+    clip.className = "media-clip";
+    const media = mediaElementFor(item);
+    applyPhotoStyle(media, item);
+    clip.appendChild(media);
+    tile.appendChild(clip);
+
+    const left = toolGroup("left");
+    left.appendChild(lockButton(item));
+    // replacing is an edit, so it follows the same rule as dragging and resizing
+    if (!item.locked) {
+      left.appendChild(tileButton("replace-btn", "Replace", REPLACE_SVG, () => {
+        replaceIndex = i;
+        replaceInput.click();
+      }));
+      left.appendChild(tileButton("crop-btn", "Crop", CROP_SVG, () => openCropModal(i)));
+    }
+    const right = toolGroup("right");
+    right.appendChild(removeButton(i));
+    tile.append(left, right);
+
+    if (item.type === "video" && media.tagName === "VIDEO") {
+      const sound = tileButton("sound-btn", media.muted ? "Sound on" : "Sound off",
+        media.muted ? SOUND_OFF_SVG : SOUND_ON_SVG, (e, b) => {
+          media.muted = !media.muted;
+          if (!media.muted) media.play().catch(() => {});
+          b.innerHTML = media.muted ? SOUND_OFF_SVG : SOUND_ON_SVG;
+          b.setAttribute("aria-label", media.muted ? "Sound on" : "Sound off");
+          b.title = b.getAttribute("aria-label");
         });
-        tile.appendChild(replaceBtn);
+      tile.appendChild(sound);
+    }
 
-        const cropBtn = document.createElement("button");
-        cropBtn.className = "tile-btn crop-btn";
-        cropBtn.type = "button";
-        cropBtn.setAttribute("aria-label", "Crop photo");
-        cropBtn.innerHTML = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2v14a2 2 0 0 0 2 2h14"/><path d="M18 22V8a2 2 0 0 0-2-2H2"/></svg>';
-        cropBtn.addEventListener("click", (e) => {
-          e.stopPropagation();
-          openCropModal(i);
-        });
-        tile.appendChild(cropBtn);
-      }
+    if (!item.locked) {
+      const handle = document.createElement("div");
+      handle.className = "resize-handle";
+      tile.appendChild(handle);
+      wireResize(handle, i);
+    }
 
-      const removeBtn = document.createElement("button");
-      removeBtn.className = "tile-btn remove";
-      removeBtn.type = "button";
-      removeBtn.setAttribute("aria-label", "Remove photo");
-      removeBtn.textContent = "×";
-      removeBtn.addEventListener("click", (e) => {
+    wireDragMove(tile, i);
+    wireFileReplace(tile, i);
+    return tile;
+  }
+
+  function applyTextStyle(body, t) {
+    body.style.fontFamily = FONTS[t.font] || FONTS.sans;
+    body.style.fontSize = (t.size || 32) + "px";
+    body.style.fontWeight = t.weight || 400;
+    body.style.color = t.color || "#000000";
+    body.style.textAlign = t.align || "left";
+  }
+
+  function buildTextTile(item, i) {
+    const tile = baseTile(item, i);
+    if (!state.present) {
+      tile.title = item.locked
+        ? "Locked — click the lock to edit"
+        : "Double-click to edit · drag to move · corner handle sets the width";
+    }
+
+    const body = document.createElement("div");
+    body.className = "text-body";
+    body.textContent = item.text || "";
+    applyTextStyle(body, item);
+    body.addEventListener("input", () => {
+      item.text = body.innerText;
+      item.h = tile.offsetHeight;
+      updateWorldSize();
+      scheduleSave();
+    });
+    body.addEventListener("blur", finishTextEdit);
+    body.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" || (e.key === "Enter" && (e.metaKey || e.ctrlKey))) {
+        e.preventDefault();
         e.stopPropagation();
+        body.blur();
+      }
+    });
+    tile.appendChild(body);
+
+    const left = toolGroup("left");
+    left.appendChild(lockButton(item));
+    if (!item.locked) {
+      left.appendChild(tileButton("edit-btn", "Edit text", EDIT_SVG, () => startTextEdit(tile, item)));
+      left.appendChild(tileButton("style-btn", "Text style", STYLE_SVG, (e, b) => {
+        if (popItemId === item.id && !textPop.hidden) closeTextPop();
+        else openTextPop(item, b);
+      }));
+    }
+    const right = toolGroup("right");
+    right.appendChild(removeButton(i));
+    tile.append(left, right);
+
+    if (!item.locked) {
+      const handle = document.createElement("div");
+      handle.className = "resize-handle";
+      tile.appendChild(handle);
+      wireResize(handle, i);
+    }
+
+    tile.addEventListener("dblclick", (e) => {
+      if (isLocked(item) || e.target.closest(".tile-tools")) return;
+      startTextEdit(tile, item, { x: e.clientX, y: e.clientY });
+    });
+    wireDragMove(tile, i);
+    return tile;
+  }
+
+  function render() {
+    if (editing) finishTextEdit();
+    world.innerHTML = "";
+    const ids = new Set();
+
+    state.photos.forEach((item, i) => {
+      ids.add(item.id);
+      world.appendChild(item.type === "text" ? buildTextTile(item, i) : buildMediaTile(item, i));
+    });
+
+    // re-attached videos carry on; make sure nothing got left paused
+    mediaEls.forEach((el, id) => {
+      if (!ids.has(id)) mediaEls.delete(id);
+      else if (el.tagName === "VIDEO" && el.paused) el.play().catch(() => {});
+    });
+
+    // text boxes size themselves; remember their height for bounds and export
+    world.querySelectorAll(".tile.text").forEach(tile => {
+      const item = findItem(tile.dataset.id);
+      if (item) item.h = tile.offsetHeight;
+    });
+
+    if (popItemId && !findItem(popItemId)) closeTextPop();
+    brandCount.textContent = state.photos.length;
+    emptyState.hidden = state.photos.length > 0;
+    updateWorldSize();
+    updateZoomUi();
+  }
+
+  function removeItemAt(index) {
+    const [item] = state.photos.splice(index, 1);
+    if (item) forgetMedia(item);
+    saveState();
+    render();
+  }
+
+  // ---- text editing ----
+  let editing = null;   // { item, tile, body }
+
+  function caretRangeAt(x, y) {
+    if (document.caretPositionFromPoint) {
+      const p = document.caretPositionFromPoint(x, y);
+      if (p) {
+        const r = document.createRange();
+        r.setStart(p.offsetNode, p.offset);
+        r.collapse(true);
+        return r;
+      }
+    }
+    if (document.caretRangeFromPoint) return document.caretRangeFromPoint(x, y);
+    return null;
+  }
+
+  function startTextEdit(tile, item, opts = {}) {
+    if (isLocked(item)) return;
+    if (editing && editing.item !== item) finishTextEdit();
+    if (editing) return;
+    const body = tile.querySelector(".text-body");
+    try { body.contentEditable = "plaintext-only"; } catch (e) {}
+    if (body.contentEditable !== "plaintext-only") body.contentEditable = "true";
+    body.spellcheck = true;
+    tile.classList.add("editing");
+    editing = { item, tile, body };
+    body.focus({ preventScroll: true });
+
+    let range = opts.x != null ? caretRangeAt(opts.x, opts.y) : null;
+    if (!range || !body.contains(range.startContainer)) {
+      range = document.createRange();
+      range.selectNodeContents(body);
+      if (!opts.selectAll) range.collapse(false);
+    }
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+  }
+
+  function finishTextEdit() {
+    if (!editing) return;
+    const { item, tile, body } = editing;
+    editing = null;
+    item.text = body.innerText.replace(/\s+$/, "");
+    body.contentEditable = "false";
+    tile.classList.remove("editing");
+    window.getSelection()?.removeAllRanges();
+    if (!item.text.trim()) {
+      // an empty box isn't worth keeping
+      const i = state.photos.indexOf(item);
+      if (i >= 0) {
         state.photos.splice(i, 1);
         saveState();
         render();
-      });
-      tile.appendChild(removeBtn);
-
-      if (!photo.locked) {
-        const handle = document.createElement("div");
-        handle.className = "resize-handle";
-        tile.appendChild(handle);
-        wireResize(handle, i);
       }
-
-      wireDragMove(tile, i);
-      wireFileReplace(tile, i);
-      canvasEl.appendChild(tile);
-    });
-
-    brandCount.textContent = state.photos.length;
-    emptyState.style.display = state.photos.length ? "none" : "flex";
-    canvasEl.style.display = state.photos.length ? "block" : "none";
-    recomputeCanvasHeight();
+      return;
+    }
+    body.textContent = item.text;
+    item.h = tile.offsetHeight;
+    updateWorldSize();
+    saveState();
   }
 
+  function addText() {
+    if (state.present) return;
+    const z = state.zoom;
+    const visW = viewW() / z, visH = viewH() / z;
+    const size = 32;
+    const w = Math.round(clamp(visW - 48, 120, 360));
+    const x = clamp(canvasEl.scrollLeft / z + (visW - w) / 2, 0, Math.max(0, placeLimitW() - w));
+    const y = Math.max(0, canvasEl.scrollTop / z + visH / 2 - size);
+    const item = {
+      id: newId(), type: "text", text: "",
+      x, y, w, h: size * TEXT_LINE + TEXT_PAD_Y * 2,
+      size, font: "sans", weight: 700, align: "left",
+      color: isDarkColour(canvasColour()) ? "#ffffff" : "#000000",
+      locked: false, z: nextZ()
+    };
+    state.photos.push(item);
+    render();
+    startTextEdit(tileFor(item.id), item, { selectAll: true });
+  }
+
+  // a click anywhere outside the box being typed in finishes it — even if it
+  // never got keyboard focus, so blur alone can't be relied on
+  document.addEventListener("pointerdown", (e) => {
+    if (editing && !editing.tile.contains(e.target) && !textPop.contains(e.target)) finishTextEdit();
+  }, true);
+
+  addTextBtn.addEventListener("click", addText);
+  emptyTextBtn.addEventListener("click", addText);
+
+  // ---- text style popover ----
+  let popItemId = null;
+
+  TEXT_SWATCHES.forEach(c => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "swatch";
+    b.style.background = c;
+    b.dataset.colour = c;
+    b.setAttribute("aria-label", "Text colour " + c);
+    b.addEventListener("click", () => updatePopItem({ color: c }));
+    popSwatches.appendChild(b);
+  });
+
+  function syncPop(item) {
+    textPop.querySelectorAll(".seg").forEach(seg => {
+      const v = String(item[seg.dataset.key] ?? "");
+      seg.querySelectorAll("button").forEach(b => b.classList.toggle("on", b.dataset.v === v));
+    });
+    popSize.value = item.size;
+    popSizeValue.textContent = Math.round(item.size);
+    popSwatches.querySelectorAll(".swatch").forEach(s => s.classList.toggle("on", s.dataset.colour === item.color));
+    if (/^#[0-9a-f]{6}$/i.test(item.color || "")) popColor.value = item.color;
+  }
+
+  function openTextPop(item, anchor) {
+    popItemId = item.id;
+    syncPop(item);
+    textPop.hidden = false;
+    // the style button sits above the box, so open upwards and keep the words in view;
+    // no room up there → just under the box
+    const r = anchor.getBoundingClientRect();
+    const box = (tileFor(item.id) || anchor).getBoundingClientRect();
+    const pw = textPop.offsetWidth, ph = textPop.offsetHeight;
+    const left = clamp(r.left, 8, window.innerWidth - pw - 8);
+    let top = r.top - ph - 8;
+    if (top < 8) top = box.bottom + 8;
+    top = clamp(top, 8, Math.max(8, window.innerHeight - ph - 8));
+    textPop.style.left = left + "px";
+    textPop.style.top = top + "px";
+  }
+
+  function closeTextPop() {
+    textPop.hidden = true;
+    popItemId = null;
+  }
+
+  function updatePopItem(changes) {
+    const item = findItem(popItemId);
+    if (!item) { closeTextPop(); return; }
+    Object.assign(item, changes);
+    const tile = tileFor(item.id);
+    if (tile) {
+      applyTextStyle(tile.querySelector(".text-body"), item);
+      item.h = tile.offsetHeight;
+    }
+    updateWorldSize();
+    syncPop(item);
+    scheduleSave();
+  }
+
+  textPop.querySelectorAll(".seg").forEach(seg => {
+    seg.addEventListener("click", (e) => {
+      const b = e.target.closest("button[data-v]");
+      if (!b) return;
+      const key = seg.dataset.key;
+      updatePopItem({ [key]: key === "weight" ? Number(b.dataset.v) : b.dataset.v });
+    });
+  });
+  popSize.addEventListener("input", () => updatePopItem({ size: Number(popSize.value) }));
+  popColor.addEventListener("input", () => updatePopItem({ color: popColor.value }));
+
+  document.addEventListener("pointerdown", (e) => {
+    if (!textPop.hidden && !textPop.contains(e.target) && !e.target.closest(".style-btn")) closeTextPop();
+  });
+
+  // ---- replace ----
   let replaceIndex = null;
 
   function isFileDrag(e) {
     return !!e.dataTransfer && Array.from(e.dataTransfer.types || []).includes("Files");
   }
 
-  // Swap the image but keep the placement: same corner, same width, height
-  // re-derived so the new photo keeps its own proportions instead of stretching.
-  async function replacePhotoAt(index, file) {
-    const photo = state.photos[index];
-    if (!photo || !file || !file.type.startsWith("image/")) return;
-    const { dataUrl, ratio } = await resizeToDataURL(file, MAX_DIM);
-    if (!state.photos[index]) return;
-    photo.dataUrl = dataUrl;
-    photo.ratio = ratio;
-    photo.h = photo.w / ratio;
-    photo.focusX = 50;      // the crop starts fresh for the new photo
-    photo.focusY = 50;
-    photo.zoom = 1;
+  function addFailed(file, e) {
+    alert(`Couldn't add "${file.name}" — ${(e && e.message) || "this file isn't supported"}.`);
+  }
+
+  // Swap the media but keep the placement: same corner, same width, height
+  // re-derived so the new file keeps its own proportions instead of stretching.
+  async function replaceMediaAt(index, file) {
+    const item = state.photos[index];
+    if (!item || item.type === "text" || !isMediaFile(file)) return;
+    let media;
+    try { media = await importMedia(file); }
+    catch (e) { addFailed(file, e); return; }
+    if (state.photos[index] !== item) { forgetMedia(media); return; }
+    forgetMedia(item);
+    delete item.dataUrl;
+    delete item.mediaId;
+    Object.assign(item, media);
+    item.h = item.w / item.ratio;
+    item.focusX = 50;      // the crop starts fresh for the new file
+    item.focusY = 50;
+    item.zoom = 1;
     saveState();
     render();
   }
@@ -731,120 +1727,150 @@
     replaceInput.value = "";
     replaceIndex = null;
     if (index === null) return;
-    await replacePhotoAt(index, file);
+    await replaceMediaAt(index, file);
   });
 
   function wireFileReplace(tile, index) {
+    const locked = () => { const it = state.photos[index]; return !it || isLocked(it); };
     tile.addEventListener("dragover", (e) => {
       // locked photos stay put; the drop falls through and lands as a new one
-      if (!isFileDrag(e) || state.photos[index]?.locked) return;
+      if (!isFileDrag(e) || locked()) return;
       e.preventDefault();
       e.stopPropagation();
       tile.classList.add("replace-target");
     });
     tile.addEventListener("dragleave", () => tile.classList.remove("replace-target"));
     tile.addEventListener("drop", async (e) => {
-      if (!isFileDrag(e) || state.photos[index]?.locked) return;
+      if (!isFileDrag(e) || locked()) return;
       e.preventDefault();
       e.stopPropagation();
       tile.classList.remove("replace-target");
       dragCounter = 0;
       document.body.classList.remove("drag-over");
-      const files = Array.from(e.dataTransfer.files || []).filter(f => f.type.startsWith("image/"));
+      const files = Array.from(e.dataTransfer.files || []).filter(isMediaFile);
       if (!files.length) return;
-      await replacePhotoAt(index, files[0]);
+      await replaceMediaAt(index, files[0]);
     });
   }
 
+  // ---- move and resize ----
   function wireDragMove(tile, index) {
     tile.addEventListener("pointerdown", (e) => {
-      if (e.target.closest(".tile-btn") || e.target.closest(".resize-handle")) return;
-      const photo = state.photos[index];
-      photo.z = nextZ();
-      tile.style.zIndex = photo.z;
-      saveState();
-      if (photo.locked) return;
+      if (e.target.closest(".tile-tools") || e.target.closest(".resize-handle") || e.target.closest(".sound-btn")) return;
+      const item = state.photos[index];
+      if (!item || state.present) return;
+      if (editing) {
+        if (editing.tile === tile) return;   // clicks inside the box being typed in place the caret
+        finishTextEdit();
+      }
+      item.z = nextZ();
+      tile.style.zIndex = item.z;
+      scheduleSave();
+      if (item.locked) return;
 
       e.preventDefault();
       tile.setPointerCapture(e.pointerId);
       tile.classList.add("dragging-active");
       const startX = e.clientX, startY = e.clientY;
-      const origX = photo.x, origY = photo.y;
+      const origX = item.x, origY = item.y;
+      const z = state.zoom;
 
       function onMove(ev) {
-        const dx = ev.clientX - startX, dy = ev.clientY - startY;
-        const maxX = Math.max(0, getCanvasWidth() - photo.w);
-        photo.x = clamp(origX + dx, 0, maxX);
-        photo.y = Math.max(0, origY + dy);
-        tile.style.left = photo.x + "px";
-        tile.style.top = photo.y + "px";
-        recomputeCanvasHeight();
+        if (pinch) return;
+        const dx = (ev.clientX - startX) / z, dy = (ev.clientY - startY) / z;
+        const maxX = Math.max(0, placeLimitW() - item.w);
+        item.x = clamp(origX + dx, 0, maxX);
+        item.y = Math.max(0, origY + dy);
+        tile.style.left = item.x + "px";
+        tile.style.top = item.y + "px";
+        updateWorldSize();
       }
       function onUp(ev) {
-        tile.releasePointerCapture(ev.pointerId);
+        if (tile.hasPointerCapture(ev.pointerId)) tile.releasePointerCapture(ev.pointerId);
         tile.removeEventListener("pointermove", onMove);
         tile.removeEventListener("pointerup", onUp);
+        tile.removeEventListener("pointercancel", onUp);
         tile.classList.remove("dragging-active");
         saveState();
-        recomputeCanvasHeight();
+        updateWorldSize();
       }
       tile.addEventListener("pointermove", onMove);
       tile.addEventListener("pointerup", onUp);
+      tile.addEventListener("pointercancel", onUp);
     });
   }
 
+  // photos keep their proportions; text boxes only change width and grow to fit
   function wireResize(handle, index) {
     handle.addEventListener("pointerdown", (e) => {
       e.preventDefault();
       e.stopPropagation();
-      const photo = state.photos[index];
+      const item = state.photos[index];
+      if (!item || isLocked(item)) return;
       const tile = handle.parentElement;
+      const isText = item.type === "text";
+      const minW = isText ? MIN_TEXT_W : MIN_W;
       handle.setPointerCapture(e.pointerId);
       const startX = e.clientX;
-      const origW = photo.w;
+      const origW = item.w;
+      const z = state.zoom;
 
       function onMove(ev) {
-        const dx = ev.clientX - startX;
-        const maxW = Math.max(MIN_W, getCanvasWidth() - photo.x);
-        const newW = clamp(origW + dx, MIN_W, maxW);
-        photo.w = newW;
-        photo.h = newW / photo.ratio;
-        tile.style.width = photo.w + "px";
-        tile.style.height = photo.h + "px";
-        recomputeCanvasHeight();
+        const dx = (ev.clientX - startX) / z;
+        const maxW = Math.max(minW, placeLimitW() - item.x);
+        item.w = clamp(origW + dx, minW, maxW);
+        tile.style.width = item.w + "px";
+        if (isText) {
+          item.h = tile.offsetHeight;
+        } else {
+          item.h = item.w / item.ratio;
+          tile.style.height = item.h + "px";
+        }
+        updateWorldSize();
       }
       function onUp(ev) {
-        handle.releasePointerCapture(ev.pointerId);
+        if (handle.hasPointerCapture(ev.pointerId)) handle.releasePointerCapture(ev.pointerId);
         handle.removeEventListener("pointermove", onMove);
         handle.removeEventListener("pointerup", onUp);
+        handle.removeEventListener("pointercancel", onUp);
         saveState();
-        recomputeCanvasHeight();
+        updateWorldSize();
       }
       handle.addEventListener("pointermove", onMove);
       handle.addEventListener("pointerup", onUp);
+      handle.addEventListener("pointercancel", onUp);
     });
   }
 
+  // ---- adding media ----
   async function handleFiles(fileList, dropPoint) {
-    const files = Array.from(fileList).filter(f => f.type.startsWith("image/"));
-    let cascade = 0;
+    if (state.present) return;
+    const files = Array.from(fileList).filter(isMediaFile);
+    const z = state.zoom;
+    const originX = canvasEl.scrollLeft / z, originY = canvasEl.scrollTop / z;
+    let cascade = 0, added = 0;
     for (const file of files) {
-      const { dataUrl, ratio } = await resizeToDataURL(file, MAX_DIM);
-      const w = Math.min(DEFAULT_W, Math.max(MIN_W, getCanvasWidth() - 48));
-      const h = w / ratio;
+      let media;
+      try { media = await importMedia(file); }
+      catch (e) { addFailed(file, e); continue; }
+      const w = Math.min(DEFAULT_W, Math.max(MIN_W, viewW() / z - 48));
+      const h = w / media.ratio;
       let x, y;
       if (dropPoint) {
         x = dropPoint.x - w / 2 + cascade * 22;
         y = dropPoint.y - h / 2 + cascade * 22;
       } else {
-        x = 24 + ((state.photos.length + cascade) % 6) * 28;
-        y = 24 + ((state.photos.length + cascade) % 6) * 28;
+        // new things land in the part of the canvas you're looking at
+        x = originX + 24 + ((state.photos.length + cascade) % 6) * 28;
+        y = originY + 24 + ((state.photos.length + cascade) % 6) * 28;
       }
-      x = clamp(x, 0, Math.max(0, getCanvasWidth() - w));
+      x = clamp(x, 0, Math.max(0, placeLimitW() - w));
       y = Math.max(0, y);
-      state.photos.push({ dataUrl, ratio, x, y, w, h, locked: false, z: nextZ(), focusX: 50, focusY: 50, zoom: 1 });
+      state.photos.push({ id: newId(), ...media, x, y, w, h, locked: false, z: nextZ(), focusX: 50, focusY: 50, zoom: 1 });
       cascade++;
+      added++;
     }
+    if (!added) return;
     saveState();
     render();
   }
@@ -856,11 +1882,12 @@
     photoInput.value = "";
   });
 
-  // whole-page drop zone — places new photos at the drop point
+  // whole-page drop zone — places new media at the drop point
   let dragCounter = 0;
   document.addEventListener("dragenter", (e) => {
     if (!e.dataTransfer.types.includes("Files")) return;
     e.preventDefault();
+    if (state.present) return;
     dragCounter++;
     document.body.classList.add("drag-over");
   });
@@ -877,22 +1904,85 @@
     e.preventDefault();
     dragCounter = 0;
     document.body.classList.remove("drag-over");
+    if (state.present) return;
     if (e.dataTransfer.files && e.dataTransfer.files.length) {
-      const rect = canvasEl.getBoundingClientRect();
-      const point = { x: e.clientX - rect.left, y: e.clientY - rect.top };
-      handleFiles(e.dataTransfer.files, point);
+      handleFiles(e.dataTransfer.files, clientToWorld(e.clientX, e.clientY));
     }
   });
 
   clearBtn.addEventListener("click", () => {
     if (!state.photos.length) return;
-    if (!confirm("Remove all photos from this canvas?")) return;
+    if (!confirm("Remove everything from this canvas?")) return;
     state.photos = [];
+    mediaUrls.forEach(url => URL.revokeObjectURL(url));
+    mediaUrls.clear();
+    mediaEls.clear();
+    clearMedia();
+    closeTextPop();
     saveState();
     render();
   });
 
-  window.addEventListener("resize", () => recomputeCanvasHeight());
+  window.addEventListener("resize", () => updateWorldSize());
+
+  // ---- lock & present ----
+  // Presenting locks everything without touching each item's own lock, so
+  // leaving puts things back exactly as they were.
+  let fullscreenByUs = false;
+  const fullscreenEl = () => document.fullscreenElement || document.webkitFullscreenElement;
+
+  function enterPresent() {
+    if (editing) finishTextEdit();
+    closeTextPop();
+    closeMenus();
+    state.present = true;
+    saveState();
+    applyPresent();
+    const el = document.documentElement;
+    const req = el.requestFullscreen || el.webkitRequestFullscreen;
+    if (req && !fullscreenEl()) {
+      try {
+        fullscreenByUs = true;
+        const p = req.call(el);
+        if (p && p.catch) p.catch(() => { fullscreenByUs = false; });
+      } catch (e) {
+        fullscreenByUs = false;
+      }
+    }
+  }
+
+  function exitPresent() {
+    state.present = false;
+    saveState();
+    applyPresent();
+    if (fullscreenEl() && fullscreenByUs) {
+      const exit = document.exitFullscreen || document.webkitExitFullscreen;
+      try {
+        const p = exit.call(document);
+        if (p && p.catch) p.catch(() => {});
+      } catch (e) {}
+    }
+    fullscreenByUs = false;
+  }
+
+  function applyPresent() {
+    document.body.classList.toggle("presenting", !!state.present);
+    render();
+  }
+
+  // Esc out of full screen ends the presentation too
+  function onFullscreenChange() {
+    if (!fullscreenEl() && fullscreenByUs) {
+      fullscreenByUs = false;
+      if (state.present) exitPresent();
+    }
+    updateWorldSize();
+  }
+  document.addEventListener("fullscreenchange", onFullscreenChange);
+  document.addEventListener("webkitfullscreenchange", onFullscreenChange);
+
+  presentBtn.addEventListener("click", enterPresent);
+  presentExit.addEventListener("click", exitPresent);
 
   // ---- crop modal ----
   let cropIndex = null;
@@ -901,14 +1991,31 @@
   let cropDragging = false;
   let grabOffset = { x: 0, y: 0 };
 
+  // the crop window for a video is picked on a still of its current frame
+  function videoFrame(v) {
+    if (!v || v.tagName !== "VIDEO" || v.readyState < 2 || !v.videoWidth) return null;
+    const c = document.createElement("canvas");
+    const s = Math.min(1, MAX_DIM / Math.max(v.videoWidth, v.videoHeight));
+    c.width = Math.round(v.videoWidth * s);
+    c.height = Math.round(v.videoHeight * s);
+    c.getContext("2d").drawImage(v, 0, 0, c.width, c.height);
+    return c.toDataURL("image/jpeg", 0.85);
+  }
+
   function openCropModal(index) {
     const photo = state.photos[index];
-    if (!photo) return;
+    if (!photo || photo.type === "text") return;
+    let src = mediaSrc(photo);
+    if (photo.type === "video") {
+      src = videoFrame(mediaEls.get(photo.id));
+      if (!src) { alert("The video is still loading — try again in a moment."); return; }
+    }
+    if (!src) return;
     cropIndex = index;
     cropFocus = { x: photo.focusX ?? 50, y: photo.focusY ?? 50 };
     cropZoom = photo.zoom ?? 1;
-    cropImg.src = photo.dataUrl;
-    cropPreviewImg.src = photo.dataUrl;
+    cropImg.src = src;
+    cropPreviewImg.src = src;
     cropPreview.style.aspectRatio = String(photo.ratio || 1);   // preview mirrors the frame
     // the stage has no layout box while the modal is hidden — show it, then measure
     cropBackdrop.hidden = false;
@@ -1028,9 +2135,6 @@
   });
   cropClose.addEventListener("click", closeCropModal);
   cropBackdrop.addEventListener("click", (e) => { if (e.target === cropBackdrop) closeCropModal(); });
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && !cropBackdrop.hidden) closeCropModal();
-  });
   cropSave.addEventListener("click", () => {
     if (cropIndex === null) return;
     const photo = state.photos[cropIndex];
@@ -1042,9 +2146,17 @@
     closeCropModal();
   });
 
-  // ---- export ----
+  // ---- menus and keys ----
+  function closeMenus() {
+    exportMenu.hidden = true;
+    exportBtn.setAttribute("aria-expanded", "false");
+    bgMenu.hidden = true;
+    bgBtn.setAttribute("aria-expanded", "false");
+  }
+
   exportBtn.addEventListener("click", () => {
     const willOpen = exportMenu.hidden;
+    closeMenus();
     exportMenu.hidden = !willOpen;
     exportBtn.setAttribute("aria-expanded", String(willOpen));
   });
@@ -1053,15 +2165,35 @@
       exportMenu.hidden = true;
       exportBtn.setAttribute("aria-expanded", "false");
     }
+    if (!bgDropdown.contains(e.target)) {
+      bgMenu.hidden = true;
+      bgBtn.setAttribute("aria-expanded", "false");
+    }
   });
   exportMenu.querySelectorAll("button[data-format]").forEach(btn => {
     btn.addEventListener("click", () => {
-      exportMenu.hidden = true;
-      exportBtn.setAttribute("aria-expanded", "false");
+      closeMenus();
       exportCanvas(btn.dataset.format);
     });
   });
 
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      if (!cropBackdrop.hidden) closeCropModal();
+      else if (!textPop.hidden) closeTextPop();
+      else if (!bgMenu.hidden || !exportMenu.hidden) closeMenus();
+      else if (state.present) exitPresent();
+      return;
+    }
+    if (editing || e.target.closest?.("input, textarea, [contenteditable='true'], [contenteditable='plaintext-only']")) return;
+    if ((e.metaKey || e.ctrlKey) && !e.altKey) {
+      if (e.key === "=" || e.key === "+") { e.preventDefault(); setViewZoom(state.zoom * ZOOM_STEP); }
+      else if (e.key === "-" || e.key === "_") { e.preventDefault(); setViewZoom(state.zoom / ZOOM_STEP); }
+      else if (e.key === "0") { e.preventDefault(); setViewZoom(1); }
+    }
+  });
+
+  // ---- export ----
   function loadImageEl(src) {
     return new Promise((resolve, reject) => {
       const img = new Image();
@@ -1071,35 +2203,81 @@
     });
   }
 
+  // what to draw for each item: photos and GIFs (first frame) from their
+  // file, videos from the frame showing right now
+  function drawableFor(item) {
+    if (item.type === "text") return Promise.resolve(null);
+    if (item.type === "video") {
+      const v = mediaEls.get(item.id);
+      const ok = v && v.tagName === "VIDEO" && v.readyState >= 2 && v.videoWidth;
+      return Promise.resolve(ok ? { el: v, iw: v.videoWidth, ih: v.videoHeight } : null);
+    }
+    const src = mediaSrc(item);
+    if (!src) return Promise.resolve(null);
+    return loadImageEl(src).then(img => ({ el: img, iw: img.naturalWidth, ih: img.naturalHeight }));
+  }
+
+  // same wrapping as the box on screen: pre-wrap, long words break anywhere
+  function wrapText(ctx, text, maxW) {
+    const lines = [];
+    const fits = s => ctx.measureText(s).width <= maxW;
+    text.split("\n").forEach(para => {
+      let line = "";
+      para.split(/(\s+)/).filter(Boolean).forEach(tok => {
+        if (/^\s+$/.test(tok) || fits(line + tok)) { line += tok; return; }
+        if (line.trim()) { lines.push(line.trimEnd()); line = ""; }
+        for (const ch of tok) {
+          if (line && !fits(line + ch)) { lines.push(line); line = ""; }
+          line += ch;
+        }
+      });
+      lines.push(line.trimEnd());
+    });
+    return lines;
+  }
+
+  function drawText(ctx, t, x, y) {
+    const size = t.size || 32;
+    ctx.save();
+    ctx.font = `${t.weight || 400} ${size}px ${FONTS[t.font] || FONTS.sans}`;
+    ctx.fillStyle = t.color || "#000000";
+    ctx.textBaseline = "middle";
+    const align = t.align || "left";
+    ctx.textAlign = align;
+    const lines = wrapText(ctx, (t.text || "").replace(/\n+$/, ""), Math.max(1, t.w - TEXT_PAD_X * 2));
+    const lh = size * TEXT_LINE;
+    const ax = align === "center" ? x + t.w / 2 : align === "right" ? x + t.w - TEXT_PAD_X : x + TEXT_PAD_X;
+    lines.forEach((line, n) => ctx.fillText(line, ax, y + TEXT_PAD_Y + lh * n + lh / 2));
+    ctx.restore();
+  }
+
   async function composeCanvasSnapshot() {
     const pad = 24;
-    const minX = Math.min(...state.photos.map(p => p.x));
-    const minY = Math.min(...state.photos.map(p => p.y));
-    const maxX = Math.max(...state.photos.map(p => p.x + p.w));
-    const maxY = Math.max(...state.photos.map(p => p.y + p.h));
-    const width = Math.round(maxX - minX + pad * 2);
-    const height = Math.round(maxY - minY + pad * 2);
+    const b = contentBounds();
+    const width = Math.round(b.maxX - b.minX + pad * 2);
+    const height = Math.round(b.maxY - b.minY + pad * 2);
 
     const canvas = document.createElement("canvas");
     canvas.width = width;
     canvas.height = height;
     const ctx = canvas.getContext("2d");
-    ctx.fillStyle = "#ffffff";
+    ctx.fillStyle = state.bg || "#ffffff";
     ctx.fillRect(0, 0, width, height);
 
-    const ordered = state.photos.map((p, i) => ({ ...p, origIndex: i })).sort((a, b) => (a.z || 0) - (b.z || 0));
-    const images = await Promise.all(ordered.map(p => loadImageEl(p.dataUrl)));
-    ordered.forEach((photo, i) => {
-      const x = photo.x - minX + pad;
-      const y = photo.y - minY + pad;
-      const img = images[i];
-      const iw = img.naturalWidth, ih = img.naturalHeight;
+    const ordered = state.photos.slice().sort((a, b) => (a.z || 0) - (b.z || 0));
+    const sources = await Promise.all(ordered.map(p => drawableFor(p).catch(() => null)));
+    ordered.forEach((item, i) => {
+      const x = item.x - b.minX + pad;
+      const y = item.y - b.minY + pad;
+      if (item.type === "text") { drawText(ctx, item, x, y); return; }
+      const src = sources[i];
+      if (!src) return;
 
       // same window the frame shows on screen: the photo shrunk by zoom, placed by focus
-      const { sw, sh } = cropWindow(iw, ih, photo.zoom ?? 1);
-      const sx = (iw - sw) * ((photo.focusX ?? 50) / 100);
-      const sy = (ih - sh) * ((photo.focusY ?? 50) / 100);
-      ctx.drawImage(img, sx, sy, sw, sh, x, y, photo.w, photo.h);
+      const { sw, sh } = cropWindow(src.iw, src.ih, item.zoom ?? 1);
+      const sx = (src.iw - sw) * ((item.focusX ?? 50) / 100);
+      const sy = (src.ih - sh) * ((item.focusY ?? 50) / 100);
+      ctx.drawImage(src.el, sx, sy, sw, sh, x, y, item.w, item.h);
     });
 
     return canvas;
@@ -1153,8 +2331,9 @@
   }
 
   async function exportCanvas(format) {
+    if (editing) finishTextEdit();
     if (!state.photos.length) {
-      alert("Add a few photos before exporting.");
+      alert("Add something to the canvas before exporting.");
       return;
     }
     const canvas = await composeCanvasSnapshot();
@@ -1173,6 +2352,12 @@
     }
   }
 
+  // ---- start ----
+  applyBackground();
+  document.body.classList.toggle("presenting", !!state.present);
   render();
+  loadStoredMedia().then(() => {
+    if (state.photos.some(p => p.mediaId)) render();
+  });
 })();
 </script>
