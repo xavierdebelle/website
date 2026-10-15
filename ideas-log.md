@@ -70,7 +70,7 @@ its ID forever. Statuses: new, planned, in progress, done, dropped.
 - 17 of the 18 pages in tools/ have no meta description (only neural-mind-map.html has one), so search results show random text. Write one outcome-led sentence per tool.
 
 ### IDEA-016 · Move to a custom domain
-- **Category:** SEO · **Effort:** S · **Impact:** ★★★ · **Status:** new
+- **Category:** SEO · **Effort:** S · **Impact:** ★★★ · **Status:** done (done in v87, 2026-10-12)
 - The site lives at xavierdebelle.github.io/website. A domain such as xavierdebelle.com is easier to remember, builds search authority that you own, and looks more credible on cards and in emails. Set it up with a CNAME on GitHub Pages (or on the new host from IDEA-039).
 
 ### IDEA-017 · Home page that says who it's for, with three doors
@@ -310,3 +310,83 @@ its ID forever. Statuses: new, planned, in progress, done, dropped.
 ### IDEA-072 · "Ask Xavier" assistant that answers questions and books the call
 - **Category:** Feature · **Effort:** L · **Impact:** ★★ · **Status:** new
 - Kitchen (tools/kitchen.html) already shows the site can call Claude, but visitors to work.html get no instant answer outside office hours. Add a small chat on work.html, fed only by Xavier's own packages, FAQ (IDEA-068) and availability, that answers a couple's question, then asks for name, date and email and creates the GoHighLevel lead. It runs through a Firebase function so no key sits in the page, and it answers at 11pm on a Sunday when couples do most of their wedding planning.
+
+## 2026-10-12 — Conversion and lead capture
+
+### IDEA-073 · Tap-to-call and tap-to-text beside every "Email me"
+- **Category:** Conversion · **Effort:** S · **Impact:** ★★ · **Status:** new
+- The only way to reach Xavier from work.html (lines ~319 and ~342), the footers and the mind map is an email link, yet tools/package-builder.html already prints a phone number (514.887.4686) in its export. Many couples and small-business owners would rather text from their phone than compose an email. Add "Call or text" buttons (tel: and sms: links, with a pre-filled "Hi Xavier, I found you through your site" body) next to each email button, and tag them like IDEA-041 so GoHighLevel's conversation inbox sees the source.
+
+### IDEA-074 · "Add $X more to unlock the next discount" nudge in the Package Builder
+- **Category:** Conversion · **Effort:** S · **Impact:** ★★★ · **Status:** new
+- tools/package-builder.html has a volume-discount ladder (getDiscount(), rising from 1% above $2,500 to 12% above $11,000) but the couple only sees the discount after reaching it. Show a quiet line under the total, "You're $180 away from 4% off ($150 saved)", that updates as they tick options. Couples nudged just below a threshold tend to add one more item, which lifts the average booking without Xavier saying a word.
+
+### IDEA-075 · Turn the Get Access request into a tagged lead
+- **Category:** Conversion · **Effort:** M · **Impact:** ★★ · **Status:** new
+- access.html collects a Google sign-in from every person who wants Sync, which is a warm, self-selected list of people who like the tools, but today it only reaches Xavier as an approval request. Add one question ("I'm a couple / photographer / agent / just curious") and an optional checkbox to hear from Xavier, then send the answer to GoHighLevel as a contact with a tag. Only people who tick the box get contacted, which keeps it in line with the privacy policy (Law 25) and still gives the tools a real lead source.
+
+### IDEA-076 · Give the Real Estate chapter its own two-way contact
+- **Category:** Conversion · **Effort:** S · **Impact:** ★ · **Status:** new
+- The Real Estate chapter in work.html (around line 319) ends in a generic "Talk property" mailto, but this lane is Xavier's own duplex project, so visitors are sellers, contractors, partners and agents, not clients. Replace the button with a short "I'm looking for: off-market duplexes in Montreal · renovation trades I can trust · investors to compare notes with" list and a mailto with a pre-filled subject for each. It attracts the people the lane needs and keeps property leads from mixing with wedding enquiries in GoHighLevel.
+
+## 2026-10-13 — Monetization and offers
+
+### IDEA-077 · Sell Glam Studio on its own to 333 Photo clients for corporate events
+- **Category:** Monetization · **Effort:** S · **Impact:** ★★★ · **Status:** new
+- tools/package-builder.html already prices Glam Studio as a standalone booking (glam_standalone, $2,000 for 5 hours with instant 4x6 B&W prints), described as "a full editorial portrait experience", but it only appears inside the wedding builder. The 333 Photo chapter of work.html lists fashion, product and lifestyle and never mentions events. Add an "Event portrait studio" line to that chapter and a short page for company parties, launches and galas, priced from the same $2,000 and sent to the 333 estimate request. The product, price and equipment exist already, so it is a new B2B buyer for an offer that needs no build.
+
+### IDEA-078 · Parents' album and print reorder offer after the gallery is delivered
+- **Category:** Monetization · **Effort:** M · **Impact:** ★★★ · **Status:** new
+- package-builder.html sells Parent Album Duplicates ($500) and a Graphi Sleeve ($150) as add-ons chosen months before the wedding, when couples are not thinking about albums yet. Add a post-delivery step: a GoHighLevel email and text sequence, starting about 3 weeks after the gallery goes out, saying "Your parents will want these", with a link to a one-page order of parent albums, framed prints and canvases. This reaches the people who actually pay for it (parents, grandparents) at the moment the photos are exciting, and it is an upsell that needs no discount.
+
+### IDEA-079 · Put a named guarantee beside the Package Builder total
+- **Category:** Monetization · **Effort:** S · **Impact:** ★★ · **Status:** new
+- The total in tools/package-builder.html is followed only by the export button, and no page on the site (work.html, the builder, who-am-i.html) states any promise that lowers a couple's risk. A $6,000 purchase from a person they have never met needs one. Add a short, specific guarantee under the total, for example "Every key moment on your schedule is covered, or the album design is free", and repeat it in the de Belle chapter of work.html. It is the cheapest way to raise the share of couples who go from pricing to enquiring, and it sets the studio apart from competitors that promise nothing.
+
+### IDEA-080 · "Team headshot day" as a fixed-price 333 Photo offer
+- **Category:** Monetization · **Effort:** M · **Impact:** ★★★ · **Status:** new
+- The 333 Photo chapter in work.html leads with fashion, product and lifestyle, but small companies, clinics and real-estate offices mostly need one thing: current headshots for their whole team. Productize it in a single page: "Team headshot day, from $X per person, minimum 6 people, on-site, edited files in 48 hours", with a per-head price that drops at 10 and 20 people and a headcount field that sends the request into GoHighLevel. It is easy to understand, sells repeatedly as people join the team (continuity), and every attendee is a possible lead for the rest of 333 Photo.
+
+## 2026-10-14 — Monetization and offers
+
+### IDEA-081 · Stop the site publish from wiping the ideas log
+- **Category:** Fix · **Effort:** S · **Impact:** ★★★ · **Status:** new
+- The v90 publish (copied from xdb-workspace by publish-site.yml) overwrote ideas-log.md with an older copy, deleting IDEA-073 to IDEA-080 and resetting IDEA-016 to "new"; they were restored by hand on 2026-10-14. The workspace's `Website Files/` has no copy of the daily log commits, so every publish will do this again. Either pull ideas-log.md into the workspace before each release, or list it in publish-site.yml as a file the copy must never overwrite (or move the log into the workspace and have this routine write there).
+
+### IDEA-082 · Price "Round 3+" and offer an extra cut on the Video Corrections thank-you screen
+- **Category:** Monetization · **Effort:** S · **Impact:** ★★ · **Status:** new
+- tools/video-corrections.html lets a couple pick "Round 3+ · Further refinements" as freely as Round 1, and its thank-you screen ("Your corrections have been received") offers nothing but "Submit another correction". State the policy on the Round 3+ card ("Rounds 1 and 2 are included; each further round is $X") and, on the thank-you screen, offer the deliverables they didn't select in the form (for example a Vertical Reel or the Full Feature) at a set price with a link to pay. Couples are watching their film at the most emotional point of the whole relationship, which is the best moment for an upsell, and pricing extra rounds protects the editor's time.
+
+### IDEA-083 · Prepaid hour blocks for 333 Photo, shown live in the Project Phases client link
+- **Category:** Monetization · **Effort:** M · **Impact:** ★★★ · **Status:** new
+- tools/project-tracker.html already logs every hour against a project, sums it in the Report (with This month since v91) and shares a read-only Client link, but has no idea of how many hours the client has paid for. Add an "Hours purchased" field per project and a meter in the Report and the client view ("6.5 of 10 hours used this month"), with a "Top up 10 hours" payment link when fewer than 2 remain. That lets 333 Photo sell design, web and marketing work as a monthly hour block (continuity) that clients can see being used, which removes the "what am I paying for?" doubt that ends most retainers.
+
+### IDEA-084 · "Add a photographer for 2 hours" on the organiser view of Activity Planner and Potluck
+- **Category:** Monetization · **Effort:** S · **Impact:** ★★ · **Status:** new
+- tools/activity-planner.html and tools/potluck.html are used by organisers planning birthdays, team events and weekend gatherings, but nothing in them offers what Xavier sells; IDEA-042 only targets guests, for weddings. On the organiser's own screen (signed-in view only), add one card: "Want this remembered? 2 hours of event photos, 100 edited images in a week, from $X", sending the event name and date to GoHighLevel. It is a small attraction offer for non-wedding events that turns a free tool's best users into paying clients, and each event's guests then see the photos with Xavier's name on them.
+
+### IDEA-085 · Hosted Claude credits so Kitchen's photo features work without a key
+- **Category:** Monetization · **Effort:** M · **Impact:** ★★ · **Status:** new
+- Builds on IDEA-034. tools/kitchen.html only reads recipe cards, fridge photos and dish photos once the user pastes their own Anthropic key ("Add a Claude key in Taste first"), which almost no friend or family member will have. Offer "Kitchen Plus", about $3 a month or $25 a year, that routes those calls through a Firebase function on Xavier's key with a monthly cap per account, using the same member flag as the Pro tier. The AI features are the tool's most impressive part, and this turns them from a setup hurdle into the thing people pay for.
+
+## 2026-10-15 — SEO, performance, accessibility, mobile
+
+### IDEA-086 · Let guests pinch-zoom the Activity Planner and Wedding Activities pages
+- **Category:** Fix · **Effort:** S · **Impact:** ★★ · **Status:** new
+- tools/activity-planner.html and tools/wedding-activities.html set `maximum-scale=1.0` in their viewport tag, which stops anyone from zooming in on a phone. These are the pages shared with groups of guests, including older relatives, and blocking zoom fails a basic accessibility rule (WCAG text resize). The usual reason for the lock (iPhone zooming into small inputs) is already handled, because activity-planner.html forces inputs to 16px. Remove `maximum-scale=1.0` from both.
+
+### IDEA-087 · Make the Package Builder usable with a keyboard and a screen reader
+- **Category:** Fix · **Effort:** S · **Impact:** ★★ · **Status:** new
+- In tools/package-builder.html every choice (option-card, addon-row, album-type-card) is a `<div onclick>`, so it can't be reached with Tab, can't be picked with Enter or Space, and a screen reader doesn't say whether it is selected. The running total also changes without being announced. Turn each card into a `<button aria-pressed>` (styles stay the same) and add `aria-live="polite"` to the total. It is the most valuable page on the site for bookings, and Lighthouse's accessibility score counts it.
+
+### IDEA-088 · Search-ready page titles and headings
+- **Category:** SEO · **Effort:** S · **Impact:** ★★★ · **Status:** new
+- The title tags (the blue link Google shows) read "WORK — XAVIER DE BELLE", "TOOLS — XAVIER DE BELLE", and on tools just "Portfolio", "Potluck" or "Carousel Planner"; work.html's main heading is "Three Lanes", and carousel-planner, freecanvas, portfolio-grid and portfolio-masonry have no h1 at all. None of them contain the words people actually search for. Rewrite each title in normal case with the search phrase first (for example "Montreal Wedding & Commercial Photographer · Xavier de Belle", "Free Instagram Grid Planner · Feed Planner"), and add a visually hidden h1 where a tool has none. It is the cheapest ranking change on the site and makes every result look less like shouting.
+
+### IDEA-089 · Self-host the fonts in one shared folder
+- **Category:** Fix · **Effort:** M · **Impact:** ★★ · **Status:** new
+- tools/potluck.html weighs 677 KB because 16 fonts are pasted into it as base64 text, and at least two of them twice (lines ~47/65 and ~56/74 are identical), so every guest opening a potluck link on mobile data downloads over half a megabyte before seeing anything. Budget Tracker, Cycle Calendar and Activity Planner load Google Fonts through a CSS `@import`, which delays the page further. Put the few typefaces actually used as .woff2 files in assets/fonts/ with `font-display: swap`, link them from each tool, and drop the duplicates. Pages load faster, files cache between tools, and privacy.html can delete its paragraph about Google seeing visitors' IP addresses.
+
+### IDEA-090 · A "What does a wedding photographer cost in Montreal?" guide page
+- **Category:** SEO · **Effort:** M · **Impact:** ★★★ · **Status:** new
+- No page on the site targets the question couples type most before contacting anyone, and the real price data already sits in tools/package-builder.html (PHOTO_OPTIONS, VIDEO_OPTIONS, the discount ladder). Unlike the one-line teaser in IDEA-003, this is a standalone, crawlable page: typical ranges for photo, video and albums in Montreal, what drives the price, what to watch out for, and a "build your exact package" button into the Package Builder. Mark it up as an article with a few FAQ answers, and update the figures each January. It brings in couples who are actively shopping, and they arrive already knowing the range, so the enquiries that follow are better qualified.
