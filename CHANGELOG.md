@@ -5,6 +5,49 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v94 — 2026-10-16
+
+**Visit counts — Umami Cloud, no cookies (IDEA-014)**
+- New `assets/stats.js`, one `<script defer>` tag on every page and tool
+  (32 files) — except the three bundled art pages (Liquid Silver, Organic
+  Loops, Volley BBQ zine: they replace their own document while unpacking)
+  and Wedding Activities (HighLevel page, already has Cloudflare counts).
+- Loads `cloud.umami.is/script.js` (website id `079ecd5c-…`) only on
+  xavierdebelle.com (`data-domains`), so local copies and previews never count.
+- **Xavier is never counted:** `account.js` sets `localStorage
+  umami.disabled = 1` when the owner signs in; stats.js then doesn't load
+  Umami at all on that browser (all pages, tools included — same origin).
+- Events: `email-click` and `phone-click` (mailto/tel/sms links, with the
+  page), `outbound` (any outside link, with its host and the page) — by one
+  click listener in stats.js, no per-link edits. Plus `package-export`
+  (Package Builder export: total + number of items, no names or choices),
+  `corrections-sent` (Video Corrections reached HighLevel), `access-request`
+  (sync request sent, with the tool). Pages call `xdbTrack(name, data)`,
+  which does nothing when Umami isn't loaded.
+- **Privacy page** (EN + FR): "the site itself runs no analytics" replaced by
+  what Umami records and doesn't; Umami added to "Who else handles it";
+  dated 16 October 2026.
+- Skills: publish-tool's head-tag list and publish-site's new-page shell now
+  include the stats.js tag, so new and replaced tools keep it.
+
+**Verified locally** (Playwright, site served as xavierdebelle.com, Umami
+stubbed so no test data reached the real dashboard)
+- 11 pages (home, work, tools, privacy, blog, Package Builder, Video
+  Corrections, Feed Planner, Potluck, Galaxy Map, 404): one page view each,
+  right website id and domain, no page errors.
+- work.html: Email me → `email-click`; 333photo.com → `outbound`.
+- Package Builder export → `package-export {total, items}`.
+- With `umami.disabled` set, Umami isn't loaded at all.
+- `cloud.umami.is/script.js` answers 200 (4.8 KB).
+
+**Outstanding**
+- Xavier: sign in once on each browser and device he uses (phone too) so
+  his own visits stop counting. A browser where he never signs in still counts.
+- Check the Umami dashboard after the push: a visit should appear within
+  a minute.
+
+---
+
 ## v93 — 2026-10-15
 
 **What's new** · FreeCanvas · [tools/freecanvas.html]

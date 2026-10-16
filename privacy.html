@@ -20,8 +20,9 @@
 <meta property="og:image:alt" content="Privacy — Xavier de Belle">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
-<link rel="stylesheet" href="assets/style.css?v=93">
+<link rel="stylesheet" href="assets/style.css?v=94">
 <script src="assets/account.js"></script>
+<script defer src="assets/stats.js"></script>
 <script src="assets/site-index.js"></script>
 <style>
   .mast {
@@ -126,8 +127,8 @@
 <section class="mast">
   <p class="kicker">Law 25 &mdash; Qu&eacute;bec</p>
   <h1 class="display"><span lang="en">Privacy</span><span lang="fr" hidden>Confidentialit&eacute;</span></h1>
-  <p class="mast__sub" lang="en">One policy for the whole site and every tool on it. Last updated October 8, 2026.</p>
-  <p class="mast__sub" lang="fr" hidden>Une seule politique pour tout le site et chacun de ses outils. Derni&egrave;re mise &agrave; jour&nbsp;: 8&nbsp;octobre&nbsp;2026.</p>
+  <p class="mast__sub" lang="en">One policy for the whole site and every tool on it. Last updated October 16, 2026.</p>
+  <p class="mast__sub" lang="fr" hidden>Une seule politique pour tout le site et chacun de ses outils. Derni&egrave;re mise &agrave; jour&nbsp;: 16&nbsp;octobre&nbsp;2026.</p>
   <div class="lang" role="group" aria-label="Language / Langue">
     <button class="topbar__btn" type="button" data-lang="en" aria-pressed="true">English</button>
     <button class="topbar__btn" type="button" data-lang="fr" aria-pressed="false" lang="fr">Fran&ccedil;ais</button>
@@ -164,7 +165,8 @@
       <div>
         <dt>Visiting any page<small>Hosting &amp; fonts</small></dt>
         <dd>
-          <p>The site is hosted by GitHub Pages. Like any web server, GitHub receives your IP address and browser details when a page loads, and keeps them in its logs for security. I don&rsquo;t receive those logs, and the site itself runs no analytics.</p>
+          <p>The site is hosted by GitHub Pages. Like any web server, GitHub receives your IP address and browser details when a page loads, and keeps them in its logs for security. I don&rsquo;t receive those logs.</p>
+          <p>To see which pages and tools are used, the site counts visits with Umami, a privacy-friendly analytics service. It uses no cookies and doesn&rsquo;t identify you: it records the page, the referring site, your browser, device type and country, and clicks on email and outside links, plus a few actions such as exporting a package in Package Builder (the total, not your choices or details). Your IP address is used only to estimate your country and is not stored. Counts are shown to me in aggregate only.</p>
           <p>A few tools load their typefaces from Google Fonts (Activity Planner, Budget Tracker, Cycle Calendar, Package Builder, Project Phases, Video Corrections, Wedding Activities) or Adobe Fonts (Project Phases). Your browser then asks Google or Adobe for the font file, which shows them your IP address.</p>
         </dd>
       </div>
@@ -238,6 +240,7 @@
     <ul>
       <li><b>Google</b> &mdash; Firebase Authentication, Firebase Realtime Database, Google Fonts</li>
       <li><b>GitHub</b> &mdash; hosts the website</li>
+      <li><b>Umami</b> &mdash; counts visits to the site, without cookies</li>
       <li><b>HighLevel</b> &mdash; de Belle Photography&rsquo;s client system (Video Corrections) and the Wedding Activities page</li>
       <li><b>Cloudflare</b> &mdash; visit counts on the Wedding Activities page</li>
       <li><b>Adobe Fonts</b> &mdash; typefaces in Project Phases</li>
@@ -350,7 +353,8 @@
       <div>
         <dt>Visite de toute page<small>H&eacute;bergement et polices</small></dt>
         <dd>
-          <p>Le site est h&eacute;berg&eacute; par GitHub Pages. Comme tout serveur web, GitHub re&ccedil;oit votre adresse IP et les d&eacute;tails de votre navigateur lorsqu&rsquo;une page se charge, et les conserve dans ses journaux pour des raisons de s&eacute;curit&eacute;. Je ne re&ccedil;ois pas ces journaux, et le site lui-m&ecirc;me n&rsquo;utilise aucun outil d&rsquo;analyse.</p>
+          <p>Le site est h&eacute;berg&eacute; par GitHub Pages. Comme tout serveur web, GitHub re&ccedil;oit votre adresse IP et les d&eacute;tails de votre navigateur lorsqu&rsquo;une page se charge, et les conserve dans ses journaux pour des raisons de s&eacute;curit&eacute;. Je ne re&ccedil;ois pas ces journaux.</p>
+          <p>Pour savoir quelles pages et quels outils servent, le site compte les visites avec Umami, un service de mesure d&rsquo;audience respectueux de la vie priv&eacute;e. Il n&rsquo;utilise aucun t&eacute;moin et ne vous identifie pas&nbsp;: il enregistre la page, le site d&rsquo;o&ugrave; vous venez, votre navigateur, le type d&rsquo;appareil et le pays, les clics sur les liens courriel et externes, ainsi que quelques actions comme l&rsquo;export d&rsquo;un forfait dans Package Builder (le total, pas vos choix ni vos coordonn&eacute;es). Votre adresse IP sert seulement &agrave; estimer le pays et n&rsquo;est pas conserv&eacute;e. Je ne vois que des totaux.</p>
           <p>Quelques outils chargent leurs polices de caract&egrave;res depuis Google Fonts (Activity Planner, Budget Tracker, Cycle Calendar, Package Builder, Project Phases, Video Corrections, Wedding Activities) ou Adobe Fonts (Project Phases). Votre navigateur demande alors le fichier &agrave; Google ou &agrave; Adobe, qui voient ainsi votre adresse IP.</p>
         </dd>
       </div>
@@ -424,6 +428,7 @@
     <ul>
       <li><b>Google</b> &mdash; Firebase Authentication, Firebase Realtime Database, Google Fonts</li>
       <li><b>GitHub</b> &mdash; h&eacute;berge le site</li>
+      <li><b>Umami</b> &mdash; comptage des visites du site, sans t&eacute;moins</li>
       <li><b>HighLevel</b> &mdash; syst&egrave;me client de de Belle Photography (Video Corrections) et page Wedding Activities</li>
       <li><b>Cloudflare</b> &mdash; comptage des visites sur la page Wedding Activities</li>
       <li><b>Adobe Fonts</b> &mdash; polices de Project Phases</li>
@@ -523,7 +528,7 @@
       <a href="mailto:xavier@debellephotography.com">Email</a>
     </div>
   </div>
-  <p class="foot__sig">&copy; <span id="yr"></span> Xavier de Belle &middot; v93</p>
+  <p class="foot__sig">&copy; <span id="yr"></span> Xavier de Belle &middot; v94</p>
 </footer>
 
 <script>

@@ -96,7 +96,7 @@
       if (!u) { store(FLAG, null); set({ status: 'signedout', user: null, pending: 0 }); return; }
       store(FLAG, '1');
       var user = { uid: u.uid, email: u.email || '', name: u.displayName || '', photo: u.photoURL || '' };
-      if (u.uid === OWNER) { set({ status: 'owner', user: user }); watchRequests(); return; }
+      if (u.uid === OWNER) { store('umami.disabled', '1'); set({ status: 'owner', user: user }); watchRequests(); return; }   // never count Xavier's own visits (stats.js)
       set({ status: 'checking', user: user });
       offs.push(fb.f.onValue(fb.f.ref(fb.db, 'members/' + u.uid), function (snap) {
         if (snap.exists()) { set({ status: 'member' }); welcome(u.uid); return; }
@@ -104,7 +104,7 @@
         asked = true;
         fb.f.set(fb.f.ref(fb.db, 'requests/' + u.uid), {
           email: user.email, name: user.name.slice(0, 120), at: Date.now(), tool: current ? current.doc : 'site'
-        }).then(function () { if (S.status !== 'member') set({ status: 'pending' }); },
+        }).then(function () { if (window.xdbTrack) window.xdbTrack('access-request', { tool: current ? current.doc : 'site' }); if (S.status !== 'member') set({ status: 'pending' }); },
                 function () { if (S.status !== 'member') set({ status: 'declined' }); });
       }, function () { set({ status: 'declined' }); }));
     });

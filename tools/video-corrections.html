@@ -248,6 +248,7 @@
       .correction-entry-body { padding: 14px; }
     }
   </style>
+<script defer src="../assets/stats.js"></script>
 </head>
 <body>
 
@@ -1000,6 +1001,7 @@
         headers: { 'Content-Type': 'application/json' },
       });
       if (res.ok) {
+        if (window.xdbTrack) xdbTrack('corrections-sent');
         clearDraft();
         form.style.display = 'none';
         document.querySelector('header').style.display = 'none';

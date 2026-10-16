@@ -182,6 +182,7 @@
   @media(max-width:960px) { .builder-layout{grid-template-columns:1fr} .sidebar{position:relative;height:auto} .builder-main{padding:50px 24px 80px;border-right:none} }
   @media(max-width:580px) { header{padding:120px 20px 60px} .options-grid{grid-template-columns:1fr} .album-builder{grid-template-columns:1fr 1fr} }
 </style>
+<script defer src="../assets/stats.js"></script>
 </head>
 <body>
 
@@ -690,6 +691,7 @@ function exportSummary() {
   const saving = discPct > 0 ? roundTo50(raw * discPct / 100) : 0;
   const finalTotal = raw - saving;
   const withTax = Math.round(finalTotal * 1.14975);
+  if (window.xdbTrack) xdbTrack('package-export', { total: finalTotal, items: lines.length });
   const secs = {};
   lines.forEach(l => { if (!secs[l.section]) secs[l.section]=[]; secs[l.section].push(l); });
 
