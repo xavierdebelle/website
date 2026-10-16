@@ -62,7 +62,7 @@ its ID forever. Statuses: new, planned, in progress, done, dropped.
 - Client tools (Package Builder), personal tools (Budget Tracker) and art (Liquid Silver) sit side by side, so a shopping couple, a fellow photographer and a friend all land on the same grid. Open the page with three doors (For couples and clients / For creators / Experiments) so each visitor reaches their tools and the right offer.
 
 ### IDEA-014 · Add privacy-friendly analytics
-- **Category:** Fix · **Effort:** S · **Impact:** ★★★ · **Status:** new
+- **Category:** Fix · **Effort:** S · **Impact:** ★★★ · **Status:** done (done in v94, 2026-10-16)
 - No page has any analytics, so traffic, top tools and where visitors drop off are unknown, and any monetization would be guesswork. Add a Plausible or Umami script tag to every page and track key events (Package Builder export, enquiry clicks, tool opens).
 
 ### IDEA-015 · Meta descriptions on every tool page
