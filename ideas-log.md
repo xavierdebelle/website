@@ -350,7 +350,7 @@ its ID forever. Statuses: new, planned, in progress, done, dropped.
 ## 2026-10-14 — Monetization and offers
 
 ### IDEA-081 · Stop the site publish from wiping the ideas log
-- **Category:** Fix · **Effort:** S · **Impact:** ★★★ · **Status:** new
+- **Category:** Fix · **Effort:** S · **Impact:** ★★★ · **Status:** done (done in xdb-workspace@11f3bbc, 2026-10-16)
 - The v90 publish (copied from xdb-workspace by publish-site.yml) overwrote ideas-log.md with an older copy, deleting IDEA-073 to IDEA-080 and resetting IDEA-016 to "new"; they were restored by hand on 2026-10-14. The workspace's `Website Files/` has no copy of the daily log commits, so every publish will do this again. Either pull ideas-log.md into the workspace before each release, or list it in publish-site.yml as a file the copy must never overwrite (or move the log into the workspace and have this routine write there).
 
 ### IDEA-082 · Price "Round 3+" and offer an extra cut on the Video Corrections thank-you screen
