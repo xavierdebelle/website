@@ -390,3 +390,25 @@ its ID forever. Statuses: new, planned, in progress, done, dropped.
 ### IDEA-090 · A "What does a wedding photographer cost in Montreal?" guide page
 - **Category:** SEO · **Effort:** M · **Impact:** ★★★ · **Status:** new
 - No page on the site targets the question couples type most before contacting anyone, and the real price data already sits in tools/package-builder.html (PHOTO_OPTIONS, VIDEO_OPTIONS, the discount ladder). Unlike the one-line teaser in IDEA-003, this is a standalone, crawlable page: typical ranges for photo, video and albums in Montreal, what drives the price, what to watch out for, and a "build your exact package" button into the Package Builder. Mark it up as an article with a few FAQ answers, and update the figures each January. It brings in couples who are actively shopping, and they arrive already knowing the range, so the enquiries that follow are better qualified.
+
+## 2026-10-16 — New tool ideas for photographers, couples, creators and real estate
+
+### IDEA-091 · Photo Corrections: pin retouch notes on a 333 Photo image
+- **Category:** Tool · **Effort:** M · **Impact:** ★★ · **Status:** new
+- tools/video-corrections.html already turns a wedding couple's video notes into one structured submission posted to GoHighLevel (`corrections-sent`), but commercial clients of 333 Photo still send photo retouch requests as long emails ("the third one, a bit brighter on the left"). Build the photo version from the same form and webhook: the client pastes a gallery link or drops a low-res proof, taps the spot on the image to drop a numbered pin, types the fix, and sends the whole list in one go. It cuts revision back-and-forth on every commercial job and gives Xavier a clean record of what was asked, which also makes it easy to bill a third round (the same logic as IDEA-082).
+
+### IDEA-092 · "Will it print?" size checker that ends in a print order
+- **Category:** Tool · **Effort:** S · **Impact:** ★★ · **Status:** new
+- Builds on IDEA-078. No tool on the site helps anyone after the photos are delivered, and package-builder.html only sells prints and albums before the wedding. Add a small free tool: drop any photo, it reads the pixel size in the browser (nothing uploaded) and shows which print sizes look sharp (4×6 up to 24×36 and canvas), with the crop each frame ratio will cut, then an "Order this print from Xavier" button that sends the size and file name to GoHighLevel. Anyone printing a phone photo can use it, and it gives the parents' print offer in IDEA-078 a page to land on.
+
+### IDEA-093 · Montreal photo-spot finder for engagement and portrait sessions
+- **Category:** Tool · **Effort:** M · **Impact:** ★★ · **Status:** new
+- The Package Builder sells an "Engagement / Casual Photoshoot" ($350, oa_engagement) and the wedding schedule asks for locations, but nothing helps a couple choose where to shoot. Build a filterable list or map of 15–20 spots Xavier actually uses (Old Port, Mount Royal lookout, Jean-Talon, Westmount library…) with season, best time of day, whether a permit or fee applies and one sample photo each, ending in "Book your engagement session here". It answers a question couples genuinely search for, gives Instagram something to link to every week, and leads straight into the $350 session.
+
+### IDEA-094 · One-tap vendor sheets from the Wedding Day Schedule
+- **Category:** Feature · **Effort:** S · **Impact:** ★★ · **Status:** new
+- tools/wedding-schedule.html collects every vendor (vendorBlocks, with phone numbers) and the full timeline, but its only output is one "Print / Save as PDF" of the whole day. Add a "Vendor sheets" button that prints one page per vendor: only the times and places that vendor is needed, the planner's and photographer's phone numbers, and a small "Timeline prepared with de Belle Photography" footer. Couples currently retype this for the DJ, florist and caterer; doing it for them makes the tool worth sharing, and every vendor in Montreal who receives a sheet sees Xavier's name.
+
+### IDEA-095 · Guest photo drop: a QR code at the reception for everyone's phone photos
+- **Category:** Monetization · **Effort:** L · **Impact:** ★★★ · **Status:** new
+- Package Builder already sells a guest-facing extra (Same Night Prints) and IDEA-035 covers a guest website, but nothing collects the hundreds of phone photos guests take. Build a page where guests scan a table card QR, add photos without an account (Firebase storage, one folder per wedding, size-capped), and the couple sees them all in one gallery the next day, branded de Belle. Sell it as a $99–149 add-on in the Package Builder (or free with the top bundle) and as a stand-alone product for weddings Xavier doesn't shoot; apps like this charge couples directly, and every guest who scans it sees his name on the night.
