@@ -412,3 +412,21 @@ its ID forever. Statuses: new, planned, in progress, done, dropped.
 ### IDEA-095 · Guest photo drop: a QR code at the reception for everyone's phone photos
 - **Category:** Monetization · **Effort:** L · **Impact:** ★★★ · **Status:** new
 - Package Builder already sells a guest-facing extra (Same Night Prints) and IDEA-035 covers a guest website, but nothing collects the hundreds of phone photos guests take. Build a page where guests scan a table card QR, add photos without an account (Firebase storage, one folder per wedding, size-capped), and the couple sees them all in one gallery the next day, branded de Belle. Sell it as a $99–149 add-on in the Package Builder (or free with the top bundle) and as a stand-alone product for weddings Xavier doesn't shoot; apps like this charge couples directly, and every guest who scans it sees his name on the night.
+
+## 2026-10-17 — Content, the blog, newsletter, Instagram, audience growth
+
+### IDEA-096 · Topics and a contents list on Food for Thought
+- **Category:** Content · **Effort:** S · **Impact:** ★★ · **Status:** new
+- render() in food-for-thought.html prints every post in full, one after another, with no excerpt, no topic and no list of titles, so by post ten a visitor has to scroll through thousands of words to find the one they came for, and nobody can see at a glance what the blog is about. Add an optional "Topic" field to the composer (for example Building, Reading, Weddings, Business) and a compact contents list at the top of the page: number, title, topic, minutes, with topic chips that filter it. It turns one long scroll into a library people can browse, and shows a first-time reader in two seconds whether the blog is for them.
+
+### IDEA-097 · A "next step" card at the end of each blog post
+- **Category:** Conversion · **Effort:** S · **Impact:** ★★ · **Status:** new
+- Every post in food-for-thought.html ends with nothing: no link onward, so a reader who just finished and liked it simply closes the tab. Add an optional "Next step" picker to the composer (a tool from tools.html, a book from library.html, or a chapter of work.html) that renders as one card under the post, for example a post about planning ending in "Try the Wedding Day Schedule" or a post about a book ending in its Library card. Each post then points readers at the one thing on the site it naturally leads to, and Umami (v94) shows which posts actually send people on.
+
+### IDEA-098 · Schedule blog posts to go live on set days
+- **Category:** Feature · **Effort:** S · **Impact:** ★★ · **Status:** new
+- The composer in food-for-thought.html has one button, Publish, which makes the post public immediately; the only draft is one copy kept on the device. Add a "Publish on" date and time and a list of queued posts that only Xavier sees, with the page showing a post only once its time has passed (and the database rules hiding it until then). Xavier can write three posts on a quiet Sunday and have them appear on a steady Tuesday and Thursday rhythm, and a predictable rhythm is what turns occasional readers into people who come back.
+
+### IDEA-099 · Real wedding stories that credit every vendor
+- **Category:** Content · **Effort:** M · **Impact:** ★★★ · **Status:** new
+- Builds on IDEA-063. tools/wedding-schedule.html already collects each couple's vendors (the VENDORS list: venue, planner, DJ, florist, make-up and more), but none of the 3,000+ weddings appears anywhere on the site. Once posts can carry photos, publish one short story per wedding with the couple's permission (their day in 8 to 12 images, one moment Xavier remembers) and end it with a vendor credit block pulled from their schedule, each name linked. The couple shares it with family and friends, every credited vendor shares it with their own followers, and each post is a page an engaged couple can find by searching the venue's name.
