@@ -430,3 +430,21 @@ its ID forever. Statuses: new, planned, in progress, done, dropped.
 ### IDEA-099 · Real wedding stories that credit every vendor
 - **Category:** Content · **Effort:** M · **Impact:** ★★★ · **Status:** new
 - Builds on IDEA-063. tools/wedding-schedule.html already collects each couple's vendors (the VENDORS list: venue, planner, DJ, florist, make-up and more), but none of the 3,000+ weddings appears anywhere on the site. Once posts can carry photos, publish one short story per wedding with the couple's permission (their day in 8 to 12 images, one moment Xavier remembers) and end it with a vendor credit block pulled from their schedule, each name linked. The couple shares it with family and friends, every credited vendor shares it with their own followers, and each post is a page an engaged couple can find by searching the venue's name.
+
+## 2026-10-18 — Wildcard (what the best photographer, creator and tool sites do that this one doesn't)
+
+### IDEA-100 · Holiday gift certificates for a session, sold from work.html
+- **Category:** Monetization · **Effort:** S · **Impact:** ★★★ · **Status:** new
+- Most established photographer sites sell gift cards from November to February, but nothing on work.html, in the Package Builder or anywhere else lets someone pay Xavier for a present. Add a "Give a session" block to the de Belle chapter with three fixed amounts (for example the $350 engagement session already priced as oa_engagement in package-builder.html, a $250 studio portrait, and a free-amount card), each a GoHighLevel or Stripe payment link that emails a printable certificate with a code and a 12-month expiry. It brings in cash in the slow winter months, and every certificate puts a new person in front of the camera who is a likely future wedding, family or headshot client.
+
+### IDEA-101 · One "Holiday mini-session day" with a fixed number of slots
+- **Category:** Monetization · **Effort:** M · **Impact:** ★★★ · **Status:** new
+- work.html mentions "Studio sessions, albums, prints" in a single spec-list line (around line 262) and never sells them, while top portrait studios fill a whole Saturday with 20-minute mini-sessions announced a few weeks ahead. Publish a small page for one date in late November: 20 minutes in the de Belle studio, 10 edited images, a set price, and 15 to 20 time slots booked through a GoHighLevel calendar that shows how many remain. Send it to the past-couple list and Instagram; a sold-out day is one of the fastest bookings a studio can make, and those who get the mini can be offered a full session or print upgrade (gift certificates from IDEA-100 can be redeemed here).
+
+### IDEA-102 · Turn "Submit a Tool" into a public "Request the next tool" board
+- **Category:** Feature · **Effort:** M · **Impact:** ★★ · **Status:** new
+- The mind map in index.html (line ~293) and galaxy-map.html both point "Submit a Tool" at soon.html#submit-a-tool, which is a dead end that says "The form is not up yet — email works". Indie tool makers run a short public board instead: visitors suggest a tool in one line and upvote others (stored in Firebase, one vote per browser, optional email to be told when it ships), and Xavier marks items "building" or "shipped" with a link to the changelog. It replaces a dead branch with something alive, shows which tool to build next, and gives a real demand signal before any paid tier (IDEA-033, IDEA-034) is built.
+
+### IDEA-103 · One search box for the whole site
+- **Category:** Fix · **Effort:** M · **Impact:** ★★ · **Status:** new
+- The only search on the site is the rail search inside tools.html; the map in index.html, the blog, library.html and the 404 page offer none, so someone who remembers "that schedule tool" or "the post about Hormozi" has to know where it lives. Add a search button in the shared topbar (and Ctrl/⌘ + K) that opens a small overlay listing pages, tools, blog posts and Library books from one generated index, and put the same box on 404.html under "This page moved". Good creator and tool sites all have this, and it matters more here because the mind-map front door hides most pages behind a tap.
