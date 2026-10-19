@@ -430,3 +430,21 @@ its ID forever. Statuses: new, planned, in progress, done, dropped.
 ### IDEA-099 · Real wedding stories that credit every vendor
 - **Category:** Content · **Effort:** M · **Impact:** ★★★ · **Status:** new
 - Builds on IDEA-063. tools/wedding-schedule.html already collects each couple's vendors (the VENDORS list: venue, planner, DJ, florist, make-up and more), but none of the 3,000+ weddings appears anywhere on the site. Once posts can carry photos, publish one short story per wedding with the couple's permission (their day in 8 to 12 images, one moment Xavier remembers) and end it with a vendor credit block pulled from their schedule, each name linked. The couple shares it with family and friends, every credited vendor shares it with their own followers, and each post is a page an engaged couple can find by searching the venue's name.
+
+## 2026-10-19 — Conversion and lead capture
+
+### IDEA-100 · Keep the mind map's Work branch on the site
+- **Category:** Conversion · **Effort:** S · **Impact:** ★★ · **Status:** new
+- In index.html the MAP data sends "De Belle Photo" and "333 Photo" straight to debellephotography.com and 333photo.com (external:true), and only "Real Estate" opens work.html, so the home page's two money nodes skip the one page built to sell them (and where Umami counts the visit). Point those two leaves at work.html#de-belle and work.html#333-photo, where the outside-site buttons still sit, and add a fourth "Price your wedding" leaf under Connect that opens tools/package-builder.html. Visitors from the home page then see the studio story, the specs and the tools before they leave, and every step stays measurable.
+
+### IDEA-101 · "Price your wedding in 2 minutes" button in the de Belle chapter
+- **Category:** Conversion · **Effort:** S · **Impact:** ★★★ · **Status:** new
+- The de Belle chapter of work.html (around line 251) offers only "debellephotography.com ↗" and "The tools behind it →" (which lands on the tools.html grid), so a couple reading about the studio is never handed the Package Builder, the most qualifying page on the site. Add a solid button "Price your wedding in 2 minutes →" straight to tools/package-builder.html, opened in the same tab, as the chapter's first action. A couple who builds a package has told themselves the price before they write, which makes every enquiry that follows warmer, and it is the entry point IDEA-007 and IDEA-031 need to get traffic.
+
+### IDEA-102 · Remember the package and let the couple share it with a link
+- **Category:** Conversion · **Effort:** S · **Impact:** ★★ · **Status:** new
+- tools/package-builder.html keeps nothing (no localStorage, no URL state), so a reload or a closed tab wipes the whole build, and the only output is a .txt download. Save the selections on the device as they change, and add a "Share this package" button that writes them into the link (for example ?p=…) and opens the phone's share sheet, so the same package reopens exactly for a partner or parents. Wedding budgets are decided by two to four people, often with parents paying, and a link that opens the live, priced package travels further than a text file, with Xavier's brand on every open.
+
+### IDEA-103 · Autosave the Wedding Day Schedule as it's filled in
+- **Category:** Fix · **Effort:** S · **Impact:** ★★ · **Status:** new
+- tools/wedding-schedule.html has 31 fields plus repeating vendor blocks, says "everything stays on your device until you print or save", but stores nothing, so a reload, a phone locking the tab or a stray "Clear Form" tap loses an evening's work. Save the form to localStorage on every change, restore it on open, and ask for confirmation before Clear. Couples who lose a half-built schedule don't come back, and the ones who finish it are the ones who reach the PDF and email step in IDEA-045.
