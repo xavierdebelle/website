@@ -448,3 +448,25 @@ its ID forever. Statuses: new, planned, in progress, done, dropped.
 ### IDEA-103 · Autosave the Wedding Day Schedule as it's filled in
 - **Category:** Fix · **Effort:** S · **Impact:** ★★ · **Status:** new
 - tools/wedding-schedule.html has 31 fields plus repeating vendor blocks, says "everything stays on your device until you print or save", but stores nothing, so a reload, a phone locking the tab or a stray "Clear Form" tap loses an evening's work. Save the form to localStorage on every change, restore it on open, and ask for confirmation before Clear. Couples who lose a half-built schedule don't come back, and the ones who finish it are the ones who reach the PDF and email step in IDEA-045.
+
+## 2026-10-20 — One tool in full: Journal
+
+### IDEA-104 · Encrypt the Journal before it syncs, with an optional passcode
+- **Category:** Fix · **Effort:** M · **Impact:** ★★ · **Status:** new
+- tools/journal.html sends every entry (moods, "three good things", the free writing) to Firebase as plain text through pushNow(), and privacy.html says outright that the database administrator "could technically open it". A diary is the most private thing anyone will ever type on the site, and that sentence is enough to stop a friend from trusting it. Add an optional passcode: the browser derives a key from it (Web Crypto, PBKDF2 + AES-GCM) and only the encrypted entries go into users/{uid}/tools/journal, with a lock screen when the app opens. Then privacy.html can say "not even I can read your journal", which is also the first thing a paying user of IDEA-034's Pro tier would ask about.
+
+### IDEA-105 · One photo a day in the Journal
+- **Category:** Feature · **Effort:** M · **Impact:** ★★★ · **Status:** new
+- The Journal's own prompt list asks "If today were a photo, what would be in the frame?", yet an entry can only hold a mood, three lines, text and tags. Let each day carry one photo (shrunk to about 1080px in the browser and kept in IndexedDB, not localStorage, so it can't fill up like IDEA-046), show it as a thumbnail on the calendar days in renderAside() and next to each memory in "On this day". A photographer's journal that builds a photo-a-day diary is a natural fit for the brand, a strong reason to open it every evening, and it is what makes the printed book in IDEA-108 worth buying.
+
+### IDEA-106 · "Remind me every evening" calendar reminder
+- **Category:** Feature · **Effort:** S · **Impact:** ★★ · **Status:** new
+- The Journal is built around a streak (streaks() and the stats panel), but nothing ever reminds anyone to write, and an installed web app can't send its own push notifications without a server. Add a "Remind me" button that downloads a small .ics file: a daily repeating event at the time the person picks (for example 21:00) whose link opens tools/journal.html straight on today. It works on every phone and computer calendar with no server, and a daily nudge is what keeps a streak, and a habit, alive past the first week.
+
+### IDEA-107 · "What makes a good day" insights from moods and tags
+- **Category:** Feature · **Effort:** S · **Impact:** ★★ · **Status:** new
+- The Journal already stores a 1–5 mood and tags for every day, but the stats panel only shows the streak, entries this month, a 30-day average mood and total words. Add a small "Patterns" panel: the tags that show up most on Good and Great days versus Low and Rough ones ("#training on 80% of your good days"), the best and worst weekday, and the mood by month as a row of coloured squares. It turns months of entries into something people learn from, which is the moment someone tells a friend about a tool.
+
+### IDEA-108 · "Print your year": a hardcover book of the Journal, sold each December
+- **Category:** Monetization · **Effort:** M · **Impact:** ★★ · **Status:** new
+- The Journal can export everything as .md or .json, and Xavier already sells printed albums through the Package Builder (album types, Parent Album Duplicates), so the lab and the design know-how exist. Add an "Order my year as a book" button in the Entries view that sends the year's entries (and photos, with IDEA-105) to a GoHighLevel order form, and lay them out as a hardcover: one page per day, mood and good things in the margin, at about $89–149. It sells again every December (continuity), makes a natural gift, and gives anyone who journals with the tool a reason to buy from Xavier without ever booking a shoot.
