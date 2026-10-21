@@ -5,6 +5,54 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v99 — 2026-10-21
+
+**What's new** · New tool · [tools/photo-review.html]
+### Photo Review
+The same idea as Video Review, for retouching. Send a client one link to
+the edits. They click the exact spot on a photo, draw on it if words won't
+do, and say what they'd change — each note sits on the picture as a
+numbered pin. Happy with one? They press Approve. Retouched versions land
+on the same link, and no one needs an account.
+
+**Photo Review v1 — `tools/photo-review.html`, source `Tools files/de Belle Photography apps/photo-review-v1.html`, de Belle**
+- Built from Video Review v1 (same look, sign-in, dialogs, Drive upload and
+  host model). Database `photoReviews/{id}` (32-hex link, read by exact id
+  only): `owner`, `createdAt`, `title`, `photos/{p}` (`pos`, `name`,
+  `createdAt`), `versions/{v}` (`p` photo, `n`, `name`, `drive` or `url`,
+  `w`, `h`, `createdAt`), `comments/{k}` (`p`, `v`, `x`/`y` pin as 0…1 of
+  the picture — absent = note on the whole photo, `text`, `name`, `by`,
+  `at`, `draw`, `re`, `done`, `gone`, `edited`, `host`, `ok` = approval).
+  Host index `users/{uid}/photoReviews/{id}` (`title`, `createdAt`, `seen`).
+- Clients: click the photo → pending pin → note; drawing (pen/arrow/box)
+  pins where it starts; pins numbered in the order notes were left; click
+  a pin or note to show its drawing; Approve / undo per photo version.
+  Name and browser id shared with Video Review (`xdb.review.name/by`).
+- Viewer: zoom (Fit, ±, 1:1, ctrl/pinch-wheel around the cursor), drag to
+  pan, filmstrip with open-note counts and ✓, ←/→ between photos, versions
+  per photo (a viewer stays on the version they picked).
+- Host: add many photos at once (Drive upload, optional 3000 px sRGB JPEG
+  review copy made in the browser, or paste links), retouched version per
+  photo, rename, reorder, delete version/photo/review, mark done, reply,
+  Copy notes / .txt for the whole set (per photo, pins numbered, approvals
+  named); home list with photos · open · approved and "N new".
+- **Rules:** new `photoReviews/` block in
+  `.claude/skills/add-cloud-sync/assets/firebase-rules.json`, same shape as
+  `reviews/` (clients may only add or soft-edit their own notes; `x`/`y`
+  0…1; no hard delete, no `host` flag). **Xavier publishes it together with
+  the `reviews/` rules.** Mock harness mirrors it.
+- **Drive:** same `DRIVE_CLIENT_ID` / `DRIVE_API_KEY` as Video Review — both
+  empty until his console setup; paste-a-link works meanwhile. Folder
+  "Photo Reviews".
+- Tested on the mock (two devices): create, add photos by link, client pin
+  note, arrow drawing, approve/undo, host sees it live with new dots, mark
+  done, reply, retouched version (old notes stay on v1), zoom maths, phone
+  layout; anonymous writes to photos/title/`by`/`host`/bad `x` refused.
+  Not tested: real Drive upload/playback (no keys yet), Safari.
+- Scan: hosts accounts.google.com, drive.google.com, www.googleapis.com —
+  the same ones Video Review already uses. Privacy page (EN + FR) gains a
+  Photo Review entry; Google line names it.
+
 ## v98 — 2026-10-21
 
 **What's new** · New tool · [tools/video-review.html]

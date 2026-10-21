@@ -1,0 +1,1204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="../assets/account.js"></script>
+<script defer src="../assets/stats.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Photo Review — XAVIER DE BELLE</title>
+<!-- social preview: link cards on Instagram, iMessage, WhatsApp, Facebook, X -->
+<meta name="description" content="Look through the edits, click the exact spot, draw on it and leave a note. Every note is pinned to the place on the photo.">
+<link rel="canonical" href="https://xavierdebelle.com/tools/photo-review.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Xavier de Belle">
+<meta property="og:locale" content="en_CA">
+<meta property="og:title" content="Photo Review — Xavier de Belle">
+<meta property="og:description" content="Click the spot, draw on the photo and leave your retouching notes.">
+<meta property="og:url" content="https://xavierdebelle.com/tools/photo-review.html">
+<meta property="og:image" content="https://xavierdebelle.com/assets/og/home.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Photo Review — Xavier de Belle">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="../assets/logo.svg" type="image/svg+xml">
+<!--
+  PHOTO REVIEW — setup: the same two Google keys as Video Review (project
+  xdb-tools). Once DRIVE_CLIENT_ID and DRIVE_API_KEY are in video-review.html,
+  paste the same two values below. Photos go into the Drive folder "Photo Reviews".
+-->
+<style>
+:root{
+  --ink:#000;--paper:#fff;--volt:#ffe800;--smoke:#141414;--ash:#2a2a2a;--dust:#8a8a8a;--red:#ff3b30;
+  --stack:"Helvetica Neue",Helvetica,Arial,"Segoe UI",system-ui,sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --gut:clamp(14px,3vw,28px);
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+html,body{margin:0;background:var(--ink);color:var(--paper);font-family:var(--stack)}
+button,input,select,textarea{font:inherit;color:inherit}
+a{color:var(--volt);text-decoration:none}
+[hidden]{display:none!important}
+:focus-visible{outline:2px solid var(--volt);outline-offset:2px}
+
+/* ---------- top bar ---------- */
+.top{display:flex;align-items:center;gap:10px 16px;flex-wrap:wrap;padding:12px var(--gut);border-bottom:3px solid var(--paper);
+  padding-top:max(12px,env(safe-area-inset-top))}
+.brand{display:flex;align-items:baseline;gap:10px;margin-right:auto;min-width:0;flex-wrap:wrap}
+.brand a{color:var(--paper);font-weight:900;font-size:12px;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap}
+.brand a:hover{color:var(--volt)}
+.brand h1{margin:0;font-weight:900;text-transform:uppercase;letter-spacing:-.04em;font-size:26px;line-height:1;overflow-wrap:anywhere}
+.brand h1 span{color:var(--volt)}
+.topacts{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.btn{background:transparent;border:3px solid var(--paper);color:var(--paper);font-weight:900;font-size:11px;letter-spacing:.12em;
+  text-transform:uppercase;padding:9px 13px;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:8px;border-radius:0}
+.btn:hover:not(:disabled){background:var(--volt);border-color:var(--volt);color:var(--ink)}
+.btn:disabled{opacity:.35;cursor:default}
+.btn.solid{background:var(--volt);border-color:var(--volt);color:var(--ink)}
+.btn.solid:hover:not(:disabled){background:var(--paper);border-color:var(--paper)}
+.btn.sm{padding:6px 9px;font-size:10px;border-width:2px}
+.btn.ghost{border-color:transparent}
+.btn.ok{background:var(--paper);border-color:var(--paper);color:var(--ink)}
+.btn:disabled.ok,.btn:disabled#btnApprove{opacity:1;cursor:default}
+#btnApprove:disabled:not(.ok){border-color:var(--ash);color:var(--dust)}
+.k{margin:0 0 8px;font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--dust)}
+.note{margin:8px 0 0;font-size:13px;line-height:1.5;color:var(--dust)}
+.note b{color:var(--paper)}
+input[type=text],input[type=url],textarea,select{width:100%;background:var(--ink);border:3px solid var(--paper);border-radius:0;padding:9px 11px;font-size:16px}
+select{width:auto;font-size:13px;font-weight:700;padding:7px 9px;border-width:2px}
+textarea{resize:vertical;min-height:70px;line-height:1.45}
+input:focus,textarea:focus,select:focus{outline:none;border-color:var(--volt)}
+label.chk{display:flex;gap:8px;align-items:flex-start;font-size:14px;line-height:1.4;cursor:pointer}
+label.chk input{margin-top:3px;accent-color:var(--volt)}
+
+/* ---------- home ---------- */
+.home{max-width:760px;padding:28px var(--gut) 60px}
+.home h2{font-weight:900;text-transform:uppercase;letter-spacing:-.03em;font-size:32px;line-height:1;margin:0 0 14px}
+.gate{border-left:6px solid var(--volt);padding:6px 0 6px 16px;margin:0 0 28px;font-size:15px;line-height:1.55}
+.newrow{display:flex;gap:8px;margin-bottom:34px}
+.newrow input{flex:1;min-width:0}
+.rv{display:flex;align-items:center;gap:12px;border-top:3px solid var(--ash);padding:14px 0;cursor:pointer}
+.rv:hover .rv-t{color:var(--volt)}
+.rv-t{font-weight:900;font-size:18px;text-transform:uppercase;letter-spacing:-.01em;overflow-wrap:anywhere}
+.rv-m{font-family:var(--mono);font-size:11px;color:var(--dust);margin-top:3px}
+.rv-main{flex:1;min-width:0}
+.badge{background:var(--volt);color:var(--ink);font-weight:900;font-size:11px;letter-spacing:.06em;padding:4px 8px;white-space:nowrap;text-transform:uppercase}
+.empty{color:var(--dust);font-size:14px;padding:14px 0;border-top:3px solid var(--ash)}
+
+/* ---------- review layout: notes left, photo right ---------- */
+.review{display:grid;grid-template-columns:minmax(300px,380px) minmax(0,1fr);gap:0;min-height:calc(100vh - 66px)}
+.side{border-right:3px solid var(--ash);display:flex;flex-direction:column;min-width:0;max-height:calc(100vh - 66px);position:sticky;top:0}
+.side-head{padding:14px 16px 10px;border-bottom:3px solid var(--ash);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.side-head .k{margin:0;margin-right:auto}
+.list{flex:1;overflow:auto;padding:4px 0 12px;min-height:120px}
+.cm{padding:12px 16px;border-bottom:1px solid var(--ash);cursor:pointer;position:relative}
+.cm:hover{background:var(--smoke)}
+.cm.on{background:var(--smoke);box-shadow:inset 4px 0 0 var(--volt)}
+.cm.done>.cm-text{color:var(--dust);text-decoration:line-through}
+.cm.okay{cursor:default}
+.cm-top{display:flex;align-items:center;gap:8px;font-size:12px}
+.num{font-family:var(--mono);font-size:11px;background:var(--volt);color:var(--ink);min-width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:700;padding:0 5px}
+.num.gen{border-radius:0;background:var(--ash);color:var(--paper);letter-spacing:.06em}
+.num.yes{background:var(--paper)}
+.cm-name{font-weight:900;text-transform:uppercase;letter-spacing:.04em;font-size:11px}
+.cm-name.host{color:var(--volt)}
+.cm-ago{color:var(--dust);font-family:var(--mono);font-size:10px;margin-left:auto;white-space:nowrap}
+.cm-new{width:8px;height:8px;border-radius:50%;background:var(--volt);flex:none}
+.cm-text{margin:6px 0 0;font-size:14px;line-height:1.45;white-space:pre-wrap;overflow-wrap:anywhere}
+.cm-draw{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--volt);margin-top:6px}
+.cm-acts{display:flex;gap:4px;margin-top:6px;flex-wrap:wrap}
+.cm-acts button{background:none;border:0;padding:3px 6px 3px 0;cursor:pointer;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--dust)}
+.cm-acts button:hover{color:var(--volt)}
+.cm-acts .chk{color:var(--paper)}
+.reply{margin:8px 0 0 14px;padding-left:10px;border-left:2px solid var(--ash)}
+.reply .cm-text{margin-top:3px}
+.compose{border-top:3px solid var(--paper);padding:12px 16px 14px;background:var(--ink)}
+.compose-top{display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:12px;flex-wrap:wrap}
+.compose-top .who{margin-left:auto;color:var(--dust);font-size:11px;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+.compose-row{display:flex;gap:8px;margin-top:8px;align-items:center;flex-wrap:wrap}
+.compose-row .grow{margin-right:auto}
+.replying{font-size:12px;color:var(--dust);margin-bottom:6px}
+.replying button{background:none;border:0;color:var(--volt);cursor:pointer;font-size:12px;padding:0}
+
+.main{min-width:0;padding:16px var(--gut) 30px}
+.pbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.pbar .pname{font-weight:900;text-transform:uppercase;letter-spacing:-.01em;font-size:16px;margin-right:auto;min-width:0;overflow-wrap:anywhere}
+.pbar .pname span{font-family:var(--mono);font-size:11px;color:var(--dust);font-weight:400;letter-spacing:.06em;margin-right:8px}
+.stage{position:relative;background:#050505;border:3px solid var(--ash);height:min(70vh,900px);width:100%;overflow:auto;display:grid;user-select:none;-webkit-user-select:none;overscroll-behavior:contain}
+.stage.drawing{border-color:var(--volt)}
+.sheet{position:relative;margin:auto;flex:none}
+.sheet img{display:block;width:100%;height:100%;-webkit-user-drag:none;user-select:none}
+.sheet canvas{position:absolute;left:0;top:0;pointer-events:none;touch-action:none}
+.stage.drawing .sheet canvas{pointer-events:auto;cursor:crosshair}
+.sheet{cursor:crosshair}
+.stage.grab .sheet{cursor:grab}
+.pins{position:absolute;inset:0;pointer-events:none}
+.pin{position:absolute;width:28px;height:28px;margin:-14px 0 0 -14px;border-radius:50%;background:var(--volt);color:var(--ink);border:2px solid var(--ink);
+  font:700 12px var(--mono);display:flex;align-items:center;justify-content:center;pointer-events:auto;cursor:pointer;box-shadow:0 1px 6px rgba(0,0,0,.6);padding:0}
+.pin.done{background:var(--dust)}
+.pin.on{outline:3px solid var(--paper);outline-offset:1px}
+.pin.new{background:transparent;border:3px dashed var(--volt);color:var(--volt);pointer-events:none;animation:pulse 1.2s infinite}
+@keyframes pulse{50%{transform:scale(1.15)}}
+.stage-msg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;font-size:15px;line-height:1.5;color:var(--dust);background:#050505}
+.stage-msg b{color:var(--paper)}
+.ctrl{display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap}
+.ctrl .ib{background:none;border:2px solid var(--paper);min-width:40px;height:40px;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0 8px;flex:none;font-weight:900;font-size:11px;letter-spacing:.08em}
+.ctrl .ib:hover{background:var(--volt);border-color:var(--volt);color:var(--ink)}
+.ctrl .ib:hover svg{fill:var(--ink)}
+.ctrl .ib svg{width:16px;height:16px;fill:var(--paper)}
+.zoomlbl{font-family:var(--mono);font-size:12px;color:var(--dust);min-width:46px;text-align:center}
+.tools{display:flex;align-items:center;gap:6px;margin-top:10px;flex-wrap:wrap;padding:8px;border:3px solid var(--volt)}
+.tools .k{margin:0 6px 0 2px;color:var(--volt)}
+.tools button.t{background:none;border:2px solid var(--ash);padding:6px 9px;cursor:pointer;font-size:11px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}
+.tools button.t[aria-pressed=true]{background:var(--volt);color:var(--ink);border-color:var(--volt)}
+.tools .sw{width:26px;height:26px;border:2px solid var(--ash);cursor:pointer;padding:0}
+.tools .sw[aria-pressed=true]{border-color:var(--paper);box-shadow:0 0 0 2px var(--ink) inset}
+.tools .gap{margin-left:auto}
+.strip{display:flex;gap:8px;overflow-x:auto;margin-top:14px;padding-bottom:6px}
+.th{position:relative;flex:none;width:96px;height:72px;border:3px solid var(--ash);background:#050505;cursor:pointer;padding:0;overflow:hidden}
+.th img{width:100%;height:100%;object-fit:cover;display:block}
+.th.on{border-color:var(--volt)}
+.th .tn{position:absolute;left:0;top:0;background:var(--ink);color:var(--paper);font:700 10px var(--mono);padding:2px 5px}
+.th .tc{position:absolute;right:0;bottom:0;background:var(--volt);color:var(--ink);font:700 10px var(--mono);padding:2px 5px}
+.th .ty{position:absolute;right:0;top:0;background:var(--paper);color:var(--ink);font:900 11px var(--stack);padding:1px 5px}
+.th.add{display:flex;align-items:center;justify-content:center;font-weight:900;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--paper);border-style:dashed}
+.th.add:hover{border-color:var(--volt);color:var(--volt)}
+.help{margin-top:12px;font-size:12px;color:var(--dust);line-height:1.6}
+.help kbd{font-family:var(--mono);font-size:10px;border:1px solid var(--dust);padding:1px 4px;color:var(--paper)}
+
+/* ---------- dialogs ---------- */
+.dlg{position:fixed;inset:0;background:rgba(0,0,0,.8);display:flex;align-items:center;justify-content:center;padding:16px;z-index:50}
+.dlg-box{background:var(--ink);border:3px solid var(--paper);padding:22px;width:min(520px,100%);max-height:calc(100vh - 32px);overflow:auto}
+.dlg-box h3{margin:0 0 12px;font-weight:900;text-transform:uppercase;font-size:20px;letter-spacing:-.01em}
+.dlg-acts{display:flex;gap:8px;justify-content:flex-end;margin-top:16px;flex-wrap:wrap}
+.field{margin-top:14px}
+.or{margin:16px 0 4px;font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--dust)}
+.prog{height:8px;background:var(--ash);margin-top:12px}
+.prog i{display:block;height:100%;background:var(--volt);width:0}
+.linkbox{display:flex;gap:8px}
+.linkbox input{flex:1;min-width:0;font-family:var(--mono);font-size:13px}
+
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);opacity:0;background:var(--volt);color:var(--ink);font-weight:900;font-size:13px;
+  padding:10px 16px;transition:.2s;z-index:60;pointer-events:none;max-width:calc(100vw - 32px);text-align:center}
+.toast.on{opacity:1;transform:translateX(-50%)}
+
+/* ---------- phones: photo first, notes below ---------- */
+@media (max-width:860px){
+  .review{grid-template-columns:1fr;min-height:0}
+  .side{order:2;border-right:0;border-top:3px solid var(--ash);max-height:none;position:static}
+  .main{order:1;padding:12px var(--gut) 8px}
+  .list{max-height:none;overflow:visible}
+  .brand h1{font-size:20px}
+  .stage{height:62vh}
+  .compose{order:-2;border-top:0;border-bottom:3px solid var(--ash)}
+  .side-head{order:-1}
+  .help{display:none}
+  .th{width:72px;height:56px}
+  #zoomLbl,#btn100{display:none}
+  .ctrl{gap:6px}
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="brand"><a href="../index.html">Xavier de Belle</a><h1 id="title">Photo Review<span>.</span></h1></div>
+  <div class="topacts">
+    <button type="button" class="btn sm" id="btnShare" hidden>Client link</button>
+    <button type="button" class="btn sm" id="btnHostMenu" hidden>Manage</button>
+    <span id="acctSlot" data-xdb-account hidden></span>
+  </div>
+</header>
+
+<!-- ================= HOME: your reviews ================= -->
+<main id="homeView" class="home" hidden>
+  <div id="homeBanner"></div>
+  <h2>Photo reviews</h2>
+  <div class="gate" id="gate" hidden><span id="gateText"></span>
+    <div style="margin-top:12px"><button type="button" class="btn solid sm" id="gateBtn">Sign in with Google</button></div></div>
+  <div id="hostHome" hidden>
+    <p class="k">Start a review</p>
+    <div class="newrow">
+      <input type="text" id="newTitle" maxlength="200" placeholder="e.g. Smith wedding — retouching round 1" aria-label="Review name">
+      <button type="button" class="btn solid" id="btnCreate">Create</button>
+    </div>
+    <p class="k">Your reviews</p>
+    <div id="homeList"></div>
+  </div>
+  <p class="note" style="margin-top:28px">Clients never need an account — they open the link, type their name, click the spot and leave a note. Photos live in your Google Drive.</p>
+</main>
+
+<!-- ================= REVIEW ================= -->
+<div id="reviewView" class="review" hidden>
+  <aside class="side" aria-label="Notes">
+    <div class="side-head">
+      <p class="k" id="countLbl">Notes</p>
+      <button type="button" class="btn sm ghost" id="btnHideDone" aria-pressed="false">Hide done</button>
+      <button type="button" class="btn sm" id="btnExport" hidden>Copy notes</button>
+    </div>
+    <div class="list" id="list"></div>
+    <div class="compose" id="compose">
+      <div class="replying" id="replying" hidden>Replying to <b id="replyName"></b> · <button type="button" id="replyCancel">cancel</button></div>
+      <div class="compose-top">
+        <span class="num gen" id="composePin">ALL</span>
+        <span id="composeHint" style="color:var(--dust)">Click the photo to pin a note to that spot</span>
+        <span class="who" id="whoBtn" title="Change your name"></span>
+      </div>
+      <textarea id="txt" maxlength="5000" placeholder="Your note on this photo…" aria-label="Your note"></textarea>
+      <div class="compose-row">
+        <button type="button" class="btn sm grow" id="btnDraw" aria-pressed="false">✎ Draw on photo</button>
+        <button type="button" class="btn solid sm" id="btnPost">Post note</button>
+      </div>
+    </div>
+  </aside>
+
+  <section class="main">
+    <div class="pbar">
+      <div class="pname" id="pname"></div>
+      <select id="verSel" hidden aria-label="Version"></select>
+      <button type="button" class="btn sm" id="btnApprove" hidden>✓ Approve</button>
+    </div>
+    <div class="stage" id="stage">
+      <div class="sheet" id="sheet"><img id="pic" alt=""><canvas id="ink"></canvas><div class="pins" id="pins"></div></div>
+      <div class="stage-msg" id="stageMsg" hidden></div>
+    </div>
+
+    <div class="tools" id="drawTools" hidden>
+      <span class="k">Draw</span>
+      <button type="button" class="t" data-tool="pen" aria-pressed="true">Pen</button>
+      <button type="button" class="t" data-tool="arrow" aria-pressed="false">Arrow</button>
+      <button type="button" class="t" data-tool="box" aria-pressed="false">Box</button>
+      <button type="button" class="sw" data-col="#ffe800" style="background:#ffe800" aria-label="Yellow" aria-pressed="true"></button>
+      <button type="button" class="sw" data-col="#ff3b30" style="background:#ff3b30" aria-label="Red" aria-pressed="false"></button>
+      <button type="button" class="sw" data-col="#ffffff" style="background:#fff" aria-label="White" aria-pressed="false"></button>
+      <span class="gap"></span>
+      <button type="button" class="t" id="btnUndo">Undo</button>
+      <button type="button" class="t" id="btnClear">Clear</button>
+    </div>
+
+    <div class="ctrl">
+      <button type="button" class="ib" id="btnPrev" aria-label="Previous photo"><svg viewBox="0 0 24 24"><path d="M16 3L6 12l10 9z"/></svg></button>
+      <button type="button" class="ib" id="btnNext" aria-label="Next photo"><svg viewBox="0 0 24 24"><path d="M8 3l10 9-10 9z"/></svg></button>
+      <span style="margin-right:auto"></span>
+      <button type="button" class="ib" id="btnZoomOut" aria-label="Zoom out">−</button>
+      <span class="zoomlbl" id="zoomLbl">Fit</span>
+      <button type="button" class="ib" id="btnZoomIn" aria-label="Zoom in">+</button>
+      <button type="button" class="ib" id="btnFit">Fit</button>
+      <button type="button" class="ib" id="btn100">1:1</button>
+      <button type="button" class="ib" id="btnPins" aria-pressed="true" aria-label="Hide pins">Pins</button>
+    </div>
+    <div class="strip" id="strip" aria-label="Photos"></div>
+    <p class="help">Click the photo to pin a note there · <kbd>←</kbd> <kbd>→</kbd> previous / next photo · <kbd>+</kbd> <kbd>−</kbd> zoom, <kbd>0</kbd> fit, drag to move around · <kbd>c</kbd> write a note · <kbd>Esc</kbd> cancel the pin.</p>
+  </section>
+</div>
+
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+// ── CONFIG ───────────────────────────────────
+// Photo Review — retouching notes pinned to a spot on the photo. The
+// sibling of Video Review: same look, same sign-in, same rules shape. Lives
+// in the xdb-tools database at photoReviews/{id}, readable by exact link
+// only (32 random hex). Clients leave notes without an account; whoever
+// created a review — Xavier or an approved member — runs it. The host's
+// list sits at users/{uid}/photoReviews/{id} (with `seen` for the badge).
+// A review holds photos/{p}; each photo has versions/{v} (retouch rounds);
+// notes are comments/{k} with the photo, the version and a pin (x, y as
+// 0…1 of the picture). Photos live in the host's Google Drive (drive.file,
+// "anyone with the link"). Sign-in and Firebase come from ../assets/account.js.
+const OWNER = 'jGJdt3h4EeaOL3mYWUHA4yMZsRx2';
+const DRIVE_CLIENT_ID = '';   // the same two values as video-review.html
+const DRIVE_API_KEY   = '';
+const DRIVE_SCOPE  = 'https://www.googleapis.com/auth/drive.file';
+const DRIVE_FOLDER = 'Photo Reviews';
+const ROOT = 'photoReviews', INDEX = 'photoReviews';
+const NAME_KEY = 'xdb.review.name', BY_KEY = 'xdb.review.by', FOLDER_KEY = 'xdb.photoreview.folder', HIDE_KEY = 'xdb.photoreview.hideDone';
+const SHRINK_TO = 3000;   // long side for review copies
+const ZMAX = 6;
+// ─────────────────────────────────────────────
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+const hex = n => { const b = new Uint8Array(n); crypto.getRandomValues(b); return Array.from(b, x => x.toString(16).padStart(2, '0')).join(''); };
+const recall = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
+const store = (k, v) => { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch (e) {} };
+function toast(msg) { const t = $('toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toast.h); toast.h = setTimeout(() => t.classList.remove('on'), 2600); }
+function ago(ms) {
+  const s = Math.max(0, (Date.now() - ms) / 1000);
+  if (s < 60) return 'now'; if (s < 3600) return Math.floor(s / 60) + 'm'; if (s < 86400) return Math.floor(s / 3600) + 'h';
+  if (s < 86400 * 7) return Math.floor(s / 86400) + 'd';
+  return new Date(ms).toLocaleDateString('en-CA', { month: 'short', day: 'numeric' });
+}
+const plural = (n, w) => n + ' ' + w + (n === 1 ? '' : 's');
+
+// this browser's identity for notes (no account): a name and a random id — shared with Video Review
+let myBy = recall(BY_KEY); if (!myBy) { myBy = hex(8); store(BY_KEY, myBy); }
+let myName = recall(NAME_KEY) || '';
+
+let fb = null;  // { db, f } once the SDK is in
+const acct = () => window.xdbAccount;
+const acctState = () => (acct() ? acct().state() : { status: 'signedout', user: null });
+const me = () => acctState().user;
+const canHost = () => ['owner', 'member'].includes(acctState().status);
+const isHost = () => !!(R && me() && (me().uid === R.owner || me().uid === OWNER));
+
+const params = new URLSearchParams(location.search);
+const reviewId = params.get('r');
+let R = null;            // the open review, as last read
+let photoKey = params.get('p') || null;
+let verKey = params.get('v') || null;   // a version picked by hand; null = the photo's latest
+let seenAt = null;       // host: when they last looked (for the new dots)
+let pendingAdd = params.has('add');     // just created: open "Add photos" once sign-in is known
+
+// the database drops empty objects — rebuild every key on the way in
+function normalise(v, id) {
+  if (!v || typeof v !== 'object' || !v.owner) return null;
+  const versions = Object.entries(v.versions || {}).map(([k, x]) => ({ key: k, p: x.p || '', n: Number(x.n) || 1, name: x.name || '', drive: x.drive || '', url: x.url || '',
+    w: Number(x.w) || 0, h: Number(x.h) || 0, createdAt: x.createdAt || 0 })).sort((a, b) => a.n - b.n);
+  const photos = Object.entries(v.photos || {}).map(([k, x]) => ({ key: k, pos: Number(x.pos) || 0, name: x.name || '', createdAt: x.createdAt || 0 }))
+    .sort((a, b) => a.pos - b.pos || a.createdAt - b.createdAt)
+    .map(p => Object.assign(p, { versions: versions.filter(x => x.p === p.key) }));
+  const num = n => (typeof n === 'number' && n >= 0 && n <= 1 ? n : null);
+  const comments = Object.entries(v.comments || {}).map(([k, c]) => ({ key: k, p: c.p || '', v: c.v || '', x: num(c.x), y: num(c.y), text: c.text || '', name: c.name || 'Guest',
+    by: c.by || '', at: c.at || 0, draw: c.draw || '', done: !!c.done, re: c.re || '', host: !!c.host, gone: !!c.gone, edited: c.edited || 0, ok: !!c.ok }));
+  return { id, owner: v.owner, title: v.title || 'Photo review', createdAt: v.createdAt || 0, photos, comments };
+}
+const curPhoto = () => R && (R.photos.find(p => p.key === photoKey) || R.photos[0]) || null;
+const latest = p => p && p.versions.length ? p.versions[p.versions.length - 1] : null;
+const curVer = () => { const p = curPhoto(); return p && (p.versions.find(x => x.key === verKey) || latest(p)) || null; };
+const photoIndex = () => { const p = curPhoto(); return p ? R.photos.indexOf(p) : -1; };
+function srcOf(ver) {
+  if (!ver) return '';
+  if (ver.drive) return DRIVE_API_KEY ? 'https://www.googleapis.com/drive/v3/files/' + encodeURIComponent(ver.drive) + '?alt=media&key=' + encodeURIComponent(DRIVE_API_KEY) : '';
+  return ver.url;
+}
+function thumbOf(ver) {
+  if (!ver) return '';
+  if (ver.drive) return 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(ver.drive) + '&sz=w320';
+  return ver.url;
+}
+// approval of a version = a note with ok: true that isn't deleted
+const approvals = v => R.comments.filter(c => c.v === v.key && c.ok && !c.gone);
+const openNotes = (cs, v) => cs.filter(c => c.v === v.key && !c.re && !c.gone && !c.ok && !c.done).length;
+function dbRef(p) { return fb.f.ref(fb.db, p); }
+function write(p, v, fail) {
+  return fb.f.set(dbRef(p), v).then(() => true, err => { console.warn('write refused', p, err); toast(fail || "Couldn't save — check your connection"); return false; });
+}
+function setUrl() {
+  const q = '?r=' + encodeURIComponent(R.id) + (curPhoto() ? '&p=' + encodeURIComponent(curPhoto().key) : '') + (verKey ? '&v=' + encodeURIComponent(verKey) : '');
+  history.replaceState(null, '', q);
+}
+
+// ══════════════════ HOME ══════════════════
+let homeOff = null, homeUid, homeData = {}, homeWatch = {};
+function showHome(banner) {
+  $('reviewView').hidden = true; $('homeView').hidden = false; $('acctSlot').hidden = false;
+  $('homeBanner').innerHTML = banner ? '<div class="gate">' + banner + '</div>' : '';
+  renderHome();
+}
+function renderHome() {
+  if ($('homeView').hidden) return;
+  const s = acctState();
+  const msg = {
+    signedout: 'Sign in with Google to start a review.',
+    checking: 'Checking your account…',
+    pending: 'Your access request is with Xavier — once he approves it, you can start reviews here.',
+    declined: "This account isn't approved to run reviews here.",
+    error: "Sign-in didn't work — try again.",
+  };
+  $('hostHome').hidden = !canHost(); $('gate').hidden = canHost();
+  $('gateText').textContent = msg[s.status] || msg.signedout;
+  $('gateBtn').hidden = !(s.status === 'signedout' || s.status === 'error');
+  const uidNow = canHost() ? me().uid : null;
+  if (uidNow === homeUid) return;
+  if (homeOff) { homeOff(); homeOff = null; }
+  Object.values(homeWatch).forEach(off => off()); homeWatch = {};
+  homeUid = uidNow;
+  if (!uidNow || !fb) { $('homeList').innerHTML = ''; return; }
+  homeOff = fb.f.onValue(dbRef('users/' + uidNow + '/' + INDEX), snap => { homeData = snap.val() || {}; watchHome(); renderHomeList(); }, () => {});
+}
+// each review, live, for the counts and the "N new" badge
+const homeRv = {};
+function watchHome() {
+  Object.keys(homeData).forEach(id => {
+    if (homeWatch[id]) return;
+    homeWatch[id] = fb.f.onValue(dbRef(ROOT + '/' + id), snap => { homeRv[id] = normalise(snap.val(), id); renderHomeList(); }, () => {});
+  });
+  Object.keys(homeWatch).forEach(id => { if (!homeData[id]) { homeWatch[id](); delete homeWatch[id]; } });
+}
+function renderHomeList() {
+  const all = Object.entries(homeData).sort((a, b) => (b[1].createdAt || 0) - (a[1].createdAt || 0));
+  $('homeList').innerHTML = all.length ? all.map(([id, d]) => {
+    const rv = homeRv[id], cs = rv ? rv.comments : [];
+    const notes = cs.filter(c => !c.host && !c.gone);
+    const fresh = notes.filter(c => (c.at || 0) > (d.seen || 0)).length;
+    const photos = rv ? rv.photos.filter(p => p.versions.length) : [];
+    const open = photos.reduce((n, p) => n + openNotes(cs, latest(p)), 0);
+    const ok = photos.filter(p => cs.some(c => c.v === latest(p).key && c.ok && !c.gone)).length;
+    return '<div class="rv" data-id="' + esc(id) + '"><div class="rv-main"><div class="rv-t">' + esc(d.title || 'Photo review') + '</div>' +
+      '<div class="rv-m">started ' + esc(new Date(d.createdAt || 0).toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' })) +
+      ' · ' + plural(photos.length, 'photo') + ' · ' + open + ' open · ' + ok + ' approved</div></div>' +
+      (fresh ? '<span class="badge">' + fresh + ' new</span>' : '') + '<span style="font-weight:900">→</span></div>';
+  }).join('') : '<div class="empty">Nothing here yet — start one above.</div>';
+}
+$('homeList').addEventListener('click', e => { const r = e.target.closest('.rv'); if (r) location.search = '?r=' + encodeURIComponent(r.dataset.id); });
+$('gateBtn').onclick = () => acct() && acct().signIn();
+$('newTitle').addEventListener('keydown', e => { if (e.key === 'Enter') createReview(); });
+$('btnCreate').onclick = createReview;
+function createReview() {
+  if (!canHost() || !fb) { toast('Sign in first'); return; }
+  const title = $('newTitle').value.trim();
+  if (!title) { $('newTitle').focus(); toast('Give it a name first'); return; }
+  const id = hex(16), now = Date.now(), host = me().uid;
+  fb.f.set(dbRef(ROOT + '/' + id), { owner: host, createdAt: now, title })
+    .then(() => fb.f.set(dbRef('users/' + host + '/' + INDEX + '/' + id), { title, createdAt: now, seen: now }))
+    .then(() => { location.search = '?r=' + id + '&add=1'; }, err => { console.warn(err); toast("Couldn't create it — check your connection"); });
+}
+
+// ══════════════════ REVIEW ══════════════════
+const stage = $('stage'), sheet = $('sheet'), pic = $('pic'), ink = $('ink'), ctx = ink.getContext('2d');
+let loadedSrc = null, picReady = false, shown = null, replyTo = null, pin = null, hideDone = recall(HIDE_KEY) === '1', showPins = true;
+let zoom = 1;   // 1 = fit the stage
+
+function renderReview() {
+  if (!R) return;
+  if (photoKey && !R.photos.some(p => p.key === photoKey)) photoKey = null;
+  if (!photoKey && R.photos.length) photoKey = R.photos[0].key;
+  const p = curPhoto();
+  if (verKey && !(p && p.versions.some(x => x.key === verKey))) verKey = null;
+  document.title = R.title + ' — Photo Review';
+  $('title').innerHTML = esc(R.title) + '<span>.</span>';
+  const host = isHost(), v = curVer();
+  $('btnShare').hidden = !host; $('btnHostMenu').hidden = !host; $('btnExport').hidden = !host;
+  $('acctSlot').hidden = !me();
+  $('pname').innerHTML = p ? '<span>' + (photoIndex() + 1) + ' / ' + R.photos.length + '</span>' + esc(p.name || 'Photo ' + (photoIndex() + 1)) : '';
+  // versions of this photo
+  const sel = $('verSel');
+  sel.hidden = !p || (p.versions.length < 2 && !host);
+  sel.innerHTML = p ? p.versions.slice().reverse().map(x => {
+    const n = R.comments.filter(c => c.v === x.key && !c.re && !c.gone && !c.ok).length;
+    return '<option value="' + esc(x.key) + '"' + (v && x.key === v.key ? ' selected' : '') + '>Version ' + x.n + (x.name ? ' — ' + esc(x.name) : '') + ' (' + n + ')</option>';
+  }).join('') + (host ? '<option value="__add">+ Retouched version…</option>' : '') : '';
+  // approve (clients) / approved by (host)
+  const ap = v ? approvals(v) : [], mineOk = ap.find(c => c.by === myBy);
+  $('btnApprove').hidden = !v;
+  $('btnApprove').className = 'btn sm' + (ap.length ? ' ok' : '');
+  $('btnApprove').textContent = host ? (ap.length ? '✓ Approved' : 'Not approved yet') : (mineOk ? '✓ Approved — undo' : '✓ Approve this photo');
+  $('btnApprove').disabled = host;
+  $('btnPrev').disabled = photoIndex() <= 0; $('btnNext').disabled = photoIndex() < 0 || photoIndex() >= R.photos.length - 1;
+  loadPhoto();
+  renderStrip(); renderList(); renderPins(); paintCompose();
+}
+function loadPhoto() {
+  const v = curVer(), src = srcOf(v), msg = $('stageMsg');
+  if (!v) {
+    msg.hidden = false; sheet.hidden = true;
+    msg.innerHTML = isHost() ? '<div><b>No photos yet.</b><br>Add the ones you want notes on.<br><br><button type="button" class="btn solid" onclick="openAddPhotos()">Add photos</button></div>' : '<div><b>Nothing to look at yet.</b><br>Check back soon.</div>';
+    if (loadedSrc) { pic.removeAttribute('src'); loadedSrc = null; }
+    return;
+  }
+  if (!src) { msg.hidden = false; sheet.hidden = true; msg.innerHTML = '<div><b>Drive photos aren’t set up yet.</b><br>The Drive API key still needs adding to this tool.</div>'; return; }
+  if (src === loadedSrc) return;
+  loadedSrc = src; picReady = false; shown = null; zoom = 1;
+  msg.hidden = false; msg.innerHTML = '<div>Loading the photo…</div>'; sheet.hidden = true;
+  pic.src = src;
+}
+pic.addEventListener('load', () => { picReady = true; $('stageMsg').hidden = true; sheet.hidden = false; layout(); renderPins(); });
+pic.addEventListener('error', () => {
+  if (!pic.getAttribute('src')) return;
+  const m = $('stageMsg'); m.hidden = false; sheet.hidden = true;
+  m.innerHTML = '<div><b>This photo won’t open.</b><br>If it’s on Google Drive, it has to be shared “Anyone with the link”. Browsers can’t show HEIC or RAW files — use a JPEG.' +
+    (curVer() && curVer().drive ? '<br><br><a href="https://drive.google.com/file/d/' + esc(curVer().drive) + '/view" target="_blank" rel="noopener">Open it on Google Drive ↗</a>' : '') + '</div>';
+});
+$('verSel').onchange = e => {
+  if (e.target.value === '__add') { e.target.value = curVer() ? curVer().key : ''; openAddVersion(); return; }
+  if (!leavePhoto()) { e.target.value = curVer().key; return; }
+  const p = curPhoto();
+  verKey = e.target.value === (latest(p) && latest(p).key) ? null : e.target.value;
+  setUrl(); renderReview();
+};
+function goPhoto(i) {
+  if (!R || i < 0 || i >= R.photos.length || R.photos[i].key === (curPhoto() && curPhoto().key)) return;
+  if (!leavePhoto()) return;
+  photoKey = R.photos[i].key; verKey = null; replyTo = null;
+  setUrl(); renderReview();
+}
+$('btnPrev').onclick = () => goPhoto(photoIndex() - 1);
+$('btnNext').onclick = () => goPhoto(photoIndex() + 1);
+$('btnApprove').onclick = async () => {
+  const v = curVer(); if (!v || isHost()) return;
+  const mine = approvals(v).find(c => c.by === myBy);
+  if (mine) { fb.f.update(dbRef(ROOT + '/' + R.id + '/comments/' + mine.key), { gone: true, by: mine.by }).catch(() => toast("Couldn't undo it")); return; }
+  const name = await askName(false); if (!name) return;
+  const key = fb.f.push(dbRef(ROOT + '/' + R.id + '/comments')).key;
+  const ok = await write(ROOT + '/' + R.id + '/comments/' + key, { p: curPhoto().key, v: v.key, ok: true, text: '', name: name.slice(0, 60), by: myBy, at: Date.now() });
+  if (ok) { toast('Approved ✓'); if (window.xdbTrack) window.xdbTrack('photo-approve'); }
+};
+
+// ---------- filmstrip ----------
+function renderStrip() {
+  const host = isHost(), cur = curPhoto();
+  $('strip').hidden = !R.photos.length && !host;
+  $('strip').innerHTML = R.photos.map((p, i) => {
+    const v = latest(p); if (!v) return '';
+    const open = openNotes(R.comments, v), ok = approvals(v).length;
+    return '<button type="button" class="th' + (cur && p.key === cur.key ? ' on' : '') + '" data-i="' + i + '" title="' + esc(p.name || 'Photo ' + (i + 1)) + '">' +
+      '<img loading="lazy" alt="" src="' + esc(thumbOf(v)) + '" data-full="' + esc(srcOf(v)) + '"><span class="tn">' + (i + 1) + '</span>' +
+      (ok ? '<span class="ty">✓</span>' : '') + (open ? '<span class="tc">' + open + '</span>' : '') + '</button>';
+  }).join('') + (host ? '<button type="button" class="th add" id="stripAdd">+ Photos</button>' : '');
+  // Drive's thumbnail endpoint can refuse; fall back to the picture itself
+  $('strip').querySelectorAll('img').forEach(im => im.addEventListener('error', () => { if (im.dataset.full && im.src !== im.dataset.full) im.src = im.dataset.full; }, { once: true }));
+}
+$('strip').addEventListener('click', e => {
+  if (e.target.closest('#stripAdd')) { openAddPhotos(); return; }
+  const t = e.target.closest('.th[data-i]'); if (t) goPhoto(Number(t.dataset.i));
+});
+
+// ---------- notes list ----------
+function notesFor() { const v = curVer(); return v ? R.comments.filter(c => c.v === v.key) : []; }
+// pin numbers follow the order notes were left in, so #3 stays #3 on every screen
+function numbered() {
+  const tops = notesFor().filter(c => !c.re && !c.ok && !c.gone && c.x != null).sort((a, b) => a.at - b.at);
+  const m = {}; tops.forEach((c, i) => { m[c.key] = i + 1; }); return m;
+}
+function renderList() {
+  const all = notesFor(), host = isHost(), nums = numbered();
+  const tops = all.filter(c => !c.re).sort((a, b) => (c => c.ok ? 0 : 1)(a) - (c => c.ok ? 0 : 1)(b) || (nums[a.key] || 1e9) - (nums[b.key] || 1e9) || a.at - b.at);
+  const replies = k => all.filter(c => c.re === k && !c.gone).sort((a, b) => a.at - b.at);
+  const live = tops.filter(c => !c.gone && !c.ok);
+  $('countLbl').textContent = plural(live.length, 'note') + ' · ' + live.filter(c => !c.done).length + ' open';
+  $('btnHideDone').setAttribute('aria-pressed', hideDone); $('btnHideDone').textContent = hideDone ? 'Show done' : 'Hide done';
+  const mine = c => c.by === myBy || host;
+  const isNew = c => host && seenAt != null && !c.host && c.at > seenAt;
+  const tag = c => c.ok ? '<span class="num yes">✓</span>' : nums[c.key] ? '<span class="num">' + nums[c.key] + '</span>' : '<span class="num gen">ALL</span>';
+  const one = (c, isReply) => {
+    const acts = [];
+    if (!isReply && !c.ok) acts.push('<button type="button" data-act="reply">Reply</button>');
+    if (host && !isReply && !c.ok) acts.push('<button type="button" class="chk" data-act="done">' + (c.done ? '✓ Done' : '○ Mark done') + '</button>');
+    if (mine(c) && !c.ok) acts.push('<button type="button" data-act="edit">Edit</button>');
+    if (c.ok ? c.by === myBy && !host : mine(c)) acts.push('<button type="button" data-act="del">' + (c.ok ? 'Undo' : 'Delete') + '</button>');
+    return '<div class="' + (isReply ? 'reply' : 'cm' + (c.done ? ' done' : '') + (c.ok ? ' okay' : '') + (shown === c.key ? ' on' : '')) + '" data-k="' + esc(c.key) + '">' +
+      '<div class="cm-top">' + (isReply ? '' : tag(c)) + '<span class="cm-name' + (c.host ? ' host' : '') + '">' + esc(c.name) + '</span>' +
+      (isNew(c) ? '<span class="cm-new" title="New since you last looked"></span>' : '') + '<span class="cm-ago">' + ago(c.at) + (c.edited ? ' · edited' : '') + '</span></div>' +
+      (c.ok ? '<p class="cm-text">Approved this photo.</p>' : c.text ? '<p class="cm-text">' + esc(c.text) + '</p>' : '') +
+      (c.draw ? '<div class="cm-draw">✎ Drawing on the photo</div>' : '') +
+      (acts.length ? '<div class="cm-acts">' + acts.join('') + '</div>' : '');
+  };
+  const html = tops.filter(c => !(hideDone && c.done) && !(c.ok && c.gone)).map(c => {
+    const rs = replies(c.key);
+    if (c.gone && !rs.length) return '';
+    const head = c.gone ? '<div class="cm" data-k="' + esc(c.key) + '"><div class="cm-top"><span class="cm-ago" style="margin-left:0">note deleted</span></div>' : one(c, false);
+    return head + rs.map(r => one(r, true) + '</div>').join('') + '</div>';
+  }).join('');
+  $('list').innerHTML = html || '<div class="note" style="padding:14px 16px">' + (curVer() ? 'No notes yet. Click the spot on the photo you’d like changed, then write — or draw — what you’d like.' : '') + '</div>';
+}
+$('btnHideDone').onclick = () => { hideDone = !hideDone; store(HIDE_KEY, hideDone ? '1' : null); renderList(); };
+$('list').addEventListener('click', e => {
+  const row = e.target.closest('[data-k]'); if (!row) return;
+  const c = R.comments.find(x => x.key === row.dataset.k); if (!c) return;
+  const act = e.target.closest('[data-act]');
+  if (act) { e.stopPropagation(); noteAction(act.dataset.act, c); return; }
+  if (c.re || c.ok || c.gone) return;
+  select(c);
+});
+function noteAction(a, c) {
+  const base = ROOT + '/' + R.id + '/comments/' + c.key;
+  if (a === 'reply') { replyTo = c; paintCompose(); $('txt').focus(); return; }
+  if (a === 'done') { write(base + '/done', !c.done); return; }
+  if (a === 'edit') {
+    const next = prompt('Edit your note', c.text); if (next == null || next.trim() === c.text) return;
+    fb.f.update(dbRef(base), { text: next.trim().slice(0, 5000), edited: Date.now(), by: c.by }).catch(() => toast("Couldn't save the edit"));
+    return;
+  }
+  if (a === 'del') {
+    if (!c.ok && !confirm('Delete this note?')) return;
+    if (isHost() && !c.ok) fb.f.remove(dbRef(base)).catch(() => toast("Couldn't delete it"));
+    else fb.f.update(dbRef(base), { gone: true, text: '', draw: null, by: c.by }).catch(() => toast("Couldn't delete it"));
+    if (shown === c.key) { shown = null; redraw(); renderPins(); }
+  }
+}
+// show a note: its pin highlighted, its drawing on the photo, scrolled into view
+function select(c) {
+  if (!leaveSpot()) return;
+  shown = shown === c.key ? null : c.key;
+  redraw(); renderPins(); renderList();
+  if (shown && c.x != null && zoom > 1) {
+    stage.scrollLeft = c.x * sheet.offsetWidth + sheet.offsetLeft - stage.clientWidth / 2;
+    stage.scrollTop = c.y * sheet.offsetHeight + sheet.offsetTop - stage.clientHeight / 2;
+  }
+}
+
+// ---------- pins ----------
+function renderPins() {
+  if (!R) return;
+  const nums = numbered();
+  const html = !showPins ? '' : notesFor().filter(c => nums[c.key]).map(c =>
+    '<button type="button" class="pin' + (c.done ? ' done' : '') + (shown === c.key ? ' on' : '') + '" data-k="' + esc(c.key) + '" style="left:' + (c.x * 100).toFixed(3) + '%;top:' + (c.y * 100).toFixed(3) + '%" title="' + esc(c.name + (c.text ? ': ' + c.text.slice(0, 80) : '')) + '">' + nums[c.key] + '</button>').join('');
+  $('pins').innerHTML = html + (pin ? '<span class="pin new" style="left:' + (pin.x * 100).toFixed(3) + '%;top:' + (pin.y * 100).toFixed(3) + '%">+</span>' : '');
+  $('btnPins').setAttribute('aria-pressed', showPins); $('btnPins').style.opacity = showPins ? 1 : .45;
+}
+$('pins').addEventListener('click', e => {
+  const b = e.target.closest('.pin[data-k]'); if (!b) return;
+  e.stopPropagation();
+  const c = R.comments.find(x => x.key === b.dataset.k); if (c) select(c);
+  const row = $('list').querySelector('[data-k="' + CSS.escape(b.dataset.k) + '"]'); if (row) row.scrollIntoView({ block: 'nearest' });
+});
+$('btnPins').onclick = () => { showPins = !showPins; renderPins(); };
+// a pending pin and an unposted drawing belong to this photo; moving on drops them (asks first)
+function leaveSpot() {
+  if (strokes.length && !confirm('Discard your drawing?')) return false;
+  stopDrawing(true); strokes = []; pin = null; renderPins(); paintCompose();
+  return true;
+}
+function leavePhoto() { if (!leaveSpot()) return false; shown = null; return true; }
+function fracAt(e) {
+  const b = sheet.getBoundingClientRect();
+  return { x: Math.max(0, Math.min(1, (e.clientX - b.left) / b.width)), y: Math.max(0, Math.min(1, (e.clientY - b.top) / b.height)) };
+}
+const r4 = n => Math.round(n * 10000) / 10000;
+
+// ---------- zoom + pan ----------
+// The sheet is the photo at its shown size; pins, drawing and clicks all use
+// 0…1 of the sheet, so a note lands on the same spot at any zoom, on any screen.
+function fitScale() {
+  const iw = pic.naturalWidth || 3, ih = pic.naturalHeight || 2;
+  return Math.min((stage.clientWidth - 2) / iw, (stage.clientHeight - 2) / ih);
+}
+function layout() {
+  if (!picReady) return;
+  const s = fitScale() * zoom;
+  sheet.style.width = Math.round(pic.naturalWidth * s) + 'px'; sheet.style.height = Math.round(pic.naturalHeight * s) + 'px';
+  $('zoomLbl').textContent = zoom === 1 ? 'Fit' : Math.round(s * 100) + '%';
+  stage.classList.toggle('grab', zoom > 1 && !drawing);
+  fitInk();
+}
+function zoomTo(z, cx, cy) {
+  if (!picReady) return;
+  z = Math.max(1, Math.min(z, Math.max(ZMAX, 1.5 / fitScale())));
+  if (Math.abs(z - zoom) < 1e-3) return;
+  if (cx == null) { cx = stage.clientWidth / 2; cy = stage.clientHeight / 2; }
+  const fx = (stage.scrollLeft + cx - sheet.offsetLeft) / sheet.offsetWidth, fy = (stage.scrollTop + cy - sheet.offsetTop) / sheet.offsetHeight;
+  zoom = z; layout();
+  stage.scrollLeft = fx * sheet.offsetWidth + sheet.offsetLeft - cx;
+  stage.scrollTop = fy * sheet.offsetHeight + sheet.offsetTop - cy;
+}
+$('btnZoomIn').onclick = () => zoomTo(zoom * 1.5);
+$('btnZoomOut').onclick = () => zoomTo(zoom / 1.5);
+$('btnFit').onclick = () => zoomTo(1);
+$('btn100').onclick = () => zoomTo(1 / fitScale());
+stage.addEventListener('wheel', e => {
+  if (!(e.ctrlKey || e.metaKey) || !picReady) return;   // trackpad pinch arrives as ctrl+wheel
+  e.preventDefault();
+  const b = stage.getBoundingClientRect();
+  zoomTo(zoom * Math.exp(-e.deltaY / 200), e.clientX - b.left, e.clientY - b.top);
+}, { passive: false });
+new ResizeObserver(layout).observe(stage);
+// mouse: drag pans when zoomed in, a click without moving pins a note. Touch scrolls natively.
+(function () {
+  let down = null, moved = false;
+  stage.addEventListener('pointerdown', e => {
+    if (drawing || e.pointerType !== 'mouse' || e.button !== 0 || e.target.closest('.pin')) return;
+    down = { x: e.clientX, y: e.clientY, sl: stage.scrollLeft, st: stage.scrollTop }; moved = false;
+  });
+  window.addEventListener('pointermove', e => {
+    if (!down) return;
+    if (!moved && Math.hypot(e.clientX - down.x, e.clientY - down.y) > 5) moved = true;
+    if (moved && zoom > 1) { stage.scrollLeft = down.sl - (e.clientX - down.x); stage.scrollTop = down.st - (e.clientY - down.y); }
+  });
+  window.addEventListener('pointerup', () => { down = null; setTimeout(() => { moved = false; }, 0); });
+  sheet.addEventListener('click', e => {
+    if (drawing || moved || e.target.closest('.pin') || !picReady || !curVer()) return;
+    if (replyTo) replyTo = null;
+    const f = fracAt(e); pin = { x: r4(f.x), y: r4(f.y) }; shown = null;
+    redraw(); renderPins(); renderList(); paintCompose();
+    $('txt').focus({ preventScroll: true });
+  });
+})();
+
+document.addEventListener('keydown', e => {
+  if ($('reviewView').hidden || e.target.closest('input,textarea,select,[contenteditable]') || document.querySelector('.dlg')) return;
+  if (e.metaKey || e.ctrlKey || e.altKey) { if ((e.metaKey || e.ctrlKey) && e.key === 'z' && drawing) { e.preventDefault(); undo(); } return; }
+  if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { e.preventDefault(); goPhoto(photoIndex() + (e.key === 'ArrowLeft' ? -1 : 1)); }
+  else if (e.key === '+' || e.key === '=') { e.preventDefault(); zoomTo(zoom * 1.5); }
+  else if (e.key === '-') { e.preventDefault(); zoomTo(zoom / 1.5); }
+  else if (e.key === '0') { e.preventDefault(); zoomTo(1); }
+  else if (e.key === 'c') { e.preventDefault(); $('txt').focus(); }
+  else if (e.key === 'Escape') { if (drawing) stopDrawing(!strokes.length); else if (pin) { pin = null; renderPins(); paintCompose(); } else if (shown) { shown = null; redraw(); renderPins(); renderList(); } }
+});
+
+// ---------- drawing ----------
+// Strokes are stored in photo coordinates (0…1 of the picture), so a note
+// drawn on a laptop lands in the same spot on a phone and at any zoom.
+let drawing = false, strokes = [], cur = null, tool = 'pen', colour = '#ffe800';
+function fitInk() {
+  const w = sheet.offsetWidth, h = sheet.offsetHeight;
+  if (!w || !h) return;
+  // keep the canvas under ~16 megapixels when zoomed far in
+  const dpr = Math.min(window.devicePixelRatio || 1, Math.sqrt(16e6 / (w * h)));
+  ink.width = Math.round(w * dpr); ink.height = Math.round(h * dpr);
+  ink.style.width = w + 'px'; ink.style.height = h + 'px';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  redraw();
+}
+function clearInk() { ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, ink.width, ink.height); ctx.restore(); }
+function paintStrokes(list) {
+  const W = sheet.offsetWidth, H = sheet.offsetHeight, ref = Math.min(W, H) / zoom;   // line weight follows the photo, not the zoom
+  list.forEach(s => {
+    const P = s.p, px = i => P[i] * W, py = i => P[i + 1] * H;
+    if (P.length < 2) return;
+    ctx.strokeStyle = s.c; ctx.lineWidth = Math.max(3, (s.w || 8) / 1000 * ref) * zoom; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.shadowColor = 'rgba(0,0,0,.6)'; ctx.shadowBlur = 3;
+    ctx.beginPath();
+    if (s.k === 'box' && P.length >= 4) ctx.rect(px(0), py(0), px(2) - px(0), py(2) - py(0));
+    else if (s.k === 'arrow' && P.length >= 4) {
+      const x1 = px(0), y1 = py(0), x2 = px(2), y2 = py(2), a = Math.atan2(y2 - y1, x2 - x1), L = Math.max(12, ctx.lineWidth * 4);
+      ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
+      ctx.moveTo(x2 - L * Math.cos(a - .45), y2 - L * Math.sin(a - .45)); ctx.lineTo(x2, y2); ctx.lineTo(x2 - L * Math.cos(a + .45), y2 - L * Math.sin(a + .45));
+    } else { ctx.moveTo(px(0), py(0)); for (let i = 2; i < P.length; i += 2) ctx.lineTo(px(i), py(i)); if (P.length === 2) ctx.lineTo(px(0) + .1, py(0)); }
+    ctx.stroke(); ctx.shadowBlur = 0;
+  });
+}
+function redraw() {
+  clearInk();
+  if (drawing || strokes.length) { paintStrokes(strokes.concat(cur ? [cur] : [])); return; }
+  if (shown) { const c = R && R.comments.find(x => x.key === shown); if (c) paintStrokes(parseDraw(c.draw)); }
+}
+function parseDraw(s) { try { const a = JSON.parse(s || '[]'); return Array.isArray(a) ? a.filter(x => x && Array.isArray(x.p)) : []; } catch (e) { return []; } }
+function startDrawing() {
+  if (!picReady) { toast('Nothing to draw on yet'); return; }
+  shown = null; drawing = true; cur = null; replyTo = null;
+  stage.classList.add('drawing'); stage.classList.remove('grab'); $('drawTools').hidden = false; $('btnDraw').setAttribute('aria-pressed', 'true');
+  redraw(); renderPins(); paintCompose(); renderList();
+}
+function stopDrawing(discard) {
+  if (!drawing) return;
+  if (discard) strokes = [];
+  drawing = false; cur = null; stage.classList.remove('drawing'); $('drawTools').hidden = true;
+  $('btnDraw').setAttribute('aria-pressed', 'false'); stage.classList.toggle('grab', zoom > 1);
+  paintCompose(); redraw();
+}
+function undo() { strokes.pop(); redraw(); paintCompose(); }
+$('btnDraw').onclick = () => drawing ? stopDrawing(false) : startDrawing();
+$('btnUndo').onclick = undo;
+$('btnClear').onclick = () => { strokes = []; redraw(); paintCompose(); };
+document.querySelectorAll('[data-tool]').forEach(b => b.onclick = () => { tool = b.dataset.tool; document.querySelectorAll('[data-tool]').forEach(x => x.setAttribute('aria-pressed', x === b)); });
+document.querySelectorAll('[data-col]').forEach(b => b.onclick = () => { colour = b.dataset.col; document.querySelectorAll('[data-col]').forEach(x => x.setAttribute('aria-pressed', x === b)); });
+(function () {
+  const pt = e => { const f = fracAt(e); return [r4(f.x), r4(f.y)]; };
+  ink.addEventListener('pointerdown', e => {
+    if (!drawing) return; e.preventDefault(); ink.setPointerCapture(e.pointerId);
+    const p = pt(e); cur = { k: tool, c: colour, w: 8, p: [p[0], p[1]] };
+    if (tool !== 'pen') cur.p.push(p[0], p[1]);
+  });
+  ink.addEventListener('pointermove', e => {
+    if (!drawing || !cur) return; const p = pt(e);
+    if (cur.k === 'pen') {
+      const n = cur.p.length; if (Math.hypot(p[0] - cur.p[n - 2], p[1] - cur.p[n - 1]) < 0.003 / zoom) return;
+      cur.p.push(p[0], p[1]);
+    } else { cur.p[2] = p[0]; cur.p[3] = p[1]; }
+    redraw();
+  });
+  const end = () => {
+    if (!cur) return;
+    if (cur.k === 'pen' || Math.hypot(cur.p[2] - cur.p[0], cur.p[3] - cur.p[1]) > 0.01) {
+      strokes.push(cur);
+      if (!pin) { pin = { x: cur.p[0], y: cur.p[1] }; renderPins(); }   // a drawing pins its note where it starts
+    }
+    cur = null; redraw(); paintCompose();
+  };
+  ink.addEventListener('pointerup', end); ink.addEventListener('pointercancel', end);
+})();
+
+// ---------- composing ----------
+function paintCompose() {
+  const v = curVer();
+  $('compose').hidden = !v;
+  $('replying').hidden = !replyTo;
+  if (replyTo) $('replyName').textContent = replyTo.name + (numbered()[replyTo.key] ? ' (#' + numbered()[replyTo.key] + ')' : '');
+  $('whoBtn').textContent = isHost() ? '' : (myName ? 'as ' + myName : '');
+  const cp = $('composePin');
+  cp.hidden = !!replyTo;
+  cp.className = 'num' + (pin ? '' : ' gen'); cp.textContent = pin ? '+' : 'ALL';
+  $('composeHint').textContent = replyTo ? '' : drawing ? 'Draw on the photo — the note pins where you start' : pin ? 'Note pinned to that spot · Esc to unpin' : 'Click the photo to pin a note to that spot';
+  $('btnDraw').hidden = !!replyTo;
+  $('btnDraw').textContent = drawing ? '✎ Done drawing' : strokes.length ? '✎ Drawing ready (' + strokes.length + ')' : '✎ Draw on photo';
+  $('btnPost').textContent = replyTo ? 'Post reply' : 'Post note';
+  $('txt').placeholder = replyTo ? 'Your reply…' : pin ? 'What should change here?' : 'A note on the whole photo — or click a spot first';
+}
+$('txt').addEventListener('keydown', e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); post(); } });
+$('replyCancel').onclick = () => { replyTo = null; paintCompose(); };
+$('btnPost').onclick = post;
+$('whoBtn').onclick = () => askName(true);
+function askName(force) {
+  if (isHost()) return Promise.resolve(hostName());
+  if (myName && !force) return Promise.resolve(myName);
+  return dialog('<h3>Your name</h3><p class="note">So Xavier knows who left each note. It’s remembered on this device.</p>' +
+    '<div class="field"><input type="text" id="dlgName" maxlength="60" value="' + esc(myName) + '" placeholder="First and last name"></div>',
+    [['Cancel', null], ['Continue', () => { const n = $('dlgName').value.trim(); if (!n) { $('dlgName').focus(); return false; } return n; }, true]], 'dlgName')
+    .then(n => { if (n) { myName = n.slice(0, 60); store(NAME_KEY, myName); paintCompose(); } return n || null; });
+}
+function hostName() { const u = me(); return ((u && (u.name || u.email)) || 'Xavier').split(/[\s@]/)[0]; }
+let posting = false;
+async function post() {
+  if (posting || !R || !fb) return;
+  const v = curVer(), p = curPhoto(); if (!v) return;
+  const text = $('txt').value.trim();
+  const draw = !replyTo && strokes.length ? JSON.stringify(strokes) : '';
+  if (!text && !draw) { $('txt').focus(); toast(replyTo ? 'Write a reply first' : 'Write a note or draw on the photo'); return; }
+  if (draw.length > 30000) { toast('That drawing is too big — undo a few strokes'); return; }
+  const name = await askName(false); if (!name) return;
+  const c = { p: p.key, v: v.key, text: text.slice(0, 5000), name: name.slice(0, 60), by: myBy, at: Date.now() };
+  if (!replyTo && pin) { c.x = pin.x; c.y = pin.y; }
+  if (draw) c.draw = draw;
+  if (replyTo) c.re = replyTo.key;
+  if (isHost()) c.host = true;
+  posting = true; $('btnPost').disabled = true;
+  const key = fb.f.push(dbRef(ROOT + '/' + R.id + '/comments')).key;
+  const ok = await write(ROOT + '/' + R.id + '/comments/' + key, c, "Couldn't post — check your connection");
+  posting = false; $('btnPost').disabled = false;
+  if (!ok) return;
+  if (window.xdbTrack && !isHost()) window.xdbTrack('photo-note', { drawing: !!draw, pinned: c.x != null });
+  $('txt').value = ''; replyTo = null; stopDrawing(true); strokes = []; pin = null;
+  if (!c.re) shown = key;
+  if (isHost()) markSeen();
+  redraw(); renderPins(); paintCompose(); toast('Posted ✓');
+}
+
+// ---------- host: share, photos, versions, export ----------
+const clientLink = () => location.origin + location.pathname + '?r=' + encodeURIComponent(R.id);
+$('btnShare').onclick = () => {
+  dialog('<h3>Client link</h3><p class="note">Anyone with this link can look through the photos and leave notes — no account needed. Retouched versions and new photos show up on the same link.</p>' +
+    '<div class="field linkbox"><input type="text" id="dlgLink" readonly value="' + esc(clientLink()) + '"><button type="button" class="btn solid sm" id="dlgCopy">Copy</button></div>',
+    [['Close', null]]);
+  $('dlgCopy').onclick = () => { copy(clientLink()); $('dlgCopy').textContent = 'Copied ✓'; };
+};
+function copy(s) {
+  if (navigator.clipboard) navigator.clipboard.writeText(s).then(() => toast('Copied ✓'), () => fallbackCopy(s)); else fallbackCopy(s);
+}
+function fallbackCopy(s) { const t = document.createElement('textarea'); t.value = s; document.body.appendChild(t); t.select(); try { document.execCommand('copy'); toast('Copied ✓'); } catch (e) {} t.remove(); }
+// every photo's latest version, in order — the retoucher's to-do list
+function exportText() {
+  const lines = [R.title, ''];
+  R.photos.forEach((p, i) => {
+    const v = latest(p); if (!v) return;
+    const cs = R.comments.filter(c => c.v === v.key && !c.gone);
+    const ap = cs.filter(c => c.ok), tops = cs.filter(c => !c.re && !c.ok);
+    if (!tops.length && !ap.length) return;
+    const nums = {}; tops.filter(c => c.x != null).sort((a, b) => a.at - b.at).forEach((c, j) => { nums[c.key] = j + 1; });
+    lines.push('PHOTO ' + (i + 1) + ' — ' + (p.name || 'untitled') + ' (version ' + v.n + (v.name ? ', ' + v.name : '') + ')' + (ap.length ? '  ✓ approved by ' + ap.map(c => c.name).join(', ') : ''));
+    tops.sort((a, b) => (nums[a.key] || 1e9) - (nums[b.key] || 1e9) || a.at - b.at).forEach(c => {
+      lines.push('  ' + (c.done ? '[x] ' : '[ ] ') + (nums[c.key] ? '#' + nums[c.key] : 'whole photo') + '  ' + c.name + ': ' + (c.text || '(drawing only)') + (c.draw && c.text ? '  [drawing]' : ''));
+      cs.filter(r => r.re === c.key).sort((a, b) => a.at - b.at).forEach(r => lines.push('        ↳ ' + r.name + ': ' + r.text));
+    });
+    lines.push('');
+  });
+  return lines.join('\n');
+}
+$('btnExport').onclick = () => copy(exportText());
+$('btnHostMenu').onclick = () => {
+  const p = curPhoto(), v = curVer();
+  dialog('<h3>Manage</h3>' +
+    '<div class="field"><p class="k">Review name</p><input type="text" id="dlgTitle" maxlength="200" value="' + esc(R.title) + '"></div>' +
+    (p ? '<div class="field"><p class="k">This photo’s name</p><input type="text" id="dlgPName" maxlength="200" value="' + esc(p.name) + '"></div>' : '') +
+    '<div class="dlg-acts" style="justify-content:flex-start">' +
+      '<button type="button" class="btn sm" id="dlgAddP">+ Add photos</button>' +
+      (p ? '<button type="button" class="btn sm" id="dlgAddV">+ Retouched version</button>' : '') +
+      (p && R.photos.length > 1 ? '<button type="button" class="btn sm" id="dlgLeft">← Move earlier</button><button type="button" class="btn sm" id="dlgRight">Move later →</button>' : '') +
+      '<button type="button" class="btn sm" id="dlgTxt">Download notes (.txt)</button>' +
+      (v && p.versions.length > 1 ? '<button type="button" class="btn sm" id="dlgDelV">Delete this version</button>' : '') +
+      (p ? '<button type="button" class="btn sm" id="dlgDelP">Delete this photo</button>' : '') +
+      '<button type="button" class="btn sm" id="dlgDelR">Delete review</button></div>' +
+    '<p class="note">Deleting removes the notes here. The files stay in your Google Drive folder “' + DRIVE_FOLDER + '”.</p>',
+    [['Close', null], ['Save', () => true, true]]).then(ok => {
+      if (!ok) return;
+      const title = $('dlgTitle') ? $('dlgTitle').value.trim() : '';
+      if (title && title !== R.title) { write(ROOT + '/' + R.id + '/title', title); fb.f.set(dbRef('users/' + R.owner + '/' + INDEX + '/' + R.id + '/title'), title).catch(() => {}); }
+      const pn = $('dlgPName') ? $('dlgPName').value.trim().slice(0, 200) : null;
+      if (p && pn != null && pn !== p.name) write(ROOT + '/' + R.id + '/photos/' + p.key + '/name', pn);
+    });
+  $('dlgAddP').onclick = () => { closeDialog(); openAddPhotos(); };
+  if ($('dlgAddV')) $('dlgAddV').onclick = () => { closeDialog(); openAddVersion(); };
+  const move = d => {
+    const i = photoIndex(), j = i + d; if (j < 0 || j >= R.photos.length) return;
+    const order = R.photos.slice(); order.splice(j, 0, order.splice(i, 1)[0]);
+    const change = {}; order.forEach((x, k) => { change['photos/' + x.key + '/pos'] = k; });
+    fb.f.update(dbRef(ROOT + '/' + R.id), change).catch(() => toast("Couldn't move it"));
+  };
+  if ($('dlgLeft')) { $('dlgLeft').onclick = () => move(-1); $('dlgRight').onclick = () => move(1); }
+  $('dlgTxt').onclick = () => {
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([exportText()], { type: 'text/plain' }));
+    a.download = R.title.replace(/[^\w\- ]+/g, '').trim() + ' - photo notes.txt'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  };
+  if ($('dlgDelV')) $('dlgDelV').onclick = () => {
+    if (!confirm('Delete version ' + v.n + ' of this photo and its notes?')) return;
+    const change = { ['versions/' + v.key]: null };
+    R.comments.filter(c => c.v === v.key).forEach(c => { change['comments/' + c.key] = null; });
+    fb.f.update(dbRef(ROOT + '/' + R.id), change).then(() => { closeDialog(); verKey = null; }, () => toast("Couldn't delete it"));
+  };
+  if ($('dlgDelP')) $('dlgDelP').onclick = () => {
+    if (!confirm('Delete this photo, every version of it and its notes?')) return;
+    const change = { ['photos/' + p.key]: null };
+    p.versions.forEach(x => { change['versions/' + x.key] = null; });
+    R.comments.filter(c => c.p === p.key).forEach(c => { change['comments/' + c.key] = null; });
+    fb.f.update(dbRef(ROOT + '/' + R.id), change).then(() => { closeDialog(); photoKey = null; verKey = null; shown = null; }, () => toast("Couldn't delete it"));
+  };
+  $('dlgDelR').onclick = () => {
+    if (!confirm('Delete “' + R.title + '” and every note on it? The client link stops working.')) return;
+    const owner = R.owner;
+    fb.f.remove(dbRef(ROOT + '/' + R.id)).then(() => fb.f.remove(dbRef('users/' + owner + '/' + INDEX + '/' + R.id)).catch(() => {}))
+      .then(() => { location.search = ''; }, () => toast("Couldn't delete it"));
+  };
+};
+function markSeen() {
+  if (!isHost() || !fb) return;
+  fb.f.set(dbRef('users/' + R.owner + '/' + INDEX + '/' + R.id + '/seen'), Date.now()).catch(() => {});
+}
+
+// ---------- adding photos and retouched versions: upload to Drive, or paste links ----------
+const driveReady = () => !!(DRIVE_CLIENT_ID && DRIVE_API_KEY);
+function uploadField(multiple) {
+  return driveReady()
+    ? '<input type="file" id="dlgFile" accept="image/jpeg,image/png,image/webp,image/*"' + (multiple ? ' multiple' : '') + '>' +
+      '<div class="field"><label class="chk"><input type="checkbox" id="dlgShrink" checked><span>Make a ' + SHRINK_TO + ' px review copy (recommended — fast to open, plenty for retouching notes)</span></label></div>' +
+      '<p class="note">Export <b>sRGB JPEGs</b> — browsers can’t show RAW or HEIC. They go into the “' + DRIVE_FOLDER + '” folder, shared “Anyone with the link”.</p><div class="prog" id="dlgProg" hidden><i></i></div><p class="note" id="dlgProgTxt"></p>'
+    : '<p class="note"><b>Drive upload isn’t set up yet</b> — the Drive keys still need adding. Paste links below meanwhile.</p>';
+}
+function openAddPhotos() {
+  if (driveReady()) loadGIS().catch(() => {});
+  dialog('<h3>Add photos</h3>' +
+    '<div class="field"><p class="k">Upload to your Google Drive</p>' + uploadField(true) + '</div>' +
+    '<p class="or">— or paste links, one per line —</p>' +
+    '<textarea id="dlgUrls" placeholder="Google Drive share links, or direct .jpg links"></textarea>' +
+    '<p class="note">Drive files must be shared “Anyone with the link”.</p>',
+    [['Cancel', null], ['Add', addPhotos, true]]);
+}
+function openAddVersion() {
+  const p = curPhoto(); if (!p) return;
+  const n = p.versions.length ? Math.max(...p.versions.map(x => x.n)) + 1 : 1;
+  if (driveReady()) loadGIS().catch(() => {});
+  dialog('<h3>' + esc(p.name || 'Photo ' + (photoIndex() + 1)) + ' — version ' + n + '</h3>' +
+    '<div class="field"><p class="k">Label (optional)</p><input type="text" id="dlgVName" maxlength="200" placeholder="e.g. skin softened, sign removed"></div>' +
+    '<div class="field"><p class="k">Upload to your Google Drive</p>' + uploadField(false) + '</div>' +
+    '<p class="or">— or paste a link —</p>' +
+    '<input type="url" id="dlgUrl" placeholder="Google Drive share link, or a direct .jpg link">',
+    [['Cancel', null], ['Add', () => addVersion(p, n), true]]);
+}
+function parseLink(link) {
+  const d = link.match(/drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?(?:.*&)?id=)([\w-]{20,})/) || link.match(/[?&]id=([\w-]{20,})/);
+  if (d) return { drive: d[1] };
+  if (/^https:\/\//i.test(link) || /^\//.test(link) || /^https?:\/\/(localhost|127\.0\.0\.1)/i.test(link)) return { url: link.replace(/(dropbox\.com\/.*)[?&]dl=0/, '$1?raw=1') };
+  return null;
+}
+// a file → { blob, w, h }: decoded once for its size, re-encoded only when it is bigger than the review copy
+async function prepare(file, shrink) {
+  const u = URL.createObjectURL(file), im = new Image();
+  try {
+    im.src = u; await im.decode();
+  } catch (e) { URL.revokeObjectURL(u); throw new Error(file.name + ' isn’t a photo this browser can open (HEIC or RAW?) — export a JPEG'); }
+  let w = im.naturalWidth, h = im.naturalHeight, blob = file;
+  const s = Math.min(1, SHRINK_TO / Math.max(w, h));
+  if (shrink && (s < 1 || file.size > 8e6 || !/jpe?g|png|webp/i.test(file.type))) {
+    w = Math.round(w * s); h = Math.round(h * s);
+    const c = document.createElement('canvas'); c.width = w; c.height = h;
+    const g = c.getContext('2d'); g.imageSmoothingQuality = 'high'; g.drawImage(im, 0, 0, w, h);
+    blob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.9));
+  }
+  URL.revokeObjectURL(u);
+  return { blob, w, h };
+}
+const baseName = f => f.replace(/\.[^.]+$/, '').slice(0, 200);
+async function addPhotos() {
+  const files = $('dlgFile') ? Array.from($('dlgFile').files) : [];
+  const links = ($('dlgUrls').value || '').split(/\s+/).map(s => s.trim()).filter(Boolean);
+  if (!files.length && !links.length) { toast('Choose photos or paste links'); return false; }
+  const items = [];
+  for (const l of links) { const x = parseLink(l); if (!x) { toast('“' + l.slice(0, 40) + '” doesn’t look like a link'); return false; } items.push({ name: '', src: x }); }
+  let pos = R.photos.length ? Math.max(...R.photos.map(p => p.pos)) + 1 : 0, first = null, stopped = false;
+  const shrink = $('dlgShrink') ? $('dlgShrink').checked : true;
+  for (let i = 0; i < files.length; i++) {
+    try {
+      const pr = await prepare(files[i], shrink);
+      const id = await uploadToDrive(pr.blob, R.title + ' — ' + files[i].name, 'Photo ' + (i + 1) + ' of ' + files.length);
+      items.push({ name: baseName(files[i].name), src: { drive: id, w: pr.w, h: pr.h } });
+    } catch (e) { console.warn(e); stopped = true; $('dlgProgTxt').textContent = 'Stopped: ' + (e && e.message || e) + (items.length ? ' — the ones before it were added.' : ''); break; }
+  }
+  for (const it of items) {
+    const pk = fb.f.push(dbRef(ROOT + '/' + R.id + '/photos')).key, vk = fb.f.push(dbRef(ROOT + '/' + R.id + '/versions')).key, now = Date.now();
+    const change = { ['photos/' + pk]: { pos: pos++, name: it.name, createdAt: now }, ['versions/' + vk]: Object.assign({ p: pk, n: 1, createdAt: now }, it.src) };
+    const ok = await fb.f.update(dbRef(ROOT + '/' + R.id), change).then(() => true, err => { console.warn(err); return false; });
+    if (!ok) { toast("Couldn't save — check your connection"); return false; }
+    if (!first) first = pk;
+  }
+  if (!items.length) return false;
+  if (!photoKey || !R.photos.some(p => p.versions.length)) photoKey = first;
+  setUrl(); toast(plural(items.length, 'photo') + ' added ✓');
+  return !stopped;   // a stopped upload keeps the dialog open to say why
+}
+async function addVersion(p, n) {
+  const name = $('dlgVName').value.trim().slice(0, 200);
+  const file = $('dlgFile') && $('dlgFile').files[0];
+  const link = $('dlgUrl').value.trim();
+  let ver = { p: p.key, n, name, createdAt: Date.now() };
+  if (file) {
+    try {
+      const pr = await prepare(file, $('dlgShrink').checked);
+      ver.drive = await uploadToDrive(pr.blob, R.title + ' — ' + (p.name || 'photo') + ' — v' + n + ' — ' + file.name, '');
+      ver.w = pr.w; ver.h = pr.h;
+    } catch (e) { console.warn(e); $('dlgProgTxt').textContent = 'Upload failed: ' + (e && e.message || e) + '. Try again.'; return false; }
+  } else if (link) {
+    const x = parseLink(link); if (!x) { toast('That doesn’t look like a link'); return false; }
+    Object.assign(ver, x);
+  } else { toast('Choose a file or paste a link'); return false; }
+  const key = fb.f.push(dbRef(ROOT + '/' + R.id + '/versions')).key;
+  const ok = await write(ROOT + '/' + R.id + '/versions/' + key, ver);
+  if (!ok) return false;
+  verKey = null; shown = null; setUrl();
+  toast('Version ' + n + ' added ✓');
+  return true;
+}
+
+// Google Drive — browser straight to Drive, no server. drive.file only lets
+// this page see the files it created, nothing else in the Drive.
+let gisP = null, gTok = null, gTokExp = 0;
+function loadGIS() {
+  return gisP || (gisP = new Promise((res, rej) => {
+    const s = document.createElement('script'); s.src = 'https://accounts.google.com/gsi/client'; s.async = true;
+    s.onload = res; s.onerror = () => { gisP = null; rej(new Error('Google sign-in script didn’t load')); }; document.head.appendChild(s);
+  }));
+}
+function driveToken() {
+  if (gTok && Date.now() < gTokExp - 120000) return Promise.resolve(gTok);
+  return loadGIS().then(() => new Promise((res, rej) => {
+    const c = google.accounts.oauth2.initTokenClient({
+      client_id: DRIVE_CLIENT_ID, scope: DRIVE_SCOPE, hint: (me() && me().email) || undefined,
+      callback: r => { if (r.error) rej(new Error(r.error)); else { gTok = r.access_token; gTokExp = Date.now() + r.expires_in * 1000; res(gTok); } },
+      error_callback: e => rej(new Error(e && e.type === 'popup_closed' ? 'Drive permission window closed' : 'Drive permission didn’t work')),
+    });
+    c.requestAccessToken({ prompt: '' });
+  }));
+}
+async function gfetch(url, opt) {
+  const tok = await driveToken();
+  const r = await fetch(url, Object.assign({}, opt, { headers: Object.assign({ Authorization: 'Bearer ' + tok }, (opt && opt.headers) || {}) }));
+  if (!r.ok) throw new Error('Drive said ' + r.status);
+  return r;
+}
+async function driveFolder() {
+  const cached = recall(FOLDER_KEY);
+  if (cached) {
+    const ok = await gfetch('https://www.googleapis.com/drive/v3/files/' + cached + '?fields=id,trashed').then(r => r.json()).then(j => !j.trashed, () => false);
+    if (ok) return cached;
+  }
+  const q = encodeURIComponent("name='" + DRIVE_FOLDER + "' and mimeType='application/vnd.google-apps.folder' and trashed=false");
+  const found = await gfetch('https://www.googleapis.com/drive/v3/files?q=' + q + '&fields=files(id)').then(r => r.json());
+  let id = found.files && found.files[0] && found.files[0].id;
+  if (!id) id = (await gfetch('https://www.googleapis.com/drive/v3/files?fields=id', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: DRIVE_FOLDER, mimeType: 'application/vnd.google-apps.folder' }) }).then(r => r.json())).id;
+  store(FOLDER_KEY, id);
+  return id;
+}
+// one photo, one request: a resumable session sent in a single PUT (photos are small), retried a few times
+async function uploadToDrive(blob, name, label) {
+  const prog = $('dlgProg'), bar = prog.firstChild, txt = $('dlgProgTxt');
+  const say = (p, s) => { prog.hidden = false; bar.style.width = (p * 100).toFixed(1) + '%'; txt.textContent = (label ? label + ' — ' : '') + s; };
+  say(0, 'connecting to Google Drive…');
+  const folder = await driveFolder();
+  const type = blob.type || 'image/jpeg';
+  const init = await gfetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&fields=id', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json; charset=UTF-8', 'X-Upload-Content-Type': type, 'X-Upload-Content-Length': String(blob.size) },
+    body: JSON.stringify({ name: name.replace(/\.(jpe?g|png|webp|heic|tiff?)$/i, '') + (type === 'image/jpeg' ? '.jpg' : ''), parents: [folder] }),
+  });
+  const session = init.headers.get('Location');
+  if (!session) throw new Error('Drive didn’t open an upload');
+  const mb = n => (n / 1048576).toFixed(1);
+  let done = null;
+  for (let tries = 0; !done; tries++) {
+    const res = await new Promise(resolve => {
+      const x = new XMLHttpRequest(); x.open('PUT', session);
+      x.upload.onprogress = e => say(e.loaded / blob.size, 'uploading ' + mb(e.loaded) + ' / ' + mb(blob.size) + ' MB');
+      x.onload = () => resolve({ status: x.status, body: x.responseText }); x.onerror = () => resolve({ status: 0 });
+      x.send(blob);
+    });
+    if (res.status === 200 || res.status === 201) { done = JSON.parse(res.body); break; }
+    if (tries >= 3) throw new Error('the connection keeps dropping');
+    say(0, 'connection hiccup — retrying…');
+    await new Promise(r => setTimeout(r, 1500 * (tries + 1)));
+  }
+  say(1, 'sharing it with “Anyone with the link”…');
+  await gfetch('https://www.googleapis.com/drive/v3/files/' + done.id + '/permissions', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ role: 'reader', type: 'anyone' }) });
+  say(1, 'done ✓');
+  return done.id;
+}
+
+// ---------- tiny dialog ----------
+let dlgResolve = null;
+function dialog(html, buttons, focusId) {
+  closeDialog();
+  const d = document.createElement('div'); d.className = 'dlg';
+  d.innerHTML = '<div class="dlg-box" role="dialog" aria-modal="true">' + html + '<div class="dlg-acts">' +
+    buttons.map((b, i) => '<button type="button" class="btn sm' + (b[2] ? ' solid' : '') + '" data-i="' + i + '">' + b[0] + '</button>').join('') + '</div></div>';
+  document.body.appendChild(d);
+  return new Promise(resolve => {
+    dlgResolve = resolve;
+    d.addEventListener('click', async e => {
+      if (e.target === d) { closeDialog(); return; }
+      const b = e.target.closest('[data-i]'); if (!b) return;
+      const fn = buttons[b.dataset.i][1];
+      if (!fn) { closeDialog(); return; }
+      b.disabled = true;
+      const v = await fn(); b.disabled = false;
+      if (v === false) return;
+      const r = dlgResolve; dlgResolve = null; d.remove(); r && r(v);
+    });
+    d.addEventListener('keydown', e => {
+      if (e.key === 'Escape') closeDialog();
+      if (e.key === 'Enter' && e.target.tagName === 'INPUT') { const p = d.querySelector('.btn.solid[data-i]'); if (p) p.click(); }
+    });
+    setTimeout(() => { const f = focusId && $(focusId); if (f) f.focus(); }, 30);
+  });
+}
+function closeDialog() { const d = document.querySelector('.dlg'); if (d) d.remove(); if (dlgResolve) { const r = dlgResolve; dlgResolve = null; r(null); } }
+
+// ══════════════════ BOOT ══════════════════
+function onAuth() {
+  renderHome();
+  if (R) { renderReview(); if (isHost() && seenAt == null) startSeen(); maybeAdd(); }
+}
+function maybeAdd() {
+  if (!pendingAdd || !R || !isHost()) return;
+  pendingAdd = false;
+  if (!R.photos.length) setTimeout(openAddPhotos, 50);
+}
+function startSeen() {
+  fb.f.get(dbRef('users/' + R.owner + '/' + INDEX + '/' + R.id + '/seen')).then(s => { seenAt = Number(s.val()) || 0; renderList(); markSeen(); }, () => { seenAt = 0; });
+}
+window.addEventListener('pagehide', markSeen);
+document.addEventListener('visibilitychange', () => { if (document.hidden && R) markSeen(); });
+
+if (!acct()) {
+  showHome("<strong>Can't connect.</strong> Open this from the website — it needs the site's sign-in to reach the database.");
+} else {
+  acct().on(onAuth);
+  acct().sdk().then(s => {
+    fb = { db: s.db, f: s.f };
+    if (!reviewId) { showHome(''); return; }
+    let first = true;
+    fb.f.onValue(dbRef(ROOT + '/' + reviewId), snap => {
+      const next = normalise(snap.val(), reviewId);
+      if (!next) { R = null; showHome('<strong>Review not found.</strong> The link may be wrong, or it was deleted.'); return; }
+      R = next;
+      if (first) {
+        first = false; $('homeView').hidden = true; $('reviewView').hidden = false;
+        if (isHost()) startSeen();
+        if (pendingAdd) history.replaceState(null, '', '?r=' + encodeURIComponent(reviewId));
+      }
+      renderReview(); maybeAdd();
+      if (shown || strokes.length) redraw();
+    }, err => { console.warn(err); showHome('<strong>Couldn’t open this review.</strong> Check your connection and reload.'); });
+  }).catch(() => showHome("<strong>Can't connect.</strong> Check your connection and reload."));
+}
+</script>
+</body>
+</html>
