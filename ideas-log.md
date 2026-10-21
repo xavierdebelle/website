@@ -394,7 +394,7 @@ its ID forever. Statuses: new, planned, in progress, done, dropped.
 ## 2026-10-16 — New tool ideas for photographers, couples, creators and real estate
 
 ### IDEA-091 · Photo Corrections: pin retouch notes on a 333 Photo image
-- **Category:** Tool · **Effort:** M · **Impact:** ★★ · **Status:** new
+- **Category:** Tool · **Effort:** M · **Impact:** ★★ · **Status:** done (done in v99, 2026-10-21)
 - tools/video-corrections.html already turns a wedding couple's video notes into one structured submission posted to GoHighLevel (`corrections-sent`), but commercial clients of 333 Photo still send photo retouch requests as long emails ("the third one, a bit brighter on the left"). Build the photo version from the same form and webhook: the client pastes a gallery link or drops a low-res proof, taps the spot on the image to drop a numbered pin, types the fix, and sends the whole list in one go. It cuts revision back-and-forth on every commercial job and gives Xavier a clean record of what was asked, which also makes it easy to bill a third round (the same logic as IDEA-082).
 
 ### IDEA-092 · "Will it print?" size checker that ends in a print order
@@ -470,3 +470,21 @@ its ID forever. Statuses: new, planned, in progress, done, dropped.
 ### IDEA-108 · "Print your year": a hardcover book of the Journal, sold each December
 - **Category:** Monetization · **Effort:** M · **Impact:** ★★ · **Status:** new
 - The Journal can export everything as .md or .json, and Xavier already sells printed albums through the Package Builder (album types, Parent Album Duplicates), so the lab and the design know-how exist. Add an "Order my year as a book" button in the Entries view that sends the year's entries (and photos, with IDEA-105) to a GoHighLevel order form, and lay them out as a hardcover: one page per day, mood and good things in the margin, at about $89–149. It sells again every December (continuity), makes a natural gift, and gives anyone who journals with the tool a reason to buy from Xavier without ever booking a shoot.
+
+## 2026-10-21 — Monetization and offers
+
+### IDEA-109 · "All approved? Pay the balance, get your finals" in Photo Review
+- **Category:** Monetization · **Effort:** M · **Impact:** ★★★ · **Status:** new
+- In tools/photo-review.html the client's "✓ Approve this photo" button (btnApprove, line ~528) only writes an `ok: true` note, and once every photo is approved nothing happens: no next step, no invoice, no delivery. Let the host paste a GoHighLevel invoice or payment link and a finals link per review; when the last photo is approved, the client sees one closing card ("All 24 photos approved. Pay the balance of $X and your full-resolution files are here"), with the finals link shown once Xavier marks the review paid. The moment of approval is when a client is happiest and the work is fresh, so the balance gets paid then instead of being chased for weeks.
+
+### IDEA-110 · Ask for a Google review the moment a client approves
+- **Category:** Conversion · **Effort:** S · **Impact:** ★★★ · **Status:** new
+- Video Review (v98) and Photo Review (v99) now capture the exact moment a couple or a 333 client says "this is perfect" (an approval, or the host marking the last note done), yet no screen on the site ever asks for a review; IDEA-044 only displays reviews, it doesn't collect them. Right after the toast "Approved ✓", show a short card: "Glad you love it. Would you tell others? Leave a Google review", linking to the de Belle or 333 Photo review page set per review, and track it with `xdbTrack('review-ask')`. Reviews asked for at the peak moment come in far more often, and every one feeds the strip in IDEA-044 and the ranking of both businesses on Google Maps.
+
+### IDEA-111 · "Free photo check of your website" offer after Web Squeeze
+- **Category:** Monetization · **Effort:** S · **Impact:** ★★ · **Status:** new
+- tools/web-squeeze.html ends with a summary ("12 done · 48 MB → 3.1 MB") and "Download all (.zip)", and its users are, by definition, small-business owners and creators fixing the photos on their own website, which is exactly 333 Photo's buyer. Under the summary, once files are done, add one card: "Smaller files fix the speed. Better photos fix the sales. Send me your site and I'll tell you which 5 photos to reshoot, free", posting the site address and email to GoHighLevel tagged "web-squeeze". It turns a free utility into a 333 Photo attraction offer (free audit, then a website photo shoot), aimed at people who already care about their site's images.
+
+### IDEA-112 · One-page brand sheet from Colour Wheel, sold as a 333 Photo add-on
+- **Category:** Feature · **Effort:** M · **Impact:** ★★ · **Status:** new
+- tools/colour-wheel.html already pulls five colours out of a photo (k-means in OKLab), names what each colour makes people feel, checks contrast, and exports .ase, but the only outputs are swatch files a client can't read. Add an "Export brand sheet" button that lays out one printable page: the palette with hex/CMYK, the "How it feels" summary, which colour pairs pass contrast for text, and the source photo. Offer it on 333 Photo shoots as a $150–250 add-on ("your brand colours, taken from your own photos") and as a free sample for leads from IDEA-111. It is a deliverable the tool can already almost produce, and it gives commercial clients a reason to spend more per shoot.
