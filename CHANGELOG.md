@@ -5,6 +5,64 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v98 — 2026-10-21
+
+**What's new** · New tool · [tools/video-review.html]
+### Video Review
+Send a client one link to the cut. They press pause on any frame, draw on
+the picture — a circle, an arrow, a box — and say what they'd change. Every
+note is pinned to its exact timecode, so clicking it jumps straight back to
+that frame. No account for the client, and each new version of the edit
+lands on the same link.
+
+**Video Review v1 — `tools/video-review.html`, source `Tools files/de Belle Photography apps/video-review-v1.html`, de Belle (Run The Studio)**
+- Frame.io-style notes on a cut. Database `reviews/{id}` (32-hex link, read
+  by exact id only): `owner`, `createdAt`, `title`, `versions/{k}` (`n`,
+  `name`, `drive` file id or `url`, `fps`, `size`, `createdAt`),
+  `comments/{k}` (`v` version, `t` seconds, `text`, `name`, `by` = random
+  per-browser id, `at`, `draw` = JSON strokes in 0…1 picture coordinates,
+  `re` reply-to, `done`, `gone`, `edited`, `host`). Host index
+  `users/{uid}/reviews/{id}` (`title`, `createdAt`, `seen`).
+- Clients: type a name once (remembered), pause → write and/or draw (pen,
+  arrow, box; yellow/red/white; undo/clear), typing pauses the video and
+  pins the frame; edit/delete their own notes (soft delete). Notes list on
+  the left, sorted by time, markers on the scrub bar, click to jump and
+  show the drawing; frame step ←/→, Shift = 1 s, Space, speed, full screen;
+  timecode HH:MM:SS:FF at the version's frame rate.
+- Host (Xavier or an approved member who created it): Client link, versions
+  on one link (a viewer stays on the version they opened), mark done,
+  reply, delete, rename, frame rate per version, Copy notes / Download
+  .txt for the editor; home list with "N new" since last opened (Xavier
+  chose a badge over email/GHL alerts).
+- Videos: upload straight from the browser to Xavier's Google Drive folder
+  "Video Reviews" (resumable, 16 MB chunks, retries; `drive.file` scope via
+  Google Identity Services), shared "Anyone with the link", played from the
+  Drive API (`files/{id}?alt=media&key=…`). Or paste a Drive share link or a
+  direct .mp4 link. Old Video Corrections form kept beside it (his choice).
+- **Rules change** (`reviews/`): host writes like `potlucks/`; anyone may add
+  a note, and change one only if `by` stays the same (no hard deletes,
+  no `host: true`, no extra fields). Privacy page: Video Review entry
+  (EN + FR), Google Drive under service providers.
+
+**Tested on the mock** (two devices, client signed out): create → add
+version → client name prompt, drawing + note at 00:00:03:04, focus pauses
+playback, text-only note; host sees both live with new dots, jump shows the
+drawing, done, reply, export text; versions 2 and 3 on the same link;
+home badge "1 new"; client edit/delete own note; rules refuse overwrite
+with another `by`, hard delete, fake `host`, extra fields, renaming,
+adding versions, listing `reviews`. 375 px layout: player, then note box,
+then notes. Mock harness gained `push()` and byte-range serving (video
+seeking).
+
+**Outstanding (Xavier, console):** publish the new rules; enable the Google
+Drive API in project xdb-tools; create a browser API key restricted to
+xavierdebelle.com + Drive API; add https://xavierdebelle.com to the OAuth
+web client's JavaScript origins; add the `drive.file` scope to the consent
+screen. Then the Client ID and API key go into the tool (next release).
+Drive upload and Drive playback are untested until then.
+
+---
+
 ## v97 — 2026-10-21
 
 **What's new** · New tool · [tools/web-squeeze.html]

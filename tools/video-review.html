@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="../assets/account.js"></script>
+<script defer src="../assets/stats.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Video Review — XAVIER DE BELLE</title>
+<!-- social preview: link cards on Instagram, iMessage, WhatsApp, Facebook, X -->
+<meta name="description" content="Watch the cut, pause on any frame, draw on it and leave a note. Every note is pinned to its exact timecode.">
+<link rel="canonical" href="https://xavierdebelle.com/tools/video-review.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Xavier de Belle">
+<meta property="og:locale" content="en_CA">
+<meta property="og:title" content="Video Review — Xavier de Belle">
+<meta property="og:description" content="Watch the cut, pause, draw on the frame and leave your notes.">
+<meta property="og:url" content="https://xavierdebelle.com/tools/video-review.html">
+<meta property="og:image" content="https://xavierdebelle.com/assets/og/home.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Video Review — Xavier de Belle">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="../assets/logo.svg" type="image/svg+xml">
+<!--
+  VIDEO REVIEW — setup (Xavier, once, in console.cloud.google.com, project xdb-tools)
+  1. APIs & Services → Library → "Google Drive API" → Enable.
+  2. Credentials → Create credentials → API key → restrict it:
+       Application restrictions: Websites → https://xavierdebelle.com/*
+       API restrictions: Google Drive API only.
+     Paste it as DRIVE_API_KEY below (it's meant to be public, like the Firebase key).
+  3. Credentials → OAuth 2.0 Client IDs → "Web client (auto created by Google Service)"
+     → Authorized JavaScript origins: add https://xavierdebelle.com
+     Paste its Client ID as DRIVE_CLIENT_ID below.
+  4. OAuth consent screen → Data access → add scope .../auth/drive.file (non-sensitive).
+-->
+<style>
+:root{
+  --ink:#000;--paper:#fff;--volt:#ffe800;--smoke:#141414;--ash:#2a2a2a;--dust:#8a8a8a;--red:#ff3b30;
+  --stack:"Helvetica Neue",Helvetica,Arial,"Segoe UI",system-ui,sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --gut:clamp(14px,3vw,28px);
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+html,body{margin:0;background:var(--ink);color:var(--paper);font-family:var(--stack)}
+button,input,select,textarea{font:inherit;color:inherit}
+a{color:var(--volt);text-decoration:none}
+[hidden]{display:none!important}
+:focus-visible{outline:2px solid var(--volt);outline-offset:2px}
+
+/* ---------- top bar ---------- */
+.top{display:flex;align-items:center;gap:10px 16px;flex-wrap:wrap;padding:12px var(--gut);border-bottom:3px solid var(--paper);
+  padding-top:max(12px,env(safe-area-inset-top))}
+.brand{display:flex;align-items:baseline;gap:10px;margin-right:auto;min-width:0;flex-wrap:wrap}
+.brand a{color:var(--paper);font-weight:900;font-size:12px;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap}
+.brand a:hover{color:var(--volt)}
+.brand h1{margin:0;font-weight:900;text-transform:uppercase;letter-spacing:-.04em;font-size:26px;line-height:1;overflow-wrap:anywhere}
+.brand h1 span{color:var(--volt)}
+.topacts{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.btn{background:transparent;border:3px solid var(--paper);color:var(--paper);font-weight:900;font-size:11px;letter-spacing:.12em;
+  text-transform:uppercase;padding:9px 13px;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:8px;border-radius:0}
+.btn:hover:not(:disabled){background:var(--volt);border-color:var(--volt);color:var(--ink)}
+.btn:disabled{opacity:.35;cursor:default}
+.btn.solid{background:var(--volt);border-color:var(--volt);color:var(--ink)}
+.btn.solid:hover:not(:disabled){background:var(--paper);border-color:var(--paper)}
+.btn.sm{padding:6px 9px;font-size:10px;border-width:2px}
+.btn.ghost{border-color:transparent}
+.k{margin:0 0 8px;font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--dust)}
+.note{margin:8px 0 0;font-size:13px;line-height:1.5;color:var(--dust)}
+.note b{color:var(--paper)}
+input[type=text],input[type=url],textarea,select{width:100%;background:var(--ink);border:3px solid var(--paper);border-radius:0;padding:9px 11px;font-size:16px}
+select{width:auto;font-size:13px;font-weight:700;padding:7px 9px;border-width:2px}
+textarea{resize:vertical;min-height:70px;line-height:1.45}
+input:focus,textarea:focus,select:focus{outline:none;border-color:var(--volt)}
+
+/* ---------- home ---------- */
+.home{max-width:760px;padding:28px var(--gut) 60px}
+.home h2{font-weight:900;text-transform:uppercase;letter-spacing:-.03em;font-size:32px;line-height:1;margin:0 0 14px}
+.gate{border-left:6px solid var(--volt);padding:6px 0 6px 16px;margin:0 0 28px;font-size:15px;line-height:1.55}
+.newrow{display:flex;gap:8px;margin-bottom:34px}
+.newrow input{flex:1;min-width:0}
+.rv{display:flex;align-items:center;gap:12px;border-top:3px solid var(--ash);padding:14px 0;cursor:pointer}
+.rv:hover .rv-t{color:var(--volt)}
+.rv-t{font-weight:900;font-size:18px;text-transform:uppercase;letter-spacing:-.01em;overflow-wrap:anywhere}
+.rv-m{font-family:var(--mono);font-size:11px;color:var(--dust);margin-top:3px}
+.rv-main{flex:1;min-width:0}
+.badge{background:var(--volt);color:var(--ink);font-weight:900;font-size:11px;letter-spacing:.06em;padding:4px 8px;white-space:nowrap;text-transform:uppercase}
+.empty{color:var(--dust);font-size:14px;padding:14px 0;border-top:3px solid var(--ash)}
+
+/* ---------- review layout: notes left, player right ---------- */
+.review{display:grid;grid-template-columns:minmax(300px,380px) minmax(0,1fr);gap:0;min-height:calc(100vh - 66px)}
+.side{border-right:3px solid var(--ash);display:flex;flex-direction:column;min-width:0;max-height:calc(100vh - 66px);position:sticky;top:0}
+.side-head{padding:14px 16px 10px;border-bottom:3px solid var(--ash);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.side-head .k{margin:0;margin-right:auto}
+.list{flex:1;overflow:auto;padding:4px 0 12px;min-height:120px}
+.cm{padding:12px 16px;border-bottom:1px solid var(--ash);cursor:pointer;position:relative}
+.cm:hover{background:var(--smoke)}
+.cm.on{background:var(--smoke);box-shadow:inset 4px 0 0 var(--volt)}
+.cm.done .cm-text{color:var(--dust);text-decoration:line-through}
+.cm-top{display:flex;align-items:center;gap:8px;font-size:12px}
+.tc{font-family:var(--mono);font-size:11px;background:var(--volt);color:var(--ink);padding:2px 6px;font-weight:700;letter-spacing:.02em}
+.cm-name{font-weight:900;text-transform:uppercase;letter-spacing:.04em;font-size:11px}
+.cm-name.host{color:var(--volt)}
+.cm-ago{color:var(--dust);font-family:var(--mono);font-size:10px;margin-left:auto;white-space:nowrap}
+.cm-new{width:8px;height:8px;border-radius:50%;background:var(--volt);flex:none}
+.cm-text{margin:6px 0 0;font-size:14px;line-height:1.45;white-space:pre-wrap;overflow-wrap:anywhere}
+.cm-draw{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--volt);margin-top:6px}
+.cm-acts{display:flex;gap:4px;margin-top:6px;flex-wrap:wrap}
+.cm-acts button{background:none;border:0;padding:3px 6px 3px 0;cursor:pointer;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--dust)}
+.cm-acts button:hover{color:var(--volt)}
+.cm-acts .chk{color:var(--paper)}
+.reply{margin:8px 0 0 14px;padding-left:10px;border-left:2px solid var(--ash)}
+.reply .cm-text{margin-top:3px}
+.compose{border-top:3px solid var(--paper);padding:12px 16px 14px;background:var(--ink)}
+.compose-top{display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:12px;flex-wrap:wrap}
+.compose-top .who{margin-left:auto;color:var(--dust);font-size:11px;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+.compose-row{display:flex;gap:8px;margin-top:8px;align-items:center;flex-wrap:wrap}
+.compose-row .grow{margin-right:auto}
+.replying{font-size:12px;color:var(--dust);margin-bottom:6px}
+.replying button{background:none;border:0;color:var(--volt);cursor:pointer;font-size:12px;padding:0}
+
+.main{min-width:0;padding:16px var(--gut) 30px}
+.vbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.vbar .k{margin:0}
+.vbar .sp{margin-right:auto}
+.stage{position:relative;background:#050505;border:3px solid var(--ash);aspect-ratio:16/9;max-height:70vh;width:100%;display:flex;align-items:center;justify-content:center;overflow:hidden;user-select:none;-webkit-user-select:none}
+.stage video{width:100%;height:100%;object-fit:contain;display:block;background:#050505}
+.stage canvas{position:absolute;left:0;top:0;pointer-events:none;touch-action:none}
+.stage.drawing canvas{pointer-events:auto;cursor:crosshair}
+.stage.drawing{border-color:var(--volt)}
+.stage-msg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;font-size:15px;line-height:1.5;color:var(--dust);background:#050505}
+.stage-msg b{color:var(--paper)}
+.bigplay{position:absolute;inset:0;margin:auto;width:84px;height:84px;border-radius:50%;border:0;background:rgba(0,0,0,.55);cursor:pointer;display:flex;align-items:center;justify-content:center}
+.bigplay svg{width:34px;height:34px;fill:var(--paper);margin-left:5px}
+.ctrl{display:flex;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap}
+.ctrl .ib{background:none;border:2px solid var(--paper);width:40px;height:40px;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;flex:none}
+.ctrl .ib:hover{background:var(--volt);border-color:var(--volt)}
+.ctrl .ib:hover svg{fill:var(--ink)}
+.ctrl .ib svg{width:16px;height:16px;fill:var(--paper)}
+.clock{font-family:var(--mono);font-size:13px;white-space:nowrap}
+.clock span{color:var(--dust)}
+.scrub{position:relative;height:30px;margin-top:8px;cursor:pointer;touch-action:none}
+.scrub .rail{position:absolute;left:0;right:0;top:12px;height:6px;background:var(--ash)}
+.scrub .buf{position:absolute;left:0;top:12px;height:6px;background:#444;width:0}
+.scrub .fill{position:absolute;left:0;top:12px;height:6px;background:var(--paper);width:0}
+.scrub .head{position:absolute;top:6px;width:4px;height:18px;background:var(--volt);margin-left:-2px;left:0}
+.scrub .mk{position:absolute;top:0;width:10px;height:10px;margin-left:-5px;background:var(--volt);border-radius:50%;border:2px solid var(--ink)}
+.scrub .mk.done{background:var(--dust)}
+.scrub .mk.draw{border-radius:0}
+.ctrl select{border-color:var(--ash)}
+.tools{display:flex;align-items:center;gap:6px;margin-top:10px;flex-wrap:wrap;padding:8px;border:3px solid var(--volt)}
+.tools .k{margin:0 6px 0 2px;color:var(--volt)}
+.tools button.t{background:none;border:2px solid var(--ash);padding:6px 9px;cursor:pointer;font-size:11px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}
+.tools button.t[aria-pressed=true]{background:var(--volt);color:var(--ink);border-color:var(--volt)}
+.tools .sw{width:26px;height:26px;border:2px solid var(--ash);cursor:pointer;padding:0}
+.tools .sw[aria-pressed=true]{border-color:var(--paper);box-shadow:0 0 0 2px var(--ink) inset}
+.tools .gap{margin-left:auto}
+.help{margin-top:12px;font-size:12px;color:var(--dust);line-height:1.6}
+.help kbd{font-family:var(--mono);font-size:10px;border:1px solid var(--dust);padding:1px 4px;color:var(--paper)}
+
+/* ---------- dialogs ---------- */
+.dlg{position:fixed;inset:0;background:rgba(0,0,0,.8);display:flex;align-items:center;justify-content:center;padding:16px;z-index:50}
+.dlg-box{background:var(--ink);border:3px solid var(--paper);padding:22px;width:min(520px,100%);max-height:calc(100vh - 32px);overflow:auto}
+.dlg-box h3{margin:0 0 12px;font-weight:900;text-transform:uppercase;font-size:20px;letter-spacing:-.01em}
+.dlg-acts{display:flex;gap:8px;justify-content:flex-end;margin-top:16px;flex-wrap:wrap}
+.field{margin-top:14px}
+.or{margin:16px 0 4px;font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--dust)}
+.prog{height:8px;background:var(--ash);margin-top:12px}
+.prog i{display:block;height:100%;background:var(--volt);width:0}
+.linkbox{display:flex;gap:8px}
+.linkbox input{flex:1;min-width:0;font-family:var(--mono);font-size:13px}
+
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);opacity:0;background:var(--volt);color:var(--ink);font-weight:900;font-size:13px;
+  padding:10px 16px;transition:.2s;z-index:60;pointer-events:none;max-width:calc(100vw - 32px);text-align:center}
+.toast.on{opacity:1;transform:translateX(-50%)}
+
+/* ---------- phones: player first, notes below ---------- */
+@media (max-width:860px){
+  .review{grid-template-columns:1fr;min-height:0}
+  .side{order:2;border-right:0;border-top:3px solid var(--ash);max-height:none;position:static}
+  .main{order:1;padding:12px var(--gut) 8px}
+  .list{max-height:none;overflow:visible}
+  .brand h1{font-size:20px}
+  .stage{max-height:none}
+  .compose{order:-2;border-top:0;border-bottom:3px solid var(--ash)}
+  .side-head{order:-1}
+  .help{display:none}
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="brand"><a href="../index.html">Xavier de Belle</a><h1 id="title">Video Review<span>.</span></h1></div>
+  <div class="topacts">
+    <select id="verSel" hidden aria-label="Version"></select>
+    <button type="button" class="btn sm" id="btnShare" hidden>Client link</button>
+    <button type="button" class="btn sm" id="btnHostMenu" hidden>Manage</button>
+    <span id="acctSlot" data-xdb-account hidden></span>
+  </div>
+</header>
+
+<!-- ================= HOME: your reviews ================= -->
+<main id="homeView" class="home" hidden>
+  <div id="homeBanner"></div>
+  <h2>Video reviews</h2>
+  <div class="gate" id="gate" hidden><span id="gateText"></span>
+    <div style="margin-top:12px"><button type="button" class="btn solid sm" id="gateBtn">Sign in with Google</button></div></div>
+  <div id="hostHome" hidden>
+    <p class="k">Start a review</p>
+    <div class="newrow">
+      <input type="text" id="newTitle" maxlength="200" placeholder="e.g. Smith wedding — highlight film" aria-label="Review name">
+      <button type="button" class="btn solid" id="btnCreate">Create</button>
+    </div>
+    <p class="k">Your reviews</p>
+    <div id="homeList"></div>
+  </div>
+  <p class="note" style="margin-top:28px">Clients never need an account — they open the link, type their name and leave notes. Videos live in your Google Drive.</p>
+</main>
+
+<!-- ================= REVIEW ================= -->
+<div id="reviewView" class="review" hidden>
+  <aside class="side" aria-label="Notes">
+    <div class="side-head">
+      <p class="k" id="countLbl">Notes</p>
+      <button type="button" class="btn sm ghost" id="btnHideDone" aria-pressed="false">Hide done</button>
+      <button type="button" class="btn sm" id="btnExport" hidden>Copy notes</button>
+    </div>
+    <div class="list" id="list"></div>
+    <div class="compose" id="compose">
+      <div class="replying" id="replying" hidden>Replying to <b id="replyName"></b> · <button type="button" id="replyCancel">cancel</button></div>
+      <div class="compose-top">
+        <span class="tc" id="composeTc">00:00:00:00</span>
+        <span id="composeHint" style="color:var(--dust)">Pause anywhere to leave a note</span>
+        <span class="who" id="whoBtn" title="Change your name"></span>
+      </div>
+      <textarea id="txt" maxlength="5000" placeholder="Your note on this frame…" aria-label="Your note"></textarea>
+      <div class="compose-row">
+        <button type="button" class="btn sm grow" id="btnDraw" aria-pressed="false">✎ Draw on frame</button>
+        <button type="button" class="btn solid sm" id="btnPost">Post note</button>
+      </div>
+    </div>
+  </aside>
+
+  <section class="main">
+    <div class="stage" id="stage">
+      <video id="vid" playsinline preload="metadata"></video>
+      <canvas id="ink"></canvas>
+      <button type="button" class="bigplay" id="bigPlay" aria-label="Play"><svg viewBox="0 0 24 24"><path d="M6 4l15 8-15 8z"/></svg></button>
+      <div class="stage-msg" id="stageMsg" hidden></div>
+    </div>
+
+    <div class="tools" id="drawTools" hidden>
+      <span class="k">Draw</span>
+      <button type="button" class="t" data-tool="pen" aria-pressed="true">Pen</button>
+      <button type="button" class="t" data-tool="arrow" aria-pressed="false">Arrow</button>
+      <button type="button" class="t" data-tool="box" aria-pressed="false">Box</button>
+      <button type="button" class="sw" data-col="#ffe800" style="background:#ffe800" aria-label="Yellow" aria-pressed="true"></button>
+      <button type="button" class="sw" data-col="#ff3b30" style="background:#ff3b30" aria-label="Red" aria-pressed="false"></button>
+      <button type="button" class="sw" data-col="#ffffff" style="background:#fff" aria-label="White" aria-pressed="false"></button>
+      <span class="gap"></span>
+      <button type="button" class="t" id="btnUndo">Undo</button>
+      <button type="button" class="t" id="btnClear">Clear</button>
+    </div>
+
+    <div class="scrub" id="scrub" role="slider" aria-label="Position" tabindex="0">
+      <div class="rail"></div><div class="buf" id="buf"></div><div class="fill" id="fill"></div>
+      <div id="marks"></div><div class="head" id="head"></div>
+    </div>
+    <div class="ctrl">
+      <button type="button" class="ib" id="btnPlay" aria-label="Play"><svg viewBox="0 0 24 24" id="playIcon"><path d="M6 4l15 8-15 8z"/></svg></button>
+      <button type="button" class="ib" id="btnBack" aria-label="One frame back"><svg viewBox="0 0 24 24"><path d="M5 4h3v16H5zM20 4L9 12l11 8z"/></svg></button>
+      <button type="button" class="ib" id="btnFwd" aria-label="One frame forward"><svg viewBox="0 0 24 24"><path d="M16 4h3v16h-3zM4 4l11 8-11 8z"/></svg></button>
+      <span class="clock" id="clock">00:00:00:00 <span>/ 00:00:00:00</span></span>
+      <span style="margin-right:auto"></span>
+      <select id="rate" aria-label="Speed"><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="1.5">1.5×</option><option value="2">2×</option></select>
+      <button type="button" class="ib" id="btnMute" aria-label="Mute"><svg viewBox="0 0 24 24" id="muteIcon"><path d="M3 9h4l5-5v16l-5-5H3zM15 8a5 5 0 010 8M17.5 5.5a8.5 8.5 0 010 13" stroke="#fff" stroke-width="2" fill-rule="evenodd"/></svg></button>
+      <button type="button" class="ib" id="btnFull" aria-label="Full screen"><svg viewBox="0 0 24 24"><path d="M3 3h7v3H6v4H3zM14 3h7v7h-3V6h-4zM3 14h3v4h4v3H3zM18 14h3v7h-7v-3h4z"/></svg></button>
+    </div>
+    <p class="help"><kbd>Space</kbd> play / pause · <kbd>←</kbd> <kbd>→</kbd> one frame · <kbd>Shift</kbd>+arrows one second · click a note to jump to it. Notes pin to the exact frame you paused on.</p>
+  </section>
+</div>
+
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+// ── CONFIG ───────────────────────────────────
+// Video Review — Frame.io-style notes on a cut. Lives in the xdb-tools
+// database at reviews/{id}, readable by exact link only (32 random hex).
+// Clients leave notes without an account; whoever created a review —
+// Xavier or an approved member — runs it. The host's list sits at
+// users/{uid}/reviews/{id} (with `seen` for the new-notes badge). Videos
+// live in the host's Google Drive (drive.file scope, "anyone with the link")
+// and play straight from the Drive API. Sign-in and Firebase come from
+// the site-wide ../assets/account.js.
+const OWNER = 'jGJdt3h4EeaOL3mYWUHA4yMZsRx2';
+const DRIVE_CLIENT_ID = '';   // see the setup note in <head>
+const DRIVE_API_KEY   = '';
+const DRIVE_SCOPE  = 'https://www.googleapis.com/auth/drive.file';
+const DRIVE_FOLDER = 'Video Reviews';
+const NAME_KEY = 'xdb.review.name', BY_KEY = 'xdb.review.by', FOLDER_KEY = 'xdb.review.folder', HIDE_KEY = 'xdb.review.hideDone';
+const COLOURS = ['#ffe800', '#ff3b30', '#ffffff'];
+// ─────────────────────────────────────────────
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+const hex = n => { const b = new Uint8Array(n); crypto.getRandomValues(b); return Array.from(b, x => x.toString(16).padStart(2, '0')).join(''); };
+const recall = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
+const store = (k, v) => { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch (e) {} };
+function toast(msg) { const t = $('toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toast.h); toast.h = setTimeout(() => t.classList.remove('on'), 2600); }
+function ago(ms) {
+  const s = Math.max(0, (Date.now() - ms) / 1000);
+  if (s < 60) return 'now'; if (s < 3600) return Math.floor(s / 60) + 'm'; if (s < 86400) return Math.floor(s / 3600) + 'h';
+  if (s < 86400 * 7) return Math.floor(s / 86400) + 'd';
+  return new Date(ms).toLocaleDateString('en-CA', { month: 'short', day: 'numeric' });
+}
+
+// this browser's identity for notes (no account): a name and a random id
+let myBy = recall(BY_KEY); if (!myBy) { myBy = hex(8); store(BY_KEY, myBy); }
+let myName = recall(NAME_KEY) || '';
+
+let fb = null;  // { db, f } once the SDK is in
+const acct = () => window.xdbAccount;
+const acctState = () => (acct() ? acct().state() : { status: 'signedout', user: null });
+const me = () => acctState().user;
+const canHost = () => ['owner', 'member'].includes(acctState().status);
+const isHost = () => !!(R && me() && (me().uid === R.owner || me().uid === OWNER));
+
+const params = new URLSearchParams(location.search);
+const reviewId = params.get('r');
+let R = null;          // the open review, as last read
+let verKey = params.get('v') || null;
+let seenAt = null;     // host: when they last looked (for the new dots)
+let pendingAdd = params.has('add');   // just created: open "Add version" once sign-in is known
+
+// the database drops empty objects — rebuild every key on the way in
+function normalise(v, id) {
+  if (!v || typeof v !== 'object' || !v.owner) return null;
+  const versions = Object.entries(v.versions || {}).map(([k, x]) => ({ key: k, n: Number(x.n) || 1, name: x.name || '', drive: x.drive || '', url: x.url || '', fps: Number(x.fps) || 24, createdAt: x.createdAt || 0 }))
+    .sort((a, b) => a.n - b.n);
+  const comments = Object.entries(v.comments || {}).map(([k, c]) => ({ key: k, v: c.v || '', t: Number(c.t) || 0, text: c.text || '', name: c.name || 'Guest', by: c.by || '', at: c.at || 0,
+    draw: c.draw || '', done: !!c.done, re: c.re || '', host: !!c.host, gone: !!c.gone, edited: c.edited || 0 }));
+  return { id, owner: v.owner, title: v.title || 'Video review', createdAt: v.createdAt || 0, versions, comments };
+}
+const curVer = () => R && (R.versions.find(x => x.key === verKey) || R.versions[R.versions.length - 1]) || null;
+const fps = () => (curVer() && curVer().fps) || 24;
+function tc(t, f) {
+  f = f || fps(); const fr = Math.max(0, Math.floor(t * f + 1e-4)), F = Math.round(f);
+  const ff = fr % F, s = Math.floor(fr / F), p = n => String(n).padStart(2, '0');
+  return p(Math.floor(s / 3600)) + ':' + p(Math.floor(s / 60) % 60) + ':' + p(s % 60) + ':' + p(ff);
+}
+function srcOf(ver) {
+  if (!ver) return '';
+  if (ver.drive) return DRIVE_API_KEY ? 'https://www.googleapis.com/drive/v3/files/' + encodeURIComponent(ver.drive) + '?alt=media&key=' + encodeURIComponent(DRIVE_API_KEY) : '';
+  return ver.url;
+}
+function dbRef(p) { return fb.f.ref(fb.db, p); }
+function write(p, v, fail) {
+  return fb.f.set(dbRef(p), v).then(() => true, err => { console.warn('write refused', p, err); toast(fail || "Couldn't save — check your connection"); return false; });
+}
+
+// ══════════════════ HOME ══════════════════
+let homeOff = null, homeUid, homeData = {}, homeWatch = {};
+function showHome(banner) {
+  $('reviewView').hidden = true; $('homeView').hidden = false; $('acctSlot').hidden = false;
+  $('homeBanner').innerHTML = banner ? '<div class="gate">' + banner + '</div>' : '';
+  renderHome();
+}
+function renderHome() {
+  if ($('homeView').hidden) return;
+  const s = acctState();
+  const msg = {
+    signedout: 'Sign in with Google to start a review.',
+    checking: 'Checking your account…',
+    pending: 'Your access request is with Xavier — once he approves it, you can start reviews here.',
+    declined: "This account isn't approved to run reviews here.",
+    error: "Sign-in didn't work — try again.",
+  };
+  $('hostHome').hidden = !canHost(); $('gate').hidden = canHost();
+  $('gateText').textContent = msg[s.status] || msg.signedout;
+  $('gateBtn').hidden = !(s.status === 'signedout' || s.status === 'error');
+  const uidNow = canHost() ? me().uid : null;
+  if (uidNow === homeUid) return;
+  if (homeOff) { homeOff(); homeOff = null; }
+  Object.values(homeWatch).forEach(off => off()); homeWatch = {};
+  homeUid = uidNow;
+  if (!uidNow || !fb) { $('homeList').innerHTML = ''; return; }
+  homeOff = fb.f.onValue(dbRef('users/' + uidNow + '/reviews'), snap => { homeData = snap.val() || {}; watchHome(); renderHomeList(); }, () => {});
+}
+// each review's notes, live, for the "N new" badge
+const homeNotes = {};
+function watchHome() {
+  Object.keys(homeData).forEach(id => {
+    if (homeWatch[id]) return;
+    homeWatch[id] = fb.f.onValue(dbRef('reviews/' + id + '/comments'), snap => { homeNotes[id] = snap.val() || {}; renderHomeList(); }, () => {});
+  });
+  Object.keys(homeWatch).forEach(id => { if (!homeData[id]) { homeWatch[id](); delete homeWatch[id]; } });
+}
+function renderHomeList() {
+  const all = Object.entries(homeData).sort((a, b) => (b[1].createdAt || 0) - (a[1].createdAt || 0));
+  $('homeList').innerHTML = all.length ? all.map(([id, d]) => {
+    const notes = Object.values(homeNotes[id] || {}).filter(c => c && !c.host && !c.gone);
+    const fresh = notes.filter(c => (c.at || 0) > (d.seen || 0)).length;
+    const open = Object.values(homeNotes[id] || {}).filter(c => c && !c.done && !c.gone && !c.re).length;
+    return '<div class="rv" data-id="' + esc(id) + '"><div class="rv-main"><div class="rv-t">' + esc(d.title || 'Video review') + '</div>' +
+      '<div class="rv-m">started ' + esc(new Date(d.createdAt || 0).toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' })) +
+      ' · ' + notes.length + ' note' + (notes.length === 1 ? '' : 's') + ' · ' + open + ' open</div></div>' +
+      (fresh ? '<span class="badge">' + fresh + ' new</span>' : '') + '<span style="font-weight:900">→</span></div>';
+  }).join('') : '<div class="empty">Nothing here yet — start one above.</div>';
+}
+$('homeList').addEventListener('click', e => { const r = e.target.closest('.rv'); if (r) location.search = '?r=' + encodeURIComponent(r.dataset.id); });
+$('gateBtn').onclick = () => acct() && acct().signIn();
+$('newTitle').addEventListener('keydown', e => { if (e.key === 'Enter') createReview(); });
+$('btnCreate').onclick = createReview;
+function createReview() {
+  if (!canHost() || !fb) { toast('Sign in first'); return; }
+  const title = $('newTitle').value.trim();
+  if (!title) { $('newTitle').focus(); toast('Give it a name first'); return; }
+  const id = hex(16), now = Date.now(), host = me().uid;
+  fb.f.set(dbRef('reviews/' + id), { owner: host, createdAt: now, title })
+    .then(() => fb.f.set(dbRef('users/' + host + '/reviews/' + id), { title, createdAt: now, seen: now }))
+    .then(() => { location.search = '?r=' + id + '&add=1'; }, err => { console.warn(err); toast("Couldn't create it — check your connection"); });
+}
+
+// ══════════════════ REVIEW ══════════════════
+const vid = $('vid'), stage = $('stage'), ink = $('ink'), ctx = ink.getContext('2d');
+let loadedSrc = null, shown = null, replyTo = null, hideDone = recall(HIDE_KEY) === '1', lockT = null;
+
+function renderReview() {
+  if (!R) return;
+  // stay on the version this page opened with — a new cut appears in the picker, it doesn't swap the video mid-watch
+  if (!verKey && R.versions.length) verKey = R.versions[R.versions.length - 1].key;
+  document.title = R.title + ' — Video Review';
+  $('title').innerHTML = esc(R.title) + '<span>.</span>';
+  const host = isHost();
+  $('btnShare').hidden = !host; $('btnHostMenu').hidden = !host; $('btnExport').hidden = !host;
+  $('acctSlot').hidden = !me();
+  // versions
+  const sel = $('verSel'), v = curVer();
+  sel.hidden = R.versions.length < 2 && !host;
+  sel.innerHTML = R.versions.slice().reverse().map(x => {
+    const n = R.comments.filter(c => c.v === x.key && !c.re && !c.gone).length;
+    return '<option value="' + esc(x.key) + '"' + (v && x.key === v.key ? ' selected' : '') + '>Version ' + x.n + (x.name ? ' — ' + esc(x.name) : '') + ' (' + n + ')</option>';
+  }).join('') + (host ? '<option value="__add">+ Add a version…</option>' : '');
+  if (!R.versions.length) sel.hidden = !host;
+  loadVideo();
+  renderList(); renderMarks(); paintCompose();
+}
+function loadVideo() {
+  const v = curVer(), src = srcOf(v);
+  const msg = $('stageMsg');
+  if (!v) {
+    msg.hidden = false; $('bigPlay').hidden = true;
+    msg.innerHTML = isHost() ? '<div><b>No video yet.</b><br>Add the first version.<br><br><button type="button" class="btn solid" onclick="openAdd()">Add video</button></div>' : '<div><b>Nothing to watch yet.</b><br>Check back soon.</div>';
+    if (loadedSrc) { vid.removeAttribute('src'); vid.load(); loadedSrc = null; }
+    return;
+  }
+  if (!src) { msg.hidden = false; $('bigPlay').hidden = true; msg.innerHTML = '<div><b>Drive playback isn’t set up yet.</b><br>The Drive API key still needs adding to this tool.</div>'; return; }
+  if (src === loadedSrc) return;
+  msg.hidden = true; loadedSrc = src; shown = null; clearInk();
+  vid.src = src; vid.playbackRate = Number($('rate').value) || 1;
+}
+vid.addEventListener('error', () => {
+  if (!vid.getAttribute('src')) return;
+  const m = $('stageMsg'); m.hidden = false; $('bigPlay').hidden = true;
+  m.innerHTML = '<div><b>This video won’t play.</b><br>If it’s on Google Drive, it has to be shared “Anyone with the link”. Drive also pauses streaming on very busy files for a while — try again later.' +
+    (curVer() && curVer().drive ? '<br><br><a href="https://drive.google.com/file/d/' + esc(curVer().drive) + '/view" target="_blank" rel="noopener">Open it on Google Drive ↗</a>' : '') + '</div>';
+});
+$('verSel').onchange = e => {
+  if (e.target.value === '__add') { e.target.value = curVer() ? curVer().key : ''; openAdd(); return; }
+  verKey = e.target.value; shown = null; replyTo = null;
+  history.replaceState(null, '', '?r=' + encodeURIComponent(R.id) + '&v=' + encodeURIComponent(verKey));
+  renderReview();
+};
+
+// ---------- notes list ----------
+function notesFor() { const v = curVer(); return v ? R.comments.filter(c => c.v === v.key) : []; }
+function renderList() {
+  const all = notesFor(), host = isHost();
+  const tops = all.filter(c => !c.re).sort((a, b) => a.t - b.t || a.at - b.at);
+  const replies = k => all.filter(c => c.re === k && !c.gone).sort((a, b) => a.at - b.at);
+  const live = tops.filter(c => !c.gone);
+  $('countLbl').textContent = live.length + ' note' + (live.length === 1 ? '' : 's') + ' · ' + live.filter(c => !c.done).length + ' open';
+  $('btnHideDone').setAttribute('aria-pressed', hideDone); $('btnHideDone').textContent = hideDone ? 'Show done' : 'Hide done';
+  const mine = c => c.by === myBy || host;
+  const isNew = c => host && seenAt != null && !c.host && c.at > seenAt;
+  const one = (c, isReply) => {
+    const acts = [];
+    if (!isReply) acts.push('<button type="button" data-act="reply">Reply</button>');
+    if (host && !isReply) acts.push('<button type="button" class="chk" data-act="done">' + (c.done ? '✓ Done' : '○ Mark done') + '</button>');
+    if (mine(c)) acts.push('<button type="button" data-act="edit">Edit</button><button type="button" data-act="del">Delete</button>');
+    return '<div class="' + (isReply ? 'reply' : 'cm' + (c.done ? ' done' : '') + (shown === c.key ? ' on' : '')) + '" data-k="' + esc(c.key) + '">' +
+      '<div class="cm-top">' + (isReply ? '' : '<span class="tc">' + tc(c.t) + '</span>') + '<span class="cm-name' + (c.host ? ' host' : '') + '">' + esc(c.name) + '</span>' +
+      (isNew(c) ? '<span class="cm-new" title="New since you last looked"></span>' : '') + '<span class="cm-ago">' + ago(c.at) + (c.edited ? ' · edited' : '') + '</span></div>' +
+      (c.text ? '<p class="cm-text">' + esc(c.text) + '</p>' : '') +
+      (c.draw ? '<div class="cm-draw">✎ Drawing on this frame</div>' : '') +
+      '<div class="cm-acts">' + acts.join('') + '</div>';
+  };
+  const html = tops.filter(c => !(hideDone && c.done)).map(c => {
+    const rs = replies(c.key);
+    if (c.gone && !rs.length) return '';
+    const head = c.gone ? '<div class="cm" data-k="' + esc(c.key) + '"><div class="cm-top"><span class="tc">' + tc(c.t) + '</span><span class="cm-ago">deleted</span></div>' : one(c, false);
+    return head + rs.map(r => one(r, true) + '</div>').join('') + '</div>';
+  }).join('');
+  $('list').innerHTML = html || '<div class="note" style="padding:14px 16px">' + (curVer() ? 'No notes yet. Pause the video on any frame, then write — or draw — what you’d like changed.' : '') + '</div>';
+}
+$('btnHideDone').onclick = () => { hideDone = !hideDone; store(HIDE_KEY, hideDone ? '1' : null); renderList(); };
+$('list').addEventListener('click', e => {
+  const row = e.target.closest('[data-k]'); if (!row) return;
+  const c = R.comments.find(x => x.key === row.dataset.k); if (!c) return;
+  const act = e.target.closest('[data-act]');
+  if (act) { e.stopPropagation(); noteAction(act.dataset.act, c); return; }
+  if (c.re) return;
+  jumpTo(c);
+});
+function noteAction(a, c) {
+  const base = 'reviews/' + R.id + '/comments/' + c.key;
+  if (a === 'reply') { replyTo = c; paintCompose(); $('txt').focus(); return; }
+  if (a === 'done') { write(base + '/done', !c.done); return; }
+  if (a === 'edit') {
+    const next = prompt('Edit your note', c.text); if (next == null || next.trim() === c.text) return;
+    fb.f.update(dbRef(base), { text: next.trim().slice(0, 5000), edited: Date.now(), by: c.by }).catch(() => toast("Couldn't save the edit"));
+    return;
+  }
+  if (a === 'del') {
+    if (!confirm('Delete this note?')) return;
+    if (isHost()) fb.f.remove(dbRef(base)).catch(() => toast("Couldn't delete it"));
+    else fb.f.update(dbRef(base), { gone: true, text: '', draw: null, by: c.by }).catch(() => toast("Couldn't delete it"));
+    if (shown === c.key) { shown = null; clearInk(); }
+  }
+}
+function jumpTo(c) {
+  if (!leaveFrame()) return;
+  vid.pause(); shown = c.key;
+  const go = () => { vid.currentTime = c.t; drawNote(c); renderList(); paintCompose(); };
+  if (vid.readyState >= 1) go(); else vid.addEventListener('loadedmetadata', go, { once: true });
+}
+
+// ---------- timeline markers ----------
+function renderMarks() {
+  const d = vid.duration;
+  if (!isFinite(d) || !d) { $('marks').innerHTML = ''; return; }
+  $('marks').innerHTML = notesFor().filter(c => !c.re && !c.gone).map(c =>
+    '<span class="mk' + (c.done ? ' done' : '') + (c.draw ? ' draw' : '') + '" style="left:' + (c.t / d * 100).toFixed(3) + '%" title="' + esc(tc(c.t) + ' · ' + c.name + (c.text ? ': ' + c.text.slice(0, 80) : '')) + '" data-k="' + esc(c.key) + '"></span>').join('');
+}
+
+// ---------- player ----------
+const PLAY = '<path d="M6 4l15 8-15 8z"/>', PAUSE = '<path d="M5 4h5v16H5zM14 4h5v16h-5z"/>';
+function paintTime() {
+  const d = vid.duration || 0, t = vid.currentTime || 0;
+  $('clock').innerHTML = tc(t) + ' <span>/ ' + tc(d) + '</span>';
+  const p = d ? t / d * 100 : 0;
+  $('fill').style.width = p + '%'; $('head').style.left = p + '%';
+  if (d && vid.buffered.length) $('buf').style.width = (vid.buffered.end(vid.buffered.length - 1) / d * 100) + '%';
+  if (lockT == null && !drawing) $('composeTc').textContent = tc(t);
+}
+function paintPlay() {
+  const playing = !vid.paused;
+  $('playIcon').innerHTML = playing ? PAUSE : PLAY;
+  $('btnPlay').setAttribute('aria-label', playing ? 'Pause' : 'Play');
+  $('bigPlay').hidden = playing || !loadedSrc || !$('stageMsg').hidden || vid.currentTime > 0;
+  $('composeHint').textContent = playing ? 'Pause anywhere to leave a note' : (lockT != null || drawing ? 'Note pinned to this frame' : 'Note on this frame');
+}
+function togglePlay() {
+  if (!loadedSrc) return;
+  if (vid.paused) { if (!leaveFrame()) return; shown = null; clearInk(); vid.play().catch(() => {}); }
+  else vid.pause();
+}
+// moving off the frame drops an unposted drawing (asks first) and unpins the note
+function leaveFrame() {
+  if (strokes.length && !confirm('Discard your drawing?')) return false;
+  stopDrawing(true); strokes = []; lockT = null; paintCompose();
+  return true;
+}
+function step(frames) {
+  if (!loadedSrc || !leaveFrame()) return;
+  vid.pause();
+  const f = fps(), cur = Math.floor(vid.currentTime * f + 1e-4);
+  vid.currentTime = Math.max(0, Math.min(vid.duration || 0, (cur + frames + 0.5) / f));
+}
+vid.addEventListener('play', () => { paintPlay(); renderList(); });
+vid.addEventListener('pause', paintPlay);
+vid.addEventListener('timeupdate', paintTime);
+vid.addEventListener('progress', paintTime);
+vid.addEventListener('loadedmetadata', () => { paintTime(); renderMarks(); fitInk(); paintPlay(); });
+vid.addEventListener('seeked', () => {
+  paintTime();
+  // stepping onto a frame that has a drawn note shows it
+  if (vid.paused && !drawing) {
+    const half = 0.5 / fps();
+    const hit = notesFor().find(c => !c.re && !c.gone && Math.abs(c.t - vid.currentTime) <= half);
+    if (hit) { if (shown !== hit.key) { shown = hit.key; drawNote(hit); renderList(); } }
+    else if (shown) { const s = R.comments.find(c => c.key === shown); if (!s || Math.abs(s.t - vid.currentTime) > half) { shown = null; clearInk(); renderList(); } }
+  }
+});
+vid.addEventListener('ended', paintPlay);
+$('btnPlay').onclick = togglePlay; $('bigPlay').onclick = togglePlay;
+vid.addEventListener('click', () => { if (!drawing) togglePlay(); });
+$('btnBack').onclick = () => step(-1); $('btnFwd').onclick = () => step(1);
+$('rate').onchange = e => { vid.playbackRate = Number(e.target.value) || 1; };
+$('btnMute').onclick = () => { vid.muted = !vid.muted; $('btnMute').style.opacity = vid.muted ? .4 : 1; $('btnMute').setAttribute('aria-label', vid.muted ? 'Unmute' : 'Mute'); };
+$('btnFull').onclick = () => {
+  const el = stage;
+  if (document.fullscreenElement) document.exitFullscreen();
+  else if (el.requestFullscreen) el.requestFullscreen().catch(() => {});
+  else if (vid.webkitEnterFullscreen) vid.webkitEnterFullscreen();   // iPhone
+};
+document.addEventListener('fullscreenchange', () => setTimeout(fitInk, 60));
+// scrubbing
+(function () {
+  const sc = $('scrub'); let down = false;
+  const at = e => { const r = sc.getBoundingClientRect(); return Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)); };
+  sc.addEventListener('pointerdown', e => {
+    if (!loadedSrc || !vid.duration) return;
+    const mk = e.target.closest('.mk');
+    if (mk) { const c = R.comments.find(x => x.key === mk.dataset.k); if (c) { jumpTo(c); return; } }
+    if (!leaveFrame()) return;
+    down = true; sc.setPointerCapture(e.pointerId); vid.pause(); vid.currentTime = at(e) * vid.duration;
+  });
+  sc.addEventListener('pointermove', e => { if (down) vid.currentTime = at(e) * vid.duration; });
+  sc.addEventListener('pointerup', () => { down = false; });
+  sc.addEventListener('keydown', e => { if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { e.preventDefault(); e.stopPropagation(); step((e.key === 'ArrowLeft' ? -1 : 1) * (e.shiftKey ? Math.round(fps()) : 1)); } });
+})();
+document.addEventListener('keydown', e => {
+  if ($('reviewView').hidden || e.target.closest('input,textarea,select,[contenteditable]') || document.querySelector('.dlg')) return;
+  if (e.metaKey || e.ctrlKey || e.altKey) { if ((e.metaKey || e.ctrlKey) && e.key === 'z' && drawing) { e.preventDefault(); undo(); } return; }
+  if (e.key === ' ' || e.key === 'k') { e.preventDefault(); togglePlay(); }
+  else if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { e.preventDefault(); step((e.key === 'ArrowLeft' ? -1 : 1) * (e.shiftKey ? Math.round(fps()) : 1)); }
+  else if (e.key === 'c') { e.preventDefault(); $('txt').focus(); }
+  else if (e.key === 'Escape' && drawing) stopDrawing(!strokes.length);
+});
+
+// ---------- drawing ----------
+// Strokes are stored in video-frame coordinates (0…1 of the picture, not the
+// player), so a note drawn on a laptop lands in the same spot on a phone.
+let drawing = false, strokes = [], cur = null, tool = 'pen', colour = COLOURS[0];
+function picRect() {   // where the picture sits inside the player (object-fit: contain)
+  const W = stage.clientWidth, H = stage.clientHeight, vw = vid.videoWidth || 16, vh = vid.videoHeight || 9;
+  const s = Math.min(W / vw, H / vh), w = vw * s, h = vh * s;
+  return { x: (W - w) / 2, y: (H - h) / 2, w, h };
+}
+function fitInk() {
+  const dpr = window.devicePixelRatio || 1;
+  ink.width = Math.round(stage.clientWidth * dpr); ink.height = Math.round(stage.clientHeight * dpr);
+  ink.style.width = stage.clientWidth + 'px'; ink.style.height = stage.clientHeight + 'px';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  redraw();
+}
+new ResizeObserver(fitInk).observe(stage);
+function clearInk() { ctx.clearRect(0, 0, ink.width, ink.height); }
+function paintStrokes(list) {
+  const r = picRect();
+  list.forEach(s => {
+    const P = s.p, px = i => r.x + P[i] * r.w, py = i => r.y + P[i + 1] * r.h;
+    if (P.length < 2) return;
+    ctx.strokeStyle = s.c; ctx.fillStyle = s.c; ctx.lineWidth = Math.max(3, (s.w || 8) / 1000 * r.h); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.shadowColor = 'rgba(0,0,0,.6)'; ctx.shadowBlur = 3;
+    ctx.beginPath();
+    if (s.k === 'box' && P.length >= 4) ctx.rect(px(0), py(0), px(2) - px(0), py(2) - py(0));
+    else if (s.k === 'arrow' && P.length >= 4) {
+      const x1 = px(0), y1 = py(0), x2 = px(2), y2 = py(2), a = Math.atan2(y2 - y1, x2 - x1), L = Math.max(12, ctx.lineWidth * 4);
+      ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
+      ctx.moveTo(x2 - L * Math.cos(a - .45), y2 - L * Math.sin(a - .45)); ctx.lineTo(x2, y2); ctx.lineTo(x2 - L * Math.cos(a + .45), y2 - L * Math.sin(a + .45));
+    } else { ctx.moveTo(px(0), py(0)); for (let i = 2; i < P.length; i += 2) ctx.lineTo(px(i), py(i)); if (P.length === 2) ctx.lineTo(px(0) + .1, py(0)); }
+    ctx.stroke(); ctx.shadowBlur = 0;
+  });
+}
+function redraw() {
+  clearInk();
+  if (drawing || strokes.length) { paintStrokes(strokes.concat(cur ? [cur] : [])); return; }
+  if (shown) { const c = R && R.comments.find(x => x.key === shown); if (c) paintStrokes(parseDraw(c.draw)); }
+}
+function parseDraw(s) { try { const a = JSON.parse(s || '[]'); return Array.isArray(a) ? a.filter(x => x && Array.isArray(x.p)) : []; } catch (e) { return []; } }
+function drawNote() { redraw(); }
+function startDrawing() {
+  if (!loadedSrc) { toast('Nothing to draw on yet'); return; }
+  vid.pause(); shown = null; drawing = true; cur = null;
+  if (lockT == null) lockT = vid.currentTime;
+  stage.classList.add('drawing'); $('drawTools').hidden = false; $('btnDraw').setAttribute('aria-pressed', 'true'); $('btnDraw').textContent = '✎ Drawing — done';
+  $('bigPlay').hidden = true; redraw(); paintCompose(); renderList();
+}
+function stopDrawing(discard) {
+  if (!drawing) return;
+  if (discard) strokes = [];
+  drawing = false; cur = null; stage.classList.remove('drawing'); $('drawTools').hidden = true;
+  $('btnDraw').setAttribute('aria-pressed', 'false');
+  paintCompose(); redraw();
+}
+function undo() { strokes.pop(); redraw(); paintCompose(); }
+$('btnDraw').onclick = () => drawing ? stopDrawing(false) : startDrawing();
+$('btnUndo').onclick = undo;
+$('btnClear').onclick = () => { strokes = []; redraw(); paintCompose(); };
+document.querySelectorAll('[data-tool]').forEach(b => b.onclick = () => { tool = b.dataset.tool; document.querySelectorAll('[data-tool]').forEach(x => x.setAttribute('aria-pressed', x === b)); });
+document.querySelectorAll('[data-col]').forEach(b => b.onclick = () => { colour = b.dataset.col; document.querySelectorAll('[data-col]').forEach(x => x.setAttribute('aria-pressed', x === b)); });
+(function () {
+  const pt = e => { const b = ink.getBoundingClientRect(), r = picRect(); return [Math.max(0, Math.min(1, (e.clientX - b.left - r.x) / r.w)), Math.max(0, Math.min(1, (e.clientY - b.top - r.y) / r.h))]; };
+  const r4 = n => Math.round(n * 10000) / 10000;
+  ink.addEventListener('pointerdown', e => {
+    if (!drawing) return; e.preventDefault(); ink.setPointerCapture(e.pointerId);
+    const p = pt(e); cur = { k: tool, c: colour, w: 8, p: [r4(p[0]), r4(p[1])] };
+    if (tool !== 'pen') cur.p.push(r4(p[0]), r4(p[1]));
+  });
+  ink.addEventListener('pointermove', e => {
+    if (!drawing || !cur) return; const p = pt(e);
+    if (cur.k === 'pen') {
+      const n = cur.p.length; if (Math.hypot(p[0] - cur.p[n - 2], p[1] - cur.p[n - 1]) < 0.003) return;
+      cur.p.push(r4(p[0]), r4(p[1]));
+    } else { cur.p[2] = r4(p[0]); cur.p[3] = r4(p[1]); }
+    redraw();
+  });
+  const end = () => { if (!cur) return; if (cur.k === 'pen' || Math.hypot(cur.p[2] - cur.p[0], cur.p[3] - cur.p[1]) > 0.01) strokes.push(cur); cur = null; redraw(); paintCompose(); };
+  ink.addEventListener('pointerup', end); ink.addEventListener('pointercancel', end);
+})();
+
+// ---------- composing ----------
+function paintCompose() {
+  const v = curVer();
+  $('compose').hidden = !v;
+  $('replying').hidden = !replyTo;
+  if (replyTo) $('replyName').textContent = replyTo.name + ' at ' + tc(replyTo.t);
+  $('whoBtn').textContent = isHost() ? '' : (myName ? 'as ' + myName : '');
+  const t = replyTo ? replyTo.t : (lockT != null ? lockT : vid.currentTime || 0);
+  $('composeTc').textContent = tc(t);
+  $('btnDraw').hidden = !!replyTo;
+  $('btnDraw').textContent = drawing ? '✎ Done drawing' : strokes.length ? '✎ Drawing ready (' + strokes.length + ')' : '✎ Draw on frame';
+  $('btnPost').textContent = replyTo ? 'Post reply' : 'Post note';
+  $('txt').placeholder = replyTo ? 'Your reply…' : 'Your note on this frame…';
+  paintPlay();
+}
+$('txt').addEventListener('focus', () => { if (!replyTo && !vid.paused) vid.pause(); if (!replyTo && lockT == null) lockT = vid.currentTime || 0; paintCompose(); });
+$('txt').addEventListener('keydown', e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); post(); } });
+$('replyCancel').onclick = () => { replyTo = null; paintCompose(); };
+$('btnPost').onclick = post;
+$('whoBtn').onclick = () => askName(true);
+function askName(force) {
+  if (isHost()) return Promise.resolve(hostName());
+  if (myName && !force) return Promise.resolve(myName);
+  return dialog('<h3>Your name</h3><p class="note">So Xavier knows who left each note. It’s remembered on this device.</p>' +
+    '<div class="field"><input type="text" id="dlgName" maxlength="60" value="' + esc(myName) + '" placeholder="First and last name"></div>',
+    [['Cancel', null], ['Continue', () => { const n = $('dlgName').value.trim(); if (!n) { $('dlgName').focus(); return false; } return n; }, true]], 'dlgName')
+    .then(n => { if (n) { myName = n.slice(0, 60); store(NAME_KEY, myName); paintCompose(); } return n || null; });
+}
+function hostName() { const u = me(); return ((u && (u.name || u.email)) || 'Xavier').split(/[\s@]/)[0]; }
+let posting = false;
+async function post() {
+  if (posting || !R || !fb) return;
+  const v = curVer(); if (!v) return;
+  const text = $('txt').value.trim();
+  const draw = !replyTo && strokes.length ? JSON.stringify(strokes) : '';
+  if (!text && !draw) { $('txt').focus(); toast(replyTo ? 'Write a reply first' : 'Write a note or draw on the frame'); return; }
+  if (draw.length > 30000) { toast('That drawing is too big — undo a few strokes'); return; }
+  const name = await askName(false); if (!name) return;
+  const t = replyTo ? replyTo.t : (lockT != null ? lockT : vid.currentTime || 0);
+  const c = { v: v.key, t: Math.round(t * 1000) / 1000, text: text.slice(0, 5000), name: name.slice(0, 60), by: myBy, at: Date.now() };
+  if (draw) c.draw = draw;
+  if (replyTo) c.re = replyTo.key;
+  if (isHost()) c.host = true;
+  posting = true; $('btnPost').disabled = true;
+  const key = fb.f.push(dbRef('reviews/' + R.id + '/comments')).key;
+  const ok = await write('reviews/' + R.id + '/comments/' + key, c, "Couldn't post — check your connection");
+  posting = false; $('btnPost').disabled = false;
+  if (!ok) return;
+  if (window.xdbTrack && !isHost()) window.xdbTrack('review-note', { drawing: !!draw });
+  $('txt').value = ''; replyTo = null; stopDrawing(true); strokes = []; lockT = null;
+  if (!c.re) shown = key;
+  if (isHost()) markSeen();
+  paintCompose(); toast('Posted ✓');
+}
+
+// ---------- host: share, versions, export ----------
+const clientLink = () => location.origin + location.pathname + '?r=' + encodeURIComponent(R.id);
+$('btnShare').onclick = () => {
+  dialog('<h3>Client link</h3><p class="note">Anyone with this link can watch and leave notes — no account needed. Every version you add shows up on the same link.</p>' +
+    '<div class="field linkbox"><input type="text" id="dlgLink" readonly value="' + esc(clientLink()) + '"><button type="button" class="btn solid sm" id="dlgCopy">Copy</button></div>',
+    [['Close', null]]);
+  $('dlgCopy').onclick = () => { copy(clientLink()); $('dlgCopy').textContent = 'Copied ✓'; };
+};
+function copy(s) {
+  if (navigator.clipboard) navigator.clipboard.writeText(s).then(() => toast('Copied ✓'), () => fallbackCopy(s)); else fallbackCopy(s);
+}
+function fallbackCopy(s) { const t = document.createElement('textarea'); t.value = s; document.body.appendChild(t); t.select(); try { document.execCommand('copy'); toast('Copied ✓'); } catch (e) {} t.remove(); }
+function exportText() {
+  const v = curVer(), all = notesFor().filter(c => !c.gone);
+  const lines = [R.title + ' — Version ' + v.n + (v.name ? ' (' + v.name + ')' : ''), ''];
+  all.filter(c => !c.re).sort((a, b) => a.t - b.t).forEach(c => {
+    lines.push((c.done ? '[x] ' : '[ ] ') + tc(c.t) + '  ' + c.name + ': ' + (c.text || '(drawing only)') + (c.draw && c.text ? '  [drawing]' : ''));
+    all.filter(r => r.re === c.key).sort((a, b) => a.at - b.at).forEach(r => lines.push('      ↳ ' + r.name + ': ' + r.text));
+  });
+  return lines.join('\n');
+}
+$('btnExport').onclick = () => { if (curVer()) copy(exportText()); };
+$('btnHostMenu').onclick = () => {
+  const v = curVer();
+  dialog('<h3>Manage</h3>' +
+    '<div class="field"><p class="k">Review name</p><input type="text" id="dlgTitle" maxlength="200" value="' + esc(R.title) + '"></div>' +
+    (v ? '<div class="field"><p class="k">This version · frame rate for timecodes</p><select id="dlgFps">' + [23.976, 24, 25, 29.97, 30, 50, 59.94, 60].map(f => '<option value="' + f + '"' + (Math.abs(f - v.fps) < .01 ? ' selected' : '') + '>' + f + ' fps</option>').join('') + '</select></div>' : '') +
+    '<div class="dlg-acts" style="justify-content:flex-start">' +
+      '<button type="button" class="btn sm" id="dlgAdd">+ Add version</button>' +
+      (v ? '<button type="button" class="btn sm" id="dlgTxt">Download notes (.txt)</button>' : '') +
+      (v && R.versions.length > 1 ? '<button type="button" class="btn sm" id="dlgDelV">Delete this version</button>' : '') +
+      '<button type="button" class="btn sm" id="dlgDelR">Delete review</button></div>' +
+    '<p class="note">Deleting removes the notes here. The video files stay in your Google Drive folder “' + DRIVE_FOLDER + '”.</p>',
+    [['Close', null], ['Save', () => true, true]]).then(ok => {
+      if (!ok) return;
+      const title = $('dlgTitle') ? $('dlgTitle').value.trim() : '';
+      if (title && title !== R.title) { write('reviews/' + R.id + '/title', title); fb.f.set(dbRef('users/' + R.owner + '/reviews/' + R.id + '/title'), title).catch(() => {}); }
+      const f = $('dlgFps') && Number($('dlgFps').value);
+      if (v && f && Math.abs(f - v.fps) > .001) write('reviews/' + R.id + '/versions/' + v.key + '/fps', f);
+    });
+  $('dlgAdd').onclick = () => { closeDialog(); openAdd(); };
+  if ($('dlgTxt')) $('dlgTxt').onclick = () => {
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([exportText()], { type: 'text/plain' }));
+    a.download = R.title.replace(/[^\w\- ]+/g, '').trim() + ' - v' + v.n + ' notes.txt'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  };
+  if ($('dlgDelV')) $('dlgDelV').onclick = () => {
+    if (!confirm('Delete Version ' + v.n + ' and its notes?')) return;
+    const change = { ['versions/' + v.key]: null };
+    R.comments.filter(c => c.v === v.key).forEach(c => { change['comments/' + c.key] = null; });
+    fb.f.update(dbRef('reviews/' + R.id), change).then(() => { closeDialog(); verKey = null; }, () => toast("Couldn't delete it"));
+  };
+  $('dlgDelR').onclick = () => {
+    if (!confirm('Delete “' + R.title + '” and every note on it? The client link stops working.')) return;
+    const owner = R.owner;
+    fb.f.remove(dbRef('reviews/' + R.id)).then(() => fb.f.remove(dbRef('users/' + owner + '/reviews/' + R.id)).catch(() => {}))
+      .then(() => { location.search = ''; }, () => toast("Couldn't delete it"));
+  };
+};
+function markSeen() {
+  if (!isHost() || !fb) return;
+  fb.f.set(dbRef('users/' + R.owner + '/reviews/' + R.id + '/seen'), Date.now()).catch(() => {});
+}
+
+// ---------- adding a version: upload to Drive, or paste a link ----------
+function openAdd() {
+  const n = R.versions.length ? Math.max(...R.versions.map(x => x.n)) + 1 : 1;
+  const driveReady = !!(DRIVE_CLIENT_ID && DRIVE_API_KEY);
+  if (driveReady) loadGIS().catch(() => {});
+  dialog('<h3>Add version ' + n + '</h3>' +
+    '<div class="field"><p class="k">Label (optional)</p><input type="text" id="dlgVName" maxlength="200" placeholder="e.g. colour pass, music change"></div>' +
+    '<div class="field"><p class="k">Frame rate</p><select id="dlgVFps">' + [23.976, 24, 25, 29.97, 30, 50, 59.94, 60].map(f => '<option value="' + f + '"' + (f === 24 ? ' selected' : '') + '>' + f + ' fps</option>').join('') + '</select></div>' +
+    '<div class="field"><p class="k">Upload to your Google Drive</p>' +
+      (driveReady ? '<input type="file" id="dlgFile" accept="video/mp4,video/quicktime,video/webm,video/*"><p class="note">Use an <b>H.264 MP4</b> (Web Squeeze makes one) — browsers can’t play ProRes. It goes into the “' + DRIVE_FOLDER + '” folder, shared “Anyone with the link”.</p><div class="prog" id="dlgProg" hidden><i></i></div><p class="note" id="dlgProgTxt"></p>'
+        : '<p class="note"><b>Drive upload isn’t set up yet</b> — the Drive keys still need adding. Paste a link below meanwhile.</p>') + '</div>' +
+    '<p class="or">— or paste a link —</p>' +
+    '<input type="url" id="dlgUrl" placeholder="Google Drive share link, or a direct .mp4 link">' +
+    '<p class="note">Drive files must be shared “Anyone with the link”.</p>',
+    [['Cancel', null], ['Add', () => addVersion(n), true]]);
+}
+async function addVersion(n) {
+  const name = $('dlgVName').value.trim().slice(0, 200), f = Number($('dlgVFps').value) || 24;
+  const file = $('dlgFile') && $('dlgFile').files[0];
+  const link = $('dlgUrl').value.trim();
+  let ver = { n, name, fps: f, createdAt: Date.now() };
+  if (file) {
+    try { ver.drive = await uploadToDrive(file); ver.size = file.size; }
+    catch (e) { console.warn(e); $('dlgProgTxt').textContent = 'Upload failed: ' + (e && e.message || e) + '. Try again.'; return false; }
+  } else if (link) {
+    const d = link.match(/drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?(?:.*&)?id=)([\w-]{20,})/) || link.match(/[?&]id=([\w-]{20,})/);
+    if (d) ver.drive = d[1];
+    else if (/^https:\/\//i.test(link) || /^\//.test(link) || /^https?:\/\/(localhost|127\.0\.0\.1)/i.test(link)) ver.url = link.replace(/(dropbox\.com\/.*)[?&]dl=0/, '$1?raw=1');
+    else { toast('That doesn’t look like a link'); return false; }
+  } else { toast('Choose a file or paste a link'); return false; }
+  const key = fb.f.push(dbRef('reviews/' + R.id + '/versions')).key;
+  const ok = await write('reviews/' + R.id + '/versions/' + key, ver);
+  if (!ok) return false;
+  verKey = key; history.replaceState(null, '', '?r=' + encodeURIComponent(R.id) + '&v=' + encodeURIComponent(key));
+  toast('Version ' + n + ' added ✓');
+  return true;
+}
+
+// Google Drive — browser straight to Drive, no server. drive.file only lets
+// this page see the files it created, nothing else in the Drive.
+let gisP = null, gTok = null, gTokExp = 0;
+function loadGIS() {
+  return gisP || (gisP = new Promise((res, rej) => {
+    const s = document.createElement('script'); s.src = 'https://accounts.google.com/gsi/client'; s.async = true;
+    s.onload = res; s.onerror = () => { gisP = null; rej(new Error('Google sign-in script didn’t load')); }; document.head.appendChild(s);
+  }));
+}
+function driveToken() {
+  if (gTok && Date.now() < gTokExp - 120000) return Promise.resolve(gTok);
+  return loadGIS().then(() => new Promise((res, rej) => {
+    const c = google.accounts.oauth2.initTokenClient({
+      client_id: DRIVE_CLIENT_ID, scope: DRIVE_SCOPE, hint: (me() && me().email) || undefined,
+      callback: r => { if (r.error) rej(new Error(r.error)); else { gTok = r.access_token; gTokExp = Date.now() + r.expires_in * 1000; res(gTok); } },
+      error_callback: e => rej(new Error(e && e.type === 'popup_closed' ? 'Drive permission window closed' : 'Drive permission didn’t work')),
+    });
+    c.requestAccessToken({ prompt: '' });
+  }));
+}
+async function gfetch(url, opt) {
+  const tok = await driveToken();
+  const r = await fetch(url, Object.assign({}, opt, { headers: Object.assign({ Authorization: 'Bearer ' + tok }, (opt && opt.headers) || {}) }));
+  if (!r.ok) throw new Error('Drive said ' + r.status);
+  return r;
+}
+async function driveFolder() {
+  const cached = recall(FOLDER_KEY);
+  if (cached) {
+    const ok = await gfetch('https://www.googleapis.com/drive/v3/files/' + cached + '?fields=id,trashed').then(r => r.json()).then(j => !j.trashed, () => false);
+    if (ok) return cached;
+  }
+  const q = encodeURIComponent("name='" + DRIVE_FOLDER + "' and mimeType='application/vnd.google-apps.folder' and trashed=false");
+  const found = await gfetch('https://www.googleapis.com/drive/v3/files?q=' + q + '&fields=files(id)').then(r => r.json());
+  let id = found.files && found.files[0] && found.files[0].id;
+  if (!id) id = (await gfetch('https://www.googleapis.com/drive/v3/files?fields=id', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: DRIVE_FOLDER, mimeType: 'application/vnd.google-apps.folder' }) }).then(r => r.json())).id;
+  store(FOLDER_KEY, id);
+  return id;
+}
+async function uploadToDrive(file) {
+  const prog = $('dlgProg'), bar = prog.firstChild, txt = $('dlgProgTxt');
+  const say = (p, s) => { prog.hidden = false; bar.style.width = (p * 100).toFixed(1) + '%'; txt.textContent = s; };
+  say(0, 'Connecting to Google Drive…');
+  const folder = await driveFolder();
+  const init = await gfetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&fields=id', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json; charset=UTF-8', 'X-Upload-Content-Type': file.type || 'video/mp4', 'X-Upload-Content-Length': String(file.size) },
+    body: JSON.stringify({ name: R.title + ' — v' + (R.versions.length + 1) + ' — ' + file.name, parents: [folder] }),
+  });
+  const session = init.headers.get('Location');
+  if (!session) throw new Error('Drive didn’t open an upload');
+  const CHUNK = 64 * 256 * 1024;   // 16 MB, a multiple of 256 KB as Drive requires
+  let at = 0, tries = 0, done = null;
+  const mb = n => (n / 1048576).toFixed(n > 1e9 ? 0 : 1);
+  while (!done) {
+    const end = Math.min(file.size, at + CHUNK);
+    const res = await new Promise(resolve => {
+      const x = new XMLHttpRequest();
+      x.open('PUT', session);
+      x.setRequestHeader('Content-Range', 'bytes ' + at + '-' + (end - 1) + '/' + file.size);
+      x.upload.onprogress = e => say((at + e.loaded) / file.size, 'Uploading ' + mb(at + e.loaded) + ' / ' + mb(file.size) + ' MB — keep this tab open');
+      x.onload = () => resolve({ status: x.status, range: x.getResponseHeader('Range'), body: x.responseText });
+      x.onerror = () => resolve({ status: 0 });
+      x.send(file.slice(at, end));
+    });
+    if (res.status === 200 || res.status === 201) { done = JSON.parse(res.body); break; }
+    if (res.status === 308) { const m = res.range && res.range.match(/-(\d+)$/); at = m ? Number(m[1]) + 1 : end; tries = 0; continue; }
+    if (++tries > 5) throw new Error('the connection keeps dropping');
+    say(at / file.size, 'Connection hiccup — retrying…');
+    await new Promise(r => setTimeout(r, 1500 * tries));
+    // ask Drive how much it has, then carry on from there
+    const st = await new Promise(resolve => {
+      const x = new XMLHttpRequest(); x.open('PUT', session); x.setRequestHeader('Content-Range', 'bytes */' + file.size);
+      x.onload = () => resolve({ status: x.status, range: x.getResponseHeader('Range'), body: x.responseText }); x.onerror = () => resolve({ status: 0 }); x.send();
+    });
+    if (st.status === 200 || st.status === 201) { done = JSON.parse(st.body); break; }
+    if (st.status === 308) { const m = st.range && st.range.match(/-(\d+)$/); at = m ? Number(m[1]) + 1 : 0; }
+  }
+  say(1, 'Sharing it with “Anyone with the link”…');
+  await gfetch('https://www.googleapis.com/drive/v3/files/' + done.id + '/permissions', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ role: 'reader', type: 'anyone' }) });
+  say(1, 'Done ✓');
+  return done.id;
+}
+
+// ---------- tiny dialog ----------
+let dlgResolve = null;
+function dialog(html, buttons, focusId) {
+  closeDialog();
+  const d = document.createElement('div'); d.className = 'dlg';
+  d.innerHTML = '<div class="dlg-box" role="dialog" aria-modal="true">' + html + '<div class="dlg-acts">' +
+    buttons.map((b, i) => '<button type="button" class="btn sm' + (b[2] ? ' solid' : '') + '" data-i="' + i + '">' + b[0] + '</button>').join('') + '</div></div>';
+  document.body.appendChild(d);
+  return new Promise(resolve => {
+    dlgResolve = resolve;
+    d.addEventListener('click', async e => {
+      if (e.target === d) { closeDialog(); return; }
+      const b = e.target.closest('[data-i]'); if (!b) return;
+      const fn = buttons[b.dataset.i][1];
+      if (!fn) { closeDialog(); return; }
+      b.disabled = true;
+      const v = await fn(); b.disabled = false;
+      if (v === false) return;
+      const r = dlgResolve; dlgResolve = null; d.remove(); r && r(v);
+    });
+    d.addEventListener('keydown', e => {
+      if (e.key === 'Escape') closeDialog();
+      if (e.key === 'Enter' && e.target.tagName === 'INPUT') { const p = d.querySelector('.btn.solid[data-i]'); if (p) p.click(); }
+    });
+    setTimeout(() => { const f = focusId && $(focusId); if (f) f.focus(); }, 30);
+  });
+}
+function closeDialog() { const d = document.querySelector('.dlg'); if (d) d.remove(); if (dlgResolve) { const r = dlgResolve; dlgResolve = null; r(null); } }
+
+// ══════════════════ BOOT ══════════════════
+function onAuth() {
+  renderHome();
+  if (R) { renderReview(); if (isHost() && seenAt == null) startSeen(); maybeAdd(); }
+}
+function maybeAdd() {
+  if (!pendingAdd || !R || !isHost()) return;
+  pendingAdd = false;
+  if (!R.versions.length) setTimeout(openAdd, 50);
+}
+function startSeen() {
+  fb.f.get(dbRef('users/' + R.owner + '/reviews/' + R.id + '/seen')).then(s => { seenAt = Number(s.val()) || 0; renderList(); markSeen(); }, () => { seenAt = 0; });
+}
+window.addEventListener('pagehide', markSeen);
+document.addEventListener('visibilitychange', () => { if (document.hidden && R) markSeen(); });
+
+if (!acct()) {
+  showHome("<strong>Can't connect.</strong> Open this from the website — it needs the site's sign-in to reach the database.");
+} else {
+  acct().on(onAuth);
+  acct().sdk().then(s => {
+    fb = { db: s.db, f: s.f };
+    if (!reviewId) { showHome(''); return; }
+    let first = true;
+    fb.f.onValue(dbRef('reviews/' + reviewId), snap => {
+      const next = normalise(snap.val(), reviewId);
+      if (!next) { R = null; showHome('<strong>Review not found.</strong> The link may be wrong, or it was deleted.'); return; }
+      R = next;
+      if (verKey && !R.versions.some(x => x.key === verKey)) verKey = null;
+      if (first) {
+        first = false; $('homeView').hidden = true; $('reviewView').hidden = false;
+        if (isHost()) startSeen();
+        if (pendingAdd) history.replaceState(null, '', '?r=' + encodeURIComponent(reviewId));
+      }
+      renderReview(); maybeAdd();
+      if (shown) redraw();
+    }, err => { console.warn(err); showHome('<strong>Couldn’t open this review.</strong> Check your connection and reload.'); });
+  }).catch(() => showHome("<strong>Can't connect.</strong> Check your connection and reload."));
+}
+</script>
+</body>
+</html>
