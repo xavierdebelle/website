@@ -5,6 +5,28 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v100 — 2026-10-21
+
+**Video Review v2 + Photo Review v2 — Google Drive switched on**
+(sources `Tools files/de Belle Photography apps/video-review-v2.html`,
+`photo-review-v2.html`; only change: `DRIVE_CLIENT_ID` and `DRIVE_API_KEY`
+filled in.)
+- Xavier did the console setup on 2026-10-21: rules for `reviews/` +
+  `photoReviews/` published (checked from outside: list 401, exact id 200);
+  Google Drive API enabled in xdb-tools; API key "Video Review – Drive"
+  restricted to `https://xavierdebelle.com/*` and the Drive API (checked:
+  accepted with a xavierdebelle.com referrer, "blocked" from another site);
+  `https://xavierdebelle.com` added to the auto-created OAuth web client's
+  JavaScript origins; `drive.file` added to the consent screen.
+- Both values are public by design (like the Firebase key) — the key's
+  restrictions and `drive.file` (the page only ever sees files it created)
+  are the protection.
+
+**Outstanding:** first real upload + client playback, done by Xavier on the
+live site (Claude doesn't write to his Drive or the live database).
+
+---
+
 ## v99 — 2026-10-21
 
 **What's new** · New tool · [tools/photo-review.html]
