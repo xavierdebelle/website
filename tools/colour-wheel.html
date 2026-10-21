@@ -7,13 +7,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Colour Wheel — XAVIER DE BELLE</title>
 <!-- social preview: link cards on Instagram, iMessage, WhatsApp, Facebook, X -->
-<meta name="description" content="Build colour palettes on a painter's, screen or perceptual colour wheel. Harmony rules, contrast checks, colour-blind previews, colours pulled from a photo, and a library that remembers them.">
+<meta name="description" content="Build colour palettes on a colour wheel. Harmony rules, what each colour makes people feel, contrast and colour-blind checks, colours pulled from a photo, and a library that remembers them.">
 <link rel="canonical" href="https://xavierdebelle.com/tools/colour-wheel.html">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Xavier de Belle">
 <meta property="og:locale" content="en_CA">
 <meta property="og:title" content="Colour Wheel — Xavier de Belle">
-<meta property="og:description" content="Build colour palettes on a painter's, screen or perceptual colour wheel, and keep the ones worth keeping.">
+<meta property="og:description" content="Build colour palettes on a colour wheel, see what they make people feel, and keep the ones worth keeping.">
 <meta property="og:url" content="https://xavierdebelle.com/tools/colour-wheel.html">
 <meta property="og:image" content="https://xavierdebelle.com/assets/og/home.png">
 <meta property="og:image:width" content="1200">
@@ -157,6 +157,29 @@ input[type=range]::-moz-range-thumb{width:8px;height:24px;background:var(--paper
 .save input:focus{outline:none;border-color:var(--volt)}
 .exports{display:flex;gap:4px 14px;flex-wrap:wrap;margin-top:8px}
 
+/* ---------- how it feels ---------- */
+.feel-sum{border:3px solid var(--paper);padding:16px 18px;margin-bottom:6px}
+.feel-sum h3{margin:0 0 6px;font-size:clamp(20px,2.4vw,26px);font-weight:900;text-transform:uppercase;letter-spacing:-.02em;line-height:1.05}
+.feel-sum p{margin:0;font-size:15px;line-height:1.5;color:#ddd}
+.feel-sum small{display:block;margin-top:10px;font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--dust)}
+.feel-row{display:grid;grid-template-columns:44px minmax(0,1fr);gap:14px;padding:12px 0;border-bottom:1px solid var(--ash);cursor:pointer}
+.feel-row:hover h4{color:var(--volt)}
+.feel-chip{width:44px;height:44px;border:1px solid var(--ash)}
+.feel-row.on .feel-chip{outline:3px solid var(--volt);outline-offset:2px}
+.feel-row h4{margin:0;font-size:15px;font-weight:900}
+.feel-row h4 span{font-family:var(--mono);font-weight:400;font-size:11px;color:var(--dust);margin-left:8px}
+.tags{display:flex;flex-wrap:wrap;gap:4px;margin:7px 0}
+.tags i{font-style:normal;font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;border:1px solid #555;padding:3px 6px}
+.feel-row p{margin:0;font-size:13px;line-height:1.5;color:#cfcfcf}
+.guide{margin-top:14px}
+.guide summary,.science summary{cursor:pointer;padding:10px 0;font-weight:900;font-size:12px;letter-spacing:.12em;text-transform:uppercase}
+.guide summary:hover{color:var(--volt)}
+.guide-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px 18px;margin:8px 0 4px}
+.guide-grid div{display:grid;grid-template-columns:28px minmax(0,1fr);gap:10px;align-items:start}
+.guide-grid i{width:28px;height:28px;border:1px solid #555}
+.guide-grid b{display:block;font-size:13px;margin-bottom:2px}
+.guide-grid span{font-size:12px;color:#bdbdbd;line-height:1.45}
+
 /* ---------- contrast ---------- */
 .cx-wrap{overflow-x:auto;margin-top:6px}
 .cx{border-collapse:collapse;width:100%;min-width:420px;table-layout:fixed}
@@ -192,10 +215,12 @@ input[type=range]::-moz-range-thumb{width:8px;height:24px;background:var(--paper
 
 /* ---------- science notes ---------- */
 .science{margin-top:26px;border-top:3px solid var(--ash);padding-top:6px}
-.science summary{cursor:pointer;padding:10px 0;font-weight:900;font-size:12px;letter-spacing:.12em;text-transform:uppercase}
 .science summary:hover{color:var(--volt)}
-.science div{columns:2 300px;column-gap:30px;font-size:14px;line-height:1.6;color:#cfcfcf}
-.science p{margin:0 0 12px;break-inside:avoid}
+.science-body{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px 30px;font-size:14px;line-height:1.6;color:#cfcfcf;padding-bottom:6px}
+.science h4{margin:0 0 4px;color:var(--paper);font-size:14px;font-weight:900}
+.science p{margin:0}
+.science ul{margin:4px 0 0;padding-left:18px}
+.science li{margin:0 0 4px}
 .science b{color:var(--paper)}
 
 /* ---------- toast ---------- */
@@ -251,14 +276,6 @@ input[type=range]::-moz-range-thumb{width:8px;height:24px;background:var(--paper
         <svg viewBox="0 0 100 100" id="wheel-lines" aria-hidden="true"></svg>
       </div>
 
-      <p class="k">Wheel</p>
-      <div class="seg" id="models">
-        <button type="button" data-model="ryb">Painter<small>RYB</small></button>
-        <button type="button" data-model="rgb">Light<small>RGB</small></button>
-        <button type="button" data-model="oklch">Perceptual<small>OKLCH</small></button>
-      </div>
-      <p class="note" id="model-note"></p>
-
       <div class="block">
         <p class="k">Harmony: <b id="harm-name"></b></p>
         <div class="harm" id="harms"></div>
@@ -282,7 +299,7 @@ input[type=range]::-moz-range-thumb{width:8px;height:24px;background:var(--paper
           <button type="button" data-mood="deep">Deep</button>
           <button type="button" data-mood="dark">Dark</button>
         </div>
-        <p class="note">Five colours are clustered from the photo in OKLab, so they are grouped the way the eye groups them. The photo never leaves this browser; only the colours are kept.</p>
+        <p class="note">Picks the five colours that stand out most, grouped the way your eye groups them. The photo never leaves this browser; only the colours are kept.</p>
       </div>
     </div>
   </section>
@@ -331,19 +348,39 @@ input[type=range]::-moz-range-thumb{width:8px;height:24px;background:var(--paper
     </div>
 
     <div class="block">
+      <p class="k">How it feels</p>
+      <div id="feel"></div>
+      <details class="guide">
+        <summary>What each colour tends to make people feel</summary>
+        <div class="guide-grid" id="guide"></div>
+        <p class="note">These are the common associations in North America and Europe. Meanings shift between cultures — white is worn for mourning in parts of East Asia, and red means luck and celebration in China — so check against who it's for.</p>
+      </details>
+    </div>
+
+    <div class="block">
       <p class="k">Contrast — text colour (across) on background (down)</p>
       <div class="cx-wrap"><table class="cx" id="cx"></table></div>
       <p class="note">WCAG 2 contrast ratios. <b style="color:#fff">AA</b> needs 4.5 for body text, 3 for large type; <b style="color:#fff">AAA</b> needs 7.</p>
     </div>
 
-    <details class="science">
-      <summary>The colour science, briefly</summary>
-      <div>
-        <p><b>Three wheels, three answers.</b> The painter's wheel (red, yellow, blue) is the one taught in art school: it puts yellow opposite violet, which is how pigments behave. The light wheel is how a screen mixes red, green and blue light, so yellow lands opposite blue. Neither is wrong; they answer different questions.</p>
-        <p><b>The perceptual wheel</b> uses OKLCH, a colour model fitted to measurements of human vision. In HSB, a "100% bright" yellow looks far lighter than a "100% bright" blue. In OKLCH, lightness means the same at every hue and equal steps around the wheel look like equal steps, so harmonies come out evenly weighted.</p>
-        <p><b>Harmonies</b> are fixed angles around the wheel from the base colour (the ringed handle): 180° for complementary, 120° for a triad, 90° for a square, near neighbours for analogous. Drag any handle and the rest follow; pick Custom to move them freely.</p>
-        <p><b>Contrast</b> is the WCAG 2 ratio of relative luminance, from 1:1 (identical) to 21:1 (black on white). It is what decides whether text stays readable on a colour.</p>
-        <p><b>Colour vision</b> previews use the Machado (2009) model of protanopia, deuteranopia and tritanopia. Roughly one man in twelve sees some version of the first two, which is worth knowing before a red and a green carry meaning.</p>
+    <details class="science" open>
+      <summary>Colour basics, in plain English</summary>
+      <div class="science-body">
+        <div><h4>The wheel</h4><p>Every colour lives somewhere on the circle. Go <b>around</b> it and the colour itself changes — red, yellow, green, blue, back to red. Go <b>towards the middle</b> and it gets paler and greyer; towards the edge, stronger. The <b>Brightness</b> slider makes it lighter or darker.</p></div>
+        <div><h4>The handles</h4><p>Each dot on the wheel is one colour in your palette. The dot with a <b>ring</b> is your main colour; the others are worked out from it. Drag any dot and the rest follow. Choose <b>Custom</b> to move them one at a time.</p></div>
+        <div><h4>Harmonies, one line each</h4><ul>
+          <li><b>Analogous</b> — next-door neighbours. Calm.</li>
+          <li><b>Monochromatic</b> — one colour, lighter and darker. Safe.</li>
+          <li><b>Complementary</b> — opposite sides. Maximum pop.</li>
+          <li><b>Split complementary</b> — pop, but gentler.</li>
+          <li><b>Triad / Square</b> — evenly spaced. Lively, busy.</li>
+          <li><b>Shades</b> — one colour, dark to light.</li>
+        </ul></div>
+        <div><h4>Don't use them equally</h4><p>The <b>60-30-10 rule</b>: one colour covers about 60% of the design, a second about 30%, and a bright accent the last 10%. Five colours in equal amounts almost never works.</p></div>
+        <div><h4>Can people read text on it?</h4><p>That's what the <b>Contrast</b> grid answers. <b>AAA</b> is excellent, <b>AA</b> is fine for normal text, <b>AA large</b> is only good for big headings, and <b>Fail</b> means don't put text there.</p></div>
+        <div><h4>Colour blindness</h4><p>About one man in twelve can't tell some reds and greens apart. Use the <b>Normal vision</b> menu to see your palette their way. If two colours turn into the same colour, don't rely on them alone to mean different things.</p></div>
+        <div><h4>Hex codes</h4><p>A code like <b>#FFE05C</b> is the colour's exact address. Paste it into Photoshop, Lightroom, Canva or a website and you get the same colour. Click any code here to copy it.</p></div>
+        <div><h4>Screens vs. paint</h4><p>This is the screen's wheel: it mixes light, so yellow sits opposite blue. A painter's wheel mixes pigment and puts yellow opposite purple. For anything seen on a screen or printed from a photo file, this is the one to trust.</p></div>
       </div>
     </details>
   </section>
@@ -473,25 +510,25 @@ function hexOf(s, m) { return rgb2hex(toRgb(s, m)); }
    The base is always the middle swatch. */
 var HARMONIES = {
   analogous:     { name: 'Analogous',      spec: [[-40, 1, 1], [-20, 1, 1], [0, 1, 1], [20, 1, 1], [40, 1, 1]],
-                   note: 'Neighbours on the wheel. Calm, low tension — the colours of most landscapes.' },
+                   note: 'Colours sitting side by side on the wheel. Calm and natural, like a landscape.' },
   monochromatic: { name: 'Monochromatic',  spec: [[0, .8, .5], [0, .5, 1], [0, 1, 1], [0, .25, 1], [0, .65, .75]],
-                   note: 'One hue, different strengths and lightness. Hard to get wrong, easy to make dull.' },
+                   note: 'One colour, made lighter, darker and softer. Hard to get wrong.' },
   triad:         { name: 'Triad',          spec: [[120, .65, .9], [120, 1, 1], [0, 1, 1], [240, 1, 1], [240, .65, .9]],
-                   note: 'Three hues 120° apart. Lively; usually works best with one in charge and two in support.' },
+                   note: 'Three colours evenly spaced around the wheel. Lively — let one lead and the others support it.' },
   complementary: { name: 'Complementary',  spec: [[0, .5, .8], [0, .8, .65], [0, 1, 1], [180, 1, 1], [180, .6, .8]],
-                   note: 'Opposites on the wheel. The strongest contrast of hue — each makes the other look more intense.' },
+                   note: 'Colours from opposite sides of the wheel. The most pop: each makes the other look stronger.' },
   split:         { name: 'Split complementary', spec: [[150, .65, .9], [150, 1, 1], [0, 1, 1], [210, 1, 1], [210, .65, .9]],
-                   note: 'The base plus the two neighbours of its opposite. Nearly as much punch, less strain.' },
+                   note: 'Your main colour plus the two beside its opposite. Nearly as much pop, easier on the eye.' },
   doublesplit:   { name: 'Double split',   spec: [[-30, 1, 1], [150, 1, 1], [0, 1, 1], [30, 1, 1], [210, 1, 1]],
-                   note: 'Two neighbouring hues and their two opposites. Rich, and takes some restraint.' },
+                   note: 'Two neighbours and their two opposites. Rich — use with a light hand.' },
   square:        { name: 'Square',         spec: [[90, 1, 1], [180, 1, 1], [0, 1, 1], [270, 1, 1], [0, .55, .65]],
-                   note: 'Four hues 90° apart. Balanced on paper; in practice let one lead.' },
+                   note: 'Four colours evenly spaced. Busy — let one lead and keep the rest small.' },
   compound:      { name: 'Compound',       spec: [[30, 1, 1], [30, .6, .7], [0, 1, 1], [165, 1, 1], [195, 1, .8]],
-                   note: 'A neighbour on one side, two near-opposites on the other. Contrast without symmetry.' },
+                   note: 'A neighbour on one side, two near-opposites on the other. Contrast that doesn\u2019t feel too neat.' },
   shades:        { name: 'Shades',         spec: [[0, 1, .25], [0, 1, .45], [0, 1, 1], [0, 1, .7], [0, 1, .85]],
                    note: 'One colour from dark to light. The handles sit on top of each other — move one and the scale moves with it.' },
   custom:        { name: 'Custom',         spec: null,
-                   note: 'Every handle moves on its own. Nothing is held in relation.' }
+                   note: 'Move every handle wherever you like. Nothing is linked.' }
 };
 var HARM_ORDER = ['analogous', 'monochromatic', 'triad', 'complementary', 'split', 'doublesplit', 'square', 'compound', 'shades', 'custom'];
 
@@ -512,8 +549,8 @@ function harmonyIcon(key) {
 
 /* ---------- the working palette ---------- */
 function defaultWork() {
-  var w = { model: 'ryb', harmony: 'complementary', sel: 2, name: '', loadedId: null, vision: 'none',
-            sw: [null, null, { a: 118, r: 0.64, b: 1 }, null, null] };
+  var w = { model: 'rgb', harmony: 'complementary', sel: 2, name: '', loadedId: null, vision: 'none',
+            sw: [null, null, { a: 48, r: 0.64, b: 1 }, null, null] };
   return regenerate(w);
 }
 function regenerate(w) {
@@ -534,6 +571,8 @@ function loadWork() {
     var w = JSON.parse(localStorage.getItem(WORK_KEY) || 'null');
     if (w && MODELS[w.model] && HARMONIES[w.harmony] && Array.isArray(w.sw) && w.sw.length === 5) {
       var sw = w.sw.map(normSw);
+      // v1 also had painter's (RYB) and perceptual (OKLCH) wheels: keep the colours, move them onto this one
+      if (sw.every(Boolean) && w.model !== 'rgb') { sw = sw.map(function (s) { return fromRgb(toRgb(s, w.model), 'rgb', s.a); }); w.model = 'rgb'; w.harmony = 'custom'; }
       if (sw.every(Boolean)) return { model: w.model, harmony: w.harmony, sw: sw, sel: clamp(+w.sel || 0, 0, 4) | 0,
         name: typeof w.name === 'string' ? w.name : '', loadedId: w.loadedId || null,
         vision: ['none', 'protan', 'deutan', 'tritan', 'achro'].indexOf(w.vision) >= 0 ? w.vision : 'none' };
@@ -792,6 +831,92 @@ function renderContrast() {
   $('cx').innerHTML = h + '</tbody>';
 }
 
+/* ---------- how it feels ----------
+   Each colour is put in a family by its hue, saturation and brightness,
+   then nudged by how pale, dark, muted or vivid it is. */
+var FEELS = {
+  red:     { name: 'Red',     hex: '#E53935', words: ['Passion', 'Energy', 'Love', 'Urgency', 'Danger'],            line: 'Raises the pulse and is seen first. Use it for what must not be missed.' },
+  orange:  { name: 'Orange',  hex: '#FB8C00', words: ['Warmth', 'Enthusiasm', 'Fun', 'Confidence', 'Appetite'],      line: 'Friendly and outgoing — red\u2019s energy without the alarm.' },
+  yellow:  { name: 'Yellow',  hex: '#FDD835', words: ['Happiness', 'Optimism', 'Sunshine', 'Attention', 'Caution'],  line: 'The most cheerful colour, and the loudest. A little goes a long way.' },
+  lime:    { name: 'Lime',    hex: '#C0CA33', words: ['Freshness', 'Youth', 'Zest', 'Spring'],                       line: 'New growth. Sharp, young and a bit cheeky.' },
+  green:   { name: 'Green',   hex: '#43A047', words: ['Nature', 'Growth', 'Calm', 'Health', 'Balance'],              line: 'Restful to look at. Reads as natural, healthy and safe — and, in North America, money.' },
+  teal:    { name: 'Teal',    hex: '#00897B', words: ['Clarity', 'Renewal', 'Healing', 'Composure'],                 line: 'Calm like blue, alive like green. Clean and quietly sophisticated.' },
+  blue:    { name: 'Blue',    hex: '#1E88E5', words: ['Trust', 'Calm', 'Stability', 'Loyalty', 'Sadness'],           line: 'The colour of sky and water: dependable and peaceful. Too much can feel cold.' },
+  purple:  { name: 'Purple',  hex: '#8E24AA', words: ['Luxury', 'Mystery', 'Creativity', 'Spirituality'],           line: 'Long the colour of royalty. Rich, imaginative, a little otherworldly.' },
+  magenta: { name: 'Magenta', hex: '#D81B60', words: ['Boldness', 'Imagination', 'Non-conformity', 'Fun'],           line: 'Confident and unexpected. Hard to ignore, harder to take lightly.' },
+  pink:    { name: 'Pink',    hex: '#F48FB1', words: ['Tenderness', 'Romance', 'Sweetness', 'Care', 'Playfulness'],  line: 'Soft and affectionate. Hot pinks turn playful and rebellious.' },
+  brown:   { name: 'Brown',   hex: '#795548', words: ['Earthiness', 'Comfort', 'Reliability', 'Warmth', 'Rustic'],   line: 'Wood, leather, coffee, soil. Grounded and honest.' },
+  white:   { name: 'White',   hex: '#FFFFFF', words: ['Purity', 'Simplicity', 'Space', 'Cleanliness', 'New start'],  line: 'Room to breathe. Makes everything around it look cleaner.' },
+  grey:    { name: 'Grey',    hex: '#9E9E9E', words: ['Neutrality', 'Balance', 'Maturity', 'Restraint'],             line: 'Steps back so other colours can speak. On its own it can feel flat.' },
+  black:   { name: 'Black',   hex: '#000000', words: ['Elegance', 'Power', 'Sophistication', 'Mystery', 'Formality'],line: 'Serious and timeless. Makes any colour beside it look brighter.' }
+};
+var FEEL_ORDER = ['red', 'orange', 'yellow', 'lime', 'green', 'teal', 'blue', 'purple', 'magenta', 'pink', 'brown', 'white', 'grey', 'black'];
+var WARM = { red: 1, orange: 1, yellow: 1, magenta: 1, pink: 1, brown: 1 }, COOL = { lime: 1, green: 1, teal: 1, blue: 1, purple: 1 };
+function family(c) {
+  var v = rgb2hsv(c[0], c[1], c[2]), h = v[0], sa = v[1], b = v[2];
+  if (b < 0.16) return 'black';
+  if (sa < 0.12) return b > 0.9 ? 'white' : 'grey';
+  if (sa < 0.2 && b > 0.93) return 'white';
+  if (h >= 15 && h < 45 && b < 0.62) return 'brown';
+  if ((h >= 330 || h < 15) && sa < 0.55 && b > 0.75) return 'pink';
+  if (h < 15 || h >= 345) return 'red';
+  if (h < 40) return 'orange';
+  if (h < 65) return 'yellow';
+  if (h < 90) return 'lime';
+  if (h < 160) return 'green';
+  if (h < 195) return 'teal';
+  if (h < 255) return 'blue';
+  if (h < 285) return 'purple';
+  if (h < 330) return 'magenta';
+  return 'pink';
+}
+function shadeOf(c, fam) {
+  if (fam === 'white' || fam === 'grey' || fam === 'black' || fam === 'brown') return null;
+  var v = rgb2hsv(c[0], c[1], c[2]), sa = v[1], b = v[2];
+  if (sa < 0.4 && b > 0.8) return { w: 'Pastel', t: 'This one is pastel, which makes it softer, gentler and more innocent.' };
+  if (b < 0.45) return { w: 'Deep', t: 'This one is deep, which makes it more serious, grown-up and expensive-looking.' };
+  if (sa < 0.45) return { w: 'Muted', t: 'This one is muted, which makes it calmer, quieter and a little nostalgic.' };
+  if (sa > 0.75 && b > 0.85) return { w: 'Vivid', t: 'This one is vivid, which turns the volume up — more energy, more attention.' };
+  return null;
+}
+var SUMMARY = {
+  warm:    [['Warm and cosy', 'Feels like autumn, candlelight and old film. Inviting, comforting, a little nostalgic.'],
+            ['Warm and lively', 'Feels sunny, friendly and loud. Good for celebrations, food, summer and sport.']],
+  cool:    [['Cool and calm', 'Feels quiet, trustworthy and serious. Think rest, winter, water at dusk.'],
+            ['Cool and fresh', 'Feels crisp, clean and confident. Think summer sea, technology, health.']],
+  mixed:   [['Balanced and grown-up', 'Warm and cool colours held in check. Calm, with a little tension to keep it interesting.'],
+            ['Bold and playful', 'Warm against cool at full strength. Hard to ignore — let one colour lead.']],
+  neutral: [['Quiet and minimal', 'Mostly neutrals. Lets the content — your photos — do the talking.'],
+            ['Minimal with a spark', 'Mostly neutrals with a colour that stands out. Clean, modern and focused.']]
+};
+function renderFeel() {
+  var warm = 0, cool = 0, neutral = 0, energy = 0, rows = '';
+  work.sw.forEach(function (s, i) {
+    var c = toRgb(s), fam = family(c), F = FEELS[fam], sh = shadeOf(c, fam), v = rgb2hsv(c[0], c[1], c[2]);
+    if (WARM[fam]) warm++; else if (COOL[fam]) cool++; else neutral++;
+    energy += v[1] * v[2];
+    rows += '<div class="feel-row' + (i === work.sel ? ' on' : '') + '" data-i="' + i + '">' +
+      '<span class="feel-chip" style="background:' + rgb2hex(c) + '"></span><div>' +
+      '<h4>' + (sh ? sh.w + ' ' + F.name.toLowerCase() : F.name) + '<span>' + rgb2hex(c) + '</span></h4>' +
+      '<div class="tags">' + F.words.map(function (w) { return '<i>' + w + '</i>'; }).join('') + '</div>' +
+      '<p>' + F.line + (sh ? ' ' + sh.t : '') + '</p></div></div>';
+  });
+  energy /= work.sw.length;
+  var temp = neutral >= 3 ? 'neutral' : warm > cool ? 'warm' : cool > warm ? 'cool' : 'mixed';
+  if (temp !== 'neutral' && warm && cool && Math.abs(warm - cool) <= 1 && warm + cool >= 4) temp = 'mixed';
+  var lively = temp === 'neutral' ? energy >= 0.3 : energy >= 0.45, S = SUMMARY[temp][lively ? 1 : 0];
+  $('feel').innerHTML = '<div class="feel-sum"><h3>' + S[0] + '</h3><p>' + S[1] + '</p>' +
+    '<small>Warm ' + warm + ' · Cool ' + cool + ' · Neutral ' + neutral + ' · Energy: ' + (lively ? 'lively' : 'calm') + '</small></div>' + rows;
+}
+$('feel').addEventListener('click', function (ev) {
+  var r = ev.target.closest('.feel-row'); if (!r) return;
+  work.sel = +r.dataset.i; render(); saveWork();
+});
+$('guide').innerHTML = FEEL_ORDER.map(function (k) {
+  var F = FEELS[k];
+  return '<div><i style="background:' + F.hex + '"></i><p style="margin:0"><b>' + F.name + '</b><span>' + F.words.join(', ') + '.</span></p></div>';
+}).join('');
+
 /* ---------- model + harmony controls ---------- */
 function buildControls() {
   $('harms').innerHTML = HARM_ORDER.map(function (k) {
@@ -803,25 +928,9 @@ function buildControls() {
     regenerate(work);
     render(); commit();
   });
-  $('models').addEventListener('click', function (ev) {
-    var b = ev.target.closest('button'); if (!b || b.dataset.model === work.model) return;
-    setModel(b.dataset.model);
-  });
-}
-/* Switching wheels keeps the colours on screen exactly as they are, and
-   re-reads where they sit on the new wheel. In a harmony, the base keeps its
-   colour and the others are re-derived — which is the point of switching. */
-function setModel(m) {
-  var old = work.model;
-  work.sw = work.sw.map(function (s) { return fromRgb(toRgb(s, old), m, s.a); });
-  work.model = m;
-  regenerate(work);
-  render(); commit();
 }
 function renderControls() {
-  Array.prototype.forEach.call($('models').children, function (b) { b.setAttribute('aria-pressed', b.dataset.model === work.model); });
   Array.prototype.forEach.call($('harms').children, function (b) { b.setAttribute('aria-pressed', b.dataset.h === work.harmony); });
-  $('model-note').textContent = MODELS[work.model].note;
   $('harm-name').textContent = HARMONIES[work.harmony].name;
   $('harm-note').textContent = HARMONIES[work.harmony].note;
   $('btn-undo').disabled = !undoStack.length;
@@ -840,6 +949,7 @@ function render() {
   renderHandles();
   renderStrip();
   renderDetail();
+  renderFeel();
   renderContrast();
   renderControls();
 }
@@ -996,9 +1106,10 @@ function savePalette(asNew) {
 }
 function openPalette(id) {
   var p = findPalette(id); if (!p) return;
-  work.model = p.model; work.harmony = p.harmony;
-  work.sw = p.sw ? p.sw.map(function (s) { return { a: s.a, r: s.r, b: s.b }; })
-                 : p.colors.map(function (h) { return fromRgb(hex2rgb(h), p.model, 0); });
+  var same = p.model === 'rgb' && p.sw;   // palettes saved on v1's other wheels open as their exact colours, unlinked
+  work.model = 'rgb'; work.harmony = same ? p.harmony : 'custom';
+  work.sw = same ? p.sw.map(function (s) { return { a: s.a, r: s.r, b: s.b }; })
+                 : p.colors.map(function (h) { return fromRgb(hex2rgb(h), 'rgb', 0); });
   while (work.sw.length < 5) work.sw.push({ a: 0, r: 0, b: work.sw.length / 4 });
   if (work.sw.length > 5) { work.sw = work.sw.slice(0, 5); work.harmony = 'custom'; }
   if (!p.sw) work.harmony = 'custom';
@@ -1017,7 +1128,6 @@ function deletePalette(id) {
   });
 }
 function dateOf(t) { return t ? new Date(t).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : ''; }
-var MODEL_SHORT = { ryb: 'RYB', rgb: 'RGB', oklch: 'OKLCH' };
 function renderLibrary() {
   var q = $('lib-search').value.trim().toLowerCase().replace(/^#/, ''), grid = $('lib-grid');
   var list = state.palettes.slice().sort(function (a, b) { return b.updatedAt - a.updatedAt; }).filter(function (p) {
@@ -1032,7 +1142,7 @@ function renderLibrary() {
   grid.innerHTML = list.map(function (p) {
     return '<article class="card' + (p.id === work.loadedId ? ' on' : '') + '" data-id="' + esc(p.id) + '">' +
       '<div class="card-sw" data-act="open" title="Open on the wheel">' + p.colors.map(function (c) { return '<i style="background:' + c + '"></i>'; }).join('') + '</div>' +
-      '<div class="card-body"><h3>' + esc(p.name) + '</h3><p>' + esc(HARMONIES[p.harmony].name) + ' · ' + MODEL_SHORT[p.model] + ' · ' + dateOf(p.updatedAt || p.createdAt) +
+      '<div class="card-body"><h3>' + esc(p.name) + '</h3><p>' + esc(HARMONIES[p.harmony].name) + ' · ' + dateOf(p.updatedAt || p.createdAt) +
       '<br>' + p.colors.join(' ') + '</p></div>' +
       '<div class="card-acts"><button class="ghost" type="button" data-act="open">Open</button><button class="ghost" type="button" data-act="copy">Copy hex</button>' +
       '<button class="ghost" type="button" data-act="ase">.ase</button><button class="ghost" type="button" data-act="del">Delete</button></div></article>';
@@ -1138,7 +1248,7 @@ $('btn-new').addEventListener('click', function () {
   var keepModel = work.model, keepVision = work.vision;
   var fresh = defaultWork();
   work.harmony = fresh.harmony; work.sel = 2; work.name = ''; work.loadedId = null;
-  work.sw = fresh.sw.map(function (s) { return fromRgb(toRgb(s, 'ryb'), keepModel, s.a); });
+  work.sw = fresh.sw.map(function (s) { return fromRgb(toRgb(s, 'rgb'), keepModel, s.a); });
   work.model = keepModel; work.vision = keepVision;
   regenerate(work);
   render(); commit();

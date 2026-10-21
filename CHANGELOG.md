@@ -5,6 +5,39 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v96 — 2026-10-20
+
+**What's new** · Colour Wheel · [tools/colour-wheel.html]
+### What your colours<br>make people feel
+Colour Wheel now tells you the mood of a palette — warm and cosy, cool and
+fresh, bold and playful — and what each colour in it tends to say, from
+red's urgency to blue's calm. The colour basics are rewritten in plain
+English, and there's now just one wheel: the one screens use.
+
+**Colour Wheel v2 — `tools/colour-wheel.html`, source `Tools files/Art/colour-wheel-v2.html`**
+- **One wheel:** Painter (RYB) and Perceptual (OKLCH) removed at Xavier's
+  request; only Light (RGB). A working palette or saved palette made on
+  v1's other wheels opens with its exact colours, as Custom (its harmony
+  link can't survive the change of wheel). Saved data unchanged — same key,
+  same doc, same shape, so sync carries straight over.
+- **How it feels:** each swatch is put in one of 14 families (hue,
+  saturation, brightness) with feeling words and a line about it, adjusted
+  for pastel / deep / muted / vivid. A summary on top reads the whole
+  palette as warm, cool, mixed or neutral × calm or lively. A guide lists
+  all 14 families, with a note that meanings vary between cultures.
+- **Colour basics, in plain English** replaces "The colour science,
+  briefly": open by default, eight short answers (the wheel, the handles,
+  harmonies in a line each, 60-30-10, reading the contrast grid, colour
+  blindness, hex codes, screens vs. paint). Harmony notes rewritten the
+  same way.
+
+**Verified on the mock database:** a v1 OKLCH working palette and a v1
+OKLCH saved palette both open with identical hex codes; harmonies, feelings
+summary and per-colour rows update while dragging; sync still Live; no
+script errors; 375 px wide, no sideways scroll.
+
+---
+
 ## v95 — 2026-10-20
 
 **What's new** · New tool · [tools.html#art]
