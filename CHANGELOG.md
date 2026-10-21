@@ -5,6 +5,43 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v97 — 2026-10-21
+
+**What's new** · New tool · [tools/web-squeeze.html]
+### Web Squeeze
+Drop in big photos and video, get back files small enough for a website
+that still look like the originals. A 6000-pixel photo goes from megabytes
+to around a hundred kilobytes; a 4K clip from 30 MB to about 2. Slide
+between before and after to check. Nothing is uploaded — the squeezing
+happens on your own computer.
+
+**Web Squeeze v1 — `tools/web-squeeze.html`, source `Tools files/de Belle Photography apps/web-squeeze-v1.html`, Run The Studio**
+- **Photos:** longest side 3840 / 2560 / 1920 / 1200 / keep (never
+  enlarges; stepped halving + high-quality canvas resize), AVIF (libavif),
+  WebP (libwebp, sharp YUV) or JPEG (MozJPEG) — jSquash WASM encoders from
+  jsDelivr, run in a module worker. Crisp / Balanced / Tiny presets, an
+  optional "never bigger than … KB" cap (binary search on quality, 6
+  passes). EXIF/GPS stripped, colours to sRGB. HEIC only where the browser
+  can decode it (Safari).
+- **Video:** Mediabunny 1.61.0 (WebCodecs, hardware encoders): short side
+  4K / 1440 / 1080 / 720 / keep, H.264 MP4, HEVC MP4 or AV1 WebM (codecs
+  this browser can't encode are greyed out), bitrate from bits-per-pixel ×
+  codec efficiency, capped at 90% of the source's; frame rate keep/30/24;
+  sound keep (AAC, Opus for WebM) or remove; optional target size in MB;
+  2-second keyframes, fast-start MP4.
+- Queue with per-file savings, before/after slider (fit or 100%), play
+  compressed vs original, Download / Download all (.zip, fflate 0.8.2,
+  stored). Changing a setting marks finished files and offers Redo.
+  Settings remembered in `xdb.squeeze.v1`; no sync, no backend.
+
+**Verified locally (Chromium):** 6000×4000 JPEG 2.3 MB → 2560 px WebP
+127 KB, AVIF 93 KB, MozJPEG 152 KB; 60 KB cap → 59 KB. 4K 6 s H.264 31 MB
+→ 1080p H.264 2.3 MB, HEVC 1.8 MB, AV1 (no sound) 1.4 MB, 2 MB target →
+1.9 MB; output plays (1920×1080, 6.08 s). Zip built; no console errors;
+375 px layout puts the drop zone first.
+
+---
+
 ## v96 — 2026-10-20
 
 **What's new** · Colour Wheel · [tools/colour-wheel.html]

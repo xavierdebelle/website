@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script defer src="../assets/stats.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Web Squeeze — XAVIER DE BELLE</title>
+<!-- social preview: link cards on Instagram, iMessage, WhatsApp, Facebook, X -->
+<meta name="description" content="Shrink photos and video for the web without making them look shrunk. Resize, re-encode to AVIF, WebP, JPEG, H.264, HEVC or AV1, all inside your browser — nothing is uploaded.">
+<link rel="canonical" href="https://xavierdebelle.com/tools/web-squeeze.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Xavier de Belle">
+<meta property="og:locale" content="en_CA">
+<meta property="og:title" content="Web Squeeze — Xavier de Belle">
+<meta property="og:description" content="Shrink photos and video for the web without making them look shrunk. Nothing leaves your computer.">
+<meta property="og:url" content="https://xavierdebelle.com/tools/web-squeeze.html">
+<meta property="og:image" content="https://xavierdebelle.com/assets/og/home.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Web Squeeze — Xavier de Belle">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="../assets/logo.svg" type="image/svg+xml">
+<style>
+:root{
+  --ink:#000;--paper:#fff;--volt:#ffe800;--smoke:#141414;--ash:#2a2a2a;--dust:#8a8a8a;
+  --stack:"Helvetica Neue",Helvetica,Arial,"Segoe UI",system-ui,sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --gut:clamp(14px,3vw,28px);
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+html,body{margin:0;background:var(--ink);color:var(--paper);font-family:var(--stack)}
+button,input,select{font:inherit;color:inherit}
+a{color:var(--volt);text-decoration:none}
+[hidden]{display:none!important}
+:focus-visible{outline:2px solid var(--volt);outline-offset:2px}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* ---------- top bar ---------- */
+.top{display:flex;align-items:center;gap:10px 16px;flex-wrap:wrap;padding:12px var(--gut);border-bottom:3px solid var(--paper);
+  padding-top:max(12px,env(safe-area-inset-top))}
+.brand{display:flex;align-items:baseline;gap:10px;margin-right:auto;min-width:0;flex-wrap:wrap}
+.brand a{color:var(--paper);font-weight:900;font-size:12px;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap}
+.brand a:hover{color:var(--volt)}
+.brand h1{margin:0;font-weight:900;text-transform:uppercase;letter-spacing:-.04em;font-size:26px;line-height:1}
+.brand h1 span{color:var(--volt)}
+.local{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--dust)}
+.local b{color:var(--volt);font-weight:400}
+.btn{background:transparent;border:3px solid var(--paper);color:var(--paper);font-weight:900;font-size:11px;letter-spacing:.12em;
+  text-transform:uppercase;padding:9px 13px;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:8px;border-radius:0}
+.btn:hover:not(:disabled){background:var(--volt);border-color:var(--volt);color:var(--ink)}
+.btn:disabled{opacity:.35;cursor:default}
+.btn.solid{background:var(--volt);border-color:var(--volt);color:var(--ink)}
+.btn.solid:hover:not(:disabled){background:var(--paper);border-color:var(--paper)}
+.btn.sm{padding:6px 9px;font-size:10px;border-width:2px}
+.k{margin:0 0 8px;font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--dust)}
+.note{margin:8px 0 0;font-size:13px;line-height:1.5;color:var(--dust)}
+.note b{color:var(--paper)}
+
+/* ---------- layout ---------- */
+.app{display:grid;grid-template-columns:minmax(300px,380px) minmax(0,1fr);gap:28px clamp(20px,3vw,44px);padding:24px var(--gut) 40px;align-items:start}
+.panel{min-width:0}
+.tabs{display:flex;gap:18px;border-bottom:3px solid var(--ash);margin-bottom:20px}
+.tabs button{background:none;border:0;border-bottom:3px solid transparent;margin-bottom:-3px;padding:8px 0;cursor:pointer;
+  font-weight:900;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--dust)}
+.tabs button[aria-selected="true"]{color:var(--paper);border-color:var(--volt)}
+.block{margin-top:20px}
+.block:first-child{margin-top:0}
+.seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;border:3px solid var(--paper)}
+.seg button{background:transparent;border:0;border-left:3px solid var(--paper);padding:9px 4px;cursor:pointer;font-weight:900;font-size:11px;
+  letter-spacing:.08em;text-transform:uppercase;min-width:0}
+.seg button:first-child{border-left:0}
+.seg button small{display:block;font-family:var(--mono);font-weight:400;font-size:9px;letter-spacing:.1em;color:var(--dust);margin-top:3px;text-transform:none}
+.seg button[aria-pressed="true"]{background:var(--volt);color:var(--ink)}
+.seg button[aria-pressed="true"] small{color:var(--ink)}
+.seg button:disabled{opacity:.3;cursor:not-allowed;text-decoration:line-through}
+.row{display:flex;gap:10px;align-items:center}
+.row input[type=range]{flex:1;accent-color:var(--volt)}
+.row output{font-family:var(--mono);font-size:12px;min-width:3ch;text-align:right}
+.field{display:flex;align-items:center;border:3px solid var(--paper);max-width:220px}
+.field input{flex:1;min-width:0;background:transparent;border:0;padding:8px 10px;font-size:16px;font-weight:700;outline:none}
+.field span{padding:0 10px;font-family:var(--mono);font-size:11px;color:var(--dust)}
+.field:focus-within{border-color:var(--volt)}
+
+/* ---------- drop + queue ---------- */
+.drop{display:grid;place-items:center;min-height:200px;border:3px dashed var(--ash);cursor:pointer;text-align:center;padding:20px;position:relative}
+.drop:hover,.drop.over{border-color:var(--volt)}
+.drop strong{display:block;font-size:clamp(26px,4vw,44px);font-weight:900;text-transform:uppercase;letter-spacing:-.04em;line-height:.95}
+.drop strong span{color:var(--volt)}
+.drop p{margin:12px 0 0;font-size:14px;line-height:1.5;color:var(--dust)}
+.drop.small{min-height:0;padding:14px}
+.drop.small strong{font-size:18px}
+.drop.small p{display:none}
+.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:18px 0 12px}
+.bar .sum{margin-right:auto;font-family:var(--mono);font-size:12px;letter-spacing:.04em;color:var(--dust)}
+.bar .sum b{color:var(--volt);font-weight:400}
+.list{display:grid;gap:10px}
+.item{display:grid;grid-template-columns:72px minmax(0,1fr) auto;gap:14px;align-items:center;border:2px solid var(--ash);padding:10px;background:var(--smoke)}
+.item.done{border-color:#444}
+.item.err{border-color:var(--volt)}
+.thumb{width:72px;height:72px;background:#000;display:grid;place-items:center;overflow:hidden;position:relative}
+.thumb img,.thumb video{width:100%;height:100%;object-fit:cover;display:block}
+.thumb i{position:absolute;left:4px;bottom:4px;font-style:normal;font-family:var(--mono);font-size:9px;background:var(--ink);padding:1px 4px;letter-spacing:.1em}
+.meta{min-width:0}
+.meta h3{margin:0 0 4px;font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.meta .line{font-family:var(--mono);font-size:11px;color:var(--dust);line-height:1.6;letter-spacing:.02em}
+.meta .line b{color:var(--paper);font-weight:400}
+.meta .line .save{color:var(--volt)}
+.prog{height:4px;background:var(--ash);margin-top:6px;position:relative;overflow:hidden}
+.prog span{position:absolute;inset:0 auto 0 0;background:var(--volt);width:0;transition:width .2s}
+.prog.busy span{width:30%!important;animation:slide 1.1s linear infinite}
+@keyframes slide{from{left:-30%}to{left:100%}}
+.acts{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.empty{border:2px solid var(--ash);padding:18px;color:var(--dust);font-size:14px;line-height:1.6}
+.empty b{color:var(--paper)}
+
+/* ---------- compare ---------- */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.94);z-index:50;display:flex;flex-direction:column}
+.modal header{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;padding:12px var(--gut);border-bottom:3px solid var(--paper)}
+.modal header h2{margin:0 auto 0 0;font-size:15px;font-weight:900;text-transform:uppercase;letter-spacing:.02em;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.stage{flex:1;min-height:0;position:relative;overflow:auto;display:grid;place-items:center;padding:12px}
+.cmp{position:relative;user-select:none;-webkit-user-select:none;touch-action:none;line-height:0;max-width:100%;max-height:100%}
+.cmp img{display:block;max-width:100%;max-height:calc(100vh - 120px);height:auto}
+.cmp.actual img{max-width:none;max-height:none}
+.cmp .after{position:absolute;inset:0;overflow:hidden;clip-path:inset(0 0 0 50%)}
+.cmp .after img{width:100%;height:100%}
+.cmp .split{position:absolute;top:0;bottom:0;left:50%;width:3px;margin-left:-1.5px;background:var(--volt);cursor:ew-resize}
+.cmp .split::after{content:"";position:absolute;top:50%;left:50%;width:30px;height:30px;margin:-15px 0 0 -15px;background:var(--volt);border:3px solid var(--ink)}
+.cmp .tag{position:absolute;top:8px;font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;background:var(--ink);padding:5px 7px;line-height:1}
+.cmp .tag.l{left:8px}.cmp .tag.r{right:8px;color:var(--volt)}
+.stage video{max-width:100%;max-height:calc(100vh - 120px);background:#000}
+
+@media (max-width:820px){
+  .app{grid-template-columns:1fr}
+  .app>.panel:last-child{order:-1}
+  .item{grid-template-columns:56px minmax(0,1fr)}
+  .thumb{width:56px;height:56px}
+  .acts{grid-column:1/-1;justify-content:flex-start}
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="brand"><a href="../index.html">Xavier de Belle</a><h1>Web Squeeze<span>.</span></h1></div>
+  <span class="local">Runs in this browser · <b>nothing is uploaded</b></span>
+</header>
+
+<main class="app">
+  <!-- ============ left: settings ============ -->
+  <section class="panel" aria-label="Settings">
+    <div class="tabs" role="tablist">
+      <button type="button" role="tab" id="tab-btn-photo" aria-selected="true" aria-controls="tab-photo">Photos</button>
+      <button type="button" role="tab" id="tab-btn-video" aria-selected="false" aria-controls="tab-video">Video</button>
+    </div>
+
+    <div id="tab-photo" role="tabpanel" aria-labelledby="tab-btn-photo">
+      <div class="block">
+        <p class="k">Longest side</p>
+        <div class="seg" data-set="pSize">
+          <button type="button" data-v="3840">3840<small>4K screen</small></button>
+          <button type="button" data-v="2560">2560<small>full width</small></button>
+          <button type="button" data-v="1920">1920<small>gallery</small></button>
+          <button type="button" data-v="1200">1200<small>blog</small></button>
+          <button type="button" data-v="0">Keep<small>as is</small></button>
+        </div>
+        <p class="note">Never enlarges. 2560 looks sharp on almost any screen; most web photos never need more.</p>
+      </div>
+      <div class="block">
+        <p class="k">Format</p>
+        <div class="seg" data-set="pFormat">
+          <button type="button" data-v="avif">AVIF<small>smallest</small></button>
+          <button type="button" data-v="webp">WebP<small>small</small></button>
+          <button type="button" data-v="jpeg">JPEG<small>works anywhere</small></button>
+        </div>
+        <p class="note" id="fmt-note"></p>
+      </div>
+      <div class="block">
+        <p class="k">Quality</p>
+        <div class="seg" data-set="pQuality">
+          <button type="button" data-v="crisp">Crisp<small>portfolio</small></button>
+          <button type="button" data-v="balanced">Balanced<small>most pages</small></button>
+          <button type="button" data-v="tiny">Tiny<small>thumbnails</small></button>
+        </div>
+      </div>
+      <div class="block">
+        <p class="k">Never bigger than <span style="text-transform:none">(optional)</span></p>
+        <div class="field"><input id="pMax" type="number" min="20" step="10" inputmode="numeric" placeholder="no limit"><span>KB</span></div>
+        <p class="note">If a photo comes out heavier, it is re-encoded at lower quality until it fits.</p>
+      </div>
+      <p class="note">Location and camera data (EXIF) are removed. Colours are converted to sRGB, the web standard.</p>
+    </div>
+
+    <div id="tab-video" role="tabpanel" aria-labelledby="tab-btn-video" hidden>
+      <div class="block">
+        <p class="k">Size</p>
+        <div class="seg" data-set="vSize">
+          <button type="button" data-v="2160">4K</button>
+          <button type="button" data-v="1440">1440p</button>
+          <button type="button" data-v="1080">1080p</button>
+          <button type="button" data-v="720">720p</button>
+          <button type="button" data-v="0">Keep</button>
+        </div>
+        <p class="note">Measured on the short side, so it works the same for vertical video. 1080p is plenty for a website.</p>
+      </div>
+      <div class="block">
+        <p class="k">Format</p>
+        <div class="seg" data-set="vCodec">
+          <button type="button" data-v="avc">H.264<small>plays everywhere</small></button>
+          <button type="button" data-v="hevc">HEVC<small>~40% smaller</small></button>
+          <button type="button" data-v="av1">AV1<small>smallest</small></button>
+        </div>
+        <p class="note" id="codec-note"></p>
+      </div>
+      <div class="block">
+        <p class="k">Quality</p>
+        <div class="seg" data-set="vQuality">
+          <button type="button" data-v="crisp">Crisp</button>
+          <button type="button" data-v="balanced">Balanced</button>
+          <button type="button" data-v="tiny">Tiny</button>
+        </div>
+      </div>
+      <div class="block">
+        <p class="k">Frame rate</p>
+        <div class="seg" data-set="vFps">
+          <button type="button" data-v="0">Keep</button>
+          <button type="button" data-v="30">30</button>
+          <button type="button" data-v="24">24</button>
+        </div>
+      </div>
+      <div class="block">
+        <p class="k">Sound</p>
+        <div class="seg" data-set="vAudio">
+          <button type="button" data-v="keep">Keep</button>
+          <button type="button" data-v="drop">Remove<small>background loops</small></button>
+        </div>
+      </div>
+      <div class="block">
+        <p class="k">Aim for a file of <span style="text-transform:none">(optional)</span></p>
+        <div class="field"><input id="vTarget" type="number" min="1" step="1" inputmode="numeric" placeholder="auto"><span>MB</span></div>
+        <p class="note">Sets the bitrate from the length of the clip. Leave empty and the quality setting decides.</p>
+      </div>
+      <p class="note">Uses your computer's video encoder, so it runs about as fast as an export. Output is web-ready (plays while it loads).</p>
+    </div>
+  </section>
+
+  <!-- ============ right: files ============ -->
+  <section class="panel" aria-label="Files">
+    <label class="drop" id="drop">
+      <input type="file" id="file" multiple accept="image/*,video/*,.heic,.heif,.mov,.mkv" class="sr-only">
+      <div>
+        <strong>Drop photos<br>&amp; video <span>here</span></strong>
+        <p>Or click to choose. JPEG, PNG, WebP, AVIF, HEIC (in Safari), MP4, MOV, WebM. Several at once is fine.</p>
+      </div>
+    </label>
+
+    <div class="bar" id="bar" hidden>
+      <span class="sum" id="sum"></span>
+      <button class="btn sm" id="btn-rerun" type="button" hidden title="Squeeze everything again with the settings on the left">Redo with new settings</button>
+      <button class="btn sm" id="btn-clear" type="button">Clear</button>
+      <button class="btn sm solid" id="btn-zip" type="button" disabled>Download all (.zip)</button>
+    </div>
+    <div class="list" id="list"></div>
+    <div class="empty" id="empty">
+      <b>How it works.</b> Drop files in and each one is resized and re-encoded with the settings on the left, one after the other.
+      Compare before and after, then download. Change a setting and press <b>Redo</b> to try again.
+      Nothing leaves this computer — the encoders run inside the browser.
+    </div>
+  </section>
+</main>
+
+<div class="modal" id="modal" hidden role="dialog" aria-modal="true" aria-labelledby="m-title">
+  <header>
+    <h2 id="m-title"></h2>
+    <button class="btn sm" id="m-zoom" type="button">100%</button>
+    <button class="btn sm" id="m-swap" type="button" hidden>Show original</button>
+    <button class="btn sm solid" id="m-dl" type="button">Download</button>
+    <button class="btn sm" id="m-close" type="button">Close</button>
+  </header>
+  <div class="stage" id="stage"></div>
+</div>
+
+<script type="module">
+/* ============================================================
+   Web Squeeze — photos and video, compressed in the browser.
+   Photos: canvas resize → MozJPEG / libwebp / libavif (jSquash WASM) in a worker.
+   Video: Mediabunny (WebCodecs, hardware encoders) → MP4 or WebM.
+   ============================================================ */
+const MB_URL = 'https://cdn.jsdelivr.net/npm/mediabunny@1.61.0/dist/bundles/mediabunny.min.mjs';
+const ZIP_URL = 'https://cdn.jsdelivr.net/npm/fflate@0.8.2/esm/browser.js';
+const KEY = 'xdb.squeeze.v1';
+
+const $ = s => document.querySelector(s);
+const fmtBytes = b => b < 1024 ? b + ' B' : b < 1048576 ? (b / 1024).toFixed(b < 10240 ? 1 : 0) + ' KB' : b < 1073741824 ? (b / 1048576).toFixed(1) + ' MB' : (b / 1073741824).toFixed(2) + ' GB';
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+/* ---------- settings ---------- */
+const DEF = { tab: 'photo', pSize: '2560', pFormat: 'webp', pQuality: 'balanced', pMax: '', vSize: '1080', vCodec: 'avc', vQuality: 'balanced', vFps: '0', vAudio: 'keep', vTarget: '' };
+let S = { ...DEF };
+try { Object.assign(S, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch (e) {}
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} };
+
+// Encoder quality per preset. AVIF's scale runs lower than the others for the same look.
+const PQ = {
+  avif: { crisp: 72, balanced: 60, tiny: 45 },
+  webp: { crisp: 88, balanced: 78, tiny: 62 },
+  jpeg: { crisp: 86, balanced: 77, tiny: 62 },
+};
+// Video bits per pixel per frame (H.264); newer codecs need less for the same picture.
+const BPP = { crisp: 0.09, balanced: 0.06, tiny: 0.035 };
+const CODEC_EFF = { avc: 1, hevc: 0.62, av1: 0.55 };
+const FMT_NOTE = {
+  avif: 'About half the size of JPEG at the same look. Every current browser shows it; some website builders and email still don’t accept it. Slower to make.',
+  webp: 'About a third smaller than JPEG. Shown everywhere, accepted by nearly every website builder. The safe modern choice.',
+  jpeg: 'MozJPEG — the best JPEG encoder there is, still around 20% smaller than a camera or Photoshop JPEG. Use it when a platform only takes JPEG.',
+};
+const CODEC_NOTE = {
+  avc: 'MP4 / H.264. Plays on every phone, browser and platform. The one to use if you’re unsure.',
+  hevc: 'MP4 / HEVC. Same look at roughly 40% less. Plays on Apple devices, Edge and Chrome on most computers; Firefox can’t.',
+  av1: 'WebM / AV1. The smallest. Plays in Chrome, Firefox, Edge and recent iPhones/Macs; older Apple devices can’t.',
+};
+
+function paintSettings() {
+  document.querySelectorAll('.seg[data-set]').forEach(seg => {
+    const k = seg.dataset.set;
+    seg.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === S[k])));
+  });
+  $('#pMax').value = S.pMax; $('#vTarget').value = S.vTarget;
+  $('#fmt-note').textContent = FMT_NOTE[S.pFormat];
+  $('#codec-note').textContent = CODEC_NOTE[S.vCodec];
+  const photo = S.tab === 'photo';
+  $('#tab-btn-photo').setAttribute('aria-selected', String(photo));
+  $('#tab-btn-video').setAttribute('aria-selected', String(!photo));
+  $('#tab-photo').hidden = !photo; $('#tab-video').hidden = photo;
+}
+document.querySelectorAll('.seg[data-set]').forEach(seg => seg.addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b || b.disabled) return;
+  S[seg.dataset.set] = b.dataset.v; save(); paintSettings(); markStale();
+}));
+$('#pMax').addEventListener('input', e => { S.pMax = e.target.value; save(); markStale(); });
+$('#vTarget').addEventListener('input', e => { S.vTarget = e.target.value; save(); markStale(); });
+$('#tab-btn-photo').onclick = () => { S.tab = 'photo'; save(); paintSettings(); };
+$('#tab-btn-video').onclick = () => { S.tab = 'video'; save(); paintSettings(); };
+paintSettings();
+
+/* ---------- photo encoder worker ---------- */
+const WORKER_SRC = `
+const BASE = { avif: 'https://cdn.jsdelivr.net/npm/@jsquash/avif@2.1.1/codec/enc/avif_enc.js',
+  webp: 'https://cdn.jsdelivr.net/npm/@jsquash/webp@1.5.0/codec/enc/webp_enc_simd.js',
+  webpPlain: 'https://cdn.jsdelivr.net/npm/@jsquash/webp@1.5.0/codec/enc/webp_enc.js',
+  jpeg: 'https://cdn.jsdelivr.net/npm/@jsquash/jpeg@1.6.0/codec/enc/mozjpeg_enc.js' };
+const OPTS = {
+  avif: q => ({ quality: q, qualityAlpha: -1, denoiseLevel: 0, tileColsLog2: 0, tileRowsLog2: 0, speed: 6, subsample: 1,
+    chromaDeltaQ: false, sharpness: 0, tune: 0, enableSharpYUV: false, bitDepth: 8, lossless: false }),
+  webp: q => ({ quality: q, target_size: 0, target_PSNR: 0, method: 5, sns_strength: 50, filter_strength: 60, filter_sharpness: 0,
+    filter_type: 1, partitions: 0, segments: 4, pass: 1, show_compressed: 0, preprocessing: 0, autofilter: 0, partition_limit: 0,
+    alpha_compression: 1, alpha_filtering: 1, alpha_quality: 100, lossless: 0, exact: 0, image_hint: 0, emulate_jpeg_size: 0,
+    thread_level: 0, low_memory: 0, near_lossless: 100, use_delta_palette: 0, use_sharp_yuv: 1 }),
+  jpeg: q => ({ quality: q, baseline: false, arithmetic: false, progressive: true, optimize_coding: true, smoothing: 0,
+    color_space: 3, quant_table: 3, trellis_multipass: false, trellis_opt_zero: false, trellis_opt_table: false, trellis_loops: 1,
+    auto_subsample: true, chroma_subsample: 2, separate_chroma_quality: false, chroma_quality: q }),
+};
+const mods = {};
+async function load(fmt) {
+  if (mods[fmt]) return mods[fmt];
+  const make = async url => (await import(url)).default({ noInitialRun: true });
+  mods[fmt] = (async () => {
+    if (fmt === 'webp') { try { return await make(BASE.webp); } catch (e) { return make(BASE.webpPlain); } }
+    return make(BASE[fmt]);
+  })();
+  return mods[fmt];
+}
+onmessage = async ({ data }) => {
+  const { id, fmt, q, w, h, pixels } = data;
+  try {
+    const m = await load(fmt);
+    const px = fmt === 'avif' ? new Uint8Array(pixels) : new Uint8ClampedArray(pixels);
+    const out = m.encode(px, w, h, OPTS[fmt](q));
+    if (!out) throw new Error('Encoding failed');
+    const buf = out.buffer.slice(out.byteOffset, out.byteOffset + out.byteLength);
+    postMessage({ id, buf }, [buf]);
+  } catch (e) { postMessage({ id, error: String(e && e.message || e) }); }
+};`;
+let worker = null, wSeq = 0;
+const wWait = new Map();
+function getWorker() {
+  if (worker) return worker;
+  worker = new Worker(URL.createObjectURL(new Blob([WORKER_SRC], { type: 'text/javascript' })), { type: 'module' });
+  worker.onmessage = ({ data }) => { const p = wWait.get(data.id); if (!p) return; wWait.delete(data.id); data.error ? p.reject(new Error(data.error)) : p.resolve(data.buf); };
+  worker.onerror = e => { for (const p of wWait.values()) p.reject(new Error(e.message || 'Encoder failed to load')); wWait.clear(); worker = null; };
+  return worker;
+}
+function encodeInWorker(fmt, q, img) {
+  return new Promise((resolve, reject) => {
+    const id = ++wSeq; wWait.set(id, { resolve, reject });
+    const pixels = img.data.buffer.slice(0); // copy: the same pixels may be encoded several times
+    getWorker().postMessage({ id, fmt, q, w: img.width, h: img.height, pixels }, [pixels]);
+  });
+}
+
+/* ---------- photo pipeline ---------- */
+async function decodeImage(file) {
+  try { return await createImageBitmap(file, { imageOrientation: 'from-image' }); }
+  catch (e) {
+    // Some browsers decode more through <img> (e.g. HEIC in Safari)
+    const url = URL.createObjectURL(file);
+    try {
+      const img = new Image(); img.decoding = 'async'; img.src = url; await img.decode();
+      return await createImageBitmap(img);
+    } catch (e2) {
+      throw new Error(/heic|heif/i.test(file.name + file.type) ? 'This browser can’t open HEIC. Open the tool in Safari, or export as JPEG first.' : 'Can’t read this image.');
+    } finally { URL.revokeObjectURL(url); }
+  }
+}
+// Downscale in halving steps so fine detail doesn't alias, then a final high-quality pass.
+function resizeToPixels(bmp, maxSide, flatten) {
+  let w = bmp.width, h = bmp.height;
+  const scale = maxSide && Math.max(w, h) > maxSide ? maxSide / Math.max(w, h) : 1;
+  const tw = Math.max(1, Math.round(w * scale)), th = Math.max(1, Math.round(h * scale));
+  let src = bmp, sw = w, sh = h;
+  while (sw / 2 >= tw * 1.0001 && sh / 2 >= th) {
+    const c = document.createElement('canvas'); c.width = Math.round(sw / 2); c.height = Math.round(sh / 2);
+    const x = c.getContext('2d'); x.imageSmoothingEnabled = true; x.imageSmoothingQuality = 'high';
+    x.drawImage(src, 0, 0, c.width, c.height); src = c; sw = c.width; sh = c.height;
+  }
+  const c = document.createElement('canvas'); c.width = tw; c.height = th;
+  const x = c.getContext('2d', { willReadFrequently: true }); x.imageSmoothingEnabled = true; x.imageSmoothingQuality = 'high';
+  if (flatten) { x.fillStyle = '#fff'; x.fillRect(0, 0, tw, th); }
+  x.drawImage(src, 0, 0, tw, th);
+  return x.getImageData(0, 0, tw, th);
+}
+async function squeezePhoto(it) {
+  const fmt = S.pFormat, maxKB = parseFloat(S.pMax) || 0;
+  it.stage('Reading');
+  const bmp = await decodeImage(it.file);
+  it.srcDims = bmp.width + '×' + bmp.height;
+  it.stage('Resizing');
+  const px = resizeToPixels(bmp, +S.pSize, fmt === 'jpeg');
+  bmp.close && bmp.close();
+  let q = PQ[fmt][S.pQuality];
+  it.stage(fmt === 'avif' ? 'Encoding AVIF (takes a moment)' : 'Encoding');
+  let buf = await encodeInWorker(fmt, q, px);
+  // Size cap: walk the quality down until it fits (binary search, a few passes).
+  if (maxKB && buf.byteLength > maxKB * 1024) {
+    let lo = 5, hi = q - 1, best = null;
+    for (let i = 0; i < 6 && lo <= hi; i++) {
+      const mid = Math.round((lo + hi) / 2);
+      it.stage('Fitting under ' + maxKB + ' KB · pass ' + (i + 1));
+      const b = await encodeInWorker(fmt, mid, px);
+      if (b.byteLength <= maxKB * 1024) { best = { b, q: mid }; lo = mid + 1; } else { hi = mid - 1; buf = b; q = mid; }
+    }
+    if (best) { buf = best.b; q = best.q; } else it.warn = 'Couldn’t reach ' + maxKB + ' KB at this size — try a smaller longest side.';
+  }
+  const mime = { avif: 'image/avif', webp: 'image/webp', jpeg: 'image/jpeg' }[fmt];
+  it.finish(new Blob([buf], { type: mime }), { avif: 'avif', webp: 'webp', jpeg: 'jpg' }[fmt], px.width + '×' + px.height + ' · ' + fmt.toUpperCase() + ' q' + q);
+}
+
+/* ---------- video pipeline ---------- */
+let MB = null;
+const loadMB = () => MB || (MB = import(MB_URL));
+async function squeezeVideo(it) {
+  it.stage('Loading video engine');
+  const mb = await loadMB();
+  if (typeof VideoEncoder === 'undefined') throw new Error('This browser can’t encode video. Use a current Chrome, Edge or Safari.');
+  const input = new mb.Input({ source: new mb.BlobSource(it.file), formats: mb.ALL_FORMATS });
+  it.input = input;
+  const vt = await input.getPrimaryVideoTrack();
+  if (!vt) throw new Error('No video track found in this file.');
+  const at = await input.getPrimaryAudioTrack();
+  const dur = await input.computeDuration();
+  const stats = await vt.computePacketStats(120).catch(() => null);
+  const srcFps = stats && stats.averagePacketRate || 30;
+  const dw = vt.displayWidth, dh = vt.displayHeight;
+  it.srcDims = dw + '×' + dh;
+
+  // Size by the short side, never upscale, even numbers for the encoder.
+  const short = Math.min(dw, dh), want = +S.vSize;
+  const k = want && short > want ? want / short : 1;
+  const even = n => Math.max(2, Math.round(n / 2) * 2);
+  const ow = even(dw * k), oh = even(dh * k);
+  const fps = +S.vFps && srcFps > +S.vFps + 1 ? +S.vFps : srcFps;
+
+  let codec = S.vCodec;
+  const bppFor = c => BPP[S.vQuality] * CODEC_EFF[c];
+  const audioKeep = S.vAudio === 'keep' && at;
+  const audioBits = audioKeep ? 128000 : 0;
+  let vbr = ow * oh * Math.min(fps, 60) * bppFor(codec);
+  const targetMB = parseFloat(S.vTarget) || 0;
+  if (targetMB && dur > 0) vbr = Math.max(150000, (targetMB * 8 * 1024 * 1024 * 0.97) / dur - audioBits);
+  // Never ask for more than the source already spends.
+  if (stats && stats.averageBitrate && !targetMB) vbr = Math.min(vbr, stats.averageBitrate * 0.9);
+  vbr = Math.round(vbr);
+
+  if (!(await mb.canEncodeVideo(codec, { width: ow, height: oh, bitrate: vbr }))) {
+    if (codec !== 'avc' && await mb.canEncodeVideo('avc', { width: ow, height: oh, bitrate: vbr })) {
+      it.warn = CODEC_NAME[codec] + ' isn’t available in this browser — used H.264.';
+      codec = 'avc';
+      if (!targetMB) vbr = Math.round(vbr / CODEC_EFF[S.vCodec]);
+    } else throw new Error('This browser can’t encode ' + CODEC_NAME[codec] + ' at ' + ow + '×' + oh + '.');
+  }
+  const webm = codec === 'av1';
+  let aCodec = webm ? 'opus' : 'aac';
+  if (audioKeep && !(await mb.canEncodeAudio(aCodec, { bitrate: audioBits }))) aCodec = 'opus';
+  const output = new mb.Output({
+    format: webm ? new mb.WebMOutputFormat() : new mb.Mp4OutputFormat({ fastStart: 'in-memory' }),
+    target: new mb.BufferTarget(),
+  });
+  const conv = await mb.Conversion.init({
+    input, output, tracks: 'primary', showWarnings: false,
+    video: { width: ow, height: oh, fit: 'contain', codec, quality: new mb.Quality({ bitrate: vbr }), forceTranscode: true,
+      ...(fps !== srcFps ? { frameRate: fps } : {}), keyFrameInterval: 2 },
+    audio: audioKeep ? { codec: aCodec, quality: new mb.Quality({ bitrate: audioBits }) } : { discard: true },
+    tags: {},
+  });
+  if (!conv.isValid) throw new Error('Can’t convert this file: ' + conv.discardedTracks.map(d => d.reason).join(', '));
+  it.conv = conv;
+  conv.onProgress = p => it.progress(p, 'Encoding ' + Math.round(p * 100) + '%');
+  it.stage('Encoding 0%');
+  await conv.execute();
+  const ext = webm ? 'webm' : 'mp4';
+  it.finish(new Blob([output.target.buffer], { type: webm ? 'video/webm' : 'video/mp4' }), ext,
+    ow + '×' + oh + ' · ' + CODEC_NAME[codec] + ' · ' + (vbr / 1e6).toFixed(1) + ' Mb/s' + (audioKeep ? '' : ' · no sound'));
+}
+const CODEC_NAME = { avc: 'H.264', hevc: 'HEVC', av1: 'AV1' };
+
+/* ---------- queue ---------- */
+const items = [];
+let running = false;
+const isVideo = f => /^video\//.test(f.type) || /\.(mov|mp4|m4v|mkv|webm|avi)$/i.test(f.name);
+const isImage = f => /^image\//.test(f.type) || /\.(heic|heif|avif|webp|jpe?g|png|gif|bmp|tiff?)$/i.test(f.name);
+
+class Item {
+  constructor(file) {
+    this.file = file; this.kind = isVideo(file) ? 'video' : 'photo';
+    this.srcURL = URL.createObjectURL(file);
+    this.el = document.createElement('div'); this.el.className = 'item';
+    this.el.innerHTML = `<div class="thumb">${this.kind === 'video' ? `<video src="${this.srcURL}#t=0.1" muted playsinline preload="metadata"></video>` : `<img src="${this.srcURL}" alt="">`}<i>${this.kind === 'video' ? 'VID' : 'IMG'}</i></div>
+      <div class="meta"><h3>${esc(file.name)}</h3><div class="line"></div><div class="prog"><span></span></div></div>
+      <div class="acts"></div>`;
+    this.line = this.el.querySelector('.line'); this.bar = this.el.querySelector('.prog'); this.acts = this.el.querySelector('.acts');
+    const im = this.el.querySelector('.thumb img'); if (im) im.onerror = () => im.remove();
+    this.reset();
+  }
+  reset() {
+    if (this.outURL) URL.revokeObjectURL(this.outURL);
+    Object.assign(this, { state: 'wait', out: null, outURL: null, warn: '', conv: null, stale: false });
+    this.el.className = 'item'; this.bar.hidden = false; this.bar.classList.remove('busy'); this.bar.firstElementChild.style.width = '0';
+    this.line.innerHTML = `<b>${fmtBytes(this.file.size)}</b> · waiting`;
+    this.acts.innerHTML = `<button class="btn sm" data-a="remove">Remove</button>`;
+  }
+  stage(msg) { this.line.innerHTML = `<b>${fmtBytes(this.file.size)}</b> · ${esc(msg)}`; this.bar.classList.add('busy'); }
+  progress(p, msg) { this.bar.classList.remove('busy'); this.bar.firstElementChild.style.width = (p * 100).toFixed(1) + '%'; this.line.innerHTML = `<b>${fmtBytes(this.file.size)}</b> · ${esc(msg)}`; }
+  finish(blob, ext, desc) {
+    // A re-encode that comes out heavier than the original is no use for the web.
+    this.bigger = blob.size >= this.file.size;
+    this.out = blob; this.outURL = URL.createObjectURL(blob);
+    this.outName = this.file.name.replace(/\.[^.]+$/, '') + '-web.' + ext;
+    this.state = 'done'; this.desc = desc;
+    this.paint();
+  }
+  paint() {
+    this.el.className = 'item done';
+    this.bar.hidden = true;
+    const pct = Math.round((1 - this.out.size / this.file.size) * 100);
+    this.line.innerHTML = `<b>${fmtBytes(this.file.size)}</b> → <b>${fmtBytes(this.out.size)}</b> <span class="save">${pct > 0 ? '−' + pct + '%' : '+' + (-pct) + '%'}</span><br>${esc(this.srcDims || '')} → ${esc(this.desc)}`
+      + (this.bigger ? `<br><span class="save">Came out heavier — the original is already lean. Try a smaller size or lower quality.</span>` : '')
+      + (this.warn ? `<br><span class="save">${esc(this.warn)}</span>` : '')
+      + (this.stale ? `<br>settings changed since — press Redo` : '');
+    this.acts.innerHTML = `<button class="btn sm" data-a="compare">${this.kind === 'video' ? 'Play' : 'Compare'}</button><button class="btn sm solid" data-a="dl">Download</button><button class="btn sm" data-a="remove" aria-label="Remove">×</button>`;
+  }
+  fail(e) {
+    this.state = 'err'; this.el.className = 'item err'; this.bar.hidden = true;
+    this.line.innerHTML = `<b>${fmtBytes(this.file.size)}</b> · <span class="save">${esc(e && e.message || e)}</span>`;
+    this.acts.innerHTML = `<button class="btn sm" data-a="retry">Retry</button><button class="btn sm" data-a="remove">Remove</button>`;
+  }
+  async cancel() { try { if (this.conv && this.state === 'run') await this.conv.cancel(); } catch (e) {} }
+  dispose() { this.cancel(); try { this.input && this.input.dispose && this.input.dispose(); } catch (e) {} URL.revokeObjectURL(this.srcURL); if (this.outURL) URL.revokeObjectURL(this.outURL); this.el.remove(); }
+}
+
+function addFiles(files) {
+  let skipped = 0;
+  for (const f of files) {
+    if (!isVideo(f) && !isImage(f)) { skipped++; continue; }
+    const it = new Item(f); items.push(it); $('#list').append(it.el);
+  }
+  if (skipped) alert(skipped + ' file' + (skipped > 1 ? 's' : '') + ' skipped — not a photo or video.');
+  refresh(); run();
+}
+async function run() {
+  if (running) return; running = true;
+  try {
+    let it;
+    while ((it = items.find(i => i.state === 'wait'))) {
+      it.state = 'run'; it.settings = JSON.stringify(settingsFor(it.kind));
+      try { await (it.kind === 'video' ? squeezeVideo(it) : squeezePhoto(it)); }
+      catch (e) { if (items.includes(it)) { console.error(e); it.fail(e); } }
+      refresh();
+    }
+  } finally { running = false; refresh(); }
+}
+const settingsFor = kind => kind === 'video'
+  ? { vSize: S.vSize, vCodec: S.vCodec, vQuality: S.vQuality, vFps: S.vFps, vAudio: S.vAudio, vTarget: S.vTarget }
+  : { pSize: S.pSize, pFormat: S.pFormat, pQuality: S.pQuality, pMax: S.pMax };
+function markStale() {
+  for (const it of items) if (it.state === 'done') { const st = it.settings !== JSON.stringify(settingsFor(it.kind)); if (st !== it.stale) { it.stale = st; it.paint(); } }
+  refresh();
+}
+function refresh() {
+  const done = items.filter(i => i.state === 'done');
+  $('#bar').hidden = !items.length; $('#empty').hidden = !!items.length;
+  $('#drop').classList.toggle('small', !!items.length);
+  const a = done.reduce((s, i) => s + i.file.size, 0), b = done.reduce((s, i) => s + i.out.size, 0);
+  const left = items.filter(i => i.state === 'wait' || i.state === 'run').length;
+  $('#sum').innerHTML = done.length ? `${done.length} done${left ? ` · ${left} to go` : ''} · ${fmtBytes(a)} → <b>${fmtBytes(b)}</b>` : left ? `${left} to go` : '';
+  $('#btn-zip').disabled = !done.length || !!left;
+  $('#btn-rerun').hidden = !items.some(i => i.stale) || !!left;
+}
+
+$('#list').addEventListener('click', async e => {
+  const b = e.target.closest('button[data-a]'); if (!b) return;
+  const it = items.find(i => i.el.contains(b)); if (!it) return;
+  const a = b.dataset.a;
+  if (a === 'remove') { items.splice(items.indexOf(it), 1); it.dispose(); refresh(); }
+  if (a === 'retry') { it.reset(); refresh(); run(); }
+  if (a === 'dl') download(it.out, it.outName);
+  if (a === 'compare') openCompare(it);
+});
+$('#btn-clear').onclick = () => { items.splice(0).forEach(i => i.dispose()); refresh(); };
+$('#btn-rerun').onclick = () => { items.forEach(i => { if (i.state === 'done' && i.stale) i.reset(); }); refresh(); run(); };
+$('#btn-zip').onclick = async () => {
+  const btn = $('#btn-zip'); btn.disabled = true; const old = btn.textContent; btn.textContent = 'Zipping…';
+  try {
+    const { zipSync } = await import(ZIP_URL);
+    const files = {}, used = new Set();
+    for (const it of items.filter(i => i.state === 'done')) {
+      let n = it.outName, c = 2; while (used.has(n)) n = it.outName.replace(/(\.[^.]+)$/, '-' + c++ + '$1'); used.add(n);
+      files[n] = [new Uint8Array(await it.out.arrayBuffer()), { level: 0 }]; // already compressed — store, don't deflate
+    }
+    download(new Blob([zipSync(files)], { type: 'application/zip' }), 'web-squeeze.zip');
+  } catch (e) { alert('Couldn’t make the zip: ' + e.message); }
+  btn.textContent = old; refresh();
+};
+function download(blob, name) {
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+}
+
+/* ---------- drop zone ---------- */
+const drop = $('#drop');
+$('#file').addEventListener('change', e => { addFiles([...e.target.files]); e.target.value = ''; });
+['dragenter', 'dragover'].forEach(t => document.addEventListener(t, e => { e.preventDefault(); drop.classList.add('over'); }));
+['dragleave', 'drop'].forEach(t => document.addEventListener(t, e => { e.preventDefault(); if (t === 'drop' || !e.relatedTarget) drop.classList.remove('over'); }));
+document.addEventListener('drop', e => { if (e.dataTransfer && e.dataTransfer.files.length) addFiles([...e.dataTransfer.files]); });
+window.addEventListener('beforeunload', e => { if (items.some(i => i.state === 'run' || i.state === 'wait')) { e.preventDefault(); e.returnValue = ''; } });
+
+/* ---------- compare / play ---------- */
+let cur = null, actual = false, showOrig = false;
+function openCompare(it) { cur = it; actual = false; showOrig = false; $('#modal').hidden = false; paintCompare(); $('#m-close').focus(); }
+function closeCompare() { $('#modal').hidden = true; $('#stage').innerHTML = ''; cur = null; }
+function paintCompare() {
+  const it = cur, st = $('#stage');
+  $('#m-title').textContent = it.outName + ' · ' + fmtBytes(it.out.size);
+  $('#m-zoom').hidden = it.kind === 'video'; $('#m-swap').hidden = it.kind !== 'video';
+  $('#m-zoom').textContent = actual ? 'Fit' : '100%';
+  if (it.kind === 'video') {
+    const prev = st.querySelector('video'); const t = prev ? prev.currentTime : 0, playing = prev && !prev.paused;
+    $('#m-swap').textContent = showOrig ? 'Show compressed' : 'Show original';
+    st.innerHTML = `<video controls playsinline src="${showOrig ? it.srcURL : it.outURL}"></video>`;
+    const v = st.querySelector('video'); v.addEventListener('loadedmetadata', () => { v.currentTime = t; if (playing) v.play(); }, { once: true });
+    return;
+  }
+  st.innerHTML = `<div class="cmp${actual ? ' actual' : ''}"><img src="${it.srcURL}" alt="Original"><div class="after"><img src="${it.outURL}" alt="Compressed"></div>
+    <span class="tag l">Original · ${fmtBytes(it.file.size)}</span><span class="tag r">Web · ${fmtBytes(it.out.size)}</span><div class="split"></div></div>`;
+  const cmp = st.querySelector('.cmp'), after = cmp.querySelector('.after'), split = cmp.querySelector('.split');
+  if (actual) { const im = cmp.querySelector('img'); const [w] = it.desc.split(' ')[0].split('×'); im.style.width = w + 'px'; }
+  const set = x => { const r = cmp.getBoundingClientRect(); const p = Math.min(100, Math.max(0, (x - r.left) / r.width * 100)); after.style.clipPath = `inset(0 0 0 ${p}%)`; split.style.left = p + '%'; };
+  let drag = false;
+  cmp.addEventListener('pointerdown', e => { drag = true; cmp.setPointerCapture(e.pointerId); set(e.clientX); });
+  cmp.addEventListener('pointermove', e => { if (drag) set(e.clientX); });
+  cmp.addEventListener('pointerup', () => { drag = false; });
+}
+$('#m-close').onclick = closeCompare;
+$('#m-zoom').onclick = () => { actual = !actual; paintCompare(); };
+$('#m-swap').onclick = () => { showOrig = !showOrig; paintCompare(); };
+$('#m-dl').onclick = () => cur && download(cur.out, cur.outName);
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#modal').hidden) closeCompare(); });
+
+/* ---------- codec availability (greys out what this browser can't make) ---------- */
+(async () => {
+  if (typeof VideoEncoder === 'undefined') { $('#codec-note').textContent = 'This browser can’t encode video. Use a current Chrome, Edge or Safari.'; return; }
+  try {
+    const mb = await loadMB();
+    for (const c of ['hevc', 'av1']) {
+      const ok = await mb.canEncodeVideo(c, { width: 1920, height: 1080, bitrate: 4e6 });
+      const b = document.querySelector(`.seg[data-set="vCodec"] button[data-v="${c}"]`);
+      if (!ok) { b.disabled = true; b.title = 'Not available in this browser'; if (S.vCodec === c) { S.vCodec = 'avc'; save(); paintSettings(); } }
+    }
+  } catch (e) { /* offline: checked again when a video is dropped */ }
+})();
+refresh();
+</script>
+</body>
+</html>
