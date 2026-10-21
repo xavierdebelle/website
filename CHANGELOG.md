@@ -5,6 +5,61 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v95 — 2026-10-20
+
+**What's new** · New tool · [tools.html#art]
+### Colour Wheel
+Five colours on a wheel, held together by a harmony rule. Choose the
+painter's wheel, the screen's, or a perceptual one built on how the eye
+actually sees, then drag the handles until it looks right.
+- Pull a palette straight out of a photo.
+- See every text-on-colour contrast, and how the palette reads to
+  colour-blind eyes.
+- Save palettes, and download them as .ase for Photoshop and Illustrator.
+  Sign in and they follow you between devices.
+
+**Colour Wheel — `tools/colour-wheel.html`, source `Tools files/Art/colour-wheel-v1.html`** (Art)
+- Modelled on Adobe Color's wheel. Three wheel models: **Painter (RYB)**,
+  angle mapped piecewise onto HSB hue so yellow sits opposite violet;
+  **Light (RGB)**, plain HSB; **Perceptual (OKLCH)**, angle = OKLCH hue,
+  radius = share of the most chroma sRGB can show at that lightness and
+  hue (binary-searched), brightness = L. Switching wheels keeps the colours
+  on screen and re-derives the harmony from the base.
+- Ten harmonies (analogous, monochromatic, triad, complementary, split,
+  double split, square, compound, shades, custom); base is the middle
+  swatch. Dragging any handle moves the base so that handle lands where it
+  was dropped. Arrow keys move a focused handle.
+- From a photo: k-means (k = 5, farthest-point seeds) in OKLab on a
+  140 px copy, with moods (balanced, colourful, bright, muted, deep, dark)
+  filtering pixels first. The photo is never stored.
+- WCAG 2 contrast grid (5 × 5), colour-vision preview (Machado 2009:
+  protan/deutan/tritan, plus greyscale), HEX/RGB/HSB/OKLCH/CMYK values,
+  undo/redo, random, copy hex/CSS, .ase export (group + RGB swatches),
+  library search, Export all / Import .json (merge by id, newer wins).
+- **Synced** (doc `palettes`, key `xdb.palettes.v1`) with the shared
+  sync core pasted verbatim, and added to `TOOLS` in `account.js`. Only the
+  saved library syncs; the palette on the wheel is `xdb.palettes.work.v1`,
+  this browser only. No Firebase rule change (`users/{uid}` covers it).
+- Visit counter tag (stats.js) included, per v94.
+- Privacy page (EN + FR): Colour Wheel added to the synced tools — and
+  Cards, which had been missing from that list since v77.
+
+**Scan:** the only findings are the site's own Firebase (`xdb-tools`,
+same config and rules as the other synced tools — already public) and
+gstatic for the SDK. Nothing new exposed.
+
+**Verified on the mock database** (two devices, 127.0.0.1 and localhost)
+- First sign-in with a saved palette → pushed; second device signs in
+  untouched → takes it quietly; save on B shows on A live; delete on A
+  shows on B live; reload both → no write (`updatedAt` unchanged).
+- Both edit offline → conflict bar names both copies; Keep this device
+  wins on both.
+- Photo of five known colours → the same five hex codes back; .ase bytes
+  checked against the format; undo/redo; phone width (375 px), no
+  sideways scroll.
+
+---
+
 ## v94 — 2026-10-16
 
 **Visit counts — Umami Cloud, no cookies (IDEA-014)**

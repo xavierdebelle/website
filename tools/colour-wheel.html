@@ -1,0 +1,1802 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="../assets/account.js"></script>   <!-- site-wide account; the tool falls back to its own sign-in without it -->
+<script defer src="../assets/stats.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Colour Wheel — XAVIER DE BELLE</title>
+<!-- social preview: link cards on Instagram, iMessage, WhatsApp, Facebook, X -->
+<meta name="description" content="Build colour palettes on a painter's, screen or perceptual colour wheel. Harmony rules, contrast checks, colour-blind previews, colours pulled from a photo, and a library that remembers them.">
+<link rel="canonical" href="https://xavierdebelle.com/tools/colour-wheel.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Xavier de Belle">
+<meta property="og:locale" content="en_CA">
+<meta property="og:title" content="Colour Wheel — Xavier de Belle">
+<meta property="og:description" content="Build colour palettes on a painter's, screen or perceptual colour wheel, and keep the ones worth keeping.">
+<meta property="og:url" content="https://xavierdebelle.com/tools/colour-wheel.html">
+<meta property="og:image" content="https://xavierdebelle.com/assets/og/home.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Colour Wheel — Xavier de Belle">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="../assets/logo.svg" type="image/svg+xml">
+<style>
+:root{
+  --ink:#000;--paper:#fff;--volt:#ffe800;--smoke:#141414;--ash:#2a2a2a;--dust:#8a8a8a;
+  --stack:"Helvetica Neue",Helvetica,Arial,"Segoe UI",system-ui,sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --gut:clamp(14px,3vw,28px);
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+html,body{margin:0;background:var(--ink);color:var(--paper);font-family:var(--stack)}
+button,input,select{font:inherit;color:inherit}
+a{color:var(--volt);text-decoration:none}
+[hidden]{display:none!important}
+:focus-visible{outline:2px solid var(--volt);outline-offset:2px}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* ---------- top bar ---------- */
+.top{display:flex;align-items:center;gap:10px 16px;flex-wrap:wrap;padding:12px var(--gut);border-bottom:3px solid var(--paper);
+  padding-top:max(12px,env(safe-area-inset-top))}
+.brand{display:flex;align-items:baseline;gap:10px;margin-right:auto;min-width:0;flex-wrap:wrap}
+.brand a{color:var(--paper);font-weight:900;font-size:12px;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap}
+.brand a:hover{color:var(--volt)}
+.brand h1{margin:0;font-weight:900;text-transform:uppercase;letter-spacing:-.04em;font-size:26px;line-height:1}
+.brand h1 span{color:var(--volt)}
+.btn{background:transparent;border:3px solid var(--paper);color:var(--paper);font-weight:900;font-size:11px;letter-spacing:.12em;
+  text-transform:uppercase;padding:9px 13px;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:8px;border-radius:0}
+.btn:hover:not(:disabled){background:var(--volt);border-color:var(--volt);color:var(--ink)}
+.btn:disabled{opacity:.35;cursor:default}
+.btn.solid{background:var(--volt);border-color:var(--volt);color:var(--ink)}
+.btn.solid:hover{background:var(--paper);border-color:var(--paper)}
+.btn.sm{padding:6px 9px;font-size:10px;border-width:2px}
+.sync-btn.ok{border-color:var(--ash);color:var(--dust)}
+.sync-btn.ok:hover{color:var(--ink)}
+.sync-btn.bad{border-color:var(--volt);color:var(--volt)}
+.ghost{background:transparent;border:0;color:var(--dust);font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;
+  padding:8px 4px;cursor:pointer}
+.ghost:hover{color:var(--volt)}
+.k{margin:0 0 8px;font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--dust)}
+.k b{color:var(--paper);font-weight:400}
+.note{margin:8px 0 0;font-size:13px;line-height:1.5;color:var(--dust)}
+
+/* ---------- sync bar ---------- */
+#sync-bar{display:none;align-items:center;gap:10px 18px;flex-wrap:wrap;background:var(--volt);color:var(--ink);padding:12px var(--gut)}
+#sync-bar.on{display:flex}
+#sync-bar .sync-dot{width:10px;height:10px;background:var(--ink);flex:none}
+#sync-what{flex:1 1 280px;font-family:var(--mono);font-size:11px;line-height:1.6;letter-spacing:.04em}
+#sync-bar button{border:3px solid var(--ink);background:var(--ink);color:var(--volt);font-weight:900;font-size:11px;letter-spacing:.12em;
+  text-transform:uppercase;padding:8px 12px;cursor:pointer}
+#sync-bar button+button{background:transparent;color:var(--ink)}
+
+/* ---------- layout ---------- */
+.app{display:grid;grid-template-columns:minmax(300px,380px) minmax(0,1fr);gap:28px clamp(20px,3vw,44px);padding:24px var(--gut) 8px;align-items:start}
+.panel{min-width:0}
+.tabs{display:flex;gap:18px;border-bottom:3px solid var(--ash);margin-bottom:20px}
+.tabs button{background:none;border:0;border-bottom:3px solid transparent;margin-bottom:-3px;padding:8px 0;cursor:pointer;
+  font-weight:900;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--dust)}
+.tabs button[aria-selected="true"]{color:var(--paper);border-color:var(--volt)}
+
+/* ---------- wheel ---------- */
+.wheel-wrap{position:relative;width:min(100%,340px);aspect-ratio:1;margin:6px auto 18px;touch-action:none;user-select:none;-webkit-user-select:none}
+.wheel-wrap canvas{position:absolute;inset:0;width:100%;height:100%;border-radius:50%;cursor:crosshair}
+.wheel-wrap svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+.wheel-wrap svg line{stroke:#fff;stroke-width:.45;opacity:.9}
+.wheel-wrap svg circle{fill:#fff}
+.h{position:absolute;width:26px;height:26px;margin:-13px 0 0 -13px;border-radius:50%;border:3px solid #fff;padding:0;cursor:grab;
+  box-shadow:0 0 0 1px rgba(0,0,0,.45),0 2px 6px rgba(0,0,0,.35)}
+.h:active{cursor:grabbing}
+.h.base{width:34px;height:34px;margin:-17px 0 0 -17px}
+.h.base::after{content:"";position:absolute;inset:6px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.3)}
+.h.sel{box-shadow:0 0 0 3px var(--ink),0 0 0 6px var(--volt)}
+.seg{display:grid;grid-template-columns:repeat(3,1fr);border:3px solid var(--paper)}
+.seg button{background:transparent;border:0;border-left:3px solid var(--paper);padding:9px 4px;cursor:pointer;font-weight:900;font-size:11px;letter-spacing:.1em;text-transform:uppercase}
+.seg button:first-child{border-left:0}
+.seg button small{display:block;font-family:var(--mono);font-weight:400;font-size:9px;letter-spacing:.14em;color:var(--dust);margin-top:3px}
+.seg button[aria-pressed="true"]{background:var(--volt);color:var(--ink)}
+.seg button[aria-pressed="true"] small{color:var(--ink)}
+.block{margin-top:22px}
+.harm{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.harm button{aspect-ratio:1;background:var(--smoke);border:2px solid var(--ash);padding:6px;cursor:pointer;display:grid;place-items:center;color:var(--paper)}
+.harm button:hover{border-color:var(--paper)}
+.harm button[aria-pressed="true"]{border-color:var(--volt);background:var(--volt);color:var(--ink)}
+.harm svg{width:100%;height:100%}
+
+/* ---------- image tab ---------- */
+.drop{display:grid;place-items:center;min-height:220px;border:3px dashed var(--ash);cursor:pointer;text-align:center;padding:16px;position:relative;overflow:hidden}
+.drop:hover,.drop.over{border-color:var(--volt)}
+.drop span{font-size:14px;line-height:1.5;color:var(--dust);max-width:24ch}
+.drop img{max-width:100%;max-height:340px;display:block}
+.moods{display:flex;flex-wrap:wrap;gap:6px}
+.moods button{background:transparent;border:2px solid var(--ash);padding:7px 10px;cursor:pointer;font-weight:900;font-size:10px;letter-spacing:.12em;text-transform:uppercase}
+.moods button:hover{border-color:var(--paper)}
+.moods button[aria-pressed="true"]{background:var(--volt);border-color:var(--volt);color:var(--ink)}
+
+/* ---------- toolbar + strip ---------- */
+.bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.bar .grow{flex:1}
+.pick{background:var(--ink);border:3px solid var(--paper);padding:7px 30px 7px 10px;font-weight:900;font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+  border-radius:0;-webkit-appearance:none;appearance:none;cursor:pointer;
+  background-image:linear-gradient(45deg,transparent 50%,#fff 50%),linear-gradient(135deg,#fff 50%,transparent 50%);
+  background-position:calc(100% - 15px) 52%,calc(100% - 10px) 52%;background-size:5px 5px;background-repeat:no-repeat}
+.strip{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));height:clamp(220px,42vh,400px);border:3px solid var(--paper)}
+.col{position:relative;display:flex;flex-direction:column;justify-content:flex-end;cursor:pointer;min-width:0;transition:flex .2s}
+.col+.col{border-left:3px solid var(--ink)}
+.col-tag{position:absolute;top:12px;left:12px;font-family:var(--mono);font-size:9px;letter-spacing:.16em;text-transform:uppercase;opacity:.85}
+.col-mark{position:absolute;top:0;left:0;right:0;height:8px;background:var(--volt);display:none}
+.col.on .col-mark{display:block}
+.col-foot{padding:10px 10px 12px;min-width:0}
+.col-hex{width:100%;min-width:0;background:transparent;border:0;border-bottom:2px solid transparent;padding:3px 0;font-family:var(--mono);font-size:clamp(11px,1.1vw,14px);
+  font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:inherit}
+.col-hex:hover,.col-hex:focus{border-bottom-color:currentColor;outline:none}
+.col-copy{position:absolute;top:10px;right:10px;background:transparent;border:2px solid currentColor;color:inherit;width:26px;height:26px;padding:0;cursor:pointer;display:grid;place-items:center;opacity:.8}
+.col-copy:hover{opacity:1}
+.col-copy svg{width:12px;height:12px}
+.vision-note{margin:8px 0 0;font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--volt)}
+
+/* ---------- selected colour ---------- */
+.detail{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:20px 30px;margin-top:22px}
+.slide{display:grid;grid-template-columns:96px minmax(0,1fr) 48px;align-items:center;gap:10px;margin-bottom:12px}
+.slide label{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--dust)}
+.slide output{font-family:var(--mono);font-size:12px;text-align:right}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:18px;border:2px solid var(--paper);margin:0;background:#333;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:10px;height:26px;background:var(--paper);border:2px solid var(--ink);box-shadow:0 0 0 1px var(--paper)}
+input[type=range]::-moz-range-thumb{width:8px;height:24px;background:var(--paper);border:2px solid var(--ink);border-radius:0}
+.vals{display:grid;grid-template-columns:auto minmax(0,1fr);gap:0 16px;margin:0;font-size:13px}
+.vals dt{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--dust);padding:7px 0;border-bottom:1px solid var(--ash)}
+.vals dd{margin:0;padding:5px 0;border-bottom:1px solid var(--ash);min-width:0}
+.vals dd button{background:none;border:0;padding:2px 0;cursor:copy;font-family:var(--mono);font-size:12px;text-align:left;overflow-wrap:anywhere}
+.vals dd button:hover{color:var(--volt)}
+
+/* ---------- save + export ---------- */
+.save{display:flex;gap:8px;flex-wrap:wrap;align-items:stretch;margin-top:24px;padding-top:20px;border-top:3px solid var(--ash)}
+.save input{flex:1 1 200px;min-width:0;background:transparent;border:3px solid var(--paper);padding:9px 12px;font-weight:700;font-size:15px;border-radius:0}
+.save input::placeholder{color:var(--dust);font-weight:400}
+.save input:focus{outline:none;border-color:var(--volt)}
+.exports{display:flex;gap:4px 14px;flex-wrap:wrap;margin-top:8px}
+
+/* ---------- contrast ---------- */
+.cx-wrap{overflow-x:auto;margin-top:6px}
+.cx{border-collapse:collapse;width:100%;min-width:420px;table-layout:fixed}
+.cx th{font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--dust);font-weight:400;padding:4px;text-align:center}
+.cx th i{display:block;height:14px;margin:0 auto 4px;width:100%;border:1px solid var(--ash)}
+.cx th.row{width:74px;text-align:left}
+.cx th.row i{width:20px;display:inline-block;vertical-align:middle;margin:0 6px 0 0}
+.cx td{height:58px;text-align:center;border:2px solid var(--ink);padding:4px}
+.cx td b{display:block;font-size:20px;line-height:1;font-weight:900}
+.cx td small{display:block;font-family:var(--mono);font-size:10px;margin-top:4px;letter-spacing:.04em}
+.cx td.same{background:var(--smoke)!important;color:var(--ash)!important}
+.cx td.pass small{font-weight:700}
+
+/* ---------- library ---------- */
+.lib{padding:30px var(--gut) 60px;border-top:3px solid var(--paper);margin-top:36px}
+.lib-head{display:flex;align-items:baseline;gap:12px 18px;flex-wrap:wrap;margin-bottom:18px}
+.lib-head h2{margin:0;font-weight:900;text-transform:uppercase;letter-spacing:-.03em;font-size:clamp(26px,4vw,40px);line-height:1;margin-right:auto}
+.lib-head h2 span{color:var(--volt)}
+.search{background:transparent;border:3px solid var(--paper);padding:8px 12px;font-size:14px;border-radius:0;min-width:0;width:220px}
+.search:focus{outline:none;border-color:var(--volt)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px}
+.card{border:3px solid var(--paper);display:flex;flex-direction:column;min-width:0;background:var(--ink)}
+.card.on{border-color:var(--volt)}
+.card-sw{display:flex;height:96px;cursor:pointer;border-bottom:3px solid var(--paper)}
+.card.on .card-sw{border-color:var(--volt)}
+.card-sw i{flex:1}
+.card-body{padding:12px 12px 8px}
+.card-body h3{margin:0;font-size:16px;font-weight:900;letter-spacing:-.01em;overflow-wrap:anywhere}
+.card-body p{margin:5px 0 0;font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--dust);line-height:1.5}
+.card-acts{display:flex;flex-wrap:wrap;gap:0 10px;padding:0 10px 6px}
+.empty{border:3px dashed var(--ash);padding:28px;color:var(--dust);font-size:15px;line-height:1.5;max-width:60ch}
+.lib-foot{display:flex;gap:14px;margin-top:16px;flex-wrap:wrap}
+
+/* ---------- science notes ---------- */
+.science{margin-top:26px;border-top:3px solid var(--ash);padding-top:6px}
+.science summary{cursor:pointer;padding:10px 0;font-weight:900;font-size:12px;letter-spacing:.12em;text-transform:uppercase}
+.science summary:hover{color:var(--volt)}
+.science div{columns:2 300px;column-gap:30px;font-size:14px;line-height:1.6;color:#cfcfcf}
+.science p{margin:0 0 12px;break-inside:avoid}
+.science b{color:var(--paper)}
+
+/* ---------- toast ---------- */
+#toast{position:fixed;left:50%;bottom:max(20px,env(safe-area-inset-bottom));transform:translate(-50%,calc(100% + 60px));background:var(--volt);color:var(--ink);
+  display:flex;align-items:center;gap:16px;padding:12px 16px;font-weight:700;font-size:14px;transition:transform .2s;z-index:50;max-width:calc(100vw - 32px)}
+#toast.on{transform:translate(-50%,0)}
+#toast button{background:var(--ink);color:var(--volt);border:0;padding:6px 10px;font-weight:900;font-size:11px;letter-spacing:.12em;text-transform:uppercase;cursor:pointer}
+
+@media (max-width:860px){
+  .app{grid-template-columns:minmax(0,1fr)}
+  .detail{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:520px){
+  .strip{grid-template-columns:minmax(0,1fr);height:auto}
+  .col{min-height:64px;flex-direction:row;align-items:center;justify-content:space-between}
+  .col+.col{border-left:0;border-top:3px solid var(--ink)}
+  .col-tag{position:static;padding-left:12px}
+  .col-mark{width:8px;height:auto;bottom:0;right:auto}
+  .col-foot{width:52%}
+  .col-copy{top:50%;right:auto;left:42%;transform:translateY(-50%)}
+  .slide{grid-template-columns:80px minmax(0,1fr) 42px}
+  .search{width:100%}
+}
+@media (prefers-reduced-motion:reduce){#toast{transition:none}}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="brand"><a href="../index.html">Xavier de Belle</a><h1>Colour Wheel<span>.</span></h1></div>
+  <button class="btn sync-btn" id="btn-sync" onclick="syncClick()" style="display:none">Sign in to sync</button>
+  <button class="btn" id="btn-signout" onclick="signOutNow()" style="display:none" title="Sign out of sync">Sign out</button>
+</header>
+
+<div id="sync-bar" role="status">
+  <span class="sync-dot"></span>
+  <span id="sync-what"></span>
+  <button id="sync-keep-local" onclick="keepLocal()">Keep this device</button>
+  <button id="sync-keep-cloud" onclick="keepCloud()">Keep cloud copy</button>
+</div>
+
+<main class="app">
+  <!-- ============ left: wheel / image ============ -->
+  <section class="panel" aria-label="Make a palette">
+    <div class="tabs" role="tablist">
+      <button type="button" role="tab" id="tab-btn-wheel" aria-selected="true" aria-controls="tab-wheel">Colour wheel</button>
+      <button type="button" role="tab" id="tab-btn-image" aria-selected="false" aria-controls="tab-image">From a photo</button>
+    </div>
+
+    <div id="tab-wheel" role="tabpanel" aria-labelledby="tab-btn-wheel">
+      <div class="wheel-wrap" id="wheel-wrap">
+        <canvas id="wheel" width="360" height="360" aria-hidden="true"></canvas>
+        <svg viewBox="0 0 100 100" id="wheel-lines" aria-hidden="true"></svg>
+      </div>
+
+      <p class="k">Wheel</p>
+      <div class="seg" id="models">
+        <button type="button" data-model="ryb">Painter<small>RYB</small></button>
+        <button type="button" data-model="rgb">Light<small>RGB</small></button>
+        <button type="button" data-model="oklch">Perceptual<small>OKLCH</small></button>
+      </div>
+      <p class="note" id="model-note"></p>
+
+      <div class="block">
+        <p class="k">Harmony: <b id="harm-name"></b></p>
+        <div class="harm" id="harms"></div>
+        <p class="note" id="harm-note"></p>
+      </div>
+    </div>
+
+    <div id="tab-image" role="tabpanel" aria-labelledby="tab-btn-image" hidden>
+      <label class="drop" id="drop">
+        <input type="file" id="img-file" accept="image/*" class="sr-only">
+        <span id="drop-msg">Drop a photo here, or click to choose one.</span>
+        <img id="img-prev" alt="The photo the colours came from" hidden>
+      </label>
+      <div class="block">
+        <p class="k">Mood</p>
+        <div class="moods" id="moods">
+          <button type="button" data-mood="balanced" aria-pressed="true">Balanced</button>
+          <button type="button" data-mood="colourful">Colourful</button>
+          <button type="button" data-mood="bright">Bright</button>
+          <button type="button" data-mood="muted">Muted</button>
+          <button type="button" data-mood="deep">Deep</button>
+          <button type="button" data-mood="dark">Dark</button>
+        </div>
+        <p class="note">Five colours are clustered from the photo in OKLab, so they are grouped the way the eye groups them. The photo never leaves this browser; only the colours are kept.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ right: the palette ============ -->
+  <section class="panel" aria-label="Palette">
+    <div class="bar">
+      <button class="btn sm" type="button" id="btn-undo" title="Undo (⌘Z)">Undo</button>
+      <button class="btn sm" type="button" id="btn-redo" title="Redo (⇧⌘Z)">Redo</button>
+      <span class="grow"></span>
+      <label class="sr-only" for="vision">Preview as</label>
+      <select class="pick" id="vision" title="See the palette the way someone with a colour vision deficiency would">
+        <option value="none">Normal vision</option>
+        <option value="protan">Protanopia (no red)</option>
+        <option value="deutan">Deuteranopia (no green)</option>
+        <option value="tritan">Tritanopia (no blue)</option>
+        <option value="achro">Greyscale</option>
+      </select>
+      <button class="btn solid sm" type="button" id="btn-random" title="A random palette in the current harmony">Random</button>
+    </div>
+
+    <div class="strip" id="strip"></div>
+    <p class="vision-note" id="vision-note" hidden></p>
+
+    <div class="detail">
+      <div>
+        <p class="k">Selected colour</p>
+        <div class="slide"><label for="s-a" id="l-a">Hue</label><input type="range" id="s-a" min="0" max="359" step="1"><output id="o-a"></output></div>
+        <div class="slide"><label for="s-r" id="l-r">Saturation</label><input type="range" id="s-r" min="0" max="100" step="1"><output id="o-r"></output></div>
+        <div class="slide"><label for="s-b" id="l-b">Brightness</label><input type="range" id="s-b" min="0" max="100" step="1"><output id="o-b"></output></div>
+      </div>
+      <dl class="vals" id="vals"></dl>
+    </div>
+
+    <div class="save">
+      <label class="sr-only" for="pal-name">Palette name</label>
+      <input id="pal-name" type="text" placeholder="Name this palette" maxlength="80" autocomplete="off">
+      <button class="btn solid" type="button" id="btn-save">Save palette</button>
+      <button class="btn" type="button" id="btn-save-new" hidden>Save as new</button>
+    </div>
+    <div class="exports">
+      <button class="ghost" type="button" id="btn-copy-hex">Copy hex codes</button>
+      <button class="ghost" type="button" id="btn-copy-css">Copy CSS</button>
+      <button class="ghost" type="button" id="btn-ase" title="Adobe Swatch Exchange — opens in Photoshop, Illustrator, InDesign, Lightroom-adjacent tools">Download .ase</button>
+      <button class="ghost" type="button" id="btn-new">Start fresh</button>
+    </div>
+
+    <div class="block">
+      <p class="k">Contrast — text colour (across) on background (down)</p>
+      <div class="cx-wrap"><table class="cx" id="cx"></table></div>
+      <p class="note">WCAG 2 contrast ratios. <b style="color:#fff">AA</b> needs 4.5 for body text, 3 for large type; <b style="color:#fff">AAA</b> needs 7.</p>
+    </div>
+
+    <details class="science">
+      <summary>The colour science, briefly</summary>
+      <div>
+        <p><b>Three wheels, three answers.</b> The painter's wheel (red, yellow, blue) is the one taught in art school: it puts yellow opposite violet, which is how pigments behave. The light wheel is how a screen mixes red, green and blue light, so yellow lands opposite blue. Neither is wrong; they answer different questions.</p>
+        <p><b>The perceptual wheel</b> uses OKLCH, a colour model fitted to measurements of human vision. In HSB, a "100% bright" yellow looks far lighter than a "100% bright" blue. In OKLCH, lightness means the same at every hue and equal steps around the wheel look like equal steps, so harmonies come out evenly weighted.</p>
+        <p><b>Harmonies</b> are fixed angles around the wheel from the base colour (the ringed handle): 180° for complementary, 120° for a triad, 90° for a square, near neighbours for analogous. Drag any handle and the rest follow; pick Custom to move them freely.</p>
+        <p><b>Contrast</b> is the WCAG 2 ratio of relative luminance, from 1:1 (identical) to 21:1 (black on white). It is what decides whether text stays readable on a colour.</p>
+        <p><b>Colour vision</b> previews use the Machado (2009) model of protanopia, deuteranopia and tritanopia. Roughly one man in twelve sees some version of the first two, which is worth knowing before a red and a green carry meaning.</p>
+      </div>
+    </details>
+  </section>
+</main>
+
+<section class="lib" aria-label="Saved palettes">
+  <div class="lib-head">
+    <h2>Saved palettes<span>.</span></h2>
+    <input class="search" id="lib-search" type="search" placeholder="Search name or hex" aria-label="Search saved palettes" autocomplete="off">
+  </div>
+  <div class="grid" id="lib-grid"></div>
+  <div class="lib-foot">
+    <button class="ghost" type="button" id="btn-export">Export all (.json)</button>
+    <button class="ghost" type="button" id="btn-import">Import</button>
+    <input type="file" id="import-file" accept="application/json,.json" hidden>
+  </div>
+</section>
+
+<div id="toast" role="status"><span id="toast-msg"></span><button id="toast-undo" type="button">Undo</button></div>
+
+<script>
+/* ============================================================
+   COLOUR WHEEL — Xavier de Belle
+   Five colours on a wheel. Pick a wheel model and a harmony,
+   drag the handles, save what's worth keeping.
+   The working palette lives in this browser; the saved library
+   syncs while signed in.
+   ============================================================ */
+var STORAGE_KEY = 'xdb.palettes.v1';        // the saved library (synced)
+var WORK_KEY = 'xdb.palettes.work.v1';      // the palette on the wheel right now (this browser only)
+var $ = function (id) { return document.getElementById(id); };
+
+/* ---------- colour maths ---------- */
+function clamp(x, a, b) { return x < a ? a : x > b ? b : x; }
+function wrap(a) { a %= 360; return a < 0 ? a + 360 : a; }
+function hsv2rgb(h, s, v) {
+  function f(n) { var k = (n + h / 60) % 6; return v - v * s * Math.max(0, Math.min(k, 4 - k, 1)); }
+  return [f(5), f(3), f(1)];
+}
+function rgb2hsv(r, g, b) {
+  var mx = Math.max(r, g, b), mn = Math.min(r, g, b), d = mx - mn, h = 0;
+  if (d) {
+    if (mx === r) h = ((g - b) / d) % 6; else if (mx === g) h = (b - r) / d + 2; else h = (r - g) / d + 4;
+    h *= 60; if (h < 0) h += 360;
+  }
+  return [h, mx ? d / mx : 0, mx];
+}
+function lin(c) { return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); }
+function gam(c) { return c <= 0.0031308 ? 12.92 * c : 1.055 * Math.pow(c, 1 / 2.4) - 0.055; }
+function rgb2oklab(r, g, b) {
+  r = lin(r); g = lin(g); b = lin(b);
+  var l = Math.cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b),
+      m = Math.cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b),
+      s = Math.cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b);
+  return [0.2104542553 * l + 0.7936177850 * m - 0.0040720468 * s,
+          1.9779984951 * l - 2.4285922050 * m + 0.4505937099 * s,
+          0.0259040371 * l + 0.7827717662 * m - 0.8086757660 * s];
+}
+function oklab2lin(L, a, b) {
+  var l = L + 0.3963377774 * a + 0.2158037573 * b, m = L - 0.1055613458 * a - 0.0638541728 * b, s = L - 0.0894841775 * a - 1.2914855480 * b;
+  l = l * l * l; m = m * m * m; s = s * s * s;
+  return [ 4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s,
+          -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s,
+          -0.0041960863 * l - 0.7034186147 * m + 1.7076147010 * s];
+}
+function oklch2lin(L, C, h) { var r = h * Math.PI / 180; return oklab2lin(L, C * Math.cos(r), C * Math.sin(r)); }
+function linToRgb(c) { return [gam(clamp(c[0], 0, 1)), gam(clamp(c[1], 0, 1)), gam(clamp(c[2], 0, 1))]; }
+function inGamut(c) { return c[0] > -1e-4 && c[0] < 1.0001 && c[1] > -1e-4 && c[1] < 1.0001 && c[2] > -1e-4 && c[2] < 1.0001; }
+/* The most chroma sRGB can show at this lightness and hue. */
+function maxChroma(L, h) {
+  if (L <= 0.0005 || L >= 0.9995) return 0;
+  var lo = 0, hi = 0.4;
+  for (var i = 0; i < 18; i++) { var mid = (lo + hi) / 2; if (inGamut(oklch2lin(L, mid, h))) lo = mid; else hi = mid; }
+  return lo;
+}
+function rgb2hex(c) {
+  return '#' + c.map(function (x) { var v = Math.round(clamp(x, 0, 1) * 255).toString(16); return v.length < 2 ? '0' + v : v; }).join('').toUpperCase();
+}
+function hex2rgb(h) {
+  var m = String(h || '').trim().replace(/^#/, '');
+  if (/^[0-9a-f]{3}$/i.test(m)) m = m.replace(/./g, '$&$&');
+  if (!/^[0-9a-f]{6}$/i.test(m)) return null;
+  return [0, 2, 4].map(function (i) { return parseInt(m.substr(i, 2), 16) / 255; });
+}
+function luminance(c) { return 0.2126 * lin(c[0]) + 0.7152 * lin(c[1]) + 0.0722 * lin(c[2]); }
+function contrast(a, b) { var x = luminance(a), y = luminance(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); }
+function inkOn(c) { return contrast(c, [0, 0, 0]) >= contrast(c, [1, 1, 1]) ? '#000' : '#fff'; }
+
+/* Painter's wheel: angle on the RYB wheel → HSB hue. Yellow sits at 120°,
+   opposite violet; the spacing follows the traditional artist's circle. */
+var RYB = [[0, 0], [60, 35], [122, 60], [165, 120], [218, 180], [275, 240], [330, 300], [360, 360]];
+function pw(x, i, j) {
+  x = wrap(x);
+  for (var k = 1; k < RYB.length; k++) if (x <= RYB[k][i]) { var p = RYB[k - 1], q = RYB[k]; return p[j] + (x - p[i]) * (q[j] - p[j]) / (q[i] - p[i]); }
+  return x;
+}
+function ryb2hue(a) { return pw(a, 0, 1); }
+function hue2ryb(h) { return pw(h, 1, 0); }
+
+/* ---------- wheel models ----------
+   A swatch is {a, r, b}: angle on the wheel, distance from the centre (0–1),
+   and brightness / lightness (0–1). What those mean depends on the model. */
+var MODELS = {
+  ryb:   { axes: ['Hue', 'Saturation', 'Brightness'], note: 'The wheel painters learn: red, yellow and blue primaries. Yellow sits opposite violet.' },
+  rgb:   { axes: ['Hue', 'Saturation', 'Brightness'], note: 'The wheel a screen mixes with: red, green and blue light. Yellow sits opposite blue.' },
+  oklch: { axes: ['Hue', 'Chroma', 'Lightness'],      note: 'Fitted to human vision (OKLCH). Equal steps look equal, and lightness means the same at every hue. Distance from the centre is the share of the most vivid colour a screen can show there.' }
+};
+function toRgb(s, m) {
+  m = m || work.model;
+  if (m === 'oklch') return linToRgb(oklch2lin(s.b, s.r * maxChroma(s.b, s.a), s.a));
+  return hsv2rgb(m === 'ryb' ? ryb2hue(s.a) : s.a, s.r, s.b);
+}
+function fromRgb(c, m, prevA) {
+  m = m || work.model;
+  if (m === 'oklch') {
+    var lab = rgb2oklab(c[0], c[1], c[2]), L = clamp(lab[0], 0, 1), C = Math.hypot(lab[1], lab[2]);
+    var h = C < 0.002 ? (prevA || 0) : wrap(Math.atan2(lab[2], lab[1]) * 180 / Math.PI), mc = maxChroma(L, h);
+    return { a: h, r: mc > 0 ? clamp(C / mc, 0, 1) : 0, b: L };
+  }
+  var v = rgb2hsv(c[0], c[1], c[2]);
+  return { a: v[1] < 0.002 ? (prevA || 0) : (m === 'ryb' ? hue2ryb(v[0]) : v[0]), r: v[1], b: v[2] };
+}
+function hexOf(s, m) { return rgb2hex(toRgb(s, m)); }
+
+/* ---------- harmonies ----------
+   Each row is one of the five swatches: [angle from the base, saturation ×, brightness ×].
+   The base is always the middle swatch. */
+var HARMONIES = {
+  analogous:     { name: 'Analogous',      spec: [[-40, 1, 1], [-20, 1, 1], [0, 1, 1], [20, 1, 1], [40, 1, 1]],
+                   note: 'Neighbours on the wheel. Calm, low tension — the colours of most landscapes.' },
+  monochromatic: { name: 'Monochromatic',  spec: [[0, .8, .5], [0, .5, 1], [0, 1, 1], [0, .25, 1], [0, .65, .75]],
+                   note: 'One hue, different strengths and lightness. Hard to get wrong, easy to make dull.' },
+  triad:         { name: 'Triad',          spec: [[120, .65, .9], [120, 1, 1], [0, 1, 1], [240, 1, 1], [240, .65, .9]],
+                   note: 'Three hues 120° apart. Lively; usually works best with one in charge and two in support.' },
+  complementary: { name: 'Complementary',  spec: [[0, .5, .8], [0, .8, .65], [0, 1, 1], [180, 1, 1], [180, .6, .8]],
+                   note: 'Opposites on the wheel. The strongest contrast of hue — each makes the other look more intense.' },
+  split:         { name: 'Split complementary', spec: [[150, .65, .9], [150, 1, 1], [0, 1, 1], [210, 1, 1], [210, .65, .9]],
+                   note: 'The base plus the two neighbours of its opposite. Nearly as much punch, less strain.' },
+  doublesplit:   { name: 'Double split',   spec: [[-30, 1, 1], [150, 1, 1], [0, 1, 1], [30, 1, 1], [210, 1, 1]],
+                   note: 'Two neighbouring hues and their two opposites. Rich, and takes some restraint.' },
+  square:        { name: 'Square',         spec: [[90, 1, 1], [180, 1, 1], [0, 1, 1], [270, 1, 1], [0, .55, .65]],
+                   note: 'Four hues 90° apart. Balanced on paper; in practice let one lead.' },
+  compound:      { name: 'Compound',       spec: [[30, 1, 1], [30, .6, .7], [0, 1, 1], [165, 1, 1], [195, 1, .8]],
+                   note: 'A neighbour on one side, two near-opposites on the other. Contrast without symmetry.' },
+  shades:        { name: 'Shades',         spec: [[0, 1, .25], [0, 1, .45], [0, 1, 1], [0, 1, .7], [0, 1, .85]],
+                   note: 'One colour from dark to light. The handles sit on top of each other — move one and the scale moves with it.' },
+  custom:        { name: 'Custom',         spec: null,
+                   note: 'Every handle moves on its own. Nothing is held in relation.' }
+};
+var HARM_ORDER = ['analogous', 'monochromatic', 'triad', 'complementary', 'split', 'doublesplit', 'square', 'compound', 'shades', 'custom'];
+
+function harmonyIcon(key) {
+  var sp = HARMONIES[key].spec, out = '<svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="16" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".35"/>';
+  var pts = sp ? sp.map(function (t) { return [t[0], t[1] * t[2]]; }) : [[20, .7], [100, .9], [170, .5], [235, .85], [300, .6]];
+  var seen = {};
+  pts.forEach(function (p, i) {
+    var a = (90 - p[0]) * Math.PI / 180, r = 16 * (sp ? 0.45 + 0.55 * Math.min(1, p[1]) : p[1]);
+    var x = 20 + r * Math.cos(a), y = 20 - r * Math.sin(a), k = Math.round(x) + ',' + Math.round(y);
+    if (sp && seen[k]) { r *= 0.62; x = 20 + r * Math.cos(a); y = 20 - r * Math.sin(a); }
+    seen[k] = 1;
+    out += '<line x1="20" y1="20" x2="' + x.toFixed(1) + '" y2="' + y.toFixed(1) + '" stroke="currentColor" stroke-width="1.2"/>' +
+           '<circle cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="' + (sp && i === 2 ? 4 : 2.8) + '" fill="currentColor"/>';
+  });
+  return out + '</svg>';
+}
+
+/* ---------- the working palette ---------- */
+function defaultWork() {
+  var w = { model: 'ryb', harmony: 'complementary', sel: 2, name: '', loadedId: null, vision: 'none',
+            sw: [null, null, { a: 118, r: 0.64, b: 1 }, null, null] };
+  return regenerate(w);
+}
+function regenerate(w) {
+  var sp = HARMONIES[w.harmony].spec;
+  if (!sp) return w;
+  var B = w.sw[2];
+  w.sw = sp.map(function (t) { return { a: wrap(B.a + t[0]), r: clamp(B.r * t[1], 0, 1), b: clamp(B.b * t[2], 0, 1) }; });
+  return w;
+}
+function normSw(s) {
+  if (!s || typeof s !== 'object') return null;
+  var a = +s.a, r = +s.r, b = +s.b;
+  if (!isFinite(a) || !isFinite(r) || !isFinite(b)) return null;
+  return { a: wrap(a), r: clamp(r, 0, 1), b: clamp(b, 0, 1) };
+}
+function loadWork() {
+  try {
+    var w = JSON.parse(localStorage.getItem(WORK_KEY) || 'null');
+    if (w && MODELS[w.model] && HARMONIES[w.harmony] && Array.isArray(w.sw) && w.sw.length === 5) {
+      var sw = w.sw.map(normSw);
+      if (sw.every(Boolean)) return { model: w.model, harmony: w.harmony, sw: sw, sel: clamp(+w.sel || 0, 0, 4) | 0,
+        name: typeof w.name === 'string' ? w.name : '', loadedId: w.loadedId || null,
+        vision: ['none', 'protan', 'deutan', 'tritan', 'achro'].indexOf(w.vision) >= 0 ? w.vision : 'none' };
+    }
+  } catch (e) {}
+  return defaultWork();
+}
+var work = loadWork();
+function saveWork() { try { localStorage.setItem(WORK_KEY, JSON.stringify(work)); } catch (e) {} }
+
+/* Put one swatch where it was asked to go. In a harmony that means moving
+   the base so this swatch lands there, then letting the others follow. */
+function setSwatch(i, s) {
+  var sp = HARMONIES[work.harmony].spec;
+  if (!sp) { work.sw[i] = { a: wrap(s.a), r: clamp(s.r, 0, 1), b: clamp(s.b, 0, 1) }; return; }
+  var t = sp[i], B = work.sw[2];
+  work.sw[2] = { a: wrap(s.a - t[0]), r: t[1] ? clamp(s.r / t[1], 0, 1) : B.r, b: t[2] ? clamp(s.b / t[2], 0, 1) : B.b };
+  regenerate(work);
+}
+
+/* ---------- undo ---------- */
+function snap() { return JSON.stringify({ model: work.model, harmony: work.harmony, sw: work.sw }); }
+var undoStack = [], redoStack = [], lastSnap = snap();
+function commit() {
+  var s = snap();
+  if (s !== lastSnap) { undoStack.push(lastSnap); if (undoStack.length > 200) undoStack.shift(); redoStack = []; lastSnap = s; }
+  saveWork();
+  renderControls();
+}
+function restore(s) { var o = JSON.parse(s); work.model = o.model; work.harmony = o.harmony; work.sw = o.sw; lastSnap = s; saveWork(); render(); }
+function undo() { if (!undoStack.length) return; redoStack.push(lastSnap); restore(undoStack.pop()); }
+function redo() { if (!redoStack.length) return; undoStack.push(lastSnap); restore(redoStack.pop()); }
+
+/* ---------- colour vision ---------- */
+var CVD = {   // Machado, Oliveira & Fernandes (2009), severity 1.0, applied in linear RGB
+  protan: [0.152286, 1.052583, -0.204868, 0.114503, 0.786281, 0.099216, -0.003882, -0.048116, 1.051998],
+  deutan: [0.367322, 0.860646, -0.227968, 0.280085, 0.672501, 0.047413, -0.011820, 0.042940, 0.968881],
+  tritan: [1.255528, -0.076749, -0.178779, -0.078411, 0.930809, 0.147602, 0.004733, 0.691367, 0.303900]
+};
+var VISION_NAMES = { protan: 'protanopia (no red)', deutan: 'deuteranopia (no green)', tritan: 'tritanopia (no blue)', achro: 'greyscale' };
+function seen(c) {
+  var v = work.vision;
+  if (v === 'none') return c;
+  var l = [lin(c[0]), lin(c[1]), lin(c[2])];
+  if (v === 'achro') { var y = gam(0.2126 * l[0] + 0.7152 * l[1] + 0.0722 * l[2]); return [y, y, y]; }
+  var m = CVD[v];
+  return linToRgb([m[0] * l[0] + m[1] * l[1] + m[2] * l[2], m[3] * l[0] + m[4] * l[1] + m[5] * l[2], m[6] * l[0] + m[7] * l[1] + m[8] * l[2]]);
+}
+
+/* ---------- the wheel ---------- */
+var wheelKey = '';
+function drawWheel() {
+  var b = work.sw[work.sel].b, key = work.model + '|' + b.toFixed(3);
+  if (key === wheelKey) return;
+  wheelKey = key;
+  var cv = $('wheel'), N = cv.width, R = N / 2, ctx = cv.getContext('2d'), img = ctx.createImageData(N, N), d = img.data;
+  var mc = null, m = work.model;
+  if (m === 'oklch') { mc = new Float32Array(361); for (var h = 0; h <= 360; h++) mc[h] = maxChroma(b, h); }
+  for (var y = 0; y < N; y++) for (var x = 0; x < N; x++) {
+    var dx = x + 0.5 - R, dy = y + 0.5 - R, r = Math.hypot(dx, dy) / R;
+    if (r > 1.02) continue;
+    r = Math.min(r, 1);
+    var a = wrap(Math.atan2(-dy, dx) * 180 / Math.PI), c;
+    if (mc) { var f = Math.floor(a), t = a - f; c = linToRgb(oklch2lin(b, r * (mc[f] * (1 - t) + mc[f + 1] * t), a)); }
+    else c = hsv2rgb(m === 'ryb' ? ryb2hue(a) : a, r, b);
+    var i = (y * N + x) * 4;
+    d[i] = c[0] * 255; d[i + 1] = c[1] * 255; d[i + 2] = c[2] * 255; d[i + 3] = 255;
+  }
+  ctx.putImageData(img, 0, 0);
+}
+function pos(s) { var a = s.a * Math.PI / 180; return [50 + 50 * s.r * Math.cos(a), 50 - 50 * s.r * Math.sin(a)]; }
+
+var handles = [];
+function buildHandles() {
+  var wrapEl = $('wheel-wrap');
+  for (var i = 0; i < 5; i++) {
+    var h = document.createElement('button');
+    h.type = 'button'; h.className = 'h'; h.dataset.i = i;
+    h.setAttribute('aria-label', 'Colour ' + (i + 1) + ' on the wheel. Arrow keys move it.');
+    wrapEl.appendChild(h);
+    handles.push(h);
+  }
+}
+function renderHandles() {
+  var sp = HARMONIES[work.harmony].spec, lines = '';
+  work.sw.forEach(function (s, i) {
+    var p = pos(s), h = handles[i];
+    h.style.left = p[0] + '%'; h.style.top = p[1] + '%';
+    h.style.background = hexOf(s);
+    h.classList.toggle('base', !!sp && i === 2);
+    h.classList.toggle('sel', i === work.sel);
+    h.title = hexOf(s);
+    lines += '<line x1="50" y1="50" x2="' + p[0].toFixed(2) + '" y2="' + p[1].toFixed(2) + '"/>';
+  });
+  $('wheel-lines').innerHTML = lines + '<circle cx="50" cy="50" r="1.1"/>';
+  // the selected handle sits on top
+  handles.forEach(function (h, i) { h.style.zIndex = i === work.sel ? 3 : (sp && i === 2 ? 2 : 1); });
+}
+
+/* dragging */
+var drag = null;
+function pointToSwatch(ev) {
+  var rc = $('wheel-wrap').getBoundingClientRect();
+  var dx = (ev.clientX - rc.left - rc.width / 2) / (rc.width / 2), dy = (ev.clientY - rc.top - rc.height / 2) / (rc.height / 2);
+  return { a: wrap(Math.atan2(-dy, dx) * 180 / Math.PI), r: Math.min(1, Math.hypot(dx, dy)) };
+}
+function moveTo(i, p) { setSwatch(i, { a: p.a, r: p.r, b: work.sw[i].b }); }
+$('wheel-wrap').addEventListener('pointerdown', function (ev) {
+  if (ev.button !== 0) return;
+  var hEl = ev.target.closest('.h'), i = hEl ? +hEl.dataset.i : work.sel;
+  if (!hEl && Math.hypot(ev.offsetX - this.clientWidth / 2, ev.offsetY - this.clientHeight / 2) > this.clientWidth / 2 + 4) return;
+  ev.preventDefault();
+  work.sel = i;
+  drag = { i: i, id: ev.pointerId };
+  this.setPointerCapture(ev.pointerId);
+  if (hEl) hEl.focus({ preventScroll: true });
+  if (!hEl) moveTo(i, pointToSwatch(ev));
+  render();
+});
+$('wheel-wrap').addEventListener('pointermove', function (ev) {
+  if (!drag || ev.pointerId !== drag.id) return;
+  moveTo(drag.i, pointToSwatch(ev));
+  render();
+});
+function endDrag(ev) { if (drag && ev.pointerId === drag.id) { drag = null; commit(); } }
+$('wheel-wrap').addEventListener('pointerup', endDrag);
+$('wheel-wrap').addEventListener('pointercancel', endDrag);
+$('wheel-wrap').addEventListener('keydown', function (ev) {
+  var hEl = ev.target.closest('.h'); if (!hEl) return;
+  var i = +hEl.dataset.i, s = work.sw[i], st = ev.shiftKey ? 10 : 2, da = 0, dr = 0;
+  if (ev.key === 'ArrowLeft') da = st; else if (ev.key === 'ArrowRight') da = -st;
+  else if (ev.key === 'ArrowUp') dr = st / 100; else if (ev.key === 'ArrowDown') dr = -st / 100;
+  else return;
+  ev.preventDefault();
+  work.sel = i;
+  setSwatch(i, { a: s.a + da, r: s.r + dr, b: s.b });
+  render(); commit();
+});
+$('wheel-wrap').addEventListener('focusin', function (ev) {
+  var hEl = ev.target.closest('.h');
+  if (hEl && +hEl.dataset.i !== work.sel) { work.sel = +hEl.dataset.i; render(); saveWork(); }
+});
+
+/* ---------- the strip ---------- */
+var COPY_ICON = '<svg viewBox="0 0 12 12" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="7" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M1.5 8V1.5H8" fill="none" stroke="currentColor" stroke-width="1.4"/></svg>';
+var cols = [];
+function buildStrip() {
+  var strip = $('strip');
+  for (var i = 0; i < 5; i++) {
+    var c = document.createElement('div');
+    c.className = 'col'; c.dataset.i = i;
+    c.innerHTML = '<span class="col-mark"></span><span class="col-tag"></span>' +
+      '<button class="col-copy" type="button" title="Copy hex" aria-label="Copy colour ' + (i + 1) + ' hex">' + COPY_ICON + '</button>' +
+      '<div class="col-foot"><input class="col-hex" maxlength="7" spellcheck="false" autocomplete="off" aria-label="Colour ' + (i + 1) + ' hex code"></div>';
+    strip.appendChild(c);
+    cols.push(c);
+  }
+  strip.addEventListener('click', function (ev) {
+    var c = ev.target.closest('.col'); if (!c) return;
+    var i = +c.dataset.i;
+    if (ev.target.closest('.col-copy')) { copy(hexOf(work.sw[i]), hexOf(work.sw[i]) + ' copied.'); return; }
+    if (work.sel !== i) { work.sel = i; render(); saveWork(); }
+  });
+  strip.addEventListener('focusin', function (ev) {
+    if (!ev.target.classList.contains('col-hex')) return;
+    var i = +ev.target.closest('.col').dataset.i;
+    if (work.sel !== i) { work.sel = i; render(); saveWork(); }
+    ev.target.select();
+  });
+  strip.addEventListener('change', function (ev) { if (ev.target.classList.contains('col-hex')) takeHex(ev.target); });
+  strip.addEventListener('keydown', function (ev) {
+    if (ev.target.classList.contains('col-hex') && ev.key === 'Enter') { takeHex(ev.target); ev.target.select(); }
+  });
+}
+function takeHex(inp) {
+  var i = +inp.closest('.col').dataset.i, c = hex2rgb(inp.value);
+  if (!c) { inp.value = hexOf(work.sw[i]); toast('That isn’t a hex code. Try #FFE05C.'); return; }
+  setSwatch(i, fromRgb(c, work.model, work.sw[i].a));
+  render(); commit();
+}
+function renderStrip() {
+  var sp = HARMONIES[work.harmony].spec;
+  work.sw.forEach(function (s, i) {
+    var c = cols[i], real = toRgb(s), shown = seen(real), inp = c.querySelector('.col-hex');
+    c.style.background = rgb2hex(shown);
+    c.style.color = inkOn(shown);
+    c.classList.toggle('on', i === work.sel);
+    c.querySelector('.col-tag').textContent = sp && i === 2 ? 'Base' : '';
+    if (document.activeElement !== inp) inp.value = rgb2hex(real);
+  });
+  var vn = $('vision-note');
+  vn.hidden = work.vision === 'none';
+  if (!vn.hidden) vn.textContent = 'Previewing as ' + VISION_NAMES[work.vision] + '. Hex codes are the real colours.';
+}
+
+/* ---------- selected colour: sliders + values ---------- */
+function gradient(fn) {
+  var st = [];
+  for (var k = 0; k <= 12; k++) st.push(hexOf(fn(k / 12)) + ' ' + (k / 12 * 100).toFixed(1) + '%');
+  return 'linear-gradient(90deg,' + st.join(',') + ')';
+}
+function renderDetail() {
+  var s = work.sw[work.sel], ax = MODELS[work.model].axes, ok = work.model === 'oklch';
+  $('l-a').textContent = ax[0]; $('l-r').textContent = ax[1]; $('l-b').textContent = ax[2];
+  $('s-a').value = Math.round(s.a) % 360; $('s-r').value = Math.round(s.r * 100); $('s-b').value = Math.round(s.b * 100);
+  $('o-a').textContent = Math.round(s.a) % 360 + '°';
+  $('o-r').textContent = Math.round(s.r * 100) + '%';
+  $('o-b').textContent = Math.round(s.b * 100) + '%';
+  $('s-a').style.background = gradient(function (t) { return { a: t * 360, r: Math.max(s.r, 0.5), b: ok ? s.b : Math.max(s.b, 0.6) }; });
+  $('s-r').style.background = gradient(function (t) { return { a: s.a, r: t, b: s.b }; });
+  $('s-b').style.background = gradient(function (t) { return { a: s.a, r: s.r, b: t }; });
+
+  var c = toRgb(s), hex = rgb2hex(c), R = c.map(function (x) { return Math.round(x * 255); });
+  var hsv = rgb2hsv(c[0], c[1], c[2]), lab = rgb2oklab(c[0], c[1], c[2]);
+  var C = Math.hypot(lab[1], lab[2]), H = C < 0.002 ? 0 : wrap(Math.atan2(lab[2], lab[1]) * 180 / Math.PI);
+  var k = 1 - Math.max(c[0], c[1], c[2]), cmy = c.map(function (x) { return k >= 1 ? 0 : Math.round((1 - x - k) / (1 - k) * 100); });
+  var rows = [
+    ['Hex', hex],
+    ['RGB', R.join(', ')],
+    ['HSB', Math.round(hsv[0]) + '°, ' + Math.round(hsv[1] * 100) + '%, ' + Math.round(hsv[2] * 100) + '%'],
+    ['OKLCH', 'oklch(' + (lab[0] * 100).toFixed(1) + '% ' + C.toFixed(3) + ' ' + H.toFixed(1) + ')'],
+    ['CMYK', cmy.concat(Math.round(k * 100)).join(', ') + ' (approx.)'],
+    ['Contrast', contrast(c, [1, 1, 1]).toFixed(2) + ' on white · ' + contrast(c, [0, 0, 0]).toFixed(2) + ' on black']
+  ];
+  $('vals').innerHTML = rows.map(function (r) {
+    return '<dt>' + r[0] + '</dt><dd><button type="button" title="Copy">' + esc(r[1]) + '</button></dd>';
+  }).join('');
+}
+$('vals').addEventListener('click', function (ev) {
+  var b = ev.target.closest('button'); if (b) copy(b.textContent.replace(' (approx.)', ''), 'Copied ' + b.textContent.replace(' (approx.)', '') + '.');
+});
+['a', 'r', 'b'].forEach(function (k) {
+  var el = $('s-' + k);
+  el.addEventListener('input', function () {
+    var s = work.sw[work.sel], n = { a: s.a, r: s.r, b: s.b };
+    n[k] = k === 'a' ? +el.value : +el.value / 100;
+    setSwatch(work.sel, n);
+    render();
+  });
+  el.addEventListener('change', commit);
+});
+
+/* ---------- contrast grid ---------- */
+function renderContrast() {
+  var cs = work.sw.map(function (s) { return toRgb(s); }), hx = cs.map(rgb2hex);
+  var h = '<thead><tr><th class="row"></th>' + hx.map(function (x) { return '<th><i style="background:' + x + '"></i>' + x.slice(1) + '</th>'; }).join('') + '</tr></thead><tbody>';
+  cs.forEach(function (bg, r) {
+    h += '<tr><th class="row"><i style="background:' + hx[r] + '"></i>' + hx[r].slice(1) + '</th>';
+    cs.forEach(function (fg, c) {
+      if (r === c || hx[r] === hx[c]) { h += '<td class="same">—</td>'; return; }
+      var v = contrast(bg, fg), tag = v >= 7 ? 'AAA' : v >= 4.5 ? 'AA' : v >= 3 ? 'AA large' : 'Fail';
+      h += '<td class="' + (v >= 4.5 ? 'pass' : '') + '" style="background:' + hx[r] + ';color:' + hx[c] + '"><b>Aa</b><small>' + v.toFixed(1) + ' ' + tag + '</small></td>';
+    });
+    h += '</tr>';
+  });
+  $('cx').innerHTML = h + '</tbody>';
+}
+
+/* ---------- model + harmony controls ---------- */
+function buildControls() {
+  $('harms').innerHTML = HARM_ORDER.map(function (k) {
+    return '<button type="button" data-h="' + k + '" title="' + HARMONIES[k].name + '" aria-label="' + HARMONIES[k].name + '">' + harmonyIcon(k) + '</button>';
+  }).join('');
+  $('harms').addEventListener('click', function (ev) {
+    var b = ev.target.closest('button'); if (!b) return;
+    work.harmony = b.dataset.h;
+    regenerate(work);
+    render(); commit();
+  });
+  $('models').addEventListener('click', function (ev) {
+    var b = ev.target.closest('button'); if (!b || b.dataset.model === work.model) return;
+    setModel(b.dataset.model);
+  });
+}
+/* Switching wheels keeps the colours on screen exactly as they are, and
+   re-reads where they sit on the new wheel. In a harmony, the base keeps its
+   colour and the others are re-derived — which is the point of switching. */
+function setModel(m) {
+  var old = work.model;
+  work.sw = work.sw.map(function (s) { return fromRgb(toRgb(s, old), m, s.a); });
+  work.model = m;
+  regenerate(work);
+  render(); commit();
+}
+function renderControls() {
+  Array.prototype.forEach.call($('models').children, function (b) { b.setAttribute('aria-pressed', b.dataset.model === work.model); });
+  Array.prototype.forEach.call($('harms').children, function (b) { b.setAttribute('aria-pressed', b.dataset.h === work.harmony); });
+  $('model-note').textContent = MODELS[work.model].note;
+  $('harm-name').textContent = HARMONIES[work.harmony].name;
+  $('harm-note').textContent = HARMONIES[work.harmony].note;
+  $('btn-undo').disabled = !undoStack.length;
+  $('btn-redo').disabled = !redoStack.length;
+  $('vision').value = work.vision;
+  var loaded = work.loadedId && findPalette(work.loadedId);
+  if (!loaded) work.loadedId = null;
+  $('btn-save').textContent = loaded ? 'Save changes' : 'Save palette';
+  $('btn-save-new').hidden = !loaded;
+  if (document.activeElement !== $('pal-name')) $('pal-name').value = work.name;
+  Array.prototype.forEach.call(document.querySelectorAll('.card'), function (c) { c.classList.toggle('on', c.dataset.id === work.loadedId); });
+}
+
+function render() {
+  drawWheel();
+  renderHandles();
+  renderStrip();
+  renderDetail();
+  renderContrast();
+  renderControls();
+}
+
+/* ---------- random ---------- */
+function rnd(a, b) { return a + Math.random() * (b - a); }
+function randomise() {
+  var base = { a: rnd(0, 360), r: rnd(0.35, 0.95), b: work.model === 'oklch' ? rnd(0.55, 0.88) : rnd(0.6, 0.98) };
+  if (HARMONIES[work.harmony].spec) { work.sw[2] = base; regenerate(work); }
+  else {
+    var keys = HARM_ORDER.slice(0, -1), sp = HARMONIES[keys[Math.floor(Math.random() * keys.length)]].spec;
+    work.sw = sp.map(function (t) { return { a: wrap(base.a + t[0] + rnd(-8, 8)), r: clamp(base.r * t[1] + rnd(-.1, .1), 0, 1), b: clamp(base.b * t[2] + rnd(-.08, .08), 0, 1) }; });
+  }
+  render(); commit();
+}
+
+/* ---------- colours from a photo ---------- */
+var photo = null, mood = 'balanced';
+function readPhoto(file) {
+  if (!file || !/^image\//.test(file.type)) { toast('That doesn’t look like an image.'); return; }
+  var url = URL.createObjectURL(file), img = new Image();
+  img.onload = function () {
+    photo = img;
+    $('img-prev').src = url; $('img-prev').hidden = false; $('drop-msg').hidden = true;
+    fromPhoto();
+  };
+  img.onerror = function () { toast('That image wouldn’t open.'); };
+  img.src = url;
+}
+function fromPhoto() {
+  if (!photo) return;
+  var sc = Math.min(1, 140 / Math.max(photo.naturalWidth, photo.naturalHeight));
+  var w = Math.max(1, Math.round(photo.naturalWidth * sc)), h = Math.max(1, Math.round(photo.naturalHeight * sc));
+  var cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+  var ctx = cv.getContext('2d'); ctx.drawImage(photo, 0, 0, w, h);
+  var px = ctx.getImageData(0, 0, w, h).data, pts = [];
+  for (var i = 0; i < px.length; i += 4) {
+    if (px[i + 3] < 128) continue;
+    var lab = rgb2oklab(px[i] / 255, px[i + 1] / 255, px[i + 2] / 255);
+    pts.push({ L: lab[0], A: lab[1], B: lab[2], C: Math.hypot(lab[1], lab[2]) });
+  }
+  if (!pts.length) { toast('No colour found in that image.'); return; }
+  var pick = moodFilter(pts, mood), cents = kmeans(pick.length >= 5 ? pick : pts, 5);
+  cents.sort(function (x, y) { return y.L - x.L; });
+  work.harmony = 'custom';
+  work.sw = cents.map(function (c) { return fromRgb(linToRgb(oklab2lin(c.L, c.A, c.B)), work.model, 0); });
+  work.sel = 2;
+  render(); commit();
+}
+function topBy(pts, score, share) {
+  return pts.slice().sort(function (x, y) { return score(y) - score(x); }).slice(0, Math.max(5, Math.round(pts.length * share)));
+}
+function moodFilter(pts, m) {
+  switch (m) {
+    case 'colourful': return topBy(pts, function (p) { return p.C; }, 0.35);
+    case 'bright':    return topBy(pts, function (p) { return p.L + p.C; }, 0.35);
+    case 'muted':     return topBy(pts, function (p) { return -p.C + (p.L > 0.25 && p.L < 0.9 ? 0.05 : 0); }, 0.5);
+    case 'deep':      return topBy(pts, function (p) { return p.C * 2 - p.L; }, 0.35);
+    case 'dark':      return topBy(pts, function (p) { return -p.L; }, 0.35);
+    default:          return pts;
+  }
+}
+/* k-means in OKLab, seeded by farthest points so small accents aren't swallowed. */
+function kmeans(pts, k) {
+  function d2(p, c) { var a = p.L - c.L, b = p.A - c.A, e = p.B - c.B; return a * a + b * b + e * e; }
+  var cents = [], mean = { L: 0, A: 0, B: 0 };
+  pts.forEach(function (p) { mean.L += p.L; mean.A += p.A; mean.B += p.B; });
+  mean = { L: mean.L / pts.length, A: mean.A / pts.length, B: mean.B / pts.length };
+  var first = pts.reduce(function (best, p) { return d2(p, mean) < d2(best, mean) ? p : best; });
+  cents.push({ L: first.L, A: first.A, B: first.B });
+  while (cents.length < k) {
+    var far = null, fd = -1;
+    pts.forEach(function (p) { var m = Math.min.apply(null, cents.map(function (c) { return d2(p, c); })); if (m > fd) { fd = m; far = p; } });
+    cents.push({ L: far.L, A: far.A, B: far.B });
+  }
+  for (var it = 0; it < 14; it++) {
+    var sums = cents.map(function () { return { L: 0, A: 0, B: 0, n: 0 }; });
+    pts.forEach(function (p) {
+      var bi = 0, bd = Infinity;
+      cents.forEach(function (c, j) { var dd = d2(p, c); if (dd < bd) { bd = dd; bi = j; } });
+      var s = sums[bi]; s.L += p.L; s.A += p.A; s.B += p.B; s.n++;
+    });
+    cents = cents.map(function (c, j) { var s = sums[j]; return s.n ? { L: s.L / s.n, A: s.A / s.n, B: s.B / s.n } : c; });
+  }
+  return cents;
+}
+$('img-file').addEventListener('change', function () { readPhoto(this.files[0]); this.value = ''; });
+['dragenter', 'dragover'].forEach(function (t) { $('drop').addEventListener(t, function (ev) { ev.preventDefault(); this.classList.add('over'); }); });
+['dragleave', 'drop'].forEach(function (t) { $('drop').addEventListener(t, function () { this.classList.remove('over'); }); });
+$('drop').addEventListener('drop', function (ev) { ev.preventDefault(); readPhoto(ev.dataTransfer.files[0]); });
+$('moods').addEventListener('click', function (ev) {
+  var b = ev.target.closest('button'); if (!b) return;
+  mood = b.dataset.mood;
+  Array.prototype.forEach.call(this.children, function (x) { x.setAttribute('aria-pressed', x === b); });
+  if (photo) fromPhoto(); else $('img-file').click();
+});
+
+/* tabs */
+function showTab(name) {
+  ['wheel', 'image'].forEach(function (t) {
+    $('tab-' + t).hidden = t !== name;
+    $('tab-btn-' + t).setAttribute('aria-selected', t === name);
+  });
+}
+$('tab-btn-wheel').addEventListener('click', function () { showTab('wheel'); });
+$('tab-btn-image').addEventListener('click', function () { showTab('image'); });
+
+/* ============================================================
+   The library — saved palettes (this is what syncs)
+   ============================================================ */
+function defaultState() { return { palettes: [] }; }
+function listOf(v) { return Array.isArray(v) ? v : (v && typeof v === 'object' ? Object.values(v) : []); }
+function uid() { return 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+function normPalette(p) {
+  if (!p || typeof p !== 'object') return null;
+  var colors = listOf(p.colors).map(function (h) { var c = hex2rgb(h); return c ? rgb2hex(c) : null; }).filter(Boolean);
+  if (!colors.length) return null;
+  var model = MODELS[p.model] ? p.model : 'rgb';
+  var sw = listOf(p.sw).map(normSw);
+  if (sw.length !== colors.length || !sw.every(Boolean)) sw = null;
+  return {
+    id: String(p.id || uid()), name: typeof p.name === 'string' && p.name.trim() ? p.name.slice(0, 80) : 'Untitled',
+    colors: colors, model: model, harmony: HARMONIES[p.harmony] ? p.harmony : 'custom', sw: sw,
+    createdAt: +p.createdAt || 0, updatedAt: +p.updatedAt || 0
+  };
+}
+function normalise(d) {
+  if (!d || typeof d !== 'object') return null;
+  return { palettes: listOf(d.palettes).map(normPalette).filter(Boolean) };
+}
+function loadState() {
+  try { var s = normalise(JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null')); if (s) return s; } catch (e) {}
+  return defaultState();
+}
+var state = loadState();
+function storeLocal() { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {} }
+function saveNow() { storeLocal(); cloudTouch(); }
+function findPalette(id) { for (var i = 0; i < state.palettes.length; i++) if (state.palettes[i].id === id) return state.palettes[i]; return null; }
+function round4(x) { return Math.round(x * 10000) / 10000; }
+
+function savePalette(asNew) {
+  var now = Date.now(), name = $('pal-name').value.trim() || 'Palette ' + (state.palettes.length + 1);
+  var data = {
+    name: name.slice(0, 80), colors: work.sw.map(function (s) { return hexOf(s); }), model: work.model, harmony: work.harmony,
+    sw: work.sw.map(function (s) { return { a: round4(s.a), r: round4(s.r), b: round4(s.b) }; }), updatedAt: now
+  };
+  var p = !asNew && work.loadedId && findPalette(work.loadedId);
+  if (p) { Object.keys(data).forEach(function (k) { p[k] = data[k]; }); }
+  else { p = normPalette(Object.assign({ id: uid(), createdAt: now }, data)); p.sw = data.sw; state.palettes.unshift(p); }
+  work.loadedId = p.id; work.name = p.name;
+  saveNow(); saveWork();
+  renderLibrary(); renderControls();
+  toast('Saved “' + p.name + '”.');
+}
+function openPalette(id) {
+  var p = findPalette(id); if (!p) return;
+  work.model = p.model; work.harmony = p.harmony;
+  work.sw = p.sw ? p.sw.map(function (s) { return { a: s.a, r: s.r, b: s.b }; })
+                 : p.colors.map(function (h) { return fromRgb(hex2rgb(h), p.model, 0); });
+  while (work.sw.length < 5) work.sw.push({ a: 0, r: 0, b: work.sw.length / 4 });
+  if (work.sw.length > 5) { work.sw = work.sw.slice(0, 5); work.harmony = 'custom'; }
+  if (!p.sw) work.harmony = 'custom';
+  work.sel = 2; work.loadedId = p.id; work.name = p.name;
+  showTab('wheel');
+  render(); commit();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+function deletePalette(id) {
+  var i = state.palettes.findIndex(function (p) { return p.id === id; }); if (i < 0) return;
+  var p = state.palettes.splice(i, 1)[0];
+  saveNow(); renderLibrary(); renderControls();
+  toast('Deleted “' + p.name + '”.', function () {
+    state.palettes.splice(Math.min(i, state.palettes.length), 0, p);
+    saveNow(); renderLibrary(); renderControls();
+  });
+}
+function dateOf(t) { return t ? new Date(t).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : ''; }
+var MODEL_SHORT = { ryb: 'RYB', rgb: 'RGB', oklch: 'OKLCH' };
+function renderLibrary() {
+  var q = $('lib-search').value.trim().toLowerCase().replace(/^#/, ''), grid = $('lib-grid');
+  var list = state.palettes.slice().sort(function (a, b) { return b.updatedAt - a.updatedAt; }).filter(function (p) {
+    return !q || p.name.toLowerCase().indexOf(q) >= 0 || p.colors.some(function (c) { return c.toLowerCase().indexOf(q) >= 0; });
+  });
+  if (!state.palettes.length) {
+    grid.innerHTML = '<p class="empty">Nothing saved yet. Name the palette above and press Save palette. ' +
+      'Saved palettes stay in this browser, and follow you to your other devices once you sign in.</p>';
+    return;
+  }
+  if (!list.length) { grid.innerHTML = '<p class="empty">No saved palette matches “' + esc(q) + '”.</p>'; return; }
+  grid.innerHTML = list.map(function (p) {
+    return '<article class="card' + (p.id === work.loadedId ? ' on' : '') + '" data-id="' + esc(p.id) + '">' +
+      '<div class="card-sw" data-act="open" title="Open on the wheel">' + p.colors.map(function (c) { return '<i style="background:' + c + '"></i>'; }).join('') + '</div>' +
+      '<div class="card-body"><h3>' + esc(p.name) + '</h3><p>' + esc(HARMONIES[p.harmony].name) + ' · ' + MODEL_SHORT[p.model] + ' · ' + dateOf(p.updatedAt || p.createdAt) +
+      '<br>' + p.colors.join(' ') + '</p></div>' +
+      '<div class="card-acts"><button class="ghost" type="button" data-act="open">Open</button><button class="ghost" type="button" data-act="copy">Copy hex</button>' +
+      '<button class="ghost" type="button" data-act="ase">.ase</button><button class="ghost" type="button" data-act="del">Delete</button></div></article>';
+  }).join('');
+}
+$('lib-grid').addEventListener('click', function (ev) {
+  var b = ev.target.closest('[data-act]'), card = ev.target.closest('.card'); if (!b || !card) return;
+  var p = findPalette(card.dataset.id); if (!p) return;
+  var act = b.dataset.act;
+  if (act === 'open') openPalette(p.id);
+  else if (act === 'copy') copy(p.colors.join(', '), 'Copied ' + p.colors.length + ' hex codes.');
+  else if (act === 'ase') download(aseBlob(p.name, p.colors), fileName(p.name) + '.ase');
+  else if (act === 'del') deletePalette(p.id);
+});
+$('lib-search').addEventListener('input', renderLibrary);
+
+/* export / import the whole library */
+$('btn-export').addEventListener('click', function () {
+  download(new Blob([JSON.stringify({ app: 'colour-wheel', version: 1, exportedAt: new Date().toISOString(), palettes: state.palettes }, null, 2)], { type: 'application/json' }),
+    'colour-palettes-' + new Date().toISOString().slice(0, 10) + '.json');
+});
+$('btn-import').addEventListener('click', function () { $('import-file').click(); });
+$('import-file').addEventListener('change', function () {
+  var f = this.files[0]; this.value = ''; if (!f) return;
+  f.text().then(function (t) {
+    var d = normalise(JSON.parse(t));
+    if (!d || !d.palettes.length) { toast('No palettes in that file.'); return; }
+    var added = 0, updated = 0;
+    d.palettes.forEach(function (p) {
+      var mine = findPalette(p.id);
+      if (!mine) { state.palettes.push(p); added++; }
+      else if (p.updatedAt > mine.updatedAt) { Object.assign(mine, p); updated++; }
+    });
+    saveNow(); renderLibrary(); renderControls();
+    toast('Imported ' + added + ' new' + (updated ? ', updated ' + updated : '') + '.');
+  }).catch(function () { toast('That file couldn’t be read.'); });
+});
+
+/* ---------- exports for the palette on the wheel ---------- */
+function fileName(n) { return (n || 'palette').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'palette'; }
+function currentHexes() { return work.sw.map(function (s) { return hexOf(s); }); }
+$('btn-copy-hex').addEventListener('click', function () { copy(currentHexes().join(', '), 'Copied 5 hex codes.'); });
+$('btn-copy-css').addEventListener('click', function () {
+  var slug = fileName(work.name || 'palette');
+  copy(':root {\n' + currentHexes().map(function (h, i) { return '  --' + slug + '-' + (i + 1) + ': ' + h + ';'; }).join('\n') + '\n}', 'Copied as CSS variables.');
+});
+$('btn-ase').addEventListener('click', function () { download(aseBlob(work.name || 'Palette', currentHexes()), fileName(work.name) + '.ase'); });
+
+/* Adobe Swatch Exchange: a group named after the palette, one RGB swatch per colour. */
+function aseBlob(name, hexes) {
+  var bytes = [];
+  function u16(n) { bytes.push((n >> 8) & 255, n & 255); }
+  function u32(n) { bytes.push((n >>> 24) & 255, (n >> 16) & 255, (n >> 8) & 255, n & 255); }
+  function f32(x) { var dv = new DataView(new ArrayBuffer(4)); dv.setFloat32(0, x); for (var i = 0; i < 4; i++) bytes.push(dv.getUint8(i)); }
+  function strLen(s) { return 2 + (s.length + 1) * 2; }
+  function str(s) { u16(s.length + 1); for (var i = 0; i < s.length; i++) u16(s.charCodeAt(i)); u16(0); }
+  name = String(name).slice(0, 60);
+  bytes.push(65, 83, 69, 70); u16(1); u16(0); u32(hexes.length + 2);
+  u16(0xC001); u32(strLen(name)); str(name);
+  hexes.forEach(function (h) {
+    var c = hex2rgb(h);
+    u16(0x0001); u32(strLen(h) + 4 + 12 + 2); str(h);
+    bytes.push(82, 71, 66, 32); f32(c[0]); f32(c[1]); f32(c[2]); u16(2);
+  });
+  u16(0xC002); u32(0);
+  return new Blob([new Uint8Array(bytes)], { type: 'application/octet-stream' });
+}
+function download(blob, name) {
+  var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
+}
+
+/* ---------- bits ---------- */
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+function copy(text, msg) {
+  function fallback() {
+    var t = document.createElement('textarea'); t.value = text; t.style.position = 'fixed'; t.style.opacity = '0';
+    document.body.appendChild(t); t.select(); try { document.execCommand('copy'); } catch (e) {} t.remove();
+  }
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).catch(fallback); else fallback();
+  toast(msg || 'Copied.');
+}
+var toastTimer = null, undoFn = null;
+function toast(msg, onUndo) {
+  $('toast-msg').textContent = msg;
+  undoFn = onUndo || null;
+  $('toast-undo').hidden = !undoFn;
+  $('toast').classList.add('on');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function () { $('toast').classList.remove('on'); undoFn = null; }, onUndo ? 6000 : 2200);
+}
+$('toast-undo').addEventListener('click', function () { var f = undoFn; undoFn = null; $('toast').classList.remove('on'); if (f) f(); });
+
+$('btn-undo').addEventListener('click', undo);
+$('btn-redo').addEventListener('click', redo);
+$('btn-random').addEventListener('click', randomise);
+$('btn-save').addEventListener('click', function () { savePalette(false); });
+$('btn-save-new').addEventListener('click', function () { savePalette(true); });
+$('pal-name').addEventListener('input', function () { work.name = this.value; saveWork(); });
+$('pal-name').addEventListener('keydown', function (ev) { if (ev.key === 'Enter') savePalette(false); });
+$('btn-new').addEventListener('click', function () {
+  var keepModel = work.model, keepVision = work.vision;
+  var fresh = defaultWork();
+  work.harmony = fresh.harmony; work.sel = 2; work.name = ''; work.loadedId = null;
+  work.sw = fresh.sw.map(function (s) { return fromRgb(toRgb(s, 'ryb'), keepModel, s.a); });
+  work.model = keepModel; work.vision = keepVision;
+  regenerate(work);
+  render(); commit();
+});
+$('vision').addEventListener('change', function () { work.vision = this.value; saveWork(); renderStrip(); });
+document.addEventListener('keydown', function (ev) {
+  if (!(ev.metaKey || ev.ctrlKey) || ev.key.toLowerCase() !== 'z') return;
+  var t = ev.target; if (t && (t.tagName === 'INPUT' && t.type !== 'range' || t.tagName === 'TEXTAREA')) return;
+  ev.preventDefault();
+  if (ev.shiftKey) redo(); else undo();
+});
+
+/* ---------- sync adapter: what this tool hands the shared sync code ---------- */
+var SYNC = {
+  doc: 'palettes',                           // users/{uid}/tools/palettes
+  storageKey: STORAGE_KEY,
+  noun: 'palettes',
+
+  payload: function () { return { palettes: state.palettes }; },   // the palette on the wheel is not an edit
+
+  /* The database drops empty arrays and objects; normalise() rebuilds them. */
+  apply: function (d, remote) {
+    var next = normalise(d);
+    if (!next) return false;
+    state = next;
+    storeLocal();
+    renderLibrary(); renderControls();
+    return true;
+  },
+
+  /* No saved palettes: nothing worth protecting. */
+  untouched: function () { return !state.palettes.length; },
+
+  flush: function () { storeLocal(); },
+
+  describe: function (d) {
+    var ps = listOf(d && d.palettes), n = ps.length;
+    var last = ps.reduce(function (a, p) { return p && (+p.updatedAt || 0) > (+(a && a.updatedAt) || 0) ? p : a; }, null);
+    return n + ' saved palette' + (n === 1 ? '' : 's') + (last && last.name ? ', latest \u201c' + String(last.name).slice(0, 40) + '\u201d' : '');
+  },
+
+  buttonClass: function (s) {
+    return 'btn sync-btn' + (s === 'synced' ? ' ok' : '') + ((s === 'conflict' || s === 'error') ? ' bad' : '');
+  }
+};
+
+/* ============================================================
+   Cloud sync — local first, optional, live while signed in
+
+   Shared by Project Phases, Budget Tracker and Idea Bank. Keep the copies
+   identical: everything tool-specific lives in the SYNC adapter just above.
+
+   Sync is by invitation: Xavier's account, plus the people he approves on
+   the Access page (members/{uid}). Signing in is how someone asks — their
+   request appears there, and sync starts on its own once it is approved.
+
+   Signed out, the tool is purely local and the Firebase SDK is never
+   fetched. Signed in as the owner, the cloud copy is watched live, so a
+   change on one device shows up on the other within a second or two.
+
+   Every write goes through the same pass — read the cloud, compare it
+   with the watermark, then act — so a device that is behind can never
+   overwrite a newer copy. When both sides changed, it asks.
+   ============================================================ */
+
+/* Public Firebase identifiers — not secrets. They ship in every Firebase
+   web app; the database rules are what protect the data. */
+var FIREBASE = {
+  apiKey:      'AIzaSyCu0CA6eLWIkhhl-Z7jr_dDisuXDt1dKco',
+  authDomain:  'xdb-tools.firebaseapp.com',
+  databaseURL: 'https://xdb-tools-default-rtdb.firebaseio.com',
+  projectId:   'xdb-tools',
+  appId:       '1:6009567091:web:f7ee8c43ebe1bd25fcb706'
+};
+var SDK = 'https://www.gstatic.com/firebasejs/10.12.2/';
+
+/* Who may sync. Courtesy checks only — the database rules enforce all of
+   it, and would refuse anyone else even if these lines were edited away. */
+var OWNER = 'jGJdt3h4EeaOL3mYWUHA4yMZsRx2';
+var ACCESS_URL = '../access.html';   // where requests are approved; tools live in tools/
+var META_KEY = SYNC.storageKey + '.meta';   // watermarks live beside the data, not in it
+
+var cloud = {
+  on: !!FIREBASE.databaseURL,
+  status: 'signedout',  // signedout | working | synced | conflict | pending | private | error
+  uid: null,            // set only when the signed-in account owns this sync
+  authed: false,
+  listening: false,
+  at: 0,
+  msg: '',
+  fb: null,
+  timer: null,
+  busy: false,          // a sync pass is in flight
+  again: false,         // something changed while it was, so run one more
+  pending: null,        // a conflict waiting on a decision
+  print: null,          // the synced data as last seen, to tell edits from re-saves
+  outgoing: 0,          // stamp of our own latest write, so its echo is not news
+  unwatch: null,
+  unmember: null,       // live watch on this account's membership
+  asked: false          // an access request was sent this session
+};
+
+function syncEl(id) { return document.getElementById(id); }
+
+/* No connection is not a failure: the tool keeps saving here and sends it all
+   once the connection is back. Firebase says "Client is offline" without a code. */
+function errCode(err) {
+  var c = (err && err.code) || '', m = (err && err.message) || '';
+  if (navigator.onLine === false) return 'unavailable';
+  if (!c && /offline|network|failed to fetch|load failed|dynamically imported/i.test(m)) return 'unavailable';
+  return c || 'failed';
+}
+function isOffline(code) { return code === 'unavailable' || code === 'timeout' || code === 'auth/network-request-failed'; }
+
+function explain(code) {
+  var offline = 'No connection. Everything still saves on this device and will sync when you are back online.';
+  var map = {
+    'auth/unauthorized-domain':
+      'This site is not on the Firebase authorised domains list. Add ' + location.hostname +
+      ' under Authentication → Settings → Authorized domains.',
+    'auth/operation-not-allowed':
+      'Google sign-in is not enabled for this Firebase project. Turn it on under Authentication → Sign-in method.',
+    'auth/popup-blocked':
+      'Your browser blocked the sign-in popup. Allow popups for this site, or try again.',
+    'auth/popup-closed-by-user':
+      'The sign-in window closed before it finished.',
+    'auth/network-request-failed': offline,
+    'unavailable': offline,
+    'timeout': offline,
+    'PERMISSION_DENIED':
+      'The database rules refused this account. Check the rules allow users/<your uid>.'
+  };
+  return map[code] || ('Sync failed' + (code ? ' (' + code + ')' : '') + '.');
+}
+
+function deviceName() {
+  var ua = navigator.userAgent;
+  if (/iPhone/.test(ua)) return 'iPhone';
+  if (/iPad/.test(ua)) return 'iPad';
+  if (/Android/.test(ua)) return 'Android';
+  if (/Mac OS X/.test(ua)) return 'Mac';
+  if (/Windows/.test(ua)) return 'Windows';
+  return 'this device';
+}
+
+/* Kept out of the tool's own data so exports stay clean and an imported
+   file never carries another device's watermark. */
+function meta() {
+  try {
+    var m = JSON.parse(localStorage.getItem(META_KEY) || '{}');
+    return { updatedAt: +m.updatedAt || 0, lastSyncedAt: +m.lastSyncedAt || 0, signedIn: !!m.signedIn };
+  } catch (e) { return { updatedAt: 0, lastSyncedAt: 0, signedIn: false }; }
+}
+function setMeta(patch) {
+  var m = meta();
+  for (var k in patch) m[k] = patch[k];
+  try { localStorage.setItem(META_KEY, JSON.stringify(m)); } catch (e) {}
+  return m;
+}
+
+/* Stamps only ever move forward past the watermark. Phone and laptop clocks
+   disagree by a second or two; without this, an edit made just after
+   taking a copy from a device whose clock runs ahead would look older than
+   the copy and never be sent. */
+function nextStamp() {
+  return Math.max(Date.now(), meta().lastSyncedAt + 1, cloud.outgoing + 1);
+}
+
+function syncPrint() { return JSON.stringify(SYNC.payload()); }
+
+/* A device that already held real data before sync existed has no
+   watermark, which would read as "never edited" and let the cloud replace
+   it silently. Mark it as holding unsynced work instead, so the worst case
+   is being asked. Runs once at boot, before anything is compared. */
+function seedMeta() {
+  var noWatermark = false;
+  try { noWatermark = localStorage.getItem(META_KEY) == null; } catch (e) {}
+  if (noWatermark && !SYNC.untouched()) setMeta({ updatedAt: 1 });
+  cloud.print = syncPrint();
+}
+
+/* ---- SDK, loaded once and only on demand ---- */
+/* With the site-wide account (assets/account.js) present, the tool shares
+   its one Firebase connection and its sign-in; opened on its own, it runs
+   its own. */
+function account() { return window.xdbAccount || null; }
+function loadSDK() {
+  if (cloud.fb) return Promise.resolve(cloud.fb);
+  if (account()) return account().sdk().then(function (s) {
+    cloud.fb = { auth: s.auth, db: s.db, a: s.a, f: s.f };
+    return cloud.fb;
+  });
+  return Promise.all([
+    import(SDK + 'firebase-app.js'),
+    import(SDK + 'firebase-auth.js'),
+    import(SDK + 'firebase-database.js')
+  ]).then(function (mods) {
+    var application = mods[0].initializeApp(FIREBASE);
+    cloud.fb = { auth: mods[1].getAuth(application), db: mods[2].getDatabase(application), a: mods[1], f: mods[2] };
+    return cloud.fb;
+  });
+}
+function docRef() { return cloud.fb.f.ref(cloud.fb.db, 'users/' + cloud.uid + '/tools/' + SYNC.doc); }
+
+function withTimeout(p, ms) {
+  return Promise.race([p, new Promise(function (_, no) {
+    setTimeout(function () { no({ code: 'timeout' }); }, ms);
+  })]);
+}
+
+/* ---- the three way decision ----------------------------------------
+   Local and cloud timestamps alone cannot tell an edit from a stale copy.
+   The watermark — the cloud stamp we last agreed with — is what makes
+   "both changed since we last spoke" detectable. */
+function reconcile(remote) {
+  var m = meta();
+  var localAt = m.updatedAt, syncedAt = m.lastSyncedAt;
+  var remoteAt = remote ? (+remote.updatedAt || 0) : 0;
+  if (!remote) return localAt ? 'push' : 'idle';
+  if (remoteAt === syncedAt) return localAt > syncedAt ? 'push' : 'idle';
+  return localAt > syncedAt ? 'conflict' : 'pull';
+}
+
+/* Taking a copy re-renders the page. If a field had the cursor, put it
+   back, so a change arriving from the other device does not throw you out
+   of where you were. */
+function keepingFocus(fn) {
+  function fields() { return Array.prototype.slice.call(document.querySelectorAll('input,textarea,select')); }
+  var a = document.activeElement, i = fields().indexOf(a), sel = null;
+  try { if (i >= 0 && a.selectionStart != null) sel = [a.selectionStart, a.selectionEnd]; } catch (e) {}
+  var result = fn();
+  var b = i >= 0 ? fields()[i] : null;
+  if (b && b !== document.activeElement) {
+    try { b.focus({ preventScroll: true }); if (sel) b.setSelectionRange(sel[0], sel[1]); } catch (e) {}
+  }
+  return result;
+}
+
+function adopt(remote) {
+  var d = remote && remote.data;
+  if (!d) return false;
+  if (!keepingFocus(function () { return SYNC.apply(d, remote); })) return false;
+  cloud.print = syncPrint();
+  var stamp = +remote.updatedAt || Date.now();
+  setMeta({ updatedAt: stamp, lastSyncedAt: stamp });
+  return true;
+}
+
+function pushNow() {
+  var stamp = nextStamp();
+  var print = syncPrint();
+  cloud.outgoing = stamp;
+  return cloud.fb.f.set(docRef(), { data: JSON.parse(print), updatedAt: stamp, device: deviceName() })
+    .then(function () {
+      var ahead = syncPrint() !== print;   // edited again while this was on its way
+      setMeta({ lastSyncedAt: stamp, updatedAt: ahead ? Math.max(meta().updatedAt, stamp + 1) : stamp });
+      cloud.at = stamp;
+      if (ahead) cloud.again = true;
+    });
+}
+function pullNow() {
+  return withTimeout(cloud.fb.f.get(docRef()), 12000).then(function (snap) {
+    return snap.exists() ? snap.val() : null;
+  });
+}
+
+function decide(remote) {
+  var move = reconcile(remote);
+  if (move === 'pull')     { adopt(remote); cloud.at = Date.now(); setStatus('synced'); return; }
+  if (move === 'push')     { return pushNow().then(function () { setStatus('synced'); }); }
+  if (move === 'conflict') { cloud.pending = remote; setStatus('conflict'); return; }
+  cloud.at = Date.now();
+  setStatus('synced');
+}
+
+/* One pass. Only one runs at a time; anything that asks while one is in
+   flight gets a second pass afterwards rather than being dropped. `known`
+   is a copy the live listener already has in hand, which saves a read. */
+function syncNow(userAsked, known) {
+  if (!cloud.on || !cloud.uid) return Promise.resolve();
+  if (cloud.busy) { cloud.again = true; return Promise.resolve(); }
+  if (cloud.status === 'conflict' && !userAsked) return Promise.resolve();
+  cloud.busy = true;
+  cloud.again = false;
+  clearTimeout(cloud.timer);
+  setStatus('working');
+  return (known ? Promise.resolve(known) : pullNow()).then(decide).then(function () {
+    cloud.busy = false;
+    if (cloud.again && cloud.status !== 'conflict') return syncNow();
+  }, function (err) {
+    cloud.busy = false;
+    cloud.msg = errCode(err);
+    setStatus('error');
+    if (userAsked) console.warn('[sync]', err);
+  });
+}
+
+/* Called on every save. Tools re-save on load, on navigation and on the
+   way out, so the fingerprint decides whether anything was really edited —
+   otherwise merely opening the tool would count as a change. */
+function cloudTouch() {
+  if (cloud.print === null) return;          // still booting
+  var p = syncPrint();
+  if (p === cloud.print) return;
+  cloud.print = p;
+  setMeta({ updatedAt: nextStamp() });
+  if (!cloud.on || !cloud.uid) return;
+  clearTimeout(cloud.timer);
+  cloud.timer = setTimeout(function () { syncNow(); }, 600);
+}
+
+/* ---- live ---- */
+function watch() {
+  if (cloud.unwatch || !cloud.uid) return;
+  cloud.unwatch = cloud.fb.f.onValue(docRef(), function (snap) {
+    var remote = snap.exists() ? snap.val() : null;
+    if (!remote) return;
+    var at = +remote.updatedAt || 0;
+    if (at === cloud.outgoing || at === meta().lastSyncedAt) return;   // our own write, or one we already have
+    if (cloud.status === 'conflict') { cloud.pending = remote; paintSync(); return; }
+    if (cloud.busy) { cloud.again = true; return; }
+    syncNow(false, remote);
+  }, function (err) {
+    cloud.unwatch = null;
+    cloud.msg = errCode(err);
+    setStatus('error');
+  });
+}
+function stopWatching() {
+  if (cloud.unwatch) { cloud.unwatch(); cloud.unwatch = null; }
+}
+
+/* ---- membership ----
+   Xavier always syncs. Anyone else is watched live at members/{uid}: when
+   he approves them, sync starts without a reload; if he removes them, it
+   stops and the tool carries on locally. Until then signing in files a
+   request (once per session) and the tool says so. */
+function admit(uid) {
+  if (cloud.uid === uid) return;
+  cloud.uid = uid;
+  syncNow();
+  watch();
+}
+function stopMembership() {
+  if (cloud.unmember) { cloud.unmember(); cloud.unmember = null; }
+}
+function askForAccess(user) {
+  if (cloud.asked) { setStatus('pending'); return; }
+  cloud.asked = true;
+  var ref = cloud.fb.f.ref(cloud.fb.db, 'requests/' + user.uid);
+  cloud.fb.f.set(ref, {
+    email: user.email || '', name: (user.displayName || '').slice(0, 120), at: Date.now(), tool: SYNC.doc
+  }).then(function () {
+    if (!cloud.uid) setStatus('pending');
+  }, function () {
+    // refused: this account was declined — say so, and keep working locally
+    if (!cloud.uid) setStatus('private');
+  });
+}
+function checkMembership(user) {
+  if (user.uid === OWNER) { admit(user.uid); return; }
+  setStatus('working');
+  cloud.unmember = cloud.fb.f.onValue(cloud.fb.f.ref(cloud.fb.db, 'members/' + user.uid), function (snap) {
+    if (snap.exists()) { admit(user.uid); return; }
+    if (cloud.uid) { cloud.uid = null; stopWatching(); clearTimeout(cloud.timer); }
+    askForAccess(user);
+  }, function () {
+    cloud.uid = null;
+    stopWatching();
+    setStatus('private');
+  });
+}
+
+/* ---- sign in / out ---- */
+function listen(fb) {
+  if (cloud.listening) return;
+  cloud.listening = true;
+  fb.a.onAuthStateChanged(fb.auth, function (user) {
+    cloud.authed = !!user;
+    setMeta({ signedIn: !!user });
+    stopWatching();
+    stopMembership();
+    cloud.uid = null;
+    cloud.asked = false;
+    if (!user) { setStatus('signedout'); return; }
+    checkMembership(user);
+  });
+}
+
+function signIn() {
+  if (!cloud.on) return;
+  setMeta({ signedIn: true });   // so a redirect sign-in is picked up when the page comes back
+  setStatus('working');
+  if (account()) {
+    loadSDK().then(listen).catch(function () {});
+    account().signIn().catch(function (err) {
+      if (err && err.code === 'auth/popup-closed-by-user') { if (!cloud.authed) setStatus('signedout'); return; }
+      cloud.msg = errCode(err);
+      setStatus('error');
+    });
+    return;
+  }
+  loadSDK().then(function (fb) {
+    listen(fb);
+    var provider = new fb.a.GoogleAuthProvider();
+    if (provider.setCustomParameters) provider.setCustomParameters({ prompt: 'select_account' });   // always offer the account picker
+    return fb.a.signInWithPopup(fb.auth, provider).catch(function (err) {
+      // iOS and locked-down browsers block popups; a redirect always works
+      if (err && /popup-blocked|operation-not-supported/i.test(err.code || '')) return fb.a.signInWithRedirect(fb.auth, provider);
+      throw err;
+    });
+  }).catch(function (err) {
+    setMeta({ signedIn: false });
+    cloud.msg = errCode(err);
+    setStatus('error');
+  });
+}
+function signOutNow() {
+  if (account()) { account().signOut(); return; }
+  if (cloud.fb) cloud.fb.a.signOut(cloud.fb.auth);
+}
+function syncClick() {
+  if (account() && cloud.authed) { account().openPanel(); return; }   // signed in: the account panel has it all
+  if (!cloud.uid) signIn(); else syncNow(true);
+}
+
+/* ---- the choice, in plain words ----
+   Two situations ask: a browser with work of its own signing in for the
+   first time, and two devices that both changed things before they could
+   sync. The text says which, what each side holds, and which is newer. */
+function summary(d) {
+  var s = '';
+  try { s = String(SYNC.describe(d) || ''); } catch (e) {}
+  return s.replace(/^It holds /, '').replace(/\.$/, '') || 'a copy';
+}
+function whenLabel(ms) {
+  if (!ms) return '';
+  var d = new Date(ms), now = new Date();
+  var day = d.toDateString() === now.toDateString() ? 'today'
+    : new Date(now.getTime() - 864e5).toDateString() === d.toDateString() ? 'yesterday'
+    : d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  return day + ' at ' + hhmm(ms);
+}
+function otherDevice(remote) {
+  var other = (remote && remote.device) || '';
+  if (!other) return 'your other device';
+  return other === deviceName() ? 'your other ' + other : 'your ' + other;
+}
+function choiceWords(remote) {
+  var here = deviceName(), m = meta();
+  var mine = summary(JSON.parse(syncPrint())), theirs = summary(remote.data);
+  var remoteAt = +remote.updatedAt || 0;
+  var other = otherDevice(remote), otherShort = other.replace(/^your /, 'the ');
+  if (!m.lastSyncedAt) {
+    return {
+      text: 'This browser already has its own ' + SYNC.noun + ' (' + mine + '). Your account has ' + theirs +
+        ', last saved from ' + other + ' ' + whenLabel(remoteAt) + '. Which should this browser use? ' +
+        'Whichever you don\u2019t pick is kept here as a backup for ' + BACKUP_DAYS + ' days.',
+      local: 'Keep this browser\u2019s',
+      cloud: 'Use my account\u2019s'
+    };
+  }
+  var localNewer = m.updatedAt > remoteAt;
+  return {
+    text: 'This ' + here + ' and ' + other + ' both made changes before they could sync. ' +
+      'This ' + here + (m.updatedAt > 1e12 ? ', ' + whenLabel(m.updatedAt) : '') + ': ' + mine + (localNewer ? ' (newer)' : '') + '. ' +
+      other.charAt(0).toUpperCase() + other.slice(1) + ', ' + whenLabel(remoteAt) + ': ' + theirs + (localNewer ? '' : ' (newer)') + '. ' +
+      'Which version do you want? The other is kept here as a backup for ' + BACKUP_DAYS + ' days.',
+    local: 'Keep this ' + here + '\u2019s',
+    cloud: 'Use ' + otherShort + '\u2019s'
+  };
+}
+
+/* ---- backup of the version not chosen ----
+   Whichever side loses a choice is saved on this device for a week, with
+   Restore on the bar. Restoring is itself undoable: the version it replaces
+   becomes the backup. */
+var BACKUP_KEY = SYNC.storageKey + '.backup';
+var BACKUP_DAYS = 7;
+function readBackup() {
+  try {
+    var b = JSON.parse(localStorage.getItem(BACKUP_KEY) || 'null');
+    if (b && b.data && Date.now() - (+b.at || 0) < BACKUP_DAYS * 864e5) return b;
+  } catch (e) {}
+  return null;
+}
+function writeBackup(b) {
+  try { localStorage.setItem(BACKUP_KEY, JSON.stringify(b)); } catch (e) {}
+}
+function keepBackup(data, label, restored) {
+  writeBackup({ data: data, at: Date.now(), label: label, summary: summary(data), shown: true, restored: !!restored });
+}
+function dismissBackup() {
+  var b = readBackup();
+  if (b) { b.shown = false; writeBackup(b); }
+  paintSync();
+}
+function restoreBackup() {
+  var b = readBackup();
+  if (!b) return;
+  var current = JSON.parse(syncPrint());
+  var ok = keepingFocus(function () { return SYNC.apply(b.data, { data: b.data, updatedAt: Date.now(), device: deviceName() }); });
+  if (!ok) return;
+  keepBackup(current, 'the version you just replaced', true);
+  cloud.print = syncPrint();
+  setMeta({ updatedAt: nextStamp() });   // the restored version is now the newest edit, and goes up as one
+  if (cloud.uid) syncNow(true); else paintSync();
+}
+
+/* ---- conflict resolution ----
+   The bar's two buttons also serve the backup: with no choice pending,
+   the first restores it and the second puts the note away. */
+function keepLocal() {
+  var remote = cloud.pending;
+  if (!remote) { restoreBackup(); return; }
+  keepBackup(remote.data, 'the version from ' + otherDevice(remote).replace(/^your /, 'the '));
+  cloud.pending = null;
+  var seen = +remote.updatedAt || 0;
+  // acknowledge the copy we saw, and stay ahead of it so this device wins
+  setMeta({ lastSyncedAt: seen, updatedAt: Math.max(meta().updatedAt, seen + 1) });
+  cloud.status = 'working';
+  syncNow(true);
+}
+function keepCloud() {
+  var remote = cloud.pending;
+  if (!remote) { dismissBackup(); return; }
+  keepBackup(JSON.parse(syncPrint()), 'this ' + deviceName() + '\u2019s version');
+  cloud.pending = null;
+  adopt(remote);
+  cloud.at = Date.now();
+  setStatus('synced');
+}
+
+/* ---- the visible half ---- */
+function hhmm(ms) {
+  var d = new Date(ms);
+  return (d.getHours() < 10 ? '0' : '') + d.getHours() + ':' + (d.getMinutes() < 10 ? '0' : '') + d.getMinutes();
+}
+function setStatus(s) {
+  cloud.status = s;
+  if (s === 'synced') cloud.at = cloud.at || Date.now();
+  paintSync();
+}
+
+function paintSync() {
+  var btn = syncEl('btn-sync'), out = syncEl('btn-signout'), bar = syncEl('sync-bar');
+  if (!btn) return;
+  if (!cloud.on) { btn.style.display = 'none'; out.style.display = 'none'; bar.classList.remove('on'); return; }
+
+  var label, title;
+  switch (cloud.status) {
+    case 'working':  label = 'Syncing…';                   title = 'Talking to the cloud'; break;
+    case 'synced':   label = 'Live · ' + hhmm(cloud.at);   title = 'Signed in — changes on your other devices appear here as they happen'; break;
+    case 'conflict': label = 'Pick a version';             title = 'Two versions to choose between \u2014 see the note below'; break;
+    case 'pending':  label = 'Access requested';           title = 'Waiting for Xavier to approve this account'; break;
+    case 'private':  label = 'No access';                  title = 'This account is not on the invitation list'; break;
+    case 'error':    label = isOffline(cloud.msg) ? 'Offline \u00b7 saved here' : 'Sync failed';                title = explain(cloud.msg); break;
+    default:         label = 'Sign in to sync';            title = 'Keep this in step across your devices';
+  }
+  var acct = account();
+  if (acct && cloud.authed) {
+    btn.innerHTML = acct.badgeHTML() + ' <span>' + label.replace(/[&<>]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]; }) + '</span>';
+    title += ' \u2014 open your account';
+  } else {
+    btn.textContent = label;
+  }
+  btn.title = title;
+  btn.className = SYNC.buttonClass(cloud.status);
+  btn.style.display = '';
+  out.style.display = cloud.authed && !acct ? '' : 'none';   // with the site account, signing out lives in its panel
+
+  var what = syncEl('sync-what'), kl = syncEl('sync-keep-local'), kc = syncEl('sync-keep-cloud');
+  if (cloud.status === 'pending' || cloud.status === 'private' || cloud.status === 'error') {
+    what.textContent = cloud.status === 'pending'
+      ? 'Sync is by invitation, and your request is in. Once Xavier approves it, syncing starts here on its own. ' +
+        'Until then everything keeps saving in this browser as usual. '
+      : cloud.status === 'private'
+      ? 'Sync on this site is by invitation, and this account isn\u2019t on the list. ' +
+        'Everything still saves in this browser exactly as before, and nothing is sent anywhere. '
+      : explain(cloud.msg);
+    if (cloud.status !== 'error') {
+      var more = document.createElement('a');
+      more.href = ACCESS_URL;
+      more.textContent = 'About access \u2192';
+      what.appendChild(more);
+    }
+    kl.style.display = 'none';
+    kc.style.display = 'none';
+    bar.classList.add('on');
+    return;
+  }
+  kl.style.display = '';
+  kc.style.display = '';
+  var b = readBackup();
+  if (cloud.status === 'conflict' && cloud.pending) {
+    var w = choiceWords(cloud.pending);
+    what.textContent = w.text;
+    kl.textContent = w.local;
+    kc.textContent = w.cloud;
+    bar.classList.add('on');
+  } else if (b && b.shown) {
+    what.textContent = b.restored
+      ? 'Restored. The version you replaced (' + b.summary + ') is saved here in case you want it back.'
+      : 'Done. The version you didn\u2019t keep \u2014 ' + b.label + ' (' + b.summary + ') \u2014 is saved on this device for ' + BACKUP_DAYS + ' days.';
+    kl.textContent = b.restored ? 'Switch back' : 'Restore it';
+    kc.textContent = 'OK';
+    bar.classList.add('on');
+  } else {
+    bar.classList.remove('on');
+  }
+}
+
+function initCloud() {
+  seedMeta();
+  paintSync();
+  if (!cloud.on) return;
+
+  /* Only someone who has signed in here before gets the SDK on load; a
+     visitor who never touches the button never fetches it. Signed in
+     anywhere on the site counts. */
+  var acct = account();
+  if (acct) {
+    acct.registerTool({ doc: SYNC.doc, syncNow: function () { syncNow(true); } });
+    acct.on(function (st) {
+      if (st.user && !cloud.listening) loadSDK().then(listen).catch(function () {});   // signed in from the panel
+      paintSync();
+    });
+  }
+  if (meta().signedIn || (acct && acct.wanted())) {
+    setStatus('working');
+    loadSDK().then(listen).catch(function (err) { cloud.msg = errCode(err); setStatus('error'); });
+  }
+
+  document.addEventListener('visibilitychange', function () {
+    if (!cloud.uid) return;
+    if (document.hidden) {
+      // a phone suspends the page soon after it hides: send anything unsent now
+      SYNC.flush();
+      if (meta().updatedAt > meta().lastSyncedAt) syncNow();
+    } else {
+      syncNow();
+    }
+  });
+  window.addEventListener('focus', function () { if (cloud.uid) syncNow(); });
+  window.addEventListener('online', function () { if (cloud.uid) syncNow(); });
+}
+
+/* ---------- boot ---------- */
+buildHandles();
+buildStrip();
+buildControls();
+render();
+renderLibrary();
+initCloud();
+window.addEventListener('pagehide', saveWork);
+
+// test hooks
+window.__colour = { work: function () { return work; }, state: function () { return state; }, hexOf: hexOf, toRgb: toRgb, fromRgb: fromRgb, aseBlob: aseBlob };
+</script>
+</body>
+</html>
