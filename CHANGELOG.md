@@ -5,6 +5,25 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v101 — 2026-10-21
+
+**What's new** · Fix · [tools/photo-review.html]
+### Photo Review opens the photos
+Photos uploaded to Google Drive showed "This photo won't open". They now
+load straight away, for you and for clients.
+
+**Photo Review v3 — `tools/photo-review.html`, source `Tools files/de Belle Photography apps/photo-review-v3.html`**
+- Found on Xavier's first real review: the files were shared correctly
+  (metadata via the API key and the thumbnail server both answered, signed
+  out), but `files/{id}?alt=media` failed in the page before any response,
+  so every full-size photo hit the error message.
+- `srcsOf(ver)` now tries, in order: `lh3.googleusercontent.com/d/{id}=w3000`,
+  `drive.google.com/thumbnail?id={id}&sz=w3000`, then the API download; the
+  image's error handler moves to the next before showing the message.
+  3000 px wide matches the review copy. (`=s4000` and `=w4000` were refused.)
+- Tested on the mock with one of his real Drive file ids: loads at full size
+  (1280×720) from lh3. Video Review unchanged (videos already play).
+
 ## v100 — 2026-10-21
 
 **Video Review v2 + Photo Review v2 — Google Drive switched on**

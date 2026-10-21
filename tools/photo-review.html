@@ -367,11 +367,18 @@ const curPhoto = () => R && (R.photos.find(p => p.key === photoKey) || R.photos[
 const latest = p => p && p.versions.length ? p.versions[p.versions.length - 1] : null;
 const curVer = () => { const p = curPhoto(); return p && (p.versions.find(x => x.key === verKey) || latest(p)) || null; };
 const photoIndex = () => { const p = curPhoto(); return p ? R.photos.indexOf(p) : -1; };
-function srcOf(ver) {
-  if (!ver) return '';
-  if (ver.drive) return DRIVE_API_KEY ? 'https://www.googleapis.com/drive/v3/files/' + encodeURIComponent(ver.drive) + '?alt=media&key=' + encodeURIComponent(DRIVE_API_KEY) : '';
-  return ver.url;
+// Where a photo loads from, best first. Drive's own download (files?alt=media)
+// is refused for pictures shown in a page (v101: fails before any response),
+// while Google's image server serves the same public file at full size, so
+// that leads; the thumbnail server and the API stay as fallbacks.
+function srcsOf(ver) {
+  if (!ver) return [];
+  if (!ver.drive) return ver.url ? [ver.url] : [];
+  const id = encodeURIComponent(ver.drive);
+  return ['https://lh3.googleusercontent.com/d/' + id + '=w3000', 'https://drive.google.com/thumbnail?id=' + id + '&sz=w3000']   // 3000 px wide = the review copy
+    .concat(DRIVE_API_KEY ? ['https://www.googleapis.com/drive/v3/files/' + id + '?alt=media&key=' + encodeURIComponent(DRIVE_API_KEY)] : []);
 }
+const srcOf = ver => srcsOf(ver)[0] || '';
 function thumbOf(ver) {
   if (!ver) return '';
   if (ver.drive) return 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(ver.drive) + '&sz=w320';
@@ -497,15 +504,18 @@ function loadPhoto() {
     if (loadedSrc) { pic.removeAttribute('src'); loadedSrc = null; }
     return;
   }
-  if (!src) { msg.hidden = false; sheet.hidden = true; msg.innerHTML = '<div><b>Drive photos aren’t set up yet.</b><br>The Drive API key still needs adding to this tool.</div>'; return; }
+  if (!src) { msg.hidden = false; sheet.hidden = true; msg.innerHTML = '<div><b>This photo has no link.</b></div>'; return; }
   if (src === loadedSrc) return;
-  loadedSrc = src; picReady = false; shown = null; zoom = 1;
+  loadedSrc = src; srcTry = 0; picReady = false; shown = null; zoom = 1;
   msg.hidden = false; msg.innerHTML = '<div>Loading the photo…</div>'; sheet.hidden = true;
   pic.src = src;
 }
 pic.addEventListener('load', () => { picReady = true; $('stageMsg').hidden = true; sheet.hidden = false; layout(); renderPins(); });
+let srcTry = 0;
 pic.addEventListener('error', () => {
   if (!pic.getAttribute('src')) return;
+  const next = srcsOf(curVer())[++srcTry];
+  if (next) { pic.src = next; return; }
   const m = $('stageMsg'); m.hidden = false; sheet.hidden = true;
   m.innerHTML = '<div><b>This photo won’t open.</b><br>If it’s on Google Drive, it has to be shared “Anyone with the link”. Browsers can’t show HEIC or RAW files — use a JPEG.' +
     (curVer() && curVer().drive ? '<br><br><a href="https://drive.google.com/file/d/' + esc(curVer().drive) + '/view" target="_blank" rel="noopener">Open it on Google Drive ↗</a>' : '') + '</div>';
