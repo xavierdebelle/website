@@ -429,12 +429,16 @@ const homeRv = {};
 function watchHome() {
   Object.keys(homeData).forEach(id => {
     if (homeWatch[id]) return;
-    homeWatch[id] = fb.f.onValue(dbRef(ROOT + '/' + id), snap => { homeRv[id] = normalise(snap.val(), id); renderHomeList(); }, () => {});
+    homeWatch[id] = fb.f.onValue(dbRef(ROOT + '/' + id), snap => {
+      homeRv[id] = normalise(snap.val(), id);
+      if (!snap.exists() && homeUid) { fb.f.remove(dbRef('users/' + homeUid + '/' + INDEX + '/' + id)).catch(() => {}); return; }
+      renderHomeList();
+    }, () => {});
   });
   Object.keys(homeWatch).forEach(id => { if (!homeData[id]) { homeWatch[id](); delete homeWatch[id]; } });
 }
 function renderHomeList() {
-  const all = Object.entries(homeData).sort((a, b) => (b[1].createdAt || 0) - (a[1].createdAt || 0));
+  const all = Object.entries(homeData).filter(([id]) => homeRv[id] !== null).sort((a, b) => (b[1].createdAt || 0) - (a[1].createdAt || 0));
   $('homeList').innerHTML = all.length ? all.map(([id, d]) => {
     const rv = homeRv[id], cs = rv ? rv.comments : [];
     const notes = cs.filter(c => !c.host && !c.gone);
@@ -919,12 +923,14 @@ $('btnHostMenu').onclick = () => {
       (p ? '<button type="button" class="btn sm" id="dlgDelP">Delete this photo</button>' : '') +
       '<button type="button" class="btn sm" id="dlgDelR">Delete review</button></div>' +
     '<p class="note">Deleting removes the notes here. The files stay in your Google Drive folder “' + DRIVE_FOLDER + '”.</p>',
-    [['Close', null], ['Save', () => true, true]]).then(ok => {
-      if (!ok) return;
-      const title = $('dlgTitle') ? $('dlgTitle').value.trim() : '';
-      if (title && title !== R.title) { write(ROOT + '/' + R.id + '/title', title); fb.f.set(dbRef('users/' + R.owner + '/' + INDEX + '/' + R.id + '/title'), title).catch(() => {}); }
-      const pn = $('dlgPName') ? $('dlgPName').value.trim().slice(0, 200) : null;
-      if (p && pn != null && pn !== p.name) write(ROOT + '/' + R.id + '/photos/' + p.key + '/name', pn);
+    // read the fields while the box is still open — it's gone once Save resolves
+    [['Close', null], ['Save', () => ({ title: $('dlgTitle').value.trim().slice(0, 200), pname: $('dlgPName') ? $('dlgPName').value.trim().slice(0, 200) : null }), true]]).then(got => {
+      if (!got || !R) return;
+      if (got.title && got.title !== R.title) {
+        write(ROOT + '/' + R.id + '/title', got.title).then(ok => { if (ok) toast('Renamed ✓'); });
+        fb.f.set(dbRef('users/' + R.owner + '/' + INDEX + '/' + R.id + '/title'), got.title).catch(() => {});
+      }
+      if (p && got.pname != null && got.pname !== p.name) write(ROOT + '/' + R.id + '/photos/' + p.key + '/name', got.pname);
     });
   $('dlgAddP').onclick = () => { closeDialog(); openAddPhotos(); };
   if ($('dlgAddV')) $('dlgAddV').onclick = () => { closeDialog(); openAddVersion(); };
@@ -954,13 +960,17 @@ $('btnHostMenu').onclick = () => {
   };
   $('dlgDelR').onclick = () => {
     if (!confirm('Delete “' + R.title + '” and every note on it? The client link stops working.')) return;
-    const owner = R.owner;
-    fb.f.remove(dbRef(ROOT + '/' + R.id)).then(() => fb.f.remove(dbRef('users/' + owner + '/' + INDEX + '/' + R.id)).catch(() => {}))
-      .then(() => { location.search = ''; }, () => toast("Couldn't delete it"));
+    // take the ids now: deleting fires the live listener, which clears R
+    const owner = R.owner, id = R.id;
+    deleting = true;
+    fb.f.remove(dbRef('users/' + owner + '/' + INDEX + '/' + id)).catch(() => {})
+      .then(() => fb.f.remove(dbRef(ROOT + '/' + id)))
+      .then(() => { location.replace(location.pathname); }, () => { deleting = false; toast("Couldn't delete it"); });
   };
 };
+let deleting = false;
 function markSeen() {
-  if (!isHost() || !fb) return;
+  if (deleting || !isHost() || !fb) return;
   fb.f.set(dbRef('users/' + R.owner + '/' + INDEX + '/' + R.id + '/seen'), Date.now()).catch(() => {});
 }
 
