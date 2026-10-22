@@ -25,7 +25,7 @@
   Videos come from a pasted link (GoHighLevel, files, YouTube, Vimeo, Wistia,
   Dailymotion, Loom) or an upload to Google Drive. Drive often refuses to
   stream into other sites (2026-10-22); the page then falls back to Google's
-  own player. A relay (DRIVE_RELAY) would make Drive reliable.
+  own player. Drive goes through the Cloudflare relay first (DRIVE_RELAY).
   VIDEO REVIEW — setup (Xavier, once, in console.cloud.google.com, project xdb-tools)
   1. APIs & Services → Library → "Google Drive API" → Enable.
   2. Credentials → Create credentials → API key → restrict it:
@@ -629,7 +629,7 @@ let loadedSrc = null, shown = null, replyTo = null, hideDone = recall(HIDE_KEY) 
 // ---------- where a version's video lives ----------
 // A version stores `url` (or `drive`, a Drive file id). The kind of player is
 // read from the link, so no new database fields were needed.
-const DRIVE_RELAY = '';   // once a relay exists, e.g. 'https://…/drive/' — Drive then gets the full player
+const DRIVE_RELAY = 'https://drive-relay.xavier-abd.workers.dev/drive/';   // the Cloudflare relay (Cloudflare/drive-relay), e.g. 'https://drive-relay.….workers.dev/drive/'
 const SITES = { file: 'Video file', youtube: 'YouTube', vimeo: 'Vimeo', wistia: 'Wistia', dailymotion: 'Dailymotion', loom: 'Loom', drive: 'Google Drive' };
 function parseLink(u) {
   let m;
@@ -788,16 +788,19 @@ function typedPlayer(src) {
   return { kind: src.kind, timed: false, exact: false, time: () => manualT() || 0, duration: () => 0, paused: () => true,
     play() {}, pause() {}, seek() {}, rate() {}, mute() {}, aspect: () => 16 / 9, buffered: () => 0, destroy() {} };
 }
-// Google Drive: our own player first (frame-exact timecodes). Drive often
-// refuses to stream into another site (403, found 2026-10-22); then try its
-// other address, and finally Google's own player in typed-time mode.
+// Google Drive: our own player first (frame-exact timecodes). Drive refuses
+// to stream into another site (403, found 2026-10-22), so the relay goes
+// first; then Drive's own two addresses, and finally Google's own player in
+// typed-time mode.
 let driveNote = '';
 function drivePlayer(src) {
   const id = encodeURIComponent(src.id);
-  const urls = DRIVE_RELAY ? [DRIVE_RELAY + id] : [
+  const urls = [
     'https://www.googleapis.com/drive/v3/files/' + id + '?alt=media&key=' + encodeURIComponent(DRIVE_API_KEY),
     'https://drive.usercontent.google.com/download?id=' + id + '&export=download&confirm=t',
   ];
+  // the relay only serves files attached to this review, so it's told which one
+  if (DRIVE_RELAY && R) urls.unshift(DRIVE_RELAY + id + '?r=' + encodeURIComponent(R.id));
   const me = nativePlayer(urls.shift());
   me.kind = 'drive';
   me.fallback = () => {

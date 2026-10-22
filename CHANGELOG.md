@@ -5,6 +5,38 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v116 — 2026-10-22
+
+**What's new** · Video Review · [tools/video-review.html]
+### Google Drive videos play<br>in the review player again
+Drive videos now stream through a small relay of my own, so they get the
+full review player — exact timecodes, frame steps, timeline markers —
+instead of Google's player.
+
+**Video Review v7 — `tools/video-review.html`, source `Tools files/de Belle Photography apps/video-review-v7.html`**
+- **Drive relay** — Cloudflare Worker `drive-relay` (code in
+  `Cloudflare/drive-relay/worker.js`, Xavier's free Cloudflare account,
+  https://drive-relay.xavier-abd.workers.dev). `GET /drive/{fileId}?r={reviewId}`
+  fetches the file server-side from `drive.usercontent.google.com` (no
+  browser "video, cross-site" labels, so Drive serves it) and streams it
+  with Range passed through. Only serves a file attached to that review
+  (reads `reviews/{r}/versions` from the database, cached 5 min) and only
+  for pages on xavierdebelle.com (Referer). HTML replies from Drive count
+  as refusals. Nothing stored.
+- Privacy page: Cloudflare relays Drive videos in Video Review (EN + FR).
+- `DRIVE_RELAY` set; Drive versions try the relay first, then Drive's two
+  direct addresses, then Google's player in typed-time mode — as before.
+
+**Tested:** locally (Worker run in Node against the mock database) with
+Xavier's real Drive video in headless Chrome: own player, 71 s 1080×1920,
+seek to 0:40, frame step to 00:00:40:01, every range request 206. Guards:
+other site / no referrer / look-alike site / file not in the review /
+made-up review → 403, POST → 405. Deployed Worker: `/` 404, other site
+403, made-up review 403 (database reached). A real review played through
+the deployed relay is for Xavier to confirm.
+
+---
+
 ## v115 — 2026-10-22
 
 **Photo Review v10 — ShootProof import switched on** (source `Tools files/de Belle Photography apps/photo-review-v10.html`)
