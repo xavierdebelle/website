@@ -5,6 +5,45 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v103 — 2026-10-22
+
+**What's new** · Video Review · [tools/video-review.html]
+### Video Review takes links<br>from anywhere
+Add a version from GoHighLevel, any video file link, YouTube, Vimeo or
+Wistia, and notes, drawings and jump-to-note work the same. Google Drive,
+Dailymotion and Loom play in their own player: clients pause it, type the
+time they see, and the note is pinned there.
+
+**Video Review v4 — `tools/video-review.html`, source `Tools files/de Belle Photography apps/video-review-v4.html`**
+- **Player layer:** one adapter per source, same shape (`time`, `duration`,
+  `paused`, `play`, `pause`, `seek`, `rate`, `mute`, `aspect`, `buffered`,
+  `destroy`; flags `timed`, `exact`), events through `onPlayer()`.
+  Native `<video>` (files, GoHighLevel; frame-exact), YouTube IFrame API
+  (`controls=0`, 100 ms polling while playing), Vimeo player.js (pause
+  counted at once — Vimeo's event lags), Wistia E-v1.js. The kind is read
+  from the stored link (`parseLink`), so **no database or rules change**.
+- **Typed-time mode** for Google Drive (`/preview`), Dailymotion and Loom
+  embeds: our transport and scrub bar hide, a "Time of your note" box
+  (`1:23`, `1:02:03`, `83`) pins the note; jump-to-note fills the box and
+  says "Go to 1:23 in the player". `DRIVE_RELAY` constant (empty): once a
+  relay exists, Drive versions switch to the full native player.
+- Add version recognises the link as you paste and says what to expect
+  (YouTube: Unlisted + embedding, may mute copyrighted music; Vimeo: allow
+  embedding on xavierdebelle.com). Files are still play-checked first.
+  Drawing uses the player's shape (Vimeo/Wistia report it, YouTube Shorts
+  9:16, typed modes 16:9). Per-site error messages for the host.
+- Privacy page: other video services may see the viewer's IP and set their
+  own cookies (EN + FR).
+
+**Tested in headless Chrome (CDP) on the mock:** file + GoHighLevel .mov +
+YouTube: play, pause, seek to 5.00 s, frame step to 5.063, note + drawing
+pinned at 5.063, jump back shows the drawing. Vimeo: seek, step, note,
+drawing, jump all fine; headless Chrome doesn't advance Vimeo playback,
+so real playback is for Xavier to try. Drive, Dailymotion, Loom: typed
+0:07 → note at 7 s with drawing. Garbage link refused. No console errors.
+
+---
+
 ## v102 — 2026-10-22
 
 **What's new** · Fix · [tools/video-review.html]

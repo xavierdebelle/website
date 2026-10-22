@@ -129,6 +129,15 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:var(--volt)}
 .stage{position:relative;background:#050505;border:3px solid var(--ash);aspect-ratio:16/9;max-height:70vh;width:100%;display:flex;align-items:center;justify-content:center;overflow:hidden;user-select:none;-webkit-user-select:none}
 .stage video{width:100%;height:100%;object-fit:contain;display:block;background:#050505}
 .stage canvas{position:absolute;left:0;top:0;pointer-events:none;touch-action:none}
+.frame-host{position:absolute;inset:0;background:#050505}
+.frame-host>div,.frame-host iframe{width:100%!important;height:100%!important;border:0;display:block}
+.typed{display:flex;align-items:center;gap:10px 18px;flex-wrap:wrap;margin-top:10px;padding:10px 12px;border:3px solid var(--ash);font-size:13px;line-height:1.45}
+.typed p{margin:0;flex:1 1 280px;color:var(--dust)}
+.typed p b{color:var(--paper)}
+.typed label{display:flex;align-items:center;gap:8px;font-weight:900;font-size:11px;letter-spacing:.1em;text-transform:uppercase;white-space:nowrap}
+.typed input{width:110px;font-family:var(--mono);font-size:16px;padding:7px 9px;background:var(--ink);border:3px solid var(--volt);color:var(--paper)}
+.kind{margin-top:8px;font-size:13px;line-height:1.45;color:var(--dust)}
+.kind b{color:var(--volt)}
 .stage.drawing canvas{pointer-events:auto;cursor:crosshair}
 .stage.drawing{border-color:var(--volt)}
 .stage-msg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;font-size:15px;line-height:1.5;color:var(--dust);background:#050505}
@@ -250,9 +259,15 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:var(--volt)}
   <section class="main">
     <div class="stage" id="stage">
       <video id="vid" playsinline preload="metadata"></video>
+      <div class="frame-host" id="frameHost" hidden></div>
       <canvas id="ink"></canvas>
       <button type="button" class="bigplay" id="bigPlay" aria-label="Play"><svg viewBox="0 0 24 24"><path d="M6 4l15 8-15 8z"/></svg></button>
       <div class="stage-msg" id="stageMsg" hidden></div>
+    </div>
+
+    <div class="typed" id="typedBar" hidden>
+      <p><b id="typedWhy">This player doesn’t tell the page its time.</b> Pause it, then type the time it shows — your note is pinned there.</p>
+      <label>Time of your note <input type="text" id="manT" inputmode="decimal" placeholder="0:00" autocomplete="off" maxlength="12"></label>
     </div>
 
     <div class="tools" id="drawTools" hidden>
@@ -282,7 +297,7 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:var(--volt)}
       <button type="button" class="ib" id="btnMute" aria-label="Mute"><svg viewBox="0 0 24 24" id="muteIcon"><path d="M3 9h4l5-5v16l-5-5H3zM15 8a5 5 0 010 8M17.5 5.5a8.5 8.5 0 010 13" stroke="#fff" stroke-width="2" fill-rule="evenodd"/></svg></button>
       <button type="button" class="ib" id="btnFull" aria-label="Full screen"><svg viewBox="0 0 24 24"><path d="M3 3h7v3H6v4H3zM14 3h7v7h-3V6h-4zM3 14h3v4h4v3H3zM18 14h3v7h-7v-3h4z"/></svg></button>
     </div>
-    <p class="help"><kbd>Space</kbd> play / pause · <kbd>←</kbd> <kbd>→</kbd> one frame · <kbd>Shift</kbd>+arrows one second · click a note to jump to it. Notes pin to the exact frame you paused on.</p>
+    <p class="help" id="help"><kbd>Space</kbd> play / pause · <kbd>←</kbd> <kbd>→</kbd> one frame · <kbd>Shift</kbd>+arrows one second · click a note to jump to it. Notes pin to the exact frame you paused on.</p>
   </section>
 </div>
 
@@ -353,11 +368,6 @@ function tc(t, f) {
   f = f || fps(); const fr = Math.max(0, Math.floor(t * f + 1e-4)), F = Math.round(f);
   const ff = fr % F, s = Math.floor(fr / F), p = n => String(n).padStart(2, '0');
   return p(Math.floor(s / 3600)) + ':' + p(Math.floor(s / 60) % 60) + ':' + p(s % 60) + ':' + p(ff);
-}
-function srcOf(ver) {
-  if (!ver) return '';
-  if (ver.drive) return DRIVE_API_KEY ? 'https://www.googleapis.com/drive/v3/files/' + encodeURIComponent(ver.drive) + '?alt=media&key=' + encodeURIComponent(DRIVE_API_KEY) : '';
-  return ver.url;
 }
 function dbRef(p) { return fb.f.ref(fb.db, p); }
 function write(p, v, fail) {
@@ -436,8 +446,177 @@ function createReview() {
 }
 
 // ══════════════════ REVIEW ══════════════════
-const vid = $('vid'), stage = $('stage'), ink = $('ink'), ctx = ink.getContext('2d');
-let loadedSrc = null, shown = null, replyTo = null, hideDone = recall(HIDE_KEY) === '1', lockT = null;
+const vid = $('vid'), stage = $('stage'), ink = $('ink'), ctx = ink.getContext('2d'), frameHost = $('frameHost');
+let loadedSrc = null, shown = null, replyTo = null, hideDone = recall(HIDE_KEY) === '1', lockT = null, muted = false;
+
+// ---------- where a version's video lives ----------
+// A version stores `url` (or `drive`, a Drive file id). The kind of player is
+// read from the link, so no new database fields were needed.
+const DRIVE_RELAY = '';   // once a relay exists, e.g. 'https://…/drive/' — Drive then gets the full player
+const SITES = { file: 'Video file', youtube: 'YouTube', vimeo: 'Vimeo', wistia: 'Wistia', dailymotion: 'Dailymotion', loom: 'Loom', drive: 'Google Drive' };
+function parseLink(u) {
+  let m;
+  if ((m = u.match(/drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?(?:.*&)?id=)([\w-]{20,})/)) || (/(drive|docs)\.google\.com/.test(u) && (m = u.match(/[?&]id=([\w-]{20,})/)))) return { kind: 'drive', id: m[1] };
+  if ((m = u.match(/(?:youtube(?:-nocookie)?\.com\/(?:watch\?(?:.*&)?v=|shorts\/|embed\/|live\/)|youtu\.be\/)([\w-]{11})/))) return { kind: 'youtube', id: m[1], tall: /\/shorts\//.test(u) };
+  if ((m = u.match(/vimeo\.com\/(?:video\/|channels\/[\w-]+\/)?(\d{5,})(?:\/([0-9a-f]{6,}))?/))) return { kind: 'vimeo', id: m[1], hash: (u.match(/[?&]h=([0-9a-f]+)/) || [])[1] || m[2] || '' };
+  if ((m = u.match(/(?:wistia\.(?:com|net)\/(?:medias|embed\/iframe|embed\/medias)\/|wi\.st\/medias\/)([a-z0-9]{6,})/i))) return { kind: 'wistia', id: m[1] };
+  if ((m = u.match(/(?:dailymotion\.com\/(?:embed\/)?video\/|dai\.ly\/)([a-z0-9]+)/i))) return { kind: 'dailymotion', id: m[1] };
+  if ((m = u.match(/loom\.com\/(?:share|embed)\/([0-9a-f]{20,})/i))) return { kind: 'loom', id: m[1] };
+  return { kind: 'file', url: u };
+}
+function sourceOf(ver) {
+  if (!ver) return null;
+  if (ver.drive) return { kind: 'drive', id: ver.drive };
+  return ver.url ? parseLink(ver.url) : null;
+}
+
+// ---------- players ----------
+// One small adapter per kind of player, all the same shape, so the rest of
+// the page never needs to know where the video lives.
+//   timed  the page can read the time (false: the client types it)
+//   exact  frame-accurate (our own <video>)
+let P = null;
+const scripts = {};
+function loadScript(src) {
+  return scripts[src] || (scripts[src] = new Promise((res, rej) => {
+    const el = document.createElement('script'); el.src = src; el.async = true;
+    el.onload = res; el.onerror = () => { delete scripts[src]; rej(new Error('script')); }; document.head.appendChild(el);
+  }));
+}
+function frameDiv() { frameHost.innerHTML = '<div></div>'; frameHost.hidden = false; vid.hidden = true; return frameHost.firstChild; }
+
+function nativePlayer(url) {
+  frameHost.hidden = true; frameHost.innerHTML = ''; vid.hidden = false;
+  vid.src = url; vid.playbackRate = Number($('rate').value) || 1; vid.muted = muted;
+  return { kind: 'file', native: true, timed: true, exact: true,
+    time: () => vid.currentTime || 0, duration: () => vid.duration || 0, paused: () => vid.paused,
+    play: () => vid.play().catch(() => {}), pause: () => vid.pause(), seek: t => { vid.currentTime = t; },
+    rate: r => { vid.playbackRate = r; }, mute: m => { vid.muted = m; },
+    aspect: () => (vid.videoWidth && vid.videoHeight) ? vid.videoWidth / vid.videoHeight : 16 / 9,
+    buffered: () => vid.buffered.length ? vid.buffered.end(vid.buffered.length - 1) : 0,
+    destroy: () => { vid.removeAttribute('src'); vid.load(); } };
+}
+['play', 'pause', 'ended', 'seeked'].forEach(t => vid.addEventListener(t, () => { if (P && P.native) onPlayer(t); }));
+['timeupdate', 'progress'].forEach(t => vid.addEventListener(t, () => { if (P && P.native) onPlayer('time'); }));
+vid.addEventListener('loadedmetadata', () => { if (P && P.native) onPlayer('ready'); });
+vid.addEventListener('error', () => { if (P && P.native && vid.getAttribute('src')) onPlayer('error', {}); });
+vid.addEventListener('click', () => { if (!drawing) togglePlay(); });
+
+let ytP = null;
+function ytApi() {
+  return ytP || (ytP = new Promise((res, rej) => { window.onYouTubeIframeAPIReady = res; loadScript('https://www.youtube.com/iframe_api').catch(e => { ytP = null; rej(e); }); }));
+}
+function youtubePlayer(src) {
+  const el = frameDiv(); let p = null, t = 0, playing = false, poll = null;
+  const tick = () => { if (p && p.getCurrentTime) { t = p.getCurrentTime() || 0; onPlayer('time'); } };
+  const me = { kind: 'youtube', timed: true, exact: false,
+    time: () => t, duration: () => (p && p.getDuration && p.getDuration()) || 0, paused: () => !playing,
+    play: () => p && p.playVideo(), pause: () => p && p.pauseVideo(),
+    seek: x => { if (!p) return; t = x; p.seekTo(x, true); clearTimeout(me.sk); me.sk = setTimeout(() => { tick(); onPlayer('seeked'); }, 400); },
+    rate: r => p && p.setPlaybackRate(r), mute: m => p && (m ? p.mute() : p.unMute()),
+    aspect: () => src.tall ? 9 / 16 : 16 / 9,
+    buffered: () => (p && p.getVideoLoadedFraction) ? p.getVideoLoadedFraction() * me.duration() : 0,
+    destroy: () => { clearInterval(poll); try { p && p.destroy(); } catch (e) {} } };
+  ytApi().then(() => {
+    if (P !== me) return;
+    p = new YT.Player(el, { videoId: src.id, width: '100%', height: '100%',
+      playerVars: { playsinline: 1, rel: 0, controls: 0, disablekb: 1, iv_load_policy: 3, fs: 0, origin: location.origin },
+      events: {
+        onReady: () => { if (muted) p.mute(); tick(); onPlayer('ready'); },
+        onStateChange: e => {
+          if (e.data === 1) { playing = true; clearInterval(poll); poll = setInterval(tick, 100); onPlayer('play'); }
+          else if (e.data === 2 || e.data === 0) { playing = false; clearInterval(poll); tick(); onPlayer(e.data ? 'pause' : 'ended'); }
+        },
+        onError: e => onPlayer('error', { code: e.data }) } });
+  }, () => onPlayer('error', { code: 'script' }));
+  return me;
+}
+function vimeoPlayer(src) {
+  const el = frameDiv(); let p = null, t = 0, d = 0, playing = false, ar = 16 / 9, buf = 0;
+  const me = { kind: 'vimeo', timed: true, exact: false,
+    time: () => t, duration: () => d, paused: () => !playing,
+    play: () => p && p.play().catch(() => {}),
+    // count it paused straight away — Vimeo's own pause message can lag
+    pause: () => { if (!p) return; if (playing) { playing = false; onPlayer('pause'); } p.pause().then(() => p.getCurrentTime()).then(x => { t = x; onPlayer('time'); }, () => {}); },
+    seek: x => { if (p) { t = x; p.setCurrentTime(x).catch(() => {}); } },
+    rate: r => p && p.setPlaybackRate(r).catch(() => {}), mute: m => p && p.setMuted(m).catch(() => {}),
+    aspect: () => ar, buffered: () => buf, destroy: () => { try { p && p.destroy(); } catch (e) {} } };
+  el.innerHTML = '<iframe src="https://player.vimeo.com/video/' + encodeURIComponent(src.id) + '?' + (src.hash ? 'h=' + encodeURIComponent(src.hash) + '&' : '') +
+    'playsinline=1&dnt=1&title=0&byline=0&portrait=0&keyboard=0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>';
+  loadScript('https://player.vimeo.com/api/player.js').then(() => {
+    if (P !== me) return;
+    p = new Vimeo.Player(el.firstChild);
+    p.on('play', () => { playing = true; onPlayer('play'); });
+    p.on('pause', x => { playing = false; if (x && x.seconds != null) t = x.seconds; onPlayer('pause'); });
+    p.on('ended', () => { playing = false; onPlayer('ended'); });
+    p.on('timeupdate', x => { t = x.seconds; d = x.duration || d; onPlayer('time'); });
+    p.on('seeked', x => { t = x.seconds; onPlayer('seeked'); });
+    p.on('progress', x => { buf = x.seconds || buf; });
+    p.ready().then(() => Promise.all([p.getDuration(), p.getVideoWidth(), p.getVideoHeight()]))
+      .then(([du, w, h]) => { d = du; if (w && h) ar = w / h; if (muted) p.setMuted(true).catch(() => {}); onPlayer('ready'); }, () => onPlayer('error', {}));
+  }, () => onPlayer('error', { code: 'script' }));
+  return me;
+}
+function wistiaPlayer(src) {
+  const el = frameDiv(); let w = null;
+  el.className = 'wistia_embed wistia_async_' + src.id + ' videoFoam=false';
+  const me = { kind: 'wistia', timed: true, exact: false,
+    time: () => (w ? w.time() : 0), duration: () => (w ? w.duration() : 0), paused: () => !w || w.state() !== 'playing',
+    play: () => w && w.play(), pause: () => w && w.pause(), seek: x => w && w.time(x),
+    rate: r => w && w.playbackRate(r), mute: m => w && (m ? w.mute() : w.unmute()),
+    aspect: () => (w && w.aspect()) || 16 / 9, buffered: () => 0, destroy: () => { try { w && w.remove(); } catch (e) {} } };
+  (window._wq = window._wq || []).push({ id: src.id, onReady: v => {
+    if (P !== me) return; w = v;
+    v.bind('play', () => onPlayer('play')); v.bind('pause', () => onPlayer('pause')); v.bind('end', () => onPlayer('ended'));
+    v.bind('timechange', () => onPlayer('time')); v.bind('seek', () => onPlayer('seeked'));
+    if (muted) v.mute();
+    onPlayer('ready');
+  } });
+  loadScript('https://fast.wistia.com/assets/external/E-v1.js').catch(() => onPlayer('error', { code: 'script' }));
+  return me;
+}
+// players that won't tell the page their time: the site's own player, and
+// the client types the time for each note
+const TYPED = {
+  drive: id => 'https://drive.google.com/file/d/' + id + '/preview',
+  dailymotion: id => 'https://www.dailymotion.com/embed/video/' + id,
+  loom: id => 'https://www.loom.com/embed/' + id,
+};
+function typedPlayer(src) {
+  const el = frameDiv();
+  el.innerHTML = '<iframe src="' + esc(TYPED[src.kind](encodeURIComponent(src.id))) + '" allow="autoplay; fullscreen" allowfullscreen></iframe>';
+  setTimeout(() => onPlayer('ready'), 0);
+  return { kind: src.kind, timed: false, exact: false, time: () => manualT() || 0, duration: () => 0, paused: () => true,
+    play() {}, pause() {}, seek() {}, rate() {}, mute() {}, aspect: () => 16 / 9, buffered: () => 0, destroy() {} };
+}
+function makePlayer(src) {
+  if (src.kind === 'file') return nativePlayer(src.url);
+  if (src.kind === 'drive' && DRIVE_RELAY) return nativePlayer(DRIVE_RELAY + encodeURIComponent(src.id));
+  if (src.kind === 'youtube') return youtubePlayer(src);
+  if (src.kind === 'vimeo') return vimeoPlayer(src);
+  if (src.kind === 'wistia') return wistiaPlayer(src);
+  return typedPlayer(src);
+}
+// everything the players report comes through here
+function onPlayer(type, info) {
+  if (type === 'ready') { paintTime(); renderMarks(); fitInk(); paintPlay(); }
+  else if (type === 'time') paintTime();
+  else if (type === 'play') { if (shown && !drawing) { shown = null; clearInk(); } paintPlay(); renderList(); }
+  else if (type === 'pause' || type === 'ended') { paintTime(); paintPlay(); }
+  else if (type === 'seeked') { paintTime(); autoShow(); }
+  else if (type === 'error') showPlayerError(info || {});
+}
+function showPlayerError(info) {
+  const m = $('stageMsg'), src = sourceOf(curVer()) || {};
+  m.hidden = false; $('bigPlay').hidden = true;
+  const why = info.code === 'script' ? 'The ' + (SITES[src.kind] || '') + ' player didn’t load — a content blocker or a bad connection may be stopping it.' : ({
+    file: 'Check the link still opens on its own (GoHighLevel → Media Storage), and that the video is H.264, not ProRes.',
+    youtube: 'YouTube won’t play it here. In YouTube Studio, make sure it’s <b>Unlisted</b> (not Private) and that <b>Allow embedding</b> is on.',
+    vimeo: 'Vimeo won’t play it here. In the video’s Privacy settings, allow embedding on <b>xavierdebelle.com</b>.',
+    wistia: 'Wistia won’t play it here — check the link, and that the video is public.',
+  }[src.kind] || 'Check the link opens on its own.');
+  m.innerHTML = '<div><b>This video won’t play.</b><br>' + (isHost() ? why : 'Try reloading the page. If it still won’t play, let Xavier know.') + '</div>';
+}
 
 function renderReview() {
   if (!R) return;
@@ -460,27 +639,40 @@ function renderReview() {
   renderList(); renderMarks(); paintCompose();
 }
 function loadVideo() {
-  const v = curVer(), src = srcOf(v);
-  const msg = $('stageMsg');
-  if (!v) {
+  const v = curVer(), src = sourceOf(v), msg = $('stageMsg');
+  if (!v || !src) {
+    if (P) { P.destroy(); P = null; }
+    loadedSrc = null; frameHost.hidden = true; frameHost.innerHTML = ''; vid.hidden = false;
     msg.hidden = false; $('bigPlay').hidden = true;
     msg.innerHTML = isHost() ? '<div><b>No video yet.</b><br>Add the first version.<br><br><button type="button" class="btn solid" onclick="openAdd()">Add video</button></div>' : '<div><b>Nothing to watch yet.</b><br>Check back soon.</div>';
-    if (loadedSrc) { vid.removeAttribute('src'); vid.load(); loadedSrc = null; }
-    return;
+    paintMode(); return;
   }
-  if (!src) { msg.hidden = false; $('bigPlay').hidden = true; msg.innerHTML = '<div><b>Drive playback isn’t set up yet.</b><br>The Drive API key still needs adding to this tool.</div>'; return; }
-  if (src === loadedSrc) return;
-  msg.hidden = true; loadedSrc = src; shown = null; clearInk();
-  vid.src = src; vid.playbackRate = Number($('rate').value) || 1;
+  const key = src.kind + ':' + (src.id || src.url);
+  if (key === loadedSrc) return;
+  if (P) P.destroy();
+  msg.hidden = true; loadedSrc = key; shown = null; clearInk();
+  P = makePlayer(src);
+  paintMode();
 }
-vid.addEventListener('error', () => {
-  if (!vid.getAttribute('src')) return;
-  const m = $('stageMsg'); m.hidden = false; $('bigPlay').hidden = true;
-  m.innerHTML = curVer() && curVer().drive
-    ? '<div><b>This version is on Google Drive, which no longer lets its videos play on other websites.</b>' + (isHost() ? '<br>Upload it to GoHighLevel Media Storage and add it again as a new version.' : '<br>Xavier will post it again shortly.') +
-      '<br><br><a href="https://drive.google.com/file/d/' + esc(curVer().drive) + '/view" target="_blank" rel="noopener">Watch it on Google Drive ↗</a></div>'
-    : '<div><b>This video won’t play.</b><br>' + (isHost() ? 'Check the link still opens on its own (GoHighLevel → Media Storage), and that the video is H.264, not ProRes.' : 'Try reloading the page. If it still won’t play, let Xavier know.') + '</div>';
-});
+// typed-time players: no transport of ours, a time box instead
+function paintMode() {
+  const typed = !!(P && !P.timed);
+  ['scrub', 'btnPlay', 'btnBack', 'btnFwd', 'clock', 'rate', 'btnMute', 'help'].forEach(id => { $(id).hidden = typed; });
+  $('typedBar').hidden = !typed;
+  if (typed) $('typedWhy').textContent = P.kind === 'drive'
+    ? 'Google Drive plays in its own player for now, which doesn’t tell this page its time.'
+    : (SITES[P.kind] || 'This site') + ' plays in its own player, which doesn’t tell this page its time.';
+}
+// "1:23", "01:02:03", "83", "1:23.5" → seconds (null if it isn't a time)
+function manualT() {
+  const raw = ($('manT').value || '').trim().replace(/[;.,](?=\d+$)/, '.');
+  if (!raw) return null;
+  const parts = raw.split(':');
+  if (parts.length > 3 || parts.some(x => !/^\d+(\.\d+)?$/.test(x))) return null;
+  return parts.reduce((a, x) => a * 60 + Number(x), 0);
+}
+const mmss = t => { t = Math.max(0, Math.round(t)); const h = Math.floor(t / 3600), m = Math.floor(t / 60) % 60, x = String(t % 60).padStart(2, '0'); return h ? h + ':' + String(m).padStart(2, '0') + ':' + x : m + ':' + x; };
+$('manT').addEventListener('input', () => paintCompose());
 $('verSel').onchange = e => {
   if (e.target.value === '__add') { e.target.value = curVer() ? curVer().key : ''; openAdd(); return; }
   verKey = e.target.value; shown = null; replyTo = null;
@@ -545,15 +737,16 @@ function noteAction(a, c) {
   }
 }
 function jumpTo(c) {
-  if (!leaveFrame()) return;
-  vid.pause(); shown = c.key;
-  const go = () => { vid.currentTime = c.t; drawNote(c); renderList(); paintCompose(); };
-  if (vid.readyState >= 1) go(); else vid.addEventListener('loadedmetadata', go, { once: true });
+  if (!leaveFrame() || !P) return;
+  shown = c.key;
+  if (P.timed) { P.pause(); P.seek(c.t); }
+  else { $('manT').value = mmss(c.t); toast('Go to ' + mmss(c.t) + ' in the player'); }
+  redraw(); renderList(); paintCompose();
 }
 
 // ---------- timeline markers ----------
 function renderMarks() {
-  const d = vid.duration;
+  const d = P ? P.duration() : 0;
   if (!isFinite(d) || !d) { $('marks').innerHTML = ''; return; }
   $('marks').innerHTML = notesFor().filter(c => !c.re && !c.gone).map(c =>
     '<span class="mk' + (c.done ? ' done' : '') + (c.draw ? ' draw' : '') + '" style="left:' + (c.t / d * 100).toFixed(3) + '%" title="' + esc(tc(c.t) + ' · ' + c.name + (c.text ? ': ' + c.text.slice(0, 80) : '')) + '" data-k="' + esc(c.key) + '"></span>').join('');
@@ -562,24 +755,25 @@ function renderMarks() {
 // ---------- player ----------
 const PLAY = '<path d="M6 4l15 8-15 8z"/>', PAUSE = '<path d="M5 4h5v16H5zM14 4h5v16h-5z"/>';
 function paintTime() {
-  const d = vid.duration || 0, t = vid.currentTime || 0;
+  if (!P || !P.timed) return;
+  const d = P.duration() || 0, t = P.time() || 0;
   $('clock').innerHTML = tc(t) + ' <span>/ ' + tc(d) + '</span>';
-  const p = d ? t / d * 100 : 0;
+  const p = d ? Math.min(100, t / d * 100) : 0;
   $('fill').style.width = p + '%'; $('head').style.left = p + '%';
-  if (d && vid.buffered.length) $('buf').style.width = (vid.buffered.end(vid.buffered.length - 1) / d * 100) + '%';
-  if (lockT == null && !drawing) $('composeTc').textContent = tc(t);
+  if (d) $('buf').style.width = Math.min(100, P.buffered() / d * 100) + '%';
+  if (lockT == null && !drawing && !replyTo) $('composeTc').textContent = tc(t);
 }
 function paintPlay() {
-  const playing = !vid.paused;
+  const playing = !!(P && P.timed && !P.paused()), typed = !!(P && !P.timed);
   $('playIcon').innerHTML = playing ? PAUSE : PLAY;
   $('btnPlay').setAttribute('aria-label', playing ? 'Pause' : 'Play');
-  $('bigPlay').hidden = playing || !loadedSrc || !$('stageMsg').hidden || vid.currentTime > 0;
-  $('composeHint').textContent = playing ? 'Pause anywhere to leave a note' : (lockT != null || drawing ? 'Note pinned to this frame' : 'Note on this frame');
+  $('bigPlay').hidden = !(P && P.native) || playing || !$('stageMsg').hidden || P.time() > 0;
+  $('composeHint').textContent = typed ? 'At the time typed under the video' : playing ? 'Pause anywhere to leave a note' : (lockT != null || drawing ? 'Note pinned to this frame' : 'Note on this frame');
 }
 function togglePlay() {
-  if (!loadedSrc) return;
-  if (vid.paused) { if (!leaveFrame()) return; shown = null; clearInk(); vid.play().catch(() => {}); }
-  else vid.pause();
+  if (!P || !P.timed) return;
+  if (P.paused()) { if (!leaveFrame()) return; shown = null; clearInk(); P.play(); }
+  else P.pause();
 }
 // moving off the frame drops an unposted drawing (asks first) and unpins the note
 function leaveFrame() {
@@ -588,37 +782,27 @@ function leaveFrame() {
   return true;
 }
 function step(frames) {
-  if (!loadedSrc || !leaveFrame()) return;
-  vid.pause();
-  const f = fps(), cur = Math.floor(vid.currentTime * f + 1e-4);
-  vid.currentTime = Math.max(0, Math.min(vid.duration || 0, (cur + frames + 0.5) / f));
+  if (!P || !P.timed || !leaveFrame()) return;
+  P.pause();
+  const f = fps(), cur = Math.floor(P.time() * f + 1e-4);
+  P.seek(Math.max(0, Math.min(P.duration() || 0, (cur + frames + 0.5) / f)));
 }
-vid.addEventListener('play', () => { paintPlay(); renderList(); });
-vid.addEventListener('pause', paintPlay);
-vid.addEventListener('timeupdate', paintTime);
-vid.addEventListener('progress', paintTime);
-vid.addEventListener('loadedmetadata', () => { paintTime(); renderMarks(); fitInk(); paintPlay(); });
-vid.addEventListener('seeked', () => {
-  paintTime();
-  // stepping onto a frame that has a drawn note shows it
-  if (vid.paused && !drawing) {
-    const half = 0.5 / fps();
-    const hit = notesFor().find(c => !c.re && !c.gone && Math.abs(c.t - vid.currentTime) <= half);
-    if (hit) { if (shown !== hit.key) { shown = hit.key; drawNote(hit); renderList(); } }
-    else if (shown) { const s = R.comments.find(c => c.key === shown); if (!s || Math.abs(s.t - vid.currentTime) > half) { shown = null; clearInk(); renderList(); } }
-  }
-});
-vid.addEventListener('ended', paintPlay);
+// landing on a frame that has a drawn note shows it
+function autoShow() {
+  if (!P || !P.timed || !P.paused() || drawing) return;
+  const half = Math.max(0.5 / fps(), P.exact ? 0 : 0.08), now = P.time();
+  const hit = notesFor().find(c => !c.re && !c.gone && Math.abs(c.t - now) <= half);
+  if (hit) { if (shown !== hit.key) { shown = hit.key; redraw(); renderList(); } else redraw(); }
+  else if (shown) { const sn = R.comments.find(c => c.key === shown); if (!sn || Math.abs(sn.t - now) > half) { shown = null; clearInk(); renderList(); } }
+}
 $('btnPlay').onclick = togglePlay; $('bigPlay').onclick = togglePlay;
-vid.addEventListener('click', () => { if (!drawing) togglePlay(); });
 $('btnBack').onclick = () => step(-1); $('btnFwd').onclick = () => step(1);
-$('rate').onchange = e => { vid.playbackRate = Number(e.target.value) || 1; };
-$('btnMute').onclick = () => { vid.muted = !vid.muted; $('btnMute').style.opacity = vid.muted ? .4 : 1; $('btnMute').setAttribute('aria-label', vid.muted ? 'Unmute' : 'Mute'); };
+$('rate').onchange = e => { if (P) P.rate(Number(e.target.value) || 1); };
+$('btnMute').onclick = () => { muted = !muted; if (P) P.mute(muted); $('btnMute').style.opacity = muted ? .4 : 1; $('btnMute').setAttribute('aria-label', muted ? 'Unmute' : 'Mute'); };
 $('btnFull').onclick = () => {
-  const el = stage;
   if (document.fullscreenElement) document.exitFullscreen();
-  else if (el.requestFullscreen) el.requestFullscreen().catch(() => {});
-  else if (vid.webkitEnterFullscreen) vid.webkitEnterFullscreen();   // iPhone
+  else if (stage.requestFullscreen) stage.requestFullscreen().catch(() => {});
+  else if (P && P.native && vid.webkitEnterFullscreen) vid.webkitEnterFullscreen();   // iPhone
 };
 document.addEventListener('fullscreenchange', () => setTimeout(fitInk, 60));
 // scrubbing
@@ -626,13 +810,13 @@ document.addEventListener('fullscreenchange', () => setTimeout(fitInk, 60));
   const sc = $('scrub'); let down = false;
   const at = e => { const r = sc.getBoundingClientRect(); return Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)); };
   sc.addEventListener('pointerdown', e => {
-    if (!loadedSrc || !vid.duration) return;
+    if (!P || !P.timed || !P.duration()) return;
     const mk = e.target.closest('.mk');
     if (mk) { const c = R.comments.find(x => x.key === mk.dataset.k); if (c) { jumpTo(c); return; } }
     if (!leaveFrame()) return;
-    down = true; sc.setPointerCapture(e.pointerId); vid.pause(); vid.currentTime = at(e) * vid.duration;
+    down = true; sc.setPointerCapture(e.pointerId); P.pause(); P.seek(at(e) * P.duration());
   });
-  sc.addEventListener('pointermove', e => { if (down) vid.currentTime = at(e) * vid.duration; });
+  sc.addEventListener('pointermove', e => { if (down) P.seek(at(e) * P.duration()); });
   sc.addEventListener('pointerup', () => { down = false; });
   sc.addEventListener('keydown', e => { if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { e.preventDefault(); e.stopPropagation(); step((e.key === 'ArrowLeft' ? -1 : 1) * (e.shiftKey ? Math.round(fps()) : 1)); } });
 })();
@@ -649,9 +833,9 @@ document.addEventListener('keydown', e => {
 // Strokes are stored in video-frame coordinates (0…1 of the picture, not the
 // player), so a note drawn on a laptop lands in the same spot on a phone.
 let drawing = false, strokes = [], cur = null, tool = 'pen', colour = COLOURS[0];
-function picRect() {   // where the picture sits inside the player (object-fit: contain)
-  const W = stage.clientWidth, H = stage.clientHeight, vw = vid.videoWidth || 16, vh = vid.videoHeight || 9;
-  const s = Math.min(W / vw, H / vh), w = vw * s, h = vh * s;
+function picRect() {   // where the picture sits inside the player (letterboxed to its shape)
+  const W = stage.clientWidth, H = stage.clientHeight, a = (P && P.aspect()) || 16 / 9;
+  const w = Math.min(W, H * a), h = w / a;
   return { x: (W - w) / 2, y: (H - h) / 2, w, h };
 }
 function fitInk() {
@@ -686,11 +870,10 @@ function redraw() {
   if (shown) { const c = R && R.comments.find(x => x.key === shown); if (c) paintStrokes(parseDraw(c.draw)); }
 }
 function parseDraw(s) { try { const a = JSON.parse(s || '[]'); return Array.isArray(a) ? a.filter(x => x && Array.isArray(x.p)) : []; } catch (e) { return []; } }
-function drawNote() { redraw(); }
 function startDrawing() {
-  if (!loadedSrc) { toast('Nothing to draw on yet'); return; }
-  vid.pause(); shown = null; drawing = true; cur = null;
-  if (lockT == null) lockT = vid.currentTime;
+  if (!P) { toast('Nothing to draw on yet'); return; }
+  P.pause(); shown = null; drawing = true; cur = null;
+  if (lockT == null && P.timed) lockT = P.time();
   stage.classList.add('drawing'); $('drawTools').hidden = false; $('btnDraw').setAttribute('aria-pressed', 'true'); $('btnDraw').textContent = '✎ Drawing — done';
   $('bigPlay').hidden = true; redraw(); paintCompose(); renderList();
 }
@@ -734,15 +917,23 @@ function paintCompose() {
   $('replying').hidden = !replyTo;
   if (replyTo) $('replyName').textContent = replyTo.name + ' at ' + tc(replyTo.t);
   $('whoBtn').textContent = isHost() ? '' : (myName ? 'as ' + myName : '');
-  const t = replyTo ? replyTo.t : (lockT != null ? lockT : vid.currentTime || 0);
-  $('composeTc').textContent = tc(t);
+  $('composeTc').textContent = tc(noteTime());
   $('btnDraw').hidden = !!replyTo;
   $('btnDraw').textContent = drawing ? '✎ Done drawing' : strokes.length ? '✎ Drawing ready (' + strokes.length + ')' : '✎ Draw on frame';
   $('btnPost').textContent = replyTo ? 'Post reply' : 'Post note';
   $('txt').placeholder = replyTo ? 'Your reply…' : 'Your note on this frame…';
   paintPlay();
 }
-$('txt').addEventListener('focus', () => { if (!replyTo && !vid.paused) vid.pause(); if (!replyTo && lockT == null) lockT = vid.currentTime || 0; paintCompose(); });
+// the time a new note will be pinned to
+function noteTime() {
+  if (replyTo) return replyTo.t;
+  if (P && !P.timed) return manualT() || 0;
+  return lockT != null ? lockT : (P ? P.time() : 0);
+}
+$('txt').addEventListener('focus', () => {
+  if (!replyTo && P && P.timed) { if (!P.paused()) P.pause(); if (lockT == null) lockT = P.time(); }
+  paintCompose();
+});
 $('txt').addEventListener('keydown', e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); post(); } });
 $('replyCancel').onclick = () => { replyTo = null; paintCompose(); };
 $('btnPost').onclick = post;
@@ -764,8 +955,9 @@ async function post() {
   const draw = !replyTo && strokes.length ? JSON.stringify(strokes) : '';
   if (!text && !draw) { $('txt').focus(); toast(replyTo ? 'Write a reply first' : 'Write a note or draw on the frame'); return; }
   if (draw.length > 30000) { toast('That drawing is too big — undo a few strokes'); return; }
+  if (!replyTo && P && !P.timed && manualT() == null) { $('manT').focus(); toast('Type the time of your note under the video first'); return; }
   const name = await askName(false); if (!name) return;
-  const t = replyTo ? replyTo.t : (lockT != null ? lockT : vid.currentTime || 0);
+  const t = noteTime();
   const c = { v: v.key, t: Math.round(t * 1000) / 1000, text: text.slice(0, 5000), name: name.slice(0, 60), by: myBy, at: Date.now() };
   if (draw) c.draw = draw;
   if (replyTo) c.re = replyTo.key;
@@ -859,15 +1051,31 @@ function markSeen() {
 function openAdd() {
   const n = R.versions.length ? Math.max(...R.versions.map(x => x.n)) + 1 : 1;
   dialog('<h3>Add version ' + n + '</h3>' +
-    '<div class="field"><p class="k">Video link from GoHighLevel</p>' +
-      '<input type="url" id="dlgUrl" placeholder="https://assets.cdn.filesafe.space/…/media/….mp4">' +
-      '<ol class="note steps"><li>In GoHighLevel, open <b>Media Storage</b> and upload the video.</li>' +
-      '<li>On the file, click <b>⋯ → Copy link</b>.</li><li>Paste it above.</li></ol>' +
-      '<p class="note">Use an <b>H.264 MP4 or MOV</b> — browsers can’t play ProRes (Web Squeeze makes one). Anyone with the link can watch it, same as the review link.</p>' +
+    '<div class="field"><p class="k">Video link</p>' +
+      '<input type="url" id="dlgUrl" placeholder="GoHighLevel, YouTube, Vimeo, Wistia, Google Drive… link">' +
+      '<p class="kind" id="dlgKind">Works with GoHighLevel and any direct video file, YouTube, Vimeo, Wistia, Google Drive, Dailymotion and Loom.</p>' +
+      '<details class="note"><summary>GoHighLevel: where’s the link?</summary><ol class="steps"><li>Open <b>Media Storage</b> and upload the video.</li>' +
+      '<li>On the file, click <b>⋯ → Copy link</b>.</li><li>Paste it above.</li></ol>Use an <b>H.264 MP4 or MOV</b> — browsers can’t play ProRes (Web Squeeze makes one).</details>' +
       '<p class="note" id="dlgCheck"></p></div>' +
     '<div class="field"><p class="k">Label (optional)</p><input type="text" id="dlgVName" maxlength="200" placeholder="e.g. colour pass, music change"></div>' +
     '<div class="field"><p class="k">Frame rate</p><select id="dlgVFps">' + [23.976, 24, 25, 29.97, 30, 50, 59.94, 60].map(f => '<option value="' + f + '"' + (f === 24 ? ' selected' : '') + '>' + f + ' fps</option>').join('') + '</select></div>',
     [['Cancel', null], ['Add', () => addVersion(n), true]], 'dlgUrl');
+  $('dlgUrl').addEventListener('input', () => { $('dlgCheck').textContent = ''; $('dlgKind').innerHTML = kindNote($('dlgUrl').value.trim()); });
+}
+// what a pasted link will turn into, in plain words
+function kindNote(link) {
+  if (!link) return 'Works with GoHighLevel and any direct video file, YouTube, Vimeo, Wistia, Google Drive, Dailymotion and Loom.';
+  const k = parseLink(link).kind, name = '<b>' + SITES[k] + '</b> — ';
+  if (k === 'file' && !/^(https?:\/\/|\/)/i.test(link)) return 'Paste the full link — it starts with <b>https://</b>';
+  return name + ({
+    file: 'plays in this page’s own player, frame-exact. It’s checked before it’s added.',
+    youtube: 'notes and drawings work; frame steps are close, not exact. Make it <b>Unlisted</b> with embedding allowed. Watch out: YouTube may mute or block copyrighted music.',
+    vimeo: 'notes and drawings work. In Vimeo’s privacy settings, allow embedding on xavierdebelle.com.',
+    wistia: 'notes and drawings work.',
+    drive: 'plays in Google’s own player for now, so clients type the time for each note. It gets the full player once the Drive relay is set up.' + (DRIVE_RELAY ? '' : ''),
+    dailymotion: 'plays in Dailymotion’s own player, so clients type the time for each note.',
+    loom: 'plays in Loom’s own player, so clients type the time for each note.',
+  }[k]);
 }
 // load just the start of the video to make sure a browser can play it
 function playable(url) {
@@ -884,16 +1092,17 @@ async function addVersion(n) {
   const name = $('dlgVName').value.trim().slice(0, 200), f = Number($('dlgVFps').value) || 24;
   const link = $('dlgUrl').value.trim(), say = t => { $('dlgCheck').innerHTML = t; };
   if (!link) { $('dlgUrl').focus(); say('<b>Paste the video’s link first.</b>'); return false; }
-  if (/drive\.google\.com|docs\.google\.com/i.test(link)) {
-    say('<b>Google Drive links can’t play here</b> — Google blocks its videos on other websites. Upload it to GoHighLevel Media Storage instead.');
-    return false;
-  }
-  if (!(/^https:\/\//i.test(link) || /^\//.test(link) || /^https?:\/\/(localhost|127\.0\.0\.1)/i.test(link))) { say('<b>That doesn’t look like a link.</b> It should start with https://'); return false; }
-  const url = link.replace(/(dropbox\.com\/.*)[?&]dl=0/, '$1?raw=1');
-  say('Checking it plays…');
-  const ok = await playable(url);
-  if (ok === false) { say('<b>This link doesn’t play in a browser.</b> Check it opens on its own, and that the video is H.264 — not ProRes.'); return false; }
-  const ver = { n, name, fps: f, url, createdAt: Date.now() };
+  const src = parseLink(link);
+  const ver = { n, name, fps: f, createdAt: Date.now() };
+  if (src.kind === 'file') {
+    if (!(/^https:\/\//i.test(link) || /^\//.test(link) || /^https?:\/\/(localhost|127\.0\.0\.1)/i.test(link))) { say('<b>That doesn’t look like a link.</b> It should start with https://'); return false; }
+    const url = link.replace(/(dropbox\.com\/.*)[?&]dl=0/, '$1?raw=1');
+    say('Checking it plays…');
+    const ok = await playable(url);
+    if (ok === false) { say('<b>This link doesn’t play in a browser.</b> Check it opens on its own, and that the video is H.264 — not ProRes. YouTube, Vimeo, Wistia, Drive, Dailymotion and Loom links work too.'); return false; }
+    ver.url = url;
+  } else if (src.kind === 'drive') ver.drive = src.id;
+  else ver.url = link.slice(0, 2000);
   const key = fb.f.push(dbRef('reviews/' + R.id + '/versions')).key;
   if (!(await write('reviews/' + R.id + '/versions/' + key, ver))) { say(''); return false; }
   verKey = key; history.replaceState(null, '', '?r=' + encodeURIComponent(R.id) + '&v=' + encodeURIComponent(key));
