@@ -340,7 +340,7 @@ const NAME_KEY = 'xdb.review.name', BY_KEY = 'xdb.review.by', FOLDER_KEY = 'xdb.
 const SHRINK_TO = 3000;   // long side for review copies
 // ShootProof import: the helper Worker (Cloudflare/shootproof-helper/worker.js)
 // reads a gallery's photo list; images then load from ShootProof's own server.
-const SP_HELPER = '';     // the Worker's address, e.g. https://shootproof-helper.<name>.workers.dev
+const SP_HELPER = 'https://shootproof-helper.xavier-abd.workers.dev';   // Cloudflare/shootproof-helper/worker.js
 const SP_IMG = 'https://d2rxqglyhdohqf.cloudfront.net/ph/';
 const spUrl = (p, size) => SP_IMG + p.key + '/' + size + '/' + p.id + '.jpg';   // 3x = 3000 px, m = 500 px
 const ZMAX = 6;

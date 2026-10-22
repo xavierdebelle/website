@@ -5,6 +5,14 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v115 — 2026-10-22
+
+**Photo Review v10 — ShootProof import switched on** (source `Tools files/de Belle Photography apps/photo-review-v10.html`)
+- `SP_HELPER` = `https://shootproof-helper.xavier-abd.workers.dev` — Xavier
+  deployed `Cloudflare/shootproof-helper/worker.js` on his free Cloudflare
+  account. Checked: it returns the Humes gallery (267 photos) with
+  `Access-Control-Allow-Origin: https://xavierdebelle.com`.
+
 ## v114 — 2026-10-22
 
 **What's new** · Tools · [tools.html]
