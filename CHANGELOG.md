@@ -5,6 +5,27 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v111 — 2026-10-22
+
+**What's new** · Update · [tools/photo-review.html]
+### Photo Review: pick the client portal
+Manage now lists your client portals — tick the ones a photo review should
+show up in. And when a client opens it from their portal, its "New" mark
+clears, the same as for videos.
+
+**Photo Review v7 — `tools/photo-review.html`, source `Tools files/de Belle Photography apps/photo-review-v7.html`**
+- Manage → **Client portals**: reads `users/{uid}/portals`, checks
+  `portals/{p}/reviews/{R.id}`; tick sets `{ at, kind: 'photo' }`, untick
+  removes it (agreed with the Video Review session, which owns portals).
+  No portals yet → link to Video Review to make one.
+- Client "seen" for the portal badges: a non-host opening a photo review
+  (and on pagehide) sets `xdb.portal.seen[R.id] = now`, the map Video
+  Review's portal page reads.
+- Tested on the mock (new portal rules): picker lists the portal, tick adds
+  the entry; portal shows the photo set with New → open → "All reviews"
+  back to the portal → New gone.
+- Live portal writes need the updated rules (portals block) published.
+
 ## v110 — 2026-10-22
 
 **What's new** · Update · [tools/photo-review.html]

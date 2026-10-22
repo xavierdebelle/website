@@ -978,6 +978,7 @@ $('btnHostMenu').onclick = () => {
       (v && p.versions.length > 1 ? '<button type="button" class="btn sm" id="dlgDelV">Delete this version</button>' : '') +
       (p ? '<button type="button" class="btn sm" id="dlgDelP">Delete this photo</button>' : '') +
       '<button type="button" class="btn sm" id="dlgDelR">Delete review</button></div>' +
+    '<div class="field"><p class="k">Client portals</p><div id="dlgPortals"><p class="note">Loading…</p></div></div>' +
     '<p class="note">Deleting removes the notes here. The files stay in your Google Drive folder “' + DRIVE_FOLDER + '”.</p>',
     // read the fields while the box is still open — it's gone once Save resolves
     [['Close', null], ['Save', () => ({ title: $('dlgTitle').value.trim().slice(0, 200), pname: $('dlgPName') ? $('dlgPName').value.trim().slice(0, 200) : null }), true]]).then(got => {
@@ -989,6 +990,7 @@ $('btnHostMenu').onclick = () => {
       if (p && got.pname != null && got.pname !== p.name) write(ROOT + '/' + R.id + '/photos/' + p.key + '/name', got.pname);
     });
   $('dlgAddP').onclick = () => { closeDialog(); openAddPhotos(); };
+  fillPortalPicker();
   if ($('dlgAddV')) $('dlgAddV').onclick = () => { closeDialog(); openAddVersion(); };
   const move = d => reorder(photoIndex(), photoIndex() + d);
   if ($('dlgLeft')) { $('dlgLeft').onclick = () => move(-1); $('dlgRight').onclick = () => move(1); }
@@ -1240,6 +1242,32 @@ function startSeen() {
   fb.f.get(dbRef('users/' + R.owner + '/' + INDEX + '/' + R.id + '/seen')).then(s => { seenAt = Number(s.val()) || 0; renderList(); markSeen(); }, () => { seenAt = 0; });
 }
 window.addEventListener('pagehide', markSeen);
+// Client portals live in Video Review (portals/{id}/reviews/{reviewId} =
+// { at, kind: 'photo' }). Its "New" badges compare against this browser's
+// xdb.portal.seen map, so a client opening a photo review marks it seen.
+const PSEEN_KEY = 'xdb.portal.seen';
+function markPortalSeen() {
+  if (!R || isHost()) return;
+  let m; try { m = JSON.parse(recall(PSEEN_KEY) || '{}') || {}; } catch (e) { m = {}; }
+  m[R.id] = Date.now(); store(PSEEN_KEY, JSON.stringify(m));
+}
+window.addEventListener('pagehide', markPortalSeen);
+// host: tick the portals this review shows in
+async function fillPortalPicker() {
+  const box = $('dlgPortals'); if (!box || !R) return;
+  const uid = me() && me().uid;
+  const list = uid ? await fb.f.get(dbRef('users/' + uid + '/portals')).then(s => s.val() || {}, () => ({})) : {};
+  const ids = Object.keys(list).sort((a, b) => (list[b].createdAt || 0) - (list[a].createdAt || 0));
+  if (!ids.length) { if ($('dlgPortals')) box.innerHTML = '<p class="note">No client portals yet — create one in <a href="video-review.html">Video Review</a>.</p>'; return; }
+  const inIt = await Promise.all(ids.map(id => fb.f.get(dbRef('portals/' + id + '/reviews/' + R.id)).then(s => s.exists(), () => false)));
+  if (!$('dlgPortals')) return;
+  box.innerHTML = ids.map((id, i) => '<label class="chk" style="margin-top:6px"><input type="checkbox" data-portal="' + esc(id) + '"' + (inIt[i] ? ' checked' : '') + '><span>' + esc(list[id].title || 'Client portal') + '</span></label>').join('');
+  box.querySelectorAll('[data-portal]').forEach(cb => cb.onchange = () => {
+    const ref = dbRef('portals/' + cb.dataset.portal + '/reviews/' + R.id);
+    (cb.checked ? fb.f.set(ref, { at: Date.now(), kind: 'photo' }) : fb.f.remove(ref))
+      .then(() => toast(cb.checked ? 'Added to the portal ✓' : 'Taken out of the portal'), () => { cb.checked = !cb.checked; toast("Couldn't change it — check your connection"); });
+  });
+}
 document.addEventListener('visibilitychange', () => { if (document.hidden && R) markSeen(); });
 
 if (!acct()) {
@@ -1256,7 +1284,7 @@ if (!acct()) {
       R = next;
       if (first) {
         first = false; $('homeView').hidden = true; $('reviewView').hidden = false;
-        if (isHost()) startSeen();
+        if (isHost()) startSeen(); else markPortalSeen();
         if (pendingAdd) history.replaceState(null, '', '?r=' + encodeURIComponent(reviewId));
       }
       renderReview(); maybeAdd();
