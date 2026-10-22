@@ -5,6 +5,53 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v118 — 2026-10-22
+
+**Package Builder: prices editable from a back-end panel (studio only — no visitor-facing change)**
+- New page `tools/package-builder-admin.html` (unlisted, `noindex`, linked
+  quietly as "Studio · prices" in the builder's footer; declared a companion
+  with `<meta name="xdb-companion">` so the deploy check accepts it without a
+  card). Google sign-in of its own (no `account.js`, so team members don't
+  file sync requests). Xavier always gets in; others only if their email is
+  on the editors list he keeps in the panel.
+- Edit, add, remove and reorder services in all six lists (photography,
+  cinematography, video editing, glam, albums, other add-ons): name, price,
+  description; per-hour pricing + minimum hours; "counts as full day"
+  (photography) and "needs full-day photography" (glam); per-page price,
+  minimum pages and sizes (albums). Rates & rules: glam extra hour, Same
+  Night Prints per guest / minimum / big-group threshold / assistant, the
+  bundle-discount tiers and the top %. Preview (opens the builder with the
+  unsaved prices, `?draft`), Discard, Save & publish; every save kept and
+  loadable from "Earlier versions"; a warning if someone else saved meanwhile.
+- `package-builder.html` (source v4): reads `catalog/package-builder` from
+  Firebase's public REST endpoint on load (no SDK, no sign-in), remembers
+  the last copy on the device, falls back to its built-in prices if the
+  database can't be reached or nothing was saved yet. Full day is now a
+  flag (`fullDay`) instead of the id `full_day`; minimum hours per option;
+  glam extra hour, SNP and discount tiers come from `SETTINGS`; service
+  names and descriptions are escaped.
+- **Firebase (new paths):** `catalog/$doc` public read, written by Xavier or a
+  listed editor (editors can't delete it); `catalogHistory/$doc/$at` read
+  by editors, append-only for them; `catalogEditors/<email with . → ,>`
+  Xavier only (an editor may read their own entry). Rules in
+  `.claude/skills/add-cloud-sync/assets/firebase-rules.json`; the mock
+  server mirrors them. `verify_deploy.py` learned companion pages.
+
+**Outstanding — Xavier publishes the rules.** Until then the builder keeps
+its built-in prices and the panel can't save.
+
+**Verified (mock database, Playwright Chromium)** — builder unchanged with
+nothing saved (Full Day + Glam Studio + Assistant = $5,350); as Xavier:
+price change, new add-on, removal, reorder, glam rate, empty name refused,
+editor added; Preview showed the draft while clients still saw the old
+prices; Save published (Full Day $4,200, same pair = $5,550 with the 7%
+tier), history entry written. As an added team member (phone width): can
+edit and publish, no editors section. A stranger is turned away. Straight to
+the database: stranger writes/reads history → 401; editor deleting the
+catalog, adding editors or rewriting history → 401; public read → 200.
+
+---
+
 ## v117 — 2026-10-22
 
 **What's new** · Fix · [tools/photo-review.html]

@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="xdb-companion" content="package-builder.html">   <!-- the studio's price editor; no card of its own -->
+<title>Package Builder — Prices</title>
+<link rel="icon" href="../assets/logo.svg" type="image/svg+xml">
+<style>
+:root{
+  --ink:#000;--paper:#fff;--volt:#ffe800;--smoke:#141414;--ash:#2a2a2a;--dust:#8a8a8a;--hair:#e2e2e2;--grey:#6a6a6a;
+  --stack:"Helvetica Neue",Helvetica,Arial,"Segoe UI",system-ui,sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --gut:clamp(14px,3vw,32px);
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+html,body{margin:0;background:var(--ink);color:var(--paper);font-family:var(--stack)}
+button,input,textarea,select{font:inherit;color:inherit}
+a{color:var(--volt)}
+[hidden]{display:none!important}
+.k{font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--dust)}
+
+.top{display:flex;align-items:center;gap:10px 16px;flex-wrap:wrap;padding:12px var(--gut);border-bottom:3px solid var(--paper);padding-top:max(12px,env(safe-area-inset-top))}
+.brand{margin-right:auto;display:flex;align-items:baseline;gap:12px;min-width:0;flex-wrap:wrap}
+.brand a{color:var(--paper);font-weight:900;font-size:12px;letter-spacing:.06em;text-transform:uppercase;text-decoration:none}
+.brand h1{margin:0;font-weight:900;text-transform:uppercase;letter-spacing:-.04em;font-size:24px;line-height:1}
+.brand h1 span{color:var(--volt)}
+.who{font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:var(--dust)}
+.btn{background:transparent;border:3px solid var(--paper);color:var(--paper);font-weight:900;font-size:11px;letter-spacing:.12em;text-transform:uppercase;
+  padding:9px 13px;cursor:pointer;white-space:nowrap;border-radius:0;text-decoration:none;display:inline-flex;align-items:center;gap:8px}
+.btn:hover{background:var(--volt);border-color:var(--volt);color:var(--ink)}
+.btn.solid{background:var(--volt);border-color:var(--volt);color:var(--ink)}
+.btn.solid:hover{background:var(--paper);border-color:var(--paper)}
+.btn:disabled{opacity:.35;cursor:default;background:transparent;border-color:var(--ash);color:var(--dust)}
+.ghost{background:transparent;border:0;color:var(--dust);font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;padding:6px 4px;cursor:pointer}
+.ghost:hover{color:var(--volt)}
+
+.wrap{max-width:1100px;margin:0 auto;padding:clamp(18px,3vw,34px) var(--gut) 120px}
+.gate{max-width:560px;margin:10vh auto;padding:0 var(--gut)}
+.gate h2{margin:0 0 16px;font-weight:900;text-transform:uppercase;letter-spacing:-.045em;line-height:.88;font-size:clamp(38px,7vw,64px)}
+.gate h2 span{color:var(--volt)}
+.gate p{color:#cfcfcf;font-size:16px;line-height:1.6;margin:0 0 22px}
+
+/* save bar */
+.bar{position:sticky;top:0;z-index:20;background:var(--ink);border-bottom:3px solid var(--paper);padding:12px var(--gut);display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center}
+.bar .state{margin-right:auto;font-family:var(--mono);font-size:11px;letter-spacing:.08em;line-height:1.5}
+.bar .state b{color:var(--volt);font-weight:700}
+.bar.dirty{background:var(--volt);color:var(--ink);border-bottom-color:var(--ink)}
+.bar.dirty .btn{border-color:var(--ink);color:var(--ink)}
+.bar.dirty .btn.solid{background:var(--ink);color:var(--volt)}
+.bar.dirty .btn:hover{background:var(--paper);border-color:var(--paper);color:var(--ink)}
+.bar.dirty .state b{color:var(--ink)}
+.warn{background:var(--paper);color:var(--ink);border:3px solid var(--volt);padding:12px 14px;margin:16px 0 0;font-size:14px;line-height:1.5}
+
+/* sections */
+.sec{margin-top:34px}
+.sec-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;border-bottom:3px solid var(--paper);padding-bottom:10px;margin-bottom:12px}
+.sec-head h2{margin:0;font-weight:900;text-transform:uppercase;letter-spacing:-.035em;font-size:clamp(22px,3vw,30px)}
+.sec-head h2 span{color:var(--volt)}
+.rows{display:flex;flex-direction:column;gap:10px}
+.row{background:var(--paper);color:var(--ink);padding:14px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px 14px}
+.row.bad{outline:3px solid var(--volt);outline-offset:2px}
+.fields{display:grid;grid-template-columns:minmax(0,2fr) 130px;gap:10px}
+.fields .wide{grid-column:1/-1}
+.f{display:flex;flex-direction:column;gap:5px;min-width:0}
+.f>span{font-family:var(--mono);font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--grey)}
+.f input,.f textarea{border:2px solid #dcdcdc;padding:9px 10px;font-size:15px;background:#fff;color:var(--ink);border-radius:0;outline:none;width:100%}
+.f input:focus,.f textarea:focus{border-color:var(--ink)}
+.f input.money{font-family:var(--mono);font-weight:700}
+.f textarea{resize:vertical;min-height:44px;font-size:14px;line-height:1.45}
+.f input.err{border-color:#000;background:var(--volt)}
+.opts{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center}
+.chk{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--grey);cursor:pointer}
+.chk input{width:18px;height:18px;accent-color:#000}
+.mini{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--grey)}
+.mini input{width:64px;border:2px solid #dcdcdc;padding:6px 8px;font-family:var(--mono);font-size:13px;background:#fff;color:var(--ink);border-radius:0}
+.acts{display:flex;flex-direction:column;gap:6px}
+.acts button{width:34px;height:34px;border:2px solid #dcdcdc;background:transparent;color:var(--ink);font-family:var(--mono);font-weight:700;cursor:pointer;padding:0}
+.acts button:hover{border-color:var(--ink)}
+.acts button:disabled{opacity:.25;cursor:default}
+.acts .del{margin-top:auto}
+.acts .del:hover{background:var(--ink);color:var(--volt)}
+.add{margin-top:10px;width:100%;border:3px dashed var(--ash);background:transparent;color:var(--dust);padding:14px;cursor:pointer;font-weight:900;font-size:11px;letter-spacing:.12em;text-transform:uppercase}
+.add:hover{border-color:var(--volt);color:var(--paper)}
+
+.panel{background:var(--paper);color:var(--ink);padding:16px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+.tiers{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px;margin-top:12px}
+.tier{display:flex;align-items:center;gap:8px;border:2px solid #e2e2e2;padding:8px}
+.tier input{width:90px;border:2px solid #dcdcdc;padding:6px 8px;font-family:var(--mono);font-size:13px;background:#fff;color:var(--ink);border-radius:0}
+.tier input.pct{width:58px}
+.tier span{font-family:var(--mono);font-size:11px;color:var(--grey);white-space:nowrap}
+.tier input{min-width:0}
+.tier button{margin-left:auto;border:0;background:transparent;font-family:var(--mono);font-weight:700;cursor:pointer;color:var(--grey);font-size:14px}
+.tier button:hover{color:var(--ink)}
+.note{font-size:13px;line-height:1.5;color:#4a4a4a;margin:10px 0 0}
+
+.list{display:flex;flex-direction:column}
+.li{display:flex;align-items:center;gap:12px;flex-wrap:wrap;border-top:2px solid var(--hair);padding:10px 0}
+.li:first-child{border-top:0}
+.li .k{color:var(--grey)}
+.li .main{margin-right:auto;font-size:14px;font-weight:700;overflow-wrap:anywhere}
+.addrow{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.addrow input{flex:1 1 220px;border:2px solid #dcdcdc;padding:10px 12px;font-size:15px;background:#fff;color:var(--ink);border-radius:0;outline:none}
+.panel .btn{border-color:var(--ink);color:var(--ink)}
+.panel .btn.solid{background:var(--ink);color:var(--volt)}
+
+#toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:60;display:none;align-items:center;gap:16px;
+  background:var(--paper);color:var(--ink);border:3px solid var(--ink);outline:3px solid var(--volt);padding:11px 14px;max-width:calc(100vw - 32px)}
+#toast.on{display:flex}
+#toast span{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;line-height:1.5}
+#toast button{background:var(--ink);color:var(--volt);border:0;font-weight:900;font-size:11px;letter-spacing:.12em;text-transform:uppercase;padding:7px 11px;cursor:pointer}
+
+@media (max-width:620px){
+  .fields{grid-template-columns:1fr}
+  .row{grid-template-columns:1fr}
+  .acts{flex-direction:row}
+  .acts .del{margin:0 0 0 auto}
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="brand"><a href="package-builder.html">← Package Builder</a><h1>Prices<span>.</span></h1></div>
+  <span class="who" id="who"></span>
+  <button class="btn" id="btn-out" type="button" hidden>Sign out</button>
+</header>
+
+<!-- signed out / not allowed / loading -->
+<section class="gate" id="gate">
+  <h2 id="gate-title">Studio<br><span>prices</span></h2>
+  <p id="gate-text">Services and prices for the Package Builder. Sign in with the Google account Xavier gave access to.</p>
+  <button class="btn solid" id="btn-in" type="button">Sign in with Google</button>
+</section>
+
+<!-- the editor -->
+<div id="app" hidden>
+  <div class="bar" id="bar">
+    <span class="state" id="bar-state"></span>
+    <button class="btn" id="btn-preview" type="button" title="Open the Package Builder with these prices, without saving">Preview</button>
+    <button class="btn" id="btn-discard" type="button">Discard</button>
+    <button class="btn solid" id="btn-save" type="button">Save &amp; publish</button>
+  </div>
+  <main class="wrap">
+    <div class="warn" id="warn" hidden></div>
+    <div id="sections"></div>
+
+    <section class="sec">
+      <div class="sec-head"><h2>Rates <span>&amp; rules</span></h2><span class="k">Applies to every quote</span></div>
+      <div class="panel">
+        <div class="grid2" id="settings"></div>
+        <p class="k" style="margin:22px 0 0;color:var(--grey)">Bundle discount — a subtotal up to the amount gets that % off</p>
+        <div class="tiers" id="tiers"></div>
+        <div class="addrow"><button class="btn" id="btn-tier" type="button">+ Add a tier</button>
+          <label class="mini" style="margin-left:auto">Above the last tier <input type="number" id="top-pct" min="0" max="100" step="1"> %</label></div>
+        <p class="note">Discounts are rounded to the nearest $50. Tax (GST + QST, 14.975%) is fixed in the builder.</p>
+      </div>
+    </section>
+
+    <section class="sec">
+      <div class="sec-head"><h2>Earlier <span>versions</span></h2><span class="k">Every save is kept</span></div>
+      <div class="panel"><div class="list" id="history"></div></div>
+    </section>
+
+    <section class="sec" id="editors-sec" hidden>
+      <div class="sec-head"><h2>Who can <span>edit</span></h2><span class="k">Only Xavier sees this</span></div>
+      <div class="panel">
+        <div class="list" id="editors"></div>
+        <div class="addrow">
+          <input type="email" id="editor-email" placeholder="their Google email, e.g. name@gmail.com" autocomplete="off">
+          <button class="btn solid" id="btn-editor" type="button">Add editor</button>
+        </div>
+        <p class="note">They open this page, sign in with that Google account, and can edit and publish prices. They can't add other editors or delete the price list.</p>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div id="toast" role="status"><span id="toast-msg"></span><button id="toast-undo" type="button">Undo</button></div>
+
+<script type="module">
+/* ============================================================
+   PACKAGE BUILDER — PRICES (admin)
+   Edits the services, prices and rates the Package Builder shows.
+   Saves to Firebase:
+     catalog/package-builder            { data, updatedAt, by } — public read
+     catalogHistory/package-builder/<t> every save, kept
+     catalogEditors/<email, dots → ,>   { email, at } — who may edit
+   Xavier's account always may; editors are added below by email.
+   The database rules enforce all of it; this page only asks.
+   ============================================================ */
+const SDK = 'https://www.gstatic.com/firebasejs/10.12.2/';
+const FIREBASE = {
+  apiKey: 'AIzaSyCu0CA6eLWIkhhl-Z7jr_dDisuXDt1dKco', authDomain: 'xdb-tools.firebaseapp.com',
+  databaseURL: 'https://xdb-tools-default-rtdb.firebaseio.com', projectId: 'xdb-tools', appId: '1:6009567091:web:f7ee8c43ebe1bd25fcb706'
+};
+const OWNER = 'jGJdt3h4EeaOL3mYWUHA4yMZsRx2';
+const DOC = 'package-builder';
+const DRAFT_KEY = 'debelle.pkg.draft';
+const $ = id => document.getElementById(id);
+
+/* What the builder has built in — the starting point until the first save. */
+const DEFAULTS = {
+  photo: [
+    { id:'hourly', name:'Hourly Coverage', price:400, hourly:true, minQty:2, desc:'200–300 photos per hour. Top 50 images enhanced per hour. Minimum 2 hours.' },
+    { id:'eight_hour', name:'8-Hour Service', price:3200, desc:'All high-resolution photos. Top 400 images enhanced.' },
+    { id:'full_day', name:'Full Day', price:4000, fullDay:true, desc:'10am to midnight. All high-resolution photos. Top 700 images enhanced.' }],
+  video: [
+    { id:'video_hourly', name:'Hourly Coverage', price:400, hourly:true, minQty:2, desc:'20–30 video clips per hour. All footage via download link. Minimum 2 hours.' },
+    { id:'video_eight_hour', name:'8-Hour Service', price:3200, desc:'100–200 video clips. Includes a 1–2 min edited clip.' },
+    { id:'video_full_day', name:'Full Day', price:4000, desc:'200–300 video clips. Includes a 3–5 min edited clip and a 15–30 sec reel.' }],
+  videoAddons: [
+    { id:'va_highlight_35', name:'3–5 Minute Highlight Film', price:600, desc:'Edited highlight with music.' },
+    { id:'va_highlight_510', name:'8–10 Minute Highlight Film', price:800, desc:'Extended highlight/recap with music.' },
+    { id:'va_feature_20', name:'20-Minute Feature Film', price:1200, desc:'Full edited feature film with music.' },
+    { id:'va_supplements', name:'Video Supplements', price:300, desc:'Approx. 10 minutes — speeches, first dance, etc.' },
+    { id:'va_reel', name:'Social Media Reel', price:150, desc:'IG / FB / TikTok reel.' },
+    { id:'va_asst_cine', name:'Assistant Cinematographer', price:1000, desc:'Second cinematographer for the full day.' }],
+  glam: [
+    { id:'glam_standalone', name:'Glam Studio', price:2000, desc:'5 hours of coverage. Instant 4x6 B&W prints. Standalone booking.', reqFullDay:false },
+    { id:'glam_bundled', name:'Glam Studio + Assistant', price:1750, desc:'5 hours. Bundled with full day photography. Includes assistant photographer.', reqFullDay:true },
+    { id:'glam_evening', name:'Evening Glam Studio', price:1500, desc:'5-hour evening-only service. Requires full day photography.', reqFullDay:true }],
+  albums: [
+    { id:'youngbook', name:'Young Book / Graphi Box', pricePerPage:55, min:30, format:'min. 30 pages · 8x12' },
+    { id:'graphi', name:'Graphi Album', pricePerPage:65, min:24, format:'min. 24 pages · 9x13 or 12x12' },
+    { id:'matted', name:'Matted Album', pricePerPage:75, min:24, format:'min. 24 pages · 9x13 or 12x12' },
+    { id:'layflat', name:'Layflat Album', pricePerPage:30, min:24, format:'custom size' }],
+  addons: [
+    { id:'oa_asst_photo', name:'Assistant Photographer', price:1000, desc:'Second photographer for the full day, capturing additional angles.' },
+    { id:'oa_engagement', name:'Engagement / Casual Photoshoot', price:350, desc:'1-hour session. Top 50 images enhanced, delivered via online gallery.' },
+    { id:'oa_slideshow', name:'Photo Slideshow', price:200, desc:'4–5 min slideshow, 80–100 images.' },
+    { id:'oa_parent_albums', name:'Parent Album Duplicates', price:500, desc:'One set of parent albums (4x5, 6x8, 8x10 for Graphi or Young Book).' },
+    { id:'oa_sleeve', name:'Graphi Sleeve for Album', price:150, desc:'Protective sleeve for Graphi or Young Book albums.' },
+    { id:'oa_layflat_addon', name:'24-Page Layflat Album (Add-on)', price:700, desc:'Compact layflat album, 24 pages.' }],
+  settings: {
+    glamExtraHour: 375, snpPerGuest: 4.5, snpMin: 375, snpBigGroup: 100, snpAssistant: 300, discountTop: 20,
+    discounts: [[2500,0],[3000,1],[3500,2],[4000,3],[4500,4],[5000,5],[5500,6],[6000,7],[6500,8],[7000,8],[7500,9],[8000,9],[8500,10],[9000,10],
+                [9500,11],[10000,11],[11000,12],[12000,13],[13000,14],[14000,15],[15000,16],[16000,17],[17000,18],[18000,19],[19000,20]].map(([upTo,pct]) => ({ upTo, pct }))
+  }
+};
+
+/* The six lists, and the fields each kind of service has. */
+const SECTIONS = [
+  { key:'photo', title:'Photography', hint:'Pick one', kind:'timed', fullDay:true, prefix:'ph' },
+  { key:'video', title:'Cinematography', hint:'Pick one', kind:'timed', prefix:'vi' },
+  { key:'videoAddons', title:'Video editing', hint:'Add-ons, any number', kind:'plain', prefix:'va' },
+  { key:'glam', title:'Glam studio', hint:'Pick one', kind:'glam', prefix:'gl' },
+  { key:'albums', title:'Albums', hint:'Priced per page', kind:'album', prefix:'al' },
+  { key:'addons', title:'Other add-ons', hint:'Any number', kind:'plain', prefix:'oa' }
+];
+const SETTING_FIELDS = [
+  ['glamExtraHour', 'Glam: each extra hour ($)', 1],
+  ['snpPerGuest', 'Same Night Prints: per guest ($)', 0.05],
+  ['snpMin', 'Same Night Prints: minimum ($)', 1],
+  ['snpBigGroup', 'Assistant needed above (guests)', 1],
+  ['snpAssistant', 'Same Night Prints: assistant ($)', 1]
+];
+
+/* ---------- state ---------- */
+let fb = null, user = null, isOwner = false;
+let base = null;        // the saved catalog { data, updatedAt, by } (null = never saved)
+let draft = null;       // what's on screen
+let dirty = false, toastTimer = null, undoFn = null;
+
+const clone = o => JSON.parse(JSON.stringify(o));
+const listOf = v => Array.isArray(v) ? v : (v && typeof v === 'object' ? Object.values(v) : []);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+const emailKey = e => String(e || '').trim().toLowerCase().replace(/\./g, ',');
+const when = t => new Date(t).toLocaleString(undefined, { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+
+/* The database drops empty lists: put every list back, in order. */
+function normalise(d) {
+  d = clone(d || {});
+  SECTIONS.forEach(s => { d[s.key] = listOf(d[s.key]).filter(x => x && x.id); });
+  d.settings = Object.assign(clone(DEFAULTS.settings), d.settings || {});
+  d.settings.discounts = listOf(d.settings.discounts).filter(t => t && t.upTo != null).map(t => ({ upTo: +t.upTo, pct: +t.pct || 0 }));
+  return d;
+}
+
+/* ---------- sign-in ---------- */
+async function sdk() {
+  if (fb) return fb;
+  const [app, a, f] = await Promise.all([import(SDK + 'firebase-app.js'), import(SDK + 'firebase-auth.js'), import(SDK + 'firebase-database.js')]);
+  const inst = app.initializeApp(FIREBASE);            // this page loads no other Firebase app
+  fb = { a, f, auth: a.getAuth(inst), db: f.getDatabase(inst) };
+  return fb;
+}
+function gate(title, text, showIn) {
+  $('app').hidden = true; $('gate').hidden = false;
+  $('gate-title').innerHTML = title; $('gate-text').textContent = text; $('btn-in').hidden = !showIn;
+}
+async function signIn() {
+  await sdk();
+  const p = new fb.a.GoogleAuthProvider(); p.setCustomParameters({ prompt: 'select_account' });
+  try { await fb.a.signInWithPopup(fb.auth, p); }
+  catch (e) {
+    if (/popup-blocked|operation-not-supported/i.test((e && e.code) || '')) return fb.a.signInWithRedirect(fb.auth, p);
+    if (!/popup-closed/i.test((e && e.code) || '')) toast('Sign-in didn’t work: ' + ((e && e.code) || e));
+  }
+}
+async function boot() {
+  gate('Studio<br><span>prices</span>', 'Checking who you are…', false);
+  try { await sdk(); }
+  catch (e) { gate('No<br><span>connection</span>', 'The sign-in service couldn’t be reached. Check the connection and reload.', false); return; }
+  fb.a.onAuthStateChanged(fb.auth, async u => {
+    user = u;
+    $('btn-out').hidden = !u; $('who').textContent = u ? (u.email || '') : '';
+    if (!u) { gate('Studio<br><span>prices</span>', 'Services and prices for the Package Builder. Sign in with the Google account Xavier gave access to.', true); return; }
+    isOwner = u.uid === OWNER;
+    let ok = isOwner;
+    if (!ok) {
+      try { ok = (await fb.f.get(fb.f.ref(fb.db, 'catalogEditors/' + emailKey(u.email)))).exists(); } catch (e) { ok = false; }
+    }
+    if (!ok) { gate('Not on<br><span>the list</span>', `${u.email} can’t edit prices yet. Ask Xavier to add this exact address on this page, then reload.`, false); return; }
+    start();
+  });
+}
+
+/* ---------- loading, live ---------- */
+let unwatch = null;
+function start() {
+  $('gate').hidden = true; $('app').hidden = false;
+  $('editors-sec').hidden = !isOwner;
+  if (unwatch) unwatch();
+  unwatch = fb.f.onValue(fb.f.ref(fb.db, 'catalog/' + DOC), snap => {
+    const remote = snap.exists() ? snap.val() : null;
+    const first = base === undefined || draft === null;
+    if (!first && dirty && remote && base && remote.updatedAt !== base.updatedAt) {
+      $('warn').hidden = false;
+      $('warn').textContent = `${remote.by || 'Someone'} saved new prices at ${when(remote.updatedAt)} while you were editing. Saving now replaces their version with yours; Discard loads theirs.`;
+      base = remote;
+      return;
+    }
+    base = remote;
+    if (!dirty) { draft = normalise(remote ? remote.data : DEFAULTS); renderAll(); }
+    paintBar();
+  }, () => toast('Couldn’t read the prices — check the connection'));
+  loadHistory();
+  if (isOwner) loadEditors();
+}
+
+/* ---------- rendering ---------- */
+function row(sec, item, i, n) {
+  const id = sec.key + ':' + i;
+  const num = (field, label, step, cls) => `<label class="f"><span>${label}</span><input class="money ${cls || ''}" type="number" min="0" step="${step}" data-f="${field}" data-at="${id}" value="${esc(item[field] ?? '')}"></label>`;
+  let fields;
+  if (sec.kind === 'album') {
+    fields = `<div class="fields">
+      <label class="f"><span>Name</span><input data-f="name" data-at="${id}" value="${esc(item.name)}"></label>
+      ${num('pricePerPage', 'Per page ($)', 1)}
+      <label class="f"><span>Sizes / note</span><input data-f="format" data-at="${id}" value="${esc(item.format)}"></label>
+      ${num('min', 'Min. pages', 1)}
+    </div>`;
+  } else {
+    let opts = '';
+    if (sec.kind === 'timed') {
+      opts = `<div class="opts"><label class="chk"><input type="checkbox" data-f="hourly" data-at="${id}" ${item.hourly ? 'checked' : ''}> Priced per hour</label>
+        <label class="mini" ${item.hourly ? '' : 'hidden'}>Min. hours <input type="number" min="1" step="1" data-f="minQty" data-at="${id}" value="${esc(item.minQty || 2)}"></label>
+        ${sec.fullDay ? `<label class="chk" title="Glam options marked 'needs full day' require this one"><input type="checkbox" data-f="fullDay" data-at="${id}" ${item.fullDay ? 'checked' : ''}> Counts as full day</label>` : ''}</div>`;
+    } else if (sec.kind === 'glam') {
+      opts = `<div class="opts"><label class="chk"><input type="checkbox" data-f="reqFullDay" data-at="${id}" ${item.reqFullDay ? 'checked' : ''}> Needs full-day photography</label></div>`;
+    }
+    fields = `<div class="fields">
+      <label class="f"><span>Name</span><input data-f="name" data-at="${id}" value="${esc(item.name)}"></label>
+      ${num('price', item.hourly ? 'Price per hour ($)' : 'Price ($)', 1)}
+      <label class="f wide"><span>Description</span><textarea rows="2" data-f="desc" data-at="${id}">${esc(item.desc)}</textarea></label>
+      ${opts}
+    </div>`;
+  }
+  return `<div class="row" data-row="${id}">${fields}
+    <div class="acts">
+      <button type="button" data-act="up" data-at="${id}" title="Move up" aria-label="Move up" ${i === 0 ? 'disabled' : ''}>↑</button>
+      <button type="button" data-act="down" data-at="${id}" title="Move down" aria-label="Move down" ${i === n - 1 ? 'disabled' : ''}>↓</button>
+      <button type="button" class="del" data-act="del" data-at="${id}" title="Remove" aria-label="Remove ${esc(item.name)}">✕</button>
+    </div></div>`;
+}
+function renderSections() {
+  $('sections').innerHTML = SECTIONS.map(sec => {
+    const items = draft[sec.key];
+    return `<section class="sec"><div class="sec-head"><h2>${sec.title.replace(/^(\S+)/, '$1')}</h2><span class="k">${sec.hint} · ${items.length}</span></div>
+      <div class="rows">${items.map((it, i) => row(sec, it, i, items.length)).join('') || '<p class="k" style="padding:6px 0">Nothing here — the builder hides this choice.</p>'}</div>
+      <button class="add" type="button" data-add="${sec.key}">+ Add ${sec.kind === 'album' ? 'an album' : 'a service'}</button></section>`;
+  }).join('');
+}
+function renderSettings() {
+  const s = draft.settings;
+  $('settings').innerHTML = SETTING_FIELDS.map(([k, label, step]) =>
+    `<label class="f"><span>${label}</span><input class="money" type="number" min="0" step="${step}" data-set="${k}" value="${esc(s[k])}"></label>`).join('');
+  $('tiers').innerHTML = s.discounts.map((t, i) =>
+    `<div class="tier"><span>up to $</span><input type="number" min="0" step="50" data-tier="${i}" data-tf="upTo" value="${esc(t.upTo)}">
+      <input class="pct" type="number" min="0" max="100" step="1" data-tier="${i}" data-tf="pct" value="${esc(t.pct)}"><span>%</span>
+      <button type="button" data-deltier="${i}" aria-label="Remove tier">✕</button></div>`).join('');
+  $('top-pct').value = s.discountTop;
+}
+function renderAll() { renderSections(); renderSettings(); paintBar(); }
+
+function paintBar() {
+  $('bar').classList.toggle('dirty', dirty);
+  $('btn-save').disabled = !dirty; $('btn-discard').disabled = !dirty;
+  $('bar-state').innerHTML = dirty ? '<b>Unsaved changes</b> — clients still see the published prices'
+    : base ? `Published · saved by <b>${esc(base.by || '—')}</b> · ${esc(when(base.updatedAt))}`
+    : 'Showing the <b>built-in</b> prices — nothing saved yet';
+  if (!dirty) $('warn').hidden = true;
+}
+function touched() { if (!dirty) { dirty = true; paintBar(); } }
+
+/* ---------- editing ---------- */
+function at(code) { const [k, i] = code.split(':'); return { sec: SECTIONS.find(s => s.key === k), list: draft[k], i: +i }; }
+document.addEventListener('input', ev => {
+  const t = ev.target;
+  if (t.dataset.at && t.dataset.f) {
+    const { list, i } = at(t.dataset.at), f = t.dataset.f;
+    if (t.type === 'checkbox') {
+      list[i][f] = t.checked;
+      if (f === 'hourly') { if (t.checked && !list[i].minQty) list[i].minQty = 2; renderSections(); }
+    } else if (t.type === 'number') {
+      const v = t.value === '' ? '' : Number(t.value); list[i][f] = v; t.classList.toggle('err', t.value === '' || v < 0);
+    } else list[i][f] = t.value;
+    touched(); return;
+  }
+  if (t.dataset.set) { draft.settings[t.dataset.set] = t.value === '' ? '' : Number(t.value); touched(); return; }
+  if (t.dataset.tier) { draft.settings.discounts[+t.dataset.tier][t.dataset.tf] = t.value === '' ? '' : Number(t.value); touched(); return; }
+  if (t.id === 'top-pct') { draft.settings.discountTop = t.value === '' ? '' : Number(t.value); touched(); }
+});
+document.addEventListener('change', ev => { if (ev.target.type === 'checkbox' && ev.target.dataset.at) { /* handled on input */ } });
+document.addEventListener('click', ev => {
+  const b = ev.target.closest('button'); if (!b) return;
+  if (b.dataset.act) {
+    const { sec, list, i } = at(b.dataset.at);
+    if (b.dataset.act === 'up' && i > 0) [list[i - 1], list[i]] = [list[i], list[i - 1]];
+    else if (b.dataset.act === 'down' && i < list.length - 1) [list[i + 1], list[i]] = [list[i], list[i + 1]];
+    else if (b.dataset.act === 'del') {
+      const gone = list.splice(i, 1)[0];
+      toast(`Removed “${gone.name || 'service'}” — not published until you save`, () => { list.splice(i, 0, gone); renderSections(); });
+    }
+    touched(); renderSections(); return;
+  }
+  if (b.dataset.add) {
+    const sec = SECTIONS.find(s => s.key === b.dataset.add);
+    const id = sec.prefix + '_' + Date.now().toString(36);
+    draft[sec.key].push(sec.kind === 'album' ? { id, name: '', pricePerPage: 0, min: 24, format: '' }
+      : Object.assign({ id, name: '', price: 0, desc: '' }, sec.kind === 'glam' ? { reqFullDay: false } : {}));
+    touched(); renderSections();
+    const rows = document.querySelectorAll(`[data-row^="${sec.key}:"]`), last = rows[rows.length - 1];
+    if (last) { last.scrollIntoView({ block: 'center', behavior: 'smooth' }); const n = last.querySelector('[data-f="name"]'); if (n) n.focus({ preventScroll: true }); }
+    return;
+  }
+  if (b.dataset.deltier != null) { draft.settings.discounts.splice(+b.dataset.deltier, 1); touched(); renderSettings(); return; }
+});
+$('btn-tier').addEventListener('click', () => {
+  const ds = draft.settings.discounts, last = ds[ds.length - 1];
+  ds.push({ upTo: last ? (+last.upTo || 0) + 1000 : 2500, pct: last ? +last.pct || 0 : 0 });
+  touched(); renderSettings();
+});
+
+/* ---------- checking, saving ---------- */
+function problems() {
+  const out = [];
+  document.querySelectorAll('.row.bad').forEach(r => r.classList.remove('bad'));
+  SECTIONS.forEach(sec => draft[sec.key].forEach((it, i) => {
+    const bad = !String(it.name || '').trim() ||
+      (sec.kind === 'album' ? !(it.pricePerPage >= 0 && it.pricePerPage !== '') || !(it.min >= 1) : !(it.price >= 0 && it.price !== '')) ||
+      (it.hourly && !(it.minQty >= 1));
+    if (bad) { out.push(`${sec.title}: “${it.name || 'unnamed'}”`); const r = document.querySelector(`[data-row="${sec.key}:${i}"]`); if (r) r.classList.add('bad'); }
+  }));
+  const s = draft.settings;
+  SETTING_FIELDS.forEach(([k, label]) => { if (!(s[k] >= 0 && s[k] !== '')) out.push(label); });
+  if (s.discounts.some(t => !(t.upTo >= 0 && t.upTo !== '') || !(t.pct >= 0 && t.pct <= 100 && t.pct !== ''))) out.push('A discount tier');
+  if (!(s.discountTop >= 0 && s.discountTop <= 100 && s.discountTop !== '')) out.push('The top discount');
+  return out;
+}
+function cleaned() {
+  const d = clone(draft);
+  SECTIONS.forEach(sec => { d[sec.key] = d[sec.key].map(it => {
+    const o = { id: it.id, name: String(it.name).trim() };
+    if (sec.kind === 'album') return Object.assign(o, { pricePerPage: +it.pricePerPage, min: Math.round(+it.min), format: String(it.format || '').trim() });
+    Object.assign(o, { price: +it.price, desc: String(it.desc || '').trim() });
+    if (sec.kind === 'timed' && it.hourly) Object.assign(o, { hourly: true, minQty: Math.round(+it.minQty) || 1 });
+    if (sec.fullDay && it.fullDay) o.fullDay = true;
+    if (sec.kind === 'glam') o.reqFullDay = !!it.reqFullDay;
+    return o;
+  }); });
+  d.settings.discounts = d.settings.discounts.map(t => ({ upTo: +t.upTo, pct: +t.pct })).sort((a, b) => a.upTo - b.upTo);
+  ['glamExtraHour','snpPerGuest','snpMin','snpBigGroup','snpAssistant','discountTop'].forEach(k => { d.settings[k] = +d.settings[k]; });
+  return d;
+}
+$('btn-save').addEventListener('click', async () => {
+  const bad = problems();
+  if (bad.length) { toast('Fix first: ' + bad.slice(0, 3).join(', ') + (bad.length > 3 ? '…' : '')); return; }
+  const now = Date.now(), doc = { data: cleaned(), updatedAt: now, by: (user && user.email) || '' };
+  $('btn-save').disabled = true; $('bar-state').innerHTML = '<b>Publishing…</b>';
+  try {
+    await fb.f.update(fb.f.ref(fb.db), { ['catalog/' + DOC]: doc, ['catalogHistory/' + DOC + '/' + now]: doc });
+    base = doc; dirty = false; draft = normalise(doc.data); renderAll(); loadHistory();
+    toast('Published — the Package Builder shows these prices now');
+  } catch (e) {
+    $('btn-save').disabled = false; paintBar();
+    toast(/permission/i.test(String(e && (e.code || e.message))) ? 'Not allowed to save — ask Xavier to check your access' : 'Couldn’t save: ' + ((e && e.code) || e));
+  }
+});
+$('btn-discard').addEventListener('click', () => {
+  if (!confirm('Discard your unsaved changes?')) return;
+  dirty = false; draft = normalise(base ? base.data : DEFAULTS); renderAll();
+});
+$('btn-preview').addEventListener('click', () => {
+  try { localStorage.setItem(DRAFT_KEY, JSON.stringify({ data: cleaned(), updatedAt: 'draft' })); } catch (e) {}
+  window.open('package-builder.html?draft', '_blank', 'noopener');
+});
+window.addEventListener('beforeunload', ev => { if (dirty) { ev.preventDefault(); ev.returnValue = ''; } });
+
+/* ---------- history ---------- */
+let history = [];
+async function loadHistory() {
+  try {
+    const snap = await fb.f.get(fb.f.ref(fb.db, 'catalogHistory/' + DOC));
+    const v = snap.exists() ? snap.val() : {};
+    history = Object.keys(v).map(k => v[k]).filter(h => h && h.data).sort((a, b) => b.updatedAt - a.updatedAt);
+  } catch (e) { history = []; }
+  $('history').innerHTML = history.length ? history.slice(0, 20).map((h, i) =>
+    `<div class="li"><span class="main">${esc(when(h.updatedAt))}</span><span class="k">${esc(h.by || '')}</span>
+      ${i === 0 && base && h.updatedAt === base.updatedAt ? '<span class="k" style="color:#000">Published</span>' : `<button class="btn" type="button" data-hist="${i}">Load</button>`}</div>`).join('')
+    : '<div class="li"><span class="k">No saves yet. Each save appears here, and any of them can be loaded back.</span></div>';
+}
+$('history').addEventListener('click', ev => {
+  const b = ev.target.closest('[data-hist]'); if (!b) return;
+  const h = history[+b.dataset.hist];
+  if (dirty && !confirm('Replace your unsaved changes with this earlier version?')) return;
+  draft = normalise(h.data); dirty = true; renderAll();
+  toast(`Loaded the version from ${when(h.updatedAt)} — Save to publish it`);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
+/* ---------- editors (Xavier only) ---------- */
+async function loadEditors() {
+  let v = {};
+  try { const snap = await fb.f.get(fb.f.ref(fb.db, 'catalogEditors')); v = snap.exists() ? snap.val() : {}; } catch (e) {}
+  const keys = Object.keys(v);
+  $('editors').innerHTML = `<div class="li"><span class="main">${esc(user.email)}</span><span class="k">You · always</span></div>` +
+    keys.map(k => `<div class="li"><span class="main">${esc(v[k].email)}</span><span class="k">Added ${esc(new Date(v[k].at).toLocaleDateString())}</span>
+      <button class="ghost" type="button" data-rm="${esc(k)}" style="color:#000">Remove</button></div>`).join('');
+}
+$('btn-editor').addEventListener('click', async () => {
+  const e = $('editor-email').value.trim();
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)) { toast('That doesn’t look like an email address'); return; }
+  try { await fb.f.set(fb.f.ref(fb.db, 'catalogEditors/' + emailKey(e)), { email: e.toLowerCase(), at: Date.now() }); $('editor-email').value = ''; loadEditors(); toast('Added ' + e); }
+  catch (err) { toast('Couldn’t add: ' + ((err && err.code) || err)); }
+});
+$('editors').addEventListener('click', async ev => {
+  const b = ev.target.closest('[data-rm]'); if (!b) return;
+  if (!confirm('Remove this editor? They can no longer change prices.')) return;
+  try { await fb.f.remove(fb.f.ref(fb.db, 'catalogEditors/' + b.dataset.rm)); loadEditors(); } catch (e) { toast('Couldn’t remove: ' + ((e && e.code) || e)); }
+});
+
+/* ---------- toast ---------- */
+function toast(m, undo) {
+  clearTimeout(toastTimer); undoFn = undo || null;
+  $('toast-msg').textContent = m; $('toast-undo').style.display = undo ? '' : 'none';
+  $('toast').classList.add('on');
+  toastTimer = setTimeout(() => { $('toast').classList.remove('on'); undoFn = null; }, 6000);
+}
+$('toast-undo').addEventListener('click', () => { const u = undoFn; undoFn = null; $('toast').classList.remove('on'); if (u) { u(); touched(); } });
+
+$('btn-in').addEventListener('click', signIn);
+$('btn-out').addEventListener('click', async () => {
+  if (dirty && !confirm('Sign out and lose your unsaved changes?')) return;
+  dirty = false; if (unwatch) { unwatch(); unwatch = null; } base = undefined; draft = null;
+  await fb.a.signOut(fb.auth);
+});
+base = undefined;
+boot();
+</script>
+</body>
+</html>

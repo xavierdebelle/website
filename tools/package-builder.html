@@ -292,7 +292,7 @@
 </div>
 
 <div class="footer-band">
-  <p><a href="mailto:yourwedding@debellephotography.com">yourwedding@debellephotography.com</a> &nbsp;·&nbsp; 514.887.4686 &nbsp;·&nbsp; <a href="https://debellephotography.com" target="_blank">debellephotography.com</a></p>
+  <p><a href="mailto:yourwedding@debellephotography.com">yourwedding@debellephotography.com</a> &nbsp;·&nbsp; 514.887.4686 &nbsp;·&nbsp; <a href="https://debellephotography.com" target="_blank">debellephotography.com</a> &nbsp;·&nbsp; <a href="package-builder-admin.html" rel="nofollow" style="opacity:.55">Studio · prices</a></p>
 </div>
 
 <script>
@@ -301,7 +301,7 @@
 const PHOTO_OPTIONS = [
   { id:'hourly',        name:'Hourly Coverage',  price:400,  unit:'per hour', qty:true, minQty:2, desc:'200–300 photos per hour. Top 50 images enhanced per hour. Minimum 2 hours.' },
   { id:'eight_hour',    name:'8-Hour Service',    price:3200,                             desc:'All high-resolution photos. Top 400 images enhanced.' },
-  { id:'full_day',      name:'Full Day',          price:4000,                             desc:'10am to midnight. All high-resolution photos. Top 700 images enhanced.' },
+  { id:'full_day',      name:'Full Day',          price:4000, fullDay:true,               desc:'10am to midnight. All high-resolution photos. Top 700 images enhanced.' },
 ];
 
 const VIDEO_OPTIONS = [
@@ -341,36 +341,101 @@ const OTHER_ADDONS = [
   { id:'oa_layflat_addon',name:'24-Page Layflat Album (Add-on)',   price:700,  desc:'Compact layflat album, 24 pages.' },
 ];
 
-// ── DISCOUNT TABLE ────────────────────────────────────────────────────────────
-// Returns discount % and rounded-to-50 final price
+// ── SETTINGS ──────────────────────────────────────────────────────────────────
+// The rates that aren't a service of their own. Overwritten by the live price
+// list (see LIVE PRICES below); these built-in values are the fallback.
+
+const SETTINGS = {
+  glamExtraHour: 375,                       // per hour beyond the 5-hour glam coverage
+  snpPerGuest: 4.5, snpMin: 375,            // Same Night Prints
+  snpBigGroup: 100, snpAssistant: 300,      // groups over snpBigGroup add an assistant
+  // bundle discount: a subtotal up to `upTo` gets `pct` % off; above the last tier, `top` %
+  discounts: [[2500,0],[3000,1],[3500,2],[4000,3],[4500,4],[5000,5],[5500,6],[6000,7],[6500,8],[7000,8],
+              [7500,9],[8000,9],[8500,10],[9000,10],[9500,11],[10000,11],[11000,12],[12000,13],[13000,14],
+              [14000,15],[15000,16],[16000,17],[17000,18],[18000,19],[19000,20]].map(([upTo,pct]) => ({upTo, pct})),
+  discountTop: 20,
+};
 
 function getDiscount(subtotal) {
-  if (subtotal <= 2500)  return 0;
-  if (subtotal <= 3000)  return 1;
-  if (subtotal <= 3500)  return 2;
-  if (subtotal <= 4000)  return 3;
-  if (subtotal <= 4500)  return 4;
-  if (subtotal <= 5000)  return 5;
-  if (subtotal <= 5500)  return 6;
-  if (subtotal <= 6000)  return 7;
-  if (subtotal <= 6500)  return 8;
-  if (subtotal <= 7000)  return 8;
-  if (subtotal <= 7500)  return 9;
-  if (subtotal <= 8000)  return 9;
-  if (subtotal <= 8500)  return 10;
-  if (subtotal <= 9000)  return 10;
-  if (subtotal <= 9500)  return 11;
-  if (subtotal <= 10000) return 11;
-  if (subtotal <= 11000) return 12;
-  if (subtotal <= 12000) return 13;
-  if (subtotal <= 13000) return 14;
-  if (subtotal <= 14000) return 15;
-  if (subtotal <= 15000) return 16;
-  if (subtotal <= 16000) return 17;
-  if (subtotal <= 17000) return 18;
-  if (subtotal <= 18000) return 19;
-  if (subtotal <= 19000) return 20;
-  return 20;
+  for (const t of SETTINGS.discounts) if (subtotal <= t.upTo) return t.pct;
+  return SETTINGS.discountTop;
+}
+
+// ── LIVE PRICES ───────────────────────────────────────────────────────────────
+// The studio edits services and prices in package-builder-admin.html, which
+// saves them to catalog/package-builder in Firebase (public to read). They are
+// read here without signing in, remembered on this device, and fall back to
+// the built-in lists above when the database can't be reached. ?draft shows the
+// unsaved prices from the admin panel instead (a preview, never saved here).
+
+const CATALOG_URL = 'https://xdb-tools-default-rtdb.firebaseio.com/catalog/package-builder.json';
+const CATALOG_CACHE = 'debelle.pkg.catalog';
+const CATALOG_DRAFT = 'debelle.pkg.draft';
+
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c])); }
+function listOf(v) { return Array.isArray(v) ? v : (v && typeof v === 'object' ? Object.values(v) : []); }
+function num(v, d) { v = Number(v); return isFinite(v) && v >= 0 ? v : d; }
+
+/* Adopt a saved price list. The arrays are replaced in place, so every
+   function that reads them sees the new services. Returns false (and
+   changes nothing) for anything that doesn't look like a price list. */
+function applyCatalog(c) {
+  if (!c || typeof c !== 'object' || !c.data) return false;
+  const d = c.data;
+  const item = x => x && typeof x === 'object' && x.id && x.name;
+  const base = x => ({ id: String(x.id), name: String(x.name), price: num(x.price, 0), desc: String(x.desc || '') });
+  const timed = x => Object.assign(base(x), x.hourly ? { qty: true, unit: 'per hour', minQty: Math.max(1, Math.round(num(x.minQty, 2))) } : {});
+  const put = (arr, list) => arr.splice(0, arr.length, ...list);
+  put(PHOTO_OPTIONS, listOf(d.photo).filter(item).map(x => Object.assign(timed(x), x.fullDay ? { fullDay: true } : {})));
+  put(VIDEO_OPTIONS, listOf(d.video).filter(item).map(timed));
+  put(VIDEO_ADDONS,  listOf(d.videoAddons).filter(item).map(base));
+  put(GLAM_OPTIONS,  listOf(d.glam).filter(item).map(x => Object.assign(base(x), { reqFullDay: !!x.reqFullDay })));
+  put(ALBUM_TYPES,   listOf(d.albums).filter(item).map(x => ({ id: String(x.id), name: String(x.name), pricePerPage: num(x.pricePerPage, 0),
+                                                                min: Math.max(1, Math.round(num(x.min, 24))), format: String(x.format || '') })));
+  put(OTHER_ADDONS,  listOf(d.addons).filter(item).map(base));
+  const st = d.settings || {};
+  ['glamExtraHour','snpPerGuest','snpMin','snpBigGroup','snpAssistant','discountTop'].forEach(k => { if (st[k] != null) SETTINGS[k] = num(st[k], SETTINGS[k]); });
+  const tiers = listOf(st.discounts).map(t => ({ upTo: num(t && t.upTo, NaN), pct: num(t && t.pct, 0) })).filter(t => isFinite(t.upTo));
+  if (tiers.length) SETTINGS.discounts = tiers.sort((a, b) => a.upTo - b.upTo);
+  // a choice made with the old list may have gone
+  if (state.photo && !PHOTO_OPTIONS.some(o => o.id === state.photo)) state.photo = null;
+  if (state.video && !VIDEO_OPTIONS.some(o => o.id === state.video)) state.video = null;
+  if (state.glam && !GLAM_OPTIONS.some(o => o.id === state.glam)) { state.glam = null; state.glamExtraHours = 0; }
+  if (state.album && !ALBUM_TYPES.some(o => o.id === state.album)) state.album = null;
+  state.videoAddons.forEach(id => { if (!VIDEO_ADDONS.some(o => o.id === id)) state.videoAddons.delete(id); });
+  state.otherAddons.forEach(id => { if (!OTHER_ADDONS.some(o => o.id === id)) state.otherAddons.delete(id); });
+  return true;
+}
+
+function loadCatalog() {
+  let draft = null;
+  if (/[?&]draft\b/.test(location.search)) {
+    try { draft = JSON.parse(localStorage.getItem(CATALOG_DRAFT) || 'null'); } catch (e) {}
+    if (draft && applyCatalog(draft)) {
+      const b = document.createElement('div');
+      b.textContent = 'Preview of unsaved prices from the admin panel — not what clients see yet.';
+      b.style.cssText = 'position:sticky;top:0;z-index:99;background:#c9a96e;color:#000;font:600 12px Montserrat,sans-serif;letter-spacing:.06em;text-align:center;padding:10px';
+      document.body.prepend(b);
+      renderAll();
+      return;
+    }
+  }
+  let seen = '';
+  try { const c = JSON.parse(localStorage.getItem(CATALOG_CACHE) || 'null'); if (applyCatalog(c)) seen = String(c.updatedAt); } catch (e) {}
+  renderAll();
+  const ctl = window.AbortController ? new AbortController() : null;
+  const timer = setTimeout(() => ctl && ctl.abort(), 6000);
+  fetch(CATALOG_URL, { cache: 'no-store', signal: ctl ? ctl.signal : undefined })
+    .then(r => r.ok ? r.json() : null)
+    .then(c => {
+      clearTimeout(timer);
+      if (!c || String(c.updatedAt) === seen) return;
+      if (applyCatalog(c)) {
+        try { localStorage.setItem(CATALOG_CACHE, JSON.stringify(c)); } catch (e) {}
+        renderAll();
+      }
+    })
+    .catch(() => clearTimeout(timer));     // offline or blocked: the built-in or remembered prices stand
 }
 
 function roundTo50(n) {
@@ -392,12 +457,13 @@ let state = {
 // ── HELPERS ───────────────────────────────────────────────────────────────────
 
 const fmt = n => '$' + n.toLocaleString('en-CA');
+const rate = n => '$' + (Number.isInteger(n) ? n : n.toFixed(2));   // $4.50, $5
 
 function makeCard(id, title, price, desc, selected, extraHTML='', unitNote='') {
   return `<div class="option-card ${selected?'selected':''}" onclick="toggleCard('${id}')">
     <div class="card-check">✓</div>
-    <div class="card-title">${title}</div>
-    <div class="card-desc">${desc}</div>
+    <div class="card-title">${esc(title)}</div>
+    <div class="card-desc">${esc(desc)}</div>
     ${extraHTML}
     <div class="card-price">${fmt(price)}</div>
     ${unitNote ? `<div class="card-price-note">${unitNote}</div>` : ''}
@@ -407,7 +473,7 @@ function makeCard(id, title, price, desc, selected, extraHTML='', unitNote='') {
 function makeAddon(id, name, price, desc, selected) {
   return `<div class="addon-row ${selected?'selected':''}" onclick="toggleAddon('${id}')">
     <div class="addon-check"></div>
-    <div class="addon-info"><div class="addon-name">${name}</div><div class="addon-detail">${desc}</div></div>
+    <div class="addon-info"><div class="addon-name">${esc(name)}</div><div class="addon-detail">${esc(desc)}</div></div>
     <div class="addon-price">${fmt(price)}</div>
   </div>`;
 }
@@ -451,7 +517,7 @@ function renderVideoAddons() {
 }
 
 function renderGlam() {
-  const hasFullDay = state.photo === 'full_day';
+  const hasFullDay = PHOTO_OPTIONS.some(o => o.id === state.photo && o.fullDay);
   const cf = document.getElementById('glam-conflict');
   if (state.glam) {
     const g = GLAM_OPTIONS.find(x => x.id === state.glam);
@@ -461,9 +527,9 @@ function renderGlam() {
   let extra = '';
   if (state.glam) {
     extra = `<div style="grid-column:1/-1;background:var(--black2);border:1px solid var(--line);border-top:none;padding:14px 18px;display:flex;align-items:center;gap:14px;">
-      <div class="addon-info"><div class="addon-name">Extra Hours (Glam Studio)</div><div class="addon-detail">$375 per additional hour beyond 5-hour coverage</div></div>
+      <div class="addon-info"><div class="addon-name">Extra Hours (Glam Studio)</div><div class="addon-detail">${fmt(SETTINGS.glamExtraHour)} per additional hour beyond 5-hour coverage</div></div>
       <div class="qty-control"><button class="qty-btn" onclick="changeGlamHours(-1)">−</button><div class="qty-display">${state.glamExtraHours}h</div><button class="qty-btn" onclick="changeGlamHours(1)">+</button></div>
-      <div class="addon-price">${fmt(state.glamExtraHours * 375)}</div>
+      <div class="addon-price">${fmt(state.glamExtraHours * SETTINGS.glamExtraHour)}</div>
     </div>`;
   }
   document.getElementById('glam-grid').innerHTML = GLAM_OPTIONS.map(g =>
@@ -482,9 +548,9 @@ function renderAlbums() {
     `<div class="album-builder">` +
     ALBUM_TYPES.map(a => `
       <div class="album-type-card ${sel===a.id?'selected':''}" onclick="selectAlbum('${a.id}')">
-        <div class="album-type-name">${a.name}</div>
+        <div class="album-type-name">${esc(a.name)}</div>
         <div class="album-type-price">$${a.pricePerPage}/page</div>
-        <div class="album-type-spec">${a.format}</div>
+        <div class="album-type-spec">${esc(a.format)}</div>
       </div>`).join('') +
     `</div>` +
     (sel ? `<div class="album-pages-control">
@@ -508,9 +574,9 @@ function renderOtherAddons() {
 
 function calcSNP(g) {
   if (g <= 0) return 0;
-  let b = g * 4.5;
-  if (b < 375) b = 375;
-  if (g > 100) b += 300;
+  let b = g * SETTINGS.snpPerGuest;
+  if (b < SETTINGS.snpMin) b = SETTINGS.snpMin;
+  if (g > SETTINGS.snpBigGroup) b += SETTINGS.snpAssistant;
   return Math.round(b);
 }
 
@@ -532,7 +598,7 @@ function calcRaw() {
   if (state.glam) {
     const g = GLAM_OPTIONS.find(x => x.id===state.glam);
     if (g) { total+=g.price; lines.push({section:'Glam Studio', name:g.name, price:g.price}); }
-    if (state.glamExtraHours > 0) { const ep=state.glamExtraHours*375; total+=ep; lines.push({section:'Glam Studio', name:`Extra hours (${state.glamExtraHours}h)`, price:ep}); }
+    if (state.glamExtraHours > 0) { const ep=state.glamExtraHours*SETTINGS.glamExtraHour; total+=ep; lines.push({section:'Glam Studio', name:`Extra hours (${state.glamExtraHours}h)`, price:ep}); }
   }
   if (state.snpGuests > 0) {
     const p = calcSNP(state.snpGuests); total+=p;
@@ -568,7 +634,7 @@ function renderSummary() {
     lines.forEach(l => { if (!secs[l.section]) secs[l.section]=[]; secs[l.section].push(l); });
     el.innerHTML = Object.entries(secs).map(([s, items]) =>
       `<div class="sidebar-section"><div class="sidebar-section-title">${s}</div>` +
-      items.map(i => `<div class="summary-line"><span class="summary-line-name">${i.name}</span><span class="summary-line-price">${fmt(i.price)}</span></div>`).join('') +
+      items.map(i => `<div class="summary-line"><span class="summary-line-name">${esc(i.name)}</span><span class="summary-line-price">${fmt(i.price)}</span></div>`).join('') +
       `</div>`
     ).join('');
   }
@@ -599,12 +665,12 @@ function renderSummary() {
   const g = state.snpGuests;
   if (g > 0) {
     const t = calcSNP(g);
-    let note = `$4.50/person · Min. $375 · Total: ${fmt(t)}`;
-    if (g > 100) note += ' (incl. $300 assistant)';
+    let note = `${rate(SETTINGS.snpPerGuest)}/person · Min. ${fmt(SETTINGS.snpMin)} · Total: ${fmt(t)}`;
+    if (g > SETTINGS.snpBigGroup) note += ` (incl. ${fmt(SETTINGS.snpAssistant)} assistant)`;
     document.getElementById('snp-note-display').textContent = note;
     document.getElementById('snp-total-display').textContent = fmt(t);
   } else {
-    document.getElementById('snp-note-display').textContent = '$4.50 per person · Minimum charge $375 · Groups over 100 require an assistant (+$300)';
+    document.getElementById('snp-note-display').textContent = `${rate(SETTINGS.snpPerGuest)} per person · Minimum charge ${fmt(SETTINGS.snpMin)} · Groups over ${SETTINGS.snpBigGroup} require an assistant (+${fmt(SETTINGS.snpAssistant)})`;
     document.getElementById('snp-total-display').textContent = '$0';
   }
 }
@@ -614,10 +680,12 @@ function renderSummary() {
 function toggleCard(id) {
   if (PHOTO_OPTIONS.find(o => o.id===id)) {
     state.photo = state.photo===id ? null : id;
+    const po = PHOTO_OPTIONS.find(o => o.id===state.photo); if (po && po.qty) state.photoQty = Math.max(po.minQty || 1, state.photoQty);
     renderPhoto(); renderGlam(); renderSummary(); return;
   }
   if (VIDEO_OPTIONS.find(o => o.id===id)) {
     state.video = state.video===id ? null : id;
+    const vo = VIDEO_OPTIONS.find(o => o.id===state.video); if (vo && vo.qty) state.videoQty = Math.max(vo.minQty || 1, state.videoQty);
     renderVideo(); renderSummary(); return;
   }
   if (GLAM_OPTIONS.find(g => g.id===id)) {
@@ -639,8 +707,9 @@ function toggleAddon(id) {
 }
 
 function changeQty(type, delta) {
-  if (type==='photo') { state.photoQty = Math.max(2, state.photoQty+delta); renderPhoto(); }
-  else { state.videoQty = Math.max(2, state.videoQty+delta); renderVideo(); }
+  const min = o => (o && o.minQty) || 1;
+  if (type==='photo') { state.photoQty = Math.max(min(PHOTO_OPTIONS.find(o => o.id===state.photo)), state.photoQty+delta); renderPhoto(); }
+  else { state.videoQty = Math.max(min(VIDEO_OPTIONS.find(o => o.id===state.video)), state.videoQty+delta); renderVideo(); }
   renderSummary();
 }
 
@@ -718,7 +787,7 @@ function exportSummary() {
   URL.revokeObjectURL(url);
 }
 
-renderAll();
+loadCatalog();
 </script>
 </body>
 </html>
