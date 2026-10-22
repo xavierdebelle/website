@@ -5,29 +5,7 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
-## v104 — 2026-10-22
-
-**What's new** · Fix · [tools/photo-review.html]
-### Photo Review: Manage works
-Renaming a review or a photo in Manage now saves, and deleting a review
-takes it off your list for good.
-
-**Photo Review v4 — `tools/photo-review.html`, source `Tools files/de Belle Photography apps/photo-review-v4.html`**
-- Same two bugs Video Review had (fixed there in v102), carried over when
-  Photo Review was built from it; reported by Xavier 2026-10-22.
-- **Save did nothing:** it read `dlgTitle` / `dlgPName` after the box was
-  removed. The Save button now returns the values on click; "Renamed ✓".
-- **Delete review left it in the list:** removing `photoReviews/{id}` fired
-  the live listener, which cleared `R`, so the next step's `R.id` threw and
-  the index entry stayed. Ids are taken first, the index entry goes first,
-  `markSeen` is held off (`deleting`), then `location.replace`.
-- Home list drops reviews that no longer exist and removes their leftover
-  `users/{uid}/photoReviews/{id}` entry — clears ghosts from before the fix.
-- Tested on the mock: rename review + photo saves and shows at once; delete
-  removes review and index entry, back to the list; a seeded ghost entry
-  was cleaned up on load.
-
-## v104 — 2026-10-22
+## v105 — 2026-10-22
 
 **What's new** · Video Review · [tools/video-review.html]
 ### Vimeo stays in sync,<br>Google Drive is back
@@ -62,6 +40,28 @@ Real Vimeo playback (headless can't play Vimeo DRM) and a real Drive
 upload are for Xavier to try.
 
 ---
+
+## v104 — 2026-10-22
+
+**What's new** · Fix · [tools/photo-review.html]
+### Photo Review: Manage works
+Renaming a review or a photo in Manage now saves, and deleting a review
+takes it off your list for good.
+
+**Photo Review v4 — `tools/photo-review.html`, source `Tools files/de Belle Photography apps/photo-review-v4.html`**
+- Same two bugs Video Review had (fixed there in v102), carried over when
+  Photo Review was built from it; reported by Xavier 2026-10-22.
+- **Save did nothing:** it read `dlgTitle` / `dlgPName` after the box was
+  removed. The Save button now returns the values on click; "Renamed ✓".
+- **Delete review left it in the list:** removing `photoReviews/{id}` fired
+  the live listener, which cleared `R`, so the next step's `R.id` threw and
+  the index entry stayed. Ids are taken first, the index entry goes first,
+  `markSeen` is held off (`deleting`), then `location.replace`.
+- Home list drops reviews that no longer exist and removes their leftover
+  `users/{uid}/photoReviews/{id}` entry — clears ghosts from before the fix.
+- Tested on the mock: rename review + photo saves and shows at once; delete
+  removes review and index entry, back to the list; a seeded ghost entry
+  was cleaned up on load.
 
 ## v103 — 2026-10-22
 
