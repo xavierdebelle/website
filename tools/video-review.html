@@ -22,6 +22,9 @@
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="../assets/logo.svg" type="image/svg+xml">
 <!--
+  Since v3 videos are pasted as GoHighLevel Media Storage links: Drive refuses
+  to stream into players on other sites (2026-10-22). The Drive keys below only
+  matter if a relay is added later.
   VIDEO REVIEW — setup (Xavier, once, in console.cloud.google.com, project xdb-tools)
   1. APIs & Services → Library → "Google Drive API" → Enable.
   2. Credentials → Create credentials → API key → restrict it:
@@ -168,6 +171,8 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:var(--volt)}
 .prog{height:8px;background:var(--ash);margin-top:12px}
 .prog i{display:block;height:100%;background:var(--volt);width:0}
 .linkbox{display:flex;gap:8px}
+.steps{margin:8px 0 0;padding-left:20px}
+.steps li{margin:2px 0}
 .linkbox input{flex:1;min-width:0;font-family:var(--mono);font-size:13px}
 
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);opacity:0;background:var(--volt);color:var(--ink);font-weight:900;font-size:13px;
@@ -215,7 +220,7 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:var(--volt)}
     <p class="k">Your reviews</p>
     <div id="homeList"></div>
   </div>
-  <p class="note" style="margin-top:28px">Clients never need an account — they open the link, type their name and leave notes. Videos live in your Google Drive.</p>
+  <p class="note" style="margin-top:28px">Clients never need an account — they open the link, type their name and leave notes. Videos play from your GoHighLevel Media Storage.</p>
 </main>
 
 <!-- ================= REVIEW ================= -->
@@ -392,7 +397,15 @@ const homeNotes = {};
 function watchHome() {
   Object.keys(homeData).forEach(id => {
     if (homeWatch[id]) return;
-    homeWatch[id] = fb.f.onValue(dbRef('reviews/' + id + '/comments'), snap => { homeNotes[id] = snap.val() || {}; renderHomeList(); }, () => {});
+    homeWatch[id] = fb.f.onValue(dbRef('reviews/' + id), snap => {
+      const r = snap.val();
+      if (!r) {   // deleted (or never finished being created): drop the leftover list entry
+        delete homeData[id]; delete homeNotes[id];
+        if (homeUid) fb.f.remove(dbRef('users/' + homeUid + '/reviews/' + id)).catch(() => {});
+        renderHomeList(); return;
+      }
+      homeNotes[id] = r.comments || {}; renderHomeList();
+    }, () => {});
   });
   Object.keys(homeWatch).forEach(id => { if (!homeData[id]) { homeWatch[id](); delete homeWatch[id]; } });
 }
@@ -463,8 +476,10 @@ function loadVideo() {
 vid.addEventListener('error', () => {
   if (!vid.getAttribute('src')) return;
   const m = $('stageMsg'); m.hidden = false; $('bigPlay').hidden = true;
-  m.innerHTML = '<div><b>This video won’t play.</b><br>If it’s on Google Drive, it has to be shared “Anyone with the link”. Drive also pauses streaming on very busy files for a while — try again later.' +
-    (curVer() && curVer().drive ? '<br><br><a href="https://drive.google.com/file/d/' + esc(curVer().drive) + '/view" target="_blank" rel="noopener">Open it on Google Drive ↗</a>' : '') + '</div>';
+  m.innerHTML = curVer() && curVer().drive
+    ? '<div><b>This version is on Google Drive, which no longer lets its videos play on other websites.</b>' + (isHost() ? '<br>Upload it to GoHighLevel Media Storage and add it again as a new version.' : '<br>Xavier will post it again shortly.') +
+      '<br><br><a href="https://drive.google.com/file/d/' + esc(curVer().drive) + '/view" target="_blank" rel="noopener">Watch it on Google Drive ↗</a></div>'
+    : '<div><b>This video won’t play.</b><br>' + (isHost() ? 'Check the link still opens on its own (GoHighLevel → Media Storage), and that the video is H.264, not ProRes.' : 'Try reloading the page. If it still won’t play, let Xavier know.') + '</div>';
 });
 $('verSel').onchange = e => {
   if (e.target.value === '__add') { e.target.value = curVer() ? curVer().key : ''; openAdd(); return; }
@@ -799,13 +814,15 @@ $('btnHostMenu').onclick = () => {
       (v ? '<button type="button" class="btn sm" id="dlgTxt">Download notes (.txt)</button>' : '') +
       (v && R.versions.length > 1 ? '<button type="button" class="btn sm" id="dlgDelV">Delete this version</button>' : '') +
       '<button type="button" class="btn sm" id="dlgDelR">Delete review</button></div>' +
-    '<p class="note">Deleting removes the notes here. The video files stay in your Google Drive folder “' + DRIVE_FOLDER + '”.</p>',
-    [['Close', null], ['Save', () => true, true]]).then(ok => {
-      if (!ok) return;
-      const title = $('dlgTitle') ? $('dlgTitle').value.trim() : '';
-      if (title && title !== R.title) { write('reviews/' + R.id + '/title', title); fb.f.set(dbRef('users/' + R.owner + '/reviews/' + R.id + '/title'), title).catch(() => {}); }
-      const f = $('dlgFps') && Number($('dlgFps').value);
-      if (v && f && Math.abs(f - v.fps) > .001) write('reviews/' + R.id + '/versions/' + v.key + '/fps', f);
+    '<p class="note">Deleting removes the notes here. The video files stay in GoHighLevel Media Storage.</p>',
+    // read the fields while the box is still open — it's gone once Save resolves
+    [['Close', null], ['Save', () => ({ title: $('dlgTitle').value.trim(), fps: $('dlgFps') ? Number($('dlgFps').value) : 0 }), true]]).then(got => {
+      if (!got || !R) return;
+      if (got.title && got.title !== R.title) {
+        write('reviews/' + R.id + '/title', got.title.slice(0, 200)).then(ok => { if (ok) toast('Renamed ✓'); });
+        fb.f.set(dbRef('users/' + R.owner + '/reviews/' + R.id + '/title'), got.title.slice(0, 200)).catch(() => {});
+      }
+      if (v && got.fps && Math.abs(got.fps - v.fps) > .001) write('reviews/' + R.id + '/versions/' + v.key + '/fps', got.fps);
     });
   $('dlgAdd').onclick = () => { closeDialog(); openAdd(); };
   if ($('dlgTxt')) $('dlgTxt').onclick = () => {
@@ -820,49 +837,65 @@ $('btnHostMenu').onclick = () => {
   };
   $('dlgDelR').onclick = () => {
     if (!confirm('Delete “' + R.title + '” and every note on it? The client link stops working.')) return;
-    const owner = R.owner;
-    fb.f.remove(dbRef('reviews/' + R.id)).then(() => fb.f.remove(dbRef('users/' + owner + '/reviews/' + R.id)).catch(() => {}))
-      .then(() => { location.search = ''; }, () => toast("Couldn't delete it"));
+    // take the ids now: deleting fires the live listener, which clears R
+    const owner = R.owner, id = R.id;
+    deleting = true;
+    fb.f.remove(dbRef('users/' + owner + '/reviews/' + id)).catch(() => {})
+      .then(() => fb.f.remove(dbRef('reviews/' + id)))
+      .then(() => { location.replace(location.pathname); }, () => { deleting = false; toast("Couldn't delete it"); });
   };
 };
+let deleting = false;
 function markSeen() {
-  if (!isHost() || !fb) return;
+  if (deleting || !isHost() || !fb) return;
   fb.f.set(dbRef('users/' + R.owner + '/reviews/' + R.id + '/seen'), Date.now()).catch(() => {});
 }
 
-// ---------- adding a version: upload to Drive, or paste a link ----------
+// ---------- adding a version: paste a GoHighLevel link ----------
+// Since 2026-10-22 Google Drive refuses to stream its files into a player on
+// another site, so videos are hosted in GoHighLevel's Media Storage (which
+// serves them anywhere, with seeking) and pasted here as links. The Drive
+// upload code below is kept, unwired, for a possible relay later.
 function openAdd() {
   const n = R.versions.length ? Math.max(...R.versions.map(x => x.n)) + 1 : 1;
-  const driveReady = !!(DRIVE_CLIENT_ID && DRIVE_API_KEY);
-  if (driveReady) loadGIS().catch(() => {});
   dialog('<h3>Add version ' + n + '</h3>' +
+    '<div class="field"><p class="k">Video link from GoHighLevel</p>' +
+      '<input type="url" id="dlgUrl" placeholder="https://assets.cdn.filesafe.space/…/media/….mp4">' +
+      '<ol class="note steps"><li>In GoHighLevel, open <b>Media Storage</b> and upload the video.</li>' +
+      '<li>On the file, click <b>⋯ → Copy link</b>.</li><li>Paste it above.</li></ol>' +
+      '<p class="note">Use an <b>H.264 MP4 or MOV</b> — browsers can’t play ProRes (Web Squeeze makes one). Anyone with the link can watch it, same as the review link.</p>' +
+      '<p class="note" id="dlgCheck"></p></div>' +
     '<div class="field"><p class="k">Label (optional)</p><input type="text" id="dlgVName" maxlength="200" placeholder="e.g. colour pass, music change"></div>' +
-    '<div class="field"><p class="k">Frame rate</p><select id="dlgVFps">' + [23.976, 24, 25, 29.97, 30, 50, 59.94, 60].map(f => '<option value="' + f + '"' + (f === 24 ? ' selected' : '') + '>' + f + ' fps</option>').join('') + '</select></div>' +
-    '<div class="field"><p class="k">Upload to your Google Drive</p>' +
-      (driveReady ? '<input type="file" id="dlgFile" accept="video/mp4,video/quicktime,video/webm,video/*"><p class="note">Use an <b>H.264 MP4</b> (Web Squeeze makes one) — browsers can’t play ProRes. It goes into the “' + DRIVE_FOLDER + '” folder, shared “Anyone with the link”.</p><div class="prog" id="dlgProg" hidden><i></i></div><p class="note" id="dlgProgTxt"></p>'
-        : '<p class="note"><b>Drive upload isn’t set up yet</b> — the Drive keys still need adding. Paste a link below meanwhile.</p>') + '</div>' +
-    '<p class="or">— or paste a link —</p>' +
-    '<input type="url" id="dlgUrl" placeholder="Google Drive share link, or a direct .mp4 link">' +
-    '<p class="note">Drive files must be shared “Anyone with the link”.</p>',
-    [['Cancel', null], ['Add', () => addVersion(n), true]]);
+    '<div class="field"><p class="k">Frame rate</p><select id="dlgVFps">' + [23.976, 24, 25, 29.97, 30, 50, 59.94, 60].map(f => '<option value="' + f + '"' + (f === 24 ? ' selected' : '') + '>' + f + ' fps</option>').join('') + '</select></div>',
+    [['Cancel', null], ['Add', () => addVersion(n), true]], 'dlgUrl');
+}
+// load just the start of the video to make sure a browser can play it
+function playable(url) {
+  return new Promise(res => {
+    const v = document.createElement('video'); v.preload = 'metadata'; v.muted = true;
+    const end = ok => { clearTimeout(t); v.removeAttribute('src'); v.load(); res(ok); };
+    const t = setTimeout(() => end(null), 15000);
+    v.onloadedmetadata = () => end(v.videoWidth > 0 ? true : false);
+    v.onerror = () => end(false);
+    v.src = url;
+  });
 }
 async function addVersion(n) {
   const name = $('dlgVName').value.trim().slice(0, 200), f = Number($('dlgVFps').value) || 24;
-  const file = $('dlgFile') && $('dlgFile').files[0];
-  const link = $('dlgUrl').value.trim();
-  let ver = { n, name, fps: f, createdAt: Date.now() };
-  if (file) {
-    try { ver.drive = await uploadToDrive(file); ver.size = file.size; }
-    catch (e) { console.warn(e); $('dlgProgTxt').textContent = 'Upload failed: ' + (e && e.message || e) + '. Try again.'; return false; }
-  } else if (link) {
-    const d = link.match(/drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?(?:.*&)?id=)([\w-]{20,})/) || link.match(/[?&]id=([\w-]{20,})/);
-    if (d) ver.drive = d[1];
-    else if (/^https:\/\//i.test(link) || /^\//.test(link) || /^https?:\/\/(localhost|127\.0\.0\.1)/i.test(link)) ver.url = link.replace(/(dropbox\.com\/.*)[?&]dl=0/, '$1?raw=1');
-    else { toast('That doesn’t look like a link'); return false; }
-  } else { toast('Choose a file or paste a link'); return false; }
+  const link = $('dlgUrl').value.trim(), say = t => { $('dlgCheck').innerHTML = t; };
+  if (!link) { $('dlgUrl').focus(); say('<b>Paste the video’s link first.</b>'); return false; }
+  if (/drive\.google\.com|docs\.google\.com/i.test(link)) {
+    say('<b>Google Drive links can’t play here</b> — Google blocks its videos on other websites. Upload it to GoHighLevel Media Storage instead.');
+    return false;
+  }
+  if (!(/^https:\/\//i.test(link) || /^\//.test(link) || /^https?:\/\/(localhost|127\.0\.0\.1)/i.test(link))) { say('<b>That doesn’t look like a link.</b> It should start with https://'); return false; }
+  const url = link.replace(/(dropbox\.com\/.*)[?&]dl=0/, '$1?raw=1');
+  say('Checking it plays…');
+  const ok = await playable(url);
+  if (ok === false) { say('<b>This link doesn’t play in a browser.</b> Check it opens on its own, and that the video is H.264 — not ProRes.'); return false; }
+  const ver = { n, name, fps: f, url, createdAt: Date.now() };
   const key = fb.f.push(dbRef('reviews/' + R.id + '/versions')).key;
-  const ok = await write('reviews/' + R.id + '/versions/' + key, ver);
-  if (!ok) return false;
+  if (!(await write('reviews/' + R.id + '/versions/' + key, ver))) { say(''); return false; }
   verKey = key; history.replaceState(null, '', '?r=' + encodeURIComponent(R.id) + '&v=' + encodeURIComponent(key));
   toast('Version ' + n + ' added ✓');
   return true;

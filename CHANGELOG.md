@@ -5,6 +5,53 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v102 — 2026-10-22
+
+**What's new** · Fix · [tools/video-review.html]
+### Video Review plays again
+Google Drive stopped letting its videos play inside other websites, so
+review videos now come from GoHighLevel's media storage: upload there, copy
+the link, paste it into the review. The tool checks the link plays before
+adding it. Renaming a review and deleting one work properly now too.
+
+**Video Review v3 — `tools/video-review.html`, source `Tools files/de Belle Photography apps/video-review-v3.html`**
+- **Drive can't stream into the player (found 2026-10-22, Xavier's first
+  live review).** Drive answers 403 to any cross-site video/fetch request
+  for file bytes — `Sec-Fetch-Dest: video`/`cors` + `cross-site` — on both
+  `googleapis.com/drive/v3/files/{id}?alt=media` and
+  `drive.usercontent.google.com/download`; the same request without those
+  headers gets 206. Checked with curl and headless Chrome (netlog).
+  Anonymous API downloads also hit Google's "automated queries" page.
+  A throwaway local relay (server-side fetch, Range passed through) played
+  the Drive file in Chrome fine — kept as an option, not built.
+- **GoHighLevel Media Storage works:** `assets.cdn.filesafe.space/…` serves
+  206 with ranges and `Access-Control-Allow-Origin: *` to cross-site video
+  requests; Xavier's test .mov (H.264/AAC, 1080×1624) loaded, sought to
+  0:08 and played in headless Chrome. Xavier chose manual upload + paste
+  (2026-10-22) over automatic upload via a token relay.
+- **Add version** is now link-only: steps for GHL (Media Storage → ⋯ → Copy
+  link), H.264 MP4/MOV note, refuses Google Drive links with the reason,
+  test-loads the link (`playable()`, 15 s) and refuses one that won't play.
+  Drive upload code kept but unwired. Existing Drive versions show "this
+  version is on Google Drive… add it again" (host) instead of a dead player.
+- **Fixed: deleting a review left it in the list.** The delete fired the
+  live listener, which cleared `R`; the next step read `R.id` and failed.
+  Ids are now taken first, the list entry goes first, `markSeen` is held
+  off, and the home list watches each `reviews/{id}` and drops (and cleans
+  up) entries whose review is gone — which also clears any leftover entry.
+- **Fixed: renaming in Manage did nothing.** Save read the fields after the
+  box had been removed; it now reads them on click. Frame-rate change had
+  the same bug, fixed the same way.
+- Privacy page: Video Review's videos are with HighLevel, not Google Drive
+  (EN + FR, providers list).
+
+**Tested on the mock:** Drive link refused with reason, "hello" refused,
+broken link refused after the playback check, GHL link added; ghost list
+entry removed on load; rename shows at once; delete returns to an empty
+list with review + index gone.
+
+---
+
 ## v101 — 2026-10-21
 
 **What's new** · Fix · [tools/photo-review.html]
