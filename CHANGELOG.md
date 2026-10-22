@@ -5,6 +5,38 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v114 — 2026-10-22
+
+**What's new** · Tools · [tools.html]
+### Tools, re-sorted
+de Belle Photography is now **The Biz**, and Idea Bank and Project Phases
+moved into it. Maria's Tools is now **My Wife's Tools**. A new **Archived
+Tools** section holds builds whose day has passed — starting with Wedding
+Activities, which still works.
+
+**Tools page — `tools.html`, `index.html`**
+- Labels only for existing sections; ids unchanged (`#debelle` = The Biz,
+  `#maria` = My Wife's Tools) so links and map nodes still land. The Biz
+  heading "Run The Business", blurb rewritten; Personal blurb drops "where
+  the ideas go"; My Wife's Tools blurb "Built for my wife."
+- Idea Bank and Project Phases cards: `data-cat="personal"` → `debelle`.
+- New section `#archive` (`data-cat="archive"`, "07 / Archived Tools",
+  "Done Its Job") after Art, with Wedding Activities (was Events). New
+  filter chip "Archived"; deep link `tools.html#archive` selects it.
+- Map (`MAP` in index.html): "De Belle Tools" → "The Biz", "Maria's Tools" →
+  "My Wife's Tools", new node "Archived" (shorter label: "Archived Tools"
+  ran off the right edge at 1280 px). Index list: same renames plus
+  "Archived Tools". Page description updated.
+- Left as they were: the Galaxy Map and Neural Mind Map art pieces (they
+  copy the old map on purpose), Idea Bank's design-system nav, Work's "The
+  tools behind it" link (still lands on The Biz).
+
+**Verified locally (Playwright Chromium)** — 7 sections with the right cards,
+numbering 01–28, Archived filter and #archive deep link, map shows the new
+labels and node, Index list, no page errors.
+
+---
+
 ## v113 — 2026-10-22
 
 **What's new** · Update · [tools/photo-review.html]
