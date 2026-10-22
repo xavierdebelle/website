@@ -231,6 +231,13 @@ label.chk input{margin-top:3px;accent-color:var(--volt)}
     </div>
     <p class="k">Your reviews</p>
     <div id="homeList"></div>
+    <p class="k" style="margin-top:40px">Client portals</p>
+    <p class="note" style="margin:0 0 12px">One link per client that lists every review you add to it — photos and videos. New photos and your replies show up as “New”.</p>
+    <div class="newrow">
+      <input type="text" id="newPortal" maxlength="200" placeholder="Client name, e.g. Smith family" aria-label="Portal name">
+      <button type="button" class="btn" id="btnPortal">Create portal</button>
+    </div>
+    <div id="portalList"></div>
   </div>
   <p class="note" style="margin-top:28px">Clients never need an account — they open the link, type their name, click the spot and leave a note. Photos live in your Google Drive.</p>
 </main>
@@ -432,7 +439,8 @@ function renderHome() {
   if (homeOff) { homeOff(); homeOff = null; }
   Object.values(homeWatch).forEach(off => off()); homeWatch = {};
   homeUid = uidNow;
-  if (!uidNow || !fb) { $('homeList').innerHTML = ''; return; }
+  if (!uidNow || !fb) { $('homeList').innerHTML = ''; watchHomePortals(null); return; }
+  watchHomePortals(uidNow);
   homeOff = fb.f.onValue(dbRef('users/' + uidNow + '/' + INDEX), snap => { homeData = snap.val() || {}; watchHome(); renderHomeList(); }, () => {});
 }
 // each review, live, for the counts and the "N new" badge
@@ -467,6 +475,38 @@ $('homeList').addEventListener('click', e => { const r = e.target.closest('.rv')
 $('gateBtn').onclick = () => acct() && acct().signIn();
 $('newTitle').addEventListener('keydown', e => { if (e.key === 'Enter') createReview(); });
 $('btnCreate').onclick = createReview;
+// ---------- client portals ----------
+// The same portals as Video Review (portals/{id} + users/{uid}/portals/{id});
+// the portal page itself lives in video-review.html?p={id}, so a portal made
+// here opens there, where reviews of both kinds are added and shared.
+let homePortalsOff = null, homePortals = {};
+function watchHomePortals(uid) {
+  if (homePortalsOff) { homePortalsOff(); homePortalsOff = null; }
+  homePortals = {};
+  if (!uid || !fb) { $('portalList').innerHTML = ''; return; }
+  homePortalsOff = fb.f.onValue(dbRef('users/' + uid + '/portals'), snap => { homePortals = snap.val() || {}; renderPortalList(); }, () => {});
+}
+function renderPortalList() {
+  const all = Object.entries(homePortals).sort((a, b) => (b[1].createdAt || 0) - (a[1].createdAt || 0));
+  $('portalList').innerHTML = all.length ? all.map(([id, d]) =>
+    '<div class="rv" data-portal="' + esc(id) + '"><div class="rv-main"><div class="rv-t">' + esc(d.title || 'Client portal') + '</div>' +
+    '<div class="rv-m">portal · started ' + esc(new Date(d.createdAt || 0).toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' })) + '</div></div><span style="font-weight:900">→</span></div>').join('')
+    : '<div class="empty">No portals yet.</div>';
+}
+const portalPage = id => 'video-review.html?p=' + encodeURIComponent(id);
+$('portalList').addEventListener('click', e => { const r = e.target.closest('[data-portal]'); if (r) location.href = portalPage(r.dataset.portal); });
+$('newPortal').addEventListener('keydown', e => { if (e.key === 'Enter') createPortal(); });
+$('btnPortal').onclick = createPortal;
+function createPortal() {
+  if (!canHost() || !fb) { toast('Sign in first'); return; }
+  const title = $('newPortal').value.trim();
+  if (!title) { $('newPortal').focus(); toast('Give it the client’s name first'); return; }
+  const id = hex(16), now = Date.now(), host = me().uid;
+  fb.f.set(dbRef('portals/' + id), { owner: host, createdAt: now, title: title.slice(0, 200) })
+    .then(() => fb.f.set(dbRef('users/' + host + '/portals/' + id), { title: title.slice(0, 200), createdAt: now }))
+    .then(() => { location.href = portalPage(id); }, err => { console.warn(err); toast("Couldn't create it — check your connection"); });
+}
+
 function createReview() {
   if (!canHost() || !fb) { toast('Sign in first'); return; }
   const title = $('newTitle').value.trim();
@@ -1258,7 +1298,7 @@ async function fillPortalPicker() {
   const uid = me() && me().uid;
   const list = uid ? await fb.f.get(dbRef('users/' + uid + '/portals')).then(s => s.val() || {}, () => ({})) : {};
   const ids = Object.keys(list).sort((a, b) => (list[b].createdAt || 0) - (list[a].createdAt || 0));
-  if (!ids.length) { if ($('dlgPortals')) box.innerHTML = '<p class="note">No client portals yet — create one in <a href="video-review.html">Video Review</a>.</p>'; return; }
+  if (!ids.length) { if ($('dlgPortals')) box.innerHTML = '<p class="note">No client portals yet — create one on the <a href="photo-review.html">Photo reviews</a> page.</p>'; return; }
   const inIt = await Promise.all(ids.map(id => fb.f.get(dbRef('portals/' + id + '/reviews/' + R.id)).then(s => s.exists(), () => false)));
   if (!$('dlgPortals')) return;
   box.innerHTML = ids.map((id, i) => '<label class="chk" style="margin-top:6px"><input type="checkbox" data-portal="' + esc(id) + '"' + (inIt[i] ? ' checked' : '') + '><span>' + esc(list[id].title || 'Client portal') + '</span></label>').join('');

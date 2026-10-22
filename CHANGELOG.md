@@ -5,6 +5,22 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v112 — 2026-10-22
+
+**What's new** · Update · [tools/photo-review.html]
+### Photo Review: client portals on the home page
+Your client portals are listed under your photo reviews now, and you can
+start a new one there — no need to go through Video Review.
+
+**Photo Review v8 — `tools/photo-review.html`, source `Tools files/de Belle Photography apps/photo-review-v8.html`**
+- Home: **Client portals** section copied from Video Review — list from
+  `users/{uid}/portals`, **Create portal** writes `portals/{id}` + the index
+  entry exactly as Video Review does. A portal opens on its one page,
+  `video-review.html?p={id}`, where photo and video reviews are added.
+- Manage's "no portals yet" note points to the Photo reviews page.
+- Tested on the mock: created "Jones family" → opened the portal page →
+  listed back on Photo Review's home with the existing portal.
+
 ## v111 — 2026-10-22
 
 **What's new** · Update · [tools/photo-review.html]
