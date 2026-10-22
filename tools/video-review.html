@@ -22,9 +22,10 @@
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="../assets/logo.svg" type="image/svg+xml">
 <!--
-  Since v3 videos are pasted as GoHighLevel Media Storage links: Drive refuses
-  to stream into players on other sites (2026-10-22). The Drive keys below only
-  matter if a relay is added later.
+  Videos come from a pasted link (GoHighLevel, files, YouTube, Vimeo, Wistia,
+  Dailymotion, Loom) or an upload to Google Drive. Drive often refuses to
+  stream into other sites (2026-10-22); the page then falls back to Google's
+  own player. A relay (DRIVE_RELAY) would make Drive reliable.
   VIDEO REVIEW — setup (Xavier, once, in console.cloud.google.com, project xdb-tools)
   1. APIs & Services → Library → "Google Drive API" → Enable.
   2. Credentials → Create credentials → API key → restrict it:
@@ -499,7 +500,11 @@ function nativePlayer(url) {
 ['play', 'pause', 'ended', 'seeked'].forEach(t => vid.addEventListener(t, () => { if (P && P.native) onPlayer(t); }));
 ['timeupdate', 'progress'].forEach(t => vid.addEventListener(t, () => { if (P && P.native) onPlayer('time'); }));
 vid.addEventListener('loadedmetadata', () => { if (P && P.native) onPlayer('ready'); });
-vid.addEventListener('error', () => { if (P && P.native && vid.getAttribute('src')) onPlayer('error', {}); });
+vid.addEventListener('error', () => {
+  if (!P || !P.native || !vid.getAttribute('src')) return;
+  if (P.fallback && P.fallback()) return;
+  onPlayer('error', {});
+});
 vid.addEventListener('click', () => { if (!drawing) togglePlay(); });
 
 let ytP = null;
@@ -512,7 +517,7 @@ function youtubePlayer(src) {
   const me = { kind: 'youtube', timed: true, exact: false,
     time: () => t, duration: () => (p && p.getDuration && p.getDuration()) || 0, paused: () => !playing,
     play: () => p && p.playVideo(), pause: () => p && p.pauseVideo(),
-    seek: x => { if (!p) return; t = x; p.seekTo(x, true); clearTimeout(me.sk); me.sk = setTimeout(() => { tick(); onPlayer('seeked'); }, 400); },
+    seek: x => { if (!p) return; t = x; onPlayer('time'); p.seekTo(x, true); clearTimeout(me.sk); me.sk = setTimeout(() => { tick(); onPlayer('seeked'); }, 400); },
     rate: r => p && p.setPlaybackRate(r), mute: m => p && (m ? p.mute() : p.unMute()),
     aspect: () => src.tall ? 9 / 16 : 16 / 9,
     buffered: () => (p && p.getVideoLoadedFraction) ? p.getVideoLoadedFraction() * me.duration() : 0,
@@ -532,26 +537,44 @@ function youtubePlayer(src) {
   return me;
 }
 function vimeoPlayer(src) {
-  const el = frameDiv(); let p = null, t = 0, d = 0, playing = false, ar = 16 / 9, buf = 0;
+  const el = frameDiv(); let p = null, t = 0, d = 0, playing = false, ar = 16 / 9, buf = 0, poll = null, loads = 0;
+  const setPlaying = on => { if (on !== playing) { playing = on; onPlayer(on ? 'play' : 'pause'); } };
   const me = { kind: 'vimeo', timed: true, exact: false,
     time: () => t, duration: () => d, paused: () => !playing,
     play: () => p && p.play().catch(() => {}),
     // count it paused straight away — Vimeo's own pause message can lag
-    pause: () => { if (!p) return; if (playing) { playing = false; onPlayer('pause'); } p.pause().then(() => p.getCurrentTime()).then(x => { t = x; onPlayer('time'); }, () => {}); },
-    seek: x => { if (p) { t = x; p.setCurrentTime(x).catch(() => {}); } },
+    pause: () => { if (!p) return; setPlaying(false); p.pause().then(() => p.getCurrentTime()).then(x => { t = x; onPlayer('time'); }, () => {}); },
+    seek: x => { if (p) { t = x; onPlayer('time'); p.setCurrentTime(x).then(() => onPlayer('seeked'), () => {}); } },
     rate: r => p && p.setPlaybackRate(r).catch(() => {}), mute: m => p && p.setMuted(m).catch(() => {}),
-    aspect: () => ar, buffered: () => buf, destroy: () => { try { p && p.destroy(); } catch (e) {} } };
+    aspect: () => ar, buffered: () => buf, destroy: () => { clearInterval(poll); try { p && p.destroy(); } catch (e) {} } };
+  // encrypted-media matches Vimeo's own embed code; without it Vimeo reloads
+  // its player (forcereload=drm) and forgets every event we asked for
   el.innerHTML = '<iframe src="https://player.vimeo.com/video/' + encodeURIComponent(src.id) + '?' + (src.hash ? 'h=' + encodeURIComponent(src.hash) + '&' : '') +
-    'playsinline=1&dnt=1&title=0&byline=0&portrait=0&keyboard=0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>';
+    'playsinline=1&dnt=1&title=0&byline=0&portrait=0&keyboard=0" allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media" allowfullscreen></iframe>';
+  const frame = el.firstChild;
+  const handlers = {
+    play: () => setPlaying(true),
+    pause: x => { if (x && x.seconds != null) t = x.seconds; setPlaying(false); },
+    ended: () => { playing = false; onPlayer('ended'); },
+    timeupdate: x => { t = x.seconds; d = x.duration || d; onPlayer('time'); },
+    seeked: x => { t = x.seconds; onPlayer('seeked'); },
+    progress: x => { buf = x.seconds || buf; },
+  };
+  const listen = () => Object.entries(handlers).forEach(([k, fn]) => { p.off(k); p.on(k, fn); });
   loadScript('https://player.vimeo.com/api/player.js').then(() => {
     if (P !== me) return;
-    p = new Vimeo.Player(el.firstChild);
-    p.on('play', () => { playing = true; onPlayer('play'); });
-    p.on('pause', x => { playing = false; if (x && x.seconds != null) t = x.seconds; onPlayer('pause'); });
-    p.on('ended', () => { playing = false; onPlayer('ended'); });
-    p.on('timeupdate', x => { t = x.seconds; d = x.duration || d; onPlayer('time'); });
-    p.on('seeked', x => { t = x.seconds; onPlayer('seeked'); });
-    p.on('progress', x => { buf = x.seconds || buf; });
+    p = new Vimeo.Player(frame);
+    listen();
+    // if Vimeo reloads its player anyway, ask for the events again
+    frame.addEventListener('load', () => { if (++loads > 1 && P === me) setTimeout(listen, 600); });
+    // and ask for the time and state directly, so the two never drift apart
+    poll = setInterval(() => {
+      if (P !== me || document.hidden) return;
+      Promise.all([p.getCurrentTime(), p.getPaused()]).then(([x, ps]) => {
+        if (Math.abs(x - t) > 0.05) { t = x; onPlayer('time'); }
+        setPlaying(!ps);
+      }, () => {});
+    }, 250);
     p.ready().then(() => Promise.all([p.getDuration(), p.getVideoWidth(), p.getVideoHeight()]))
       .then(([du, w, h]) => { d = du; if (w && h) ar = w / h; if (muted) p.setMuted(true).catch(() => {}); onPlayer('ready'); }, () => onPlayer('error', {}));
   }, () => onPlayer('error', { code: 'script' }));
@@ -584,14 +607,37 @@ const TYPED = {
 };
 function typedPlayer(src) {
   const el = frameDiv();
-  el.innerHTML = '<iframe src="' + esc(TYPED[src.kind](encodeURIComponent(src.id))) + '" allow="autoplay; fullscreen" allowfullscreen></iframe>';
+  el.innerHTML = '<iframe src="' + esc(TYPED[src.kind](encodeURIComponent(src.id))) + '" allow="autoplay; fullscreen; encrypted-media" allowfullscreen></iframe>';
   setTimeout(() => onPlayer('ready'), 0);
   return { kind: src.kind, timed: false, exact: false, time: () => manualT() || 0, duration: () => 0, paused: () => true,
     play() {}, pause() {}, seek() {}, rate() {}, mute() {}, aspect: () => 16 / 9, buffered: () => 0, destroy() {} };
 }
+// Google Drive: our own player first (frame-exact timecodes). Drive often
+// refuses to stream into another site (403, found 2026-10-22); then try its
+// other address, and finally Google's own player in typed-time mode.
+let driveNote = '';
+function drivePlayer(src) {
+  const id = encodeURIComponent(src.id);
+  const urls = DRIVE_RELAY ? [DRIVE_RELAY + id] : [
+    'https://www.googleapis.com/drive/v3/files/' + id + '?alt=media&key=' + encodeURIComponent(DRIVE_API_KEY),
+    'https://drive.usercontent.google.com/download?id=' + id + '&export=download&confirm=t',
+  ];
+  const me = nativePlayer(urls.shift());
+  me.kind = 'drive';
+  me.fallback = () => {
+    if (urls.length) { vid.src = urls.shift(); return true; }
+    if (P !== me) return true;
+    me.destroy();
+    driveNote = 'Google Drive refused to stream it into this page just now, so it’s playing in Google’s player. Reload the page to try again.';
+    P = typedPlayer(src); paintMode();
+    return true;
+  };
+  driveNote = '';
+  return me;
+}
 function makePlayer(src) {
   if (src.kind === 'file') return nativePlayer(src.url);
-  if (src.kind === 'drive' && DRIVE_RELAY) return nativePlayer(DRIVE_RELAY + encodeURIComponent(src.id));
+  if (src.kind === 'drive') return drivePlayer(src);
   if (src.kind === 'youtube') return youtubePlayer(src);
   if (src.kind === 'vimeo') return vimeoPlayer(src);
   if (src.kind === 'wistia') return wistiaPlayer(src);
@@ -660,7 +706,7 @@ function paintMode() {
   ['scrub', 'btnPlay', 'btnBack', 'btnFwd', 'clock', 'rate', 'btnMute', 'help'].forEach(id => { $(id).hidden = typed; });
   $('typedBar').hidden = !typed;
   if (typed) $('typedWhy').textContent = P.kind === 'drive'
-    ? 'Google Drive plays in its own player for now, which doesn’t tell this page its time.'
+    ? (driveNote || 'Google Drive is playing in Google’s own player, which doesn’t tell this page its time.')
     : (SITES[P.kind] || 'This site') + ' plays in its own player, which doesn’t tell this page its time.';
 }
 // "1:23", "01:02:03", "83", "1:23.5" → seconds (null if it isn't a time)
@@ -1050,6 +1096,7 @@ function markSeen() {
 // upload code below is kept, unwired, for a possible relay later.
 function openAdd() {
   const n = R.versions.length ? Math.max(...R.versions.map(x => x.n)) + 1 : 1;
+  if (DRIVE_CLIENT_ID) loadGIS().catch(() => {});   // ready before the click, so Google's permission window isn't blocked
   dialog('<h3>Add version ' + n + '</h3>' +
     '<div class="field"><p class="k">Video link</p>' +
       '<input type="url" id="dlgUrl" placeholder="GoHighLevel, YouTube, Vimeo, Wistia, Google Drive… link">' +
@@ -1057,6 +1104,10 @@ function openAdd() {
       '<details class="note"><summary>GoHighLevel: where’s the link?</summary><ol class="steps"><li>Open <b>Media Storage</b> and upload the video.</li>' +
       '<li>On the file, click <b>⋯ → Copy link</b>.</li><li>Paste it above.</li></ol>Use an <b>H.264 MP4 or MOV</b> — browsers can’t play ProRes (Web Squeeze makes one).</details>' +
       '<p class="note" id="dlgCheck"></p></div>' +
+    (DRIVE_CLIENT_ID ? '<p class="or">— or upload to your Google Drive —</p>' +
+      '<input type="file" id="dlgFile" accept="video/mp4,video/quicktime,video/webm,video/*">' +
+      '<p class="note">Goes into the “' + DRIVE_FOLDER + '” folder, shared “Anyone with the link”. Drive sometimes refuses to stream into this page — then it plays in Google’s player and clients type the time for their notes.</p>' +
+      '<div class="prog" id="dlgProg" hidden><i></i></div><p class="note" id="dlgProgTxt"></p>' : '') +
     '<div class="field"><p class="k">Label (optional)</p><input type="text" id="dlgVName" maxlength="200" placeholder="e.g. colour pass, music change"></div>' +
     '<div class="field"><p class="k">Frame rate</p><select id="dlgVFps">' + [23.976, 24, 25, 29.97, 30, 50, 59.94, 60].map(f => '<option value="' + f + '"' + (f === 24 ? ' selected' : '') + '>' + f + ' fps</option>').join('') + '</select></div>',
     [['Cancel', null], ['Add', () => addVersion(n), true]], 'dlgUrl');
@@ -1072,7 +1123,7 @@ function kindNote(link) {
     youtube: 'notes and drawings work; frame steps are close, not exact. Make it <b>Unlisted</b> with embedding allowed. Watch out: YouTube may mute or block copyrighted music.',
     vimeo: 'notes and drawings work. In Vimeo’s privacy settings, allow embedding on xavierdebelle.com.',
     wistia: 'notes and drawings work.',
-    drive: 'plays in Google’s own player for now, so clients type the time for each note. It gets the full player once the Drive relay is set up.' + (DRIVE_RELAY ? '' : ''),
+    drive: 'plays in this page’s own player when Google allows it (frame-exact). When Drive refuses, it switches to Google’s player and clients type the time for each note. Must be shared “Anyone with the link”.',
     dailymotion: 'plays in Dailymotion’s own player, so clients type the time for each note.',
     loom: 'plays in Loom’s own player, so clients type the time for each note.',
   }[k]);
@@ -1091,9 +1142,15 @@ function playable(url) {
 async function addVersion(n) {
   const name = $('dlgVName').value.trim().slice(0, 200), f = Number($('dlgVFps').value) || 24;
   const link = $('dlgUrl').value.trim(), say = t => { $('dlgCheck').innerHTML = t; };
-  if (!link) { $('dlgUrl').focus(); say('<b>Paste the video’s link first.</b>'); return false; }
-  const src = parseLink(link);
+  const file = $('dlgFile') && $('dlgFile').files[0];
   const ver = { n, name, fps: f, createdAt: Date.now() };
+  if (file && !link) {
+    try { ver.drive = await uploadToDrive(file); ver.size = file.size; }
+    catch (e) { console.warn(e); $('dlgProgTxt').textContent = 'Upload failed: ' + (e && e.message || e) + '. Try again.'; return false; }
+    return saveVersion(n, ver);
+  }
+  if (!link) { $('dlgUrl').focus(); say('<b>Paste the video’s link' + (DRIVE_CLIENT_ID ? ', or choose a file to upload to Drive' : '') + '.</b>'); return false; }
+  const src = parseLink(link);
   if (src.kind === 'file') {
     if (!(/^https:\/\//i.test(link) || /^\//.test(link) || /^https?:\/\/(localhost|127\.0\.0\.1)/i.test(link))) { say('<b>That doesn’t look like a link.</b> It should start with https://'); return false; }
     const url = link.replace(/(dropbox\.com\/.*)[?&]dl=0/, '$1?raw=1');
@@ -1103,8 +1160,11 @@ async function addVersion(n) {
     ver.url = url;
   } else if (src.kind === 'drive') ver.drive = src.id;
   else ver.url = link.slice(0, 2000);
+  return saveVersion(n, ver);
+}
+async function saveVersion(n, ver) {
   const key = fb.f.push(dbRef('reviews/' + R.id + '/versions')).key;
-  if (!(await write('reviews/' + R.id + '/versions/' + key, ver))) { say(''); return false; }
+  if (!(await write('reviews/' + R.id + '/versions/' + key, ver))) return false;
   verKey = key; history.replaceState(null, '', '?r=' + encodeURIComponent(R.id) + '&v=' + encodeURIComponent(key));
   toast('Version ' + n + ' added ✓');
   return true;

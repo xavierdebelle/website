@@ -27,6 +27,42 @@ takes it off your list for good.
   removes review and index entry, back to the list; a seeded ghost entry
   was cleaned up on load.
 
+## v104 — 2026-10-22
+
+**What's new** · Video Review · [tools/video-review.html]
+### Vimeo stays in sync,<br>Google Drive is back
+Vimeo videos now keep time with the notes — pausing, jumping and the clock
+all match. You can upload straight to Google Drive again, and Drive videos
+play in the review's own player with exact timecodes; when Google won't
+allow that, the page switches to Google's player on its own.
+
+**Video Review v5 — `tools/video-review.html`, source `Tools files/de Belle Photography apps/video-review-v5.html`**
+- **Vimeo out of sync (Xavier, 2026-10-22: our clock stayed 0:00 while
+  Vimeo played).** Cause: the embed lacked `encrypted-media`, so Vimeo's
+  player reloaded itself (`forcereload=drm`) and lost every event listener
+  we had registered. Fix: Vimeo's own `allow` list (`…clipboard-write;
+  encrypted-media`); re-register listeners if the iframe loads again; and
+  poll `getCurrentTime` + `getPaused` every 250 ms so the two can't drift.
+  Seeking repaints the clock at once (YouTube too).
+- **Google Drive back:** "or upload to your Google Drive" in Add version
+  (resumable upload, `drive.file`, "Anyone with the link"). Drive versions
+  try our own `<video>` first — Drive API (`alt=media&key`), then
+  `drive.usercontent.google.com` — for frame-exact timecodes; if both are
+  refused (the 403 found today), it falls back to Google's `/preview`
+  player in typed-time mode with a note saying why. `DRIVE_RELAY` still
+  switches Drive to a relay when one exists.
+- Typed-time iframes (Drive, Dailymotion, Loom) get `encrypted-media`.
+
+**Tested in headless Chrome (CDP) on the mock:** Drive through a stand-in
+relay → own player, frame step to 00:00:03:05; Xavier's real Drive file →
+refused from the test origin → Google's player + note; Vimeo: no reload,
+listeners registered once, 52 state polls in ~6 s, seek to 12 s shows
+00:00:12:00. Files and YouTube regression: play, seek 5.00, step 5.063.
+Real Vimeo playback (headless can't play Vimeo DRM) and a real Drive
+upload are for Xavier to try.
+
+---
+
 ## v103 — 2026-10-22
 
 **What's new** · Video Review · [tools/video-review.html]
