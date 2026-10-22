@@ -5,6 +5,40 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v113 — 2026-10-22
+
+**What's new** · Update · [tools/photo-review.html]
+### Photo Review: import from ShootProof
+Paste a ShootProof gallery link and pick the photos for the review from its
+thumbnails. Paste the client's favourite file names and those get ticked for
+you. The photos come in at 3000 px, straight from ShootProof.
+
+**Photo Review v9 — `tools/photo-review.html`, source `Tools files/de Belle Photography apps/photo-review-v9.html`**
+- **Helper:** `Cloudflare/shootproof-helper/worker.js` (private repo, not on
+  the site) — a Cloudflare Worker that reads
+  `https://{studio}.shootproof.com/gallery/{uuid}/data?cr=1` (the list
+  ShootProof's own gallery page loads: `id`, `key`, file name) and returns
+  `{ title, gallery, photos: [{ id, key, name }] }`. Only `*.shootproof.com`
+  gallery links, only answers xavierdebelle.com (+ the mock origins), stores
+  nothing. Not an official API. **Xavier deploys it** (README there);
+  until its address is in `SP_HELPER`, the import says it isn't set up.
+- **Images:** ShootProof's CDN `d2rxqglyhdohqf.cloudfront.net/ph/{key}/{size}/{id}.jpg`
+  — `3x` = 3000 px long side (stored as the version's `url`), `m` = 500 px
+  (thumbnails, filmstrip). `l` = 1000 px and `2x` = 2000 px also exist.
+  Nothing is copied to Drive; a deleted/expired gallery empties those photos.
+- **Picker:** Add photos → Import from ShootProof… → link → Load → grid of
+  every photo; Select all / none; photos already in the review are faded.
+  **Favourites:** a client's favourites live in their own visitor session,
+  which the helper can't see, so paste their file names (from ShootProof's
+  "favourites sent" email or the studio's favourites list) → Tick these;
+  matching ignores case, folders and extension, and lists names not found.
+- Tested: helper run locally (Node) against the real Humes gallery → 267
+  photos, title "Humes"; refuses other hosts and other sites. On the mock:
+  load → 267 thumbnails (333 px), 3 of 4 pasted names ticked (one flagged
+  missing), Add → 3 photos at 1996×3000 from ShootProof, re-import fades them.
+- Privacy page (EN + FR): imported photos load from ShootProof; the helper
+  on Cloudflare reads the list and keeps nothing.
+
 ## v112 — 2026-10-22
 
 **What's new** · Update · [tools/photo-review.html]
