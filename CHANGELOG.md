@@ -5,6 +5,46 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v106 — 2026-10-22
+
+**What's new** · Web Squeeze · [tools/web-squeeze.html]
+### One click for Instagram,<br>TikTok, YouTube or email
+Web Squeeze now has presets: pick where the file is going — website,
+Instagram, TikTok, YouTube or a newsletter — and the size, format and
+quality are set for it. And it squeezes GIFs now: keep them as GIFs
+(a 2.8 MB one comes out at 676 KB for an email), or turn them into a
+looping video a tenth of the size.
+
+**Web Squeeze v2 — `tools/web-squeeze.html`, source `Tools files/de Belle Photography apps/web-squeeze-v2.html`**
+- **Made for** presets above the tabs (Website, Instagram, TikTok,
+  YouTube, Newsletter) set every photo, video and GIF setting at once;
+  touching any setting switches to Custom. Social presets hand over crisp
+  files at display size (the platforms compress again); Instagram photos
+  fit 1080×1350, TikTok 1080×1920, YouTube thumbnails 1280×720 under 2 MB
+  (new "fit a box" photo size, shown as an extra button); Newsletter: JPEG
+  1200 px under 250 KB (Outlook can't show WebP), GIFs 600 px, 15 fps,
+  under 1 MB. A saved preset only stays selected if the settings still
+  match it. Everything from v1 unchanged.
+- **GIF tab** (dropped GIFs always go here, so animation is kept): GIF or
+  MP4 out, longest side, colours 256/128/64/32, frame rate keep/15/10
+  (dropped frames' time merged into the kept ones), optional KB cap
+  (halves colours, then shrinks by a fifth, up to 7 passes). Decoding
+  gifuct-js 2.1.2 with disposal handled; encoding gifenc 1.0.3 per-frame
+  palettes, and only the changed box of each frame is stored (unchanged
+  pixels within a colour tolerance left transparent; box positions written
+  into gifenc's output). Transparent GIFs keep transparency. MP4: H.264
+  via Mediabunny CanvasSource, white behind transparency.
+
+**Verified locally (Chromium):** GIF frames decoded back match the source
+(960×540 photo-like: mean error 0.66/765; flat screen GIF and transparent
+GIF: exact, transparency intact); output size on par with ffmpeg's
+optimised GIFs at the same size. Newsletter preset 2.8 MB GIF → 676 KB,
+60 of 100 frames, still 4.00 s. GIF → MP4 2.8 MB → 337 KB. Each preset's
+photo size checked (landscape fits inside the box); Instagram video 31 MB
+4K → 3.3 MB 1080p. No console errors; 375 px with no sideways scroll.
+
+---
+
 ## v105 — 2026-10-22
 
 **What's new** · Video Review · [tools/video-review.html]

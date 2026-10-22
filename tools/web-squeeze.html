@@ -64,6 +64,10 @@ a{color:var(--volt);text-decoration:none}
 .tabs button{background:none;border:0;border-bottom:3px solid transparent;margin-bottom:-3px;padding:8px 0;cursor:pointer;
   font-weight:900;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--dust)}
 .tabs button[aria-selected="true"]{color:var(--paper);border-color:var(--volt)}
+.presets{margin-bottom:22px}
+.presets .seg{grid-auto-flow:row;grid-template-columns:repeat(3,1fr);border-width:3px 0 0 3px}
+.presets .seg button,.presets .seg button:first-child{border:0;border-right:3px solid var(--paper);border-bottom:3px solid var(--paper);padding:11px 4px}
+.presets .note b{color:var(--volt);font-weight:400}
 .block{margin-top:20px}
 .block:first-child{margin-top:0}
 .seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;border:3px solid var(--paper)}
@@ -149,9 +153,23 @@ a{color:var(--volt);text-decoration:none}
 <main class="app">
   <!-- ============ left: settings ============ -->
   <section class="panel" aria-label="Settings">
+    <div class="presets">
+      <p class="k">Made for</p>
+      <div class="seg" id="presets">
+        <button type="button" data-p="website">Website</button>
+        <button type="button" data-p="instagram">Instagram</button>
+        <button type="button" data-p="tiktok">TikTok</button>
+        <button type="button" data-p="youtube">YouTube</button>
+        <button type="button" data-p="newsletter">Newsletter</button>
+        <button type="button" data-p="" disabled title="Change any setting below to make your own">Custom</button>
+      </div>
+      <p class="note" id="preset-note"></p>
+    </div>
+
     <div class="tabs" role="tablist">
       <button type="button" role="tab" id="tab-btn-photo" aria-selected="true" aria-controls="tab-photo">Photos</button>
       <button type="button" role="tab" id="tab-btn-video" aria-selected="false" aria-controls="tab-video">Video</button>
+      <button type="button" role="tab" id="tab-btn-gif" aria-selected="false" aria-controls="tab-gif">GIF</button>
     </div>
 
     <div id="tab-photo" role="tabpanel" aria-labelledby="tab-btn-photo">
@@ -242,6 +260,52 @@ a{color:var(--volt);text-decoration:none}
       </div>
       <p class="note">Uses your computer's video encoder, so it runs about as fast as an export. Output is web-ready (plays while it loads).</p>
     </div>
+
+    <div id="tab-gif" role="tabpanel" aria-labelledby="tab-btn-gif" hidden>
+      <div class="block">
+        <p class="k">Turn it into</p>
+        <div class="seg" data-set="gOut">
+          <button type="button" data-v="gif">GIF<small>still a GIF</small></button>
+          <button type="button" data-v="mp4">MP4<small>~90% smaller</small></button>
+        </div>
+        <p class="note" id="gout-note"></p>
+      </div>
+      <div class="block">
+        <p class="k">Longest side</p>
+        <div class="seg" data-set="gSize">
+          <button type="button" data-v="800">800</button>
+          <button type="button" data-v="600">600<small>email</small></button>
+          <button type="button" data-v="480">480</button>
+          <button type="button" data-v="320">320</button>
+          <button type="button" data-v="0">Keep</button>
+        </div>
+      </div>
+      <div class="block" id="g-colours">
+        <p class="k">Colours</p>
+        <div class="seg" data-set="gColors">
+          <button type="button" data-v="256">256<small>all</small></button>
+          <button type="button" data-v="128">128</button>
+          <button type="button" data-v="64">64</button>
+          <button type="button" data-v="32">32<small>flat art</small></button>
+        </div>
+        <p class="note">Fewer colours = smaller file. Photos in a GIF want 128 or more; logos and drawings look fine at 32.</p>
+      </div>
+      <div class="block">
+        <p class="k">Frame rate</p>
+        <div class="seg" data-set="gFps">
+          <button type="button" data-v="0">Keep</button>
+          <button type="button" data-v="15">15</button>
+          <button type="button" data-v="10">10</button>
+        </div>
+        <p class="note">Same speed, fewer frames — dropped frames are merged into the ones kept.</p>
+      </div>
+      <div class="block">
+        <p class="k">Never bigger than <span style="text-transform:none">(optional)</span></p>
+        <div class="field"><input id="gMax" type="number" min="20" step="10" inputmode="numeric" placeholder="no limit"><span>KB</span></div>
+        <p class="note">If it comes out heavier, colours and then size are stepped down until it fits.</p>
+      </div>
+      <p class="note">GIFs dropped in always come here, whichever tab is open, so the animation is kept.</p>
+    </div>
   </section>
 
   <!-- ============ right: files ============ -->
@@ -250,7 +314,7 @@ a{color:var(--volt);text-decoration:none}
       <input type="file" id="file" multiple accept="image/*,video/*,.heic,.heif,.mov,.mkv" class="sr-only">
       <div>
         <strong>Drop photos<br>&amp; video <span>here</span></strong>
-        <p>Or click to choose. JPEG, PNG, WebP, AVIF, HEIC (in Safari), MP4, MOV, WebM. Several at once is fine.</p>
+        <p>Or click to choose. JPEG, PNG, WebP, AVIF, HEIC (in Safari), GIF, MP4, MOV, WebM. Several at once is fine.</p>
       </div>
     </label>
 
@@ -295,7 +359,36 @@ const fmtBytes = b => b < 1024 ? b + ' B' : b < 1048576 ? (b / 1024).toFixed(b <
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 /* ---------- settings ---------- */
-const DEF = { tab: 'photo', pSize: '2560', pFormat: 'webp', pQuality: 'balanced', pMax: '', vSize: '1080', vCodec: 'avc', vQuality: 'balanced', vFps: '0', vAudio: 'keep', vTarget: '' };
+const DEF = { tab: 'photo', preset: 'website', pSize: '2560', pFormat: 'webp', pQuality: 'balanced', pMax: '', vSize: '1080', vCodec: 'avc', vQuality: 'balanced', vFps: '0', vAudio: 'keep', vTarget: '',
+  gOut: 'gif', gSize: '800', gColors: '128', gFps: '0', gMax: '' };
+
+// "Made for" presets: each sets every photo, video and GIF setting at once.
+// Social platforms re-compress whatever they get, so those presets hand over a clean, high-quality file
+// at the size they display rather than squeezing hard (that would be compressed twice).
+const PRESETS = {
+  website: { label: 'Website',
+    note: 'Photos 2560 px WebP · video 1080p H.264 · GIFs 800 px. Light pages, still sharp on big screens.',
+    s: { pSize: '2560', pFormat: 'webp', pQuality: 'balanced', pMax: '', vSize: '1080', vCodec: 'avc', vQuality: 'balanced', vFps: '0', vAudio: 'keep', vTarget: '',
+      gOut: 'gif', gSize: '800', gColors: '128', gFps: '0', gMax: '' } },
+  instagram: { label: 'Instagram',
+    note: 'Photos fit 1080×1350 (1080 wide, up to 4:5 portrait) JPEG · Reels 1080p H.264 at 30 fps · GIFs become MP4 (Instagram doesn’t take GIFs). Kept crisp, because Instagram compresses again.',
+    s: { pSize: '1080x1350', pFormat: 'jpeg', pQuality: 'crisp', pMax: '', vSize: '1080', vCodec: 'avc', vQuality: 'crisp', vFps: '30', vAudio: 'keep', vTarget: '',
+      gOut: 'mp4', gSize: '0', gColors: '256', gFps: '0', gMax: '' } },
+  tiktok: { label: 'TikTok',
+    note: 'Video 1080p H.264, crisp, frame rate kept · photos fit 1080×1920 JPEG for photo posts · GIFs become MP4. TikTok compresses again, so it gets a clean file.',
+    s: { pSize: '1080x1920', pFormat: 'jpeg', pQuality: 'crisp', pMax: '', vSize: '1080', vCodec: 'avc', vQuality: 'crisp', vFps: '0', vAudio: 'keep', vTarget: '',
+      gOut: 'mp4', gSize: '0', gColors: '256', gFps: '0', gMax: '' } },
+  youtube: { label: 'YouTube',
+    note: 'Video keeps its resolution and frame rate, H.264 at high quality — a lighter upload without losing what YouTube shows · photos fit 1280×720 for thumbnails, under 2 MB · GIFs become MP4.',
+    s: { pSize: '1280x720', pFormat: 'jpeg', pQuality: 'crisp', pMax: '2000', vSize: '0', vCodec: 'avc', vQuality: 'crisp', vFps: '0', vAudio: 'keep', vTarget: '',
+      gOut: 'mp4', gSize: '0', gColors: '256', gFps: '0', gMax: '' } },
+  newsletter: { label: 'Newsletter',
+    note: 'Photos 1200 px JPEG under 250 KB (sharp at 600 px on phones, and Outlook can’t show WebP) · GIFs 600 px, 15 fps, under 1 MB · video 720p to link to.',
+    s: { pSize: '1200', pFormat: 'jpeg', pQuality: 'balanced', pMax: '250', vSize: '720', vCodec: 'avc', vQuality: 'balanced', vFps: '30', vAudio: 'keep', vTarget: '',
+      gOut: 'gif', gSize: '600', gColors: '128', gFps: '15', gMax: '1000' } },
+};
+// Labels for preset values that have no button of their own (shown as an extra "preset" button).
+const EXTRA = { pSize: { '1080x1350': ['1080×1350', 'Instagram'], '1080x1920': ['1080×1920', 'TikTok'], '1280x720': ['1280×720', 'thumbnail'] } };
 let S = { ...DEF };
 try { Object.assign(S, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch (e) {}
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} };
@@ -320,27 +413,50 @@ const CODEC_NOTE = {
   av1: 'WebM / AV1. The smallest. Plays in Chrome, Firefox, Edge and recent iPhones/Macs; older Apple devices can’t.',
 };
 
+const GOUT_NOTE = {
+  gif: 'Stays a GIF, so it works anywhere a GIF does — email, Slack, forums. Unchanged areas between frames are left out, which is where most of the saving comes from.',
+  mp4: 'A silent, looping H.264 video, usually a tenth of the GIF or less. Best for websites (as an autoplay loop) and social posts; email can’t play it.',
+};
 function paintSettings() {
   document.querySelectorAll('.seg[data-set]').forEach(seg => {
     const k = seg.dataset.set;
+    let extra = seg.querySelector('.extra');
+    const has = [...seg.querySelectorAll('button:not(.extra)')].some(b => b.dataset.v === S[k]);
+    if (!has && EXTRA[k] && EXTRA[k][S[k]]) {
+      if (!extra) { extra = document.createElement('button'); extra.type = 'button'; extra.className = 'extra'; seg.append(extra); }
+      extra.dataset.v = S[k]; extra.innerHTML = `${EXTRA[k][S[k]][0]}<small>${EXTRA[k][S[k]][1]}</small>`;
+    } else if (extra && has) extra.remove();
     seg.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === S[k])));
   });
-  $('#pMax').value = S.pMax; $('#vTarget').value = S.vTarget;
+  $('#pMax').value = S.pMax; $('#vTarget').value = S.vTarget; $('#gMax').value = S.gMax;
   $('#fmt-note').textContent = FMT_NOTE[S.pFormat];
   $('#codec-note').textContent = CODEC_NOTE[S.vCodec];
-  const photo = S.tab === 'photo';
-  $('#tab-btn-photo').setAttribute('aria-selected', String(photo));
-  $('#tab-btn-video').setAttribute('aria-selected', String(!photo));
-  $('#tab-photo').hidden = !photo; $('#tab-video').hidden = photo;
+  $('#gout-note').textContent = GOUT_NOTE[S.gOut];
+  $('#g-colours').hidden = S.gOut !== 'gif';
+  document.querySelectorAll('#presets button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.p === S.preset)));
+  $('#preset-note').innerHTML = S.preset ? `<b>${PRESETS[S.preset].label}:</b> ${esc(PRESETS[S.preset].note)}` : 'Your own settings. Pick a preset above to start again from one.';
+  for (const t of ['photo', 'video', 'gif']) {
+    $('#tab-btn-' + t).setAttribute('aria-selected', String(S.tab === t));
+    $('#tab-' + t).hidden = S.tab !== t;
+  }
 }
+const changed = () => { S.preset = ''; save(); paintSettings(); markStale(); };
 document.querySelectorAll('.seg[data-set]').forEach(seg => seg.addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b || b.disabled) return;
-  S[seg.dataset.set] = b.dataset.v; save(); paintSettings(); markStale();
+  if (S[seg.dataset.set] === b.dataset.v) return;
+  S[seg.dataset.set] = b.dataset.v; changed();
 }));
-$('#pMax').addEventListener('input', e => { S.pMax = e.target.value; save(); markStale(); });
-$('#vTarget').addEventListener('input', e => { S.vTarget = e.target.value; save(); markStale(); });
-$('#tab-btn-photo').onclick = () => { S.tab = 'photo'; save(); paintSettings(); };
-$('#tab-btn-video').onclick = () => { S.tab = 'video'; save(); paintSettings(); };
+$('#presets').addEventListener('click', e => {
+  const b = e.target.closest('button[data-p]'); if (!b || !b.dataset.p) return;
+  S.preset = b.dataset.p; Object.assign(S, PRESETS[S.preset].s);
+  if (codecOff.has(S.vCodec)) S.vCodec = 'avc';
+  save(); paintSettings(); markStale();
+});
+for (const id of ['pMax', 'vTarget', 'gMax']) $('#' + id).addEventListener('input', e => { S[id] = e.target.value; changed(); });
+for (const t of ['photo', 'video', 'gif']) $('#tab-btn-' + t).onclick = () => { S.tab = t; save(); paintSettings(); };
+const codecOff = new Set();
+// A saved preset only counts if the settings still match it.
+if (S.preset && (!PRESETS[S.preset] || Object.entries(PRESETS[S.preset].s).some(([k, v]) => S[k] !== v))) S.preset = '';
 paintSettings();
 
 /* ---------- photo encoder worker ---------- */
@@ -415,7 +531,9 @@ async function decodeImage(file) {
 // Downscale in halving steps so fine detail doesn't alias, then a final high-quality pass.
 function resizeToPixels(bmp, maxSide, flatten) {
   let w = bmp.width, h = bmp.height;
-  const scale = maxSide && Math.max(w, h) > maxSide ? maxSide / Math.max(w, h) : 1;
+  // maxSide is a longest side in pixels, or a "WxH" box to fit inside (platform presets).
+  const box = typeof maxSide === 'string' && maxSide.includes('x') ? maxSide.split('x').map(Number) : null;
+  const scale = box ? Math.min(1, box[0] / w, box[1] / h) : maxSide && Math.max(w, h) > maxSide ? maxSide / Math.max(w, h) : 1;
   const tw = Math.max(1, Math.round(w * scale)), th = Math.max(1, Math.round(h * scale));
   let src = bmp, sw = w, sh = h;
   while (sw / 2 >= tw * 1.0001 && sh / 2 >= th) {
@@ -435,7 +553,7 @@ async function squeezePhoto(it) {
   const bmp = await decodeImage(it.file);
   it.srcDims = bmp.width + '×' + bmp.height;
   it.stage('Resizing');
-  const px = resizeToPixels(bmp, +S.pSize, fmt === 'jpeg');
+  const px = resizeToPixels(bmp, S.pSize.includes('x') ? S.pSize : +S.pSize, fmt === 'jpeg');
   bmp.close && bmp.close();
   let q = PQ[fmt][S.pQuality];
   it.stage(fmt === 'avif' ? 'Encoding AVIF (takes a moment)' : 'Encoding');
@@ -523,18 +641,171 @@ async function squeezeVideo(it) {
 }
 const CODEC_NAME = { avc: 'H.264', hevc: 'HEVC', av1: 'AV1' };
 
+/* ---------- GIF pipeline ---------- */
+const GIFDEC_URL = 'https://cdn.jsdelivr.net/npm/gifuct-js@2.1.2/+esm';
+const GIFENC_URL = 'https://cdn.jsdelivr.net/npm/gifenc@1.0.3/dist/gifenc.esm.js';
+const tick = () => new Promise(r => setTimeout(r));
+
+// Every frame rebuilt at full size, honouring each frame's disposal method (GIFs store only what changed).
+async function decodeGif(file, it) {
+  const { parseGIF, decompressFrames } = await import(GIFDEC_URL);
+  let gif, raw;
+  try { gif = parseGIF(await file.arrayBuffer()); raw = decompressFrames(gif, true); } catch (e) { throw new Error('Can’t read this GIF.'); }
+  if (!raw.length) throw new Error('No frames in this GIF.');
+  const W = gif.lsd.width, H = gif.lsd.height;
+  const c = document.createElement('canvas'); c.width = W; c.height = H;
+  const x = c.getContext('2d', { willReadFrequently: true });
+  const tmp = document.createElement('canvas'), tx = tmp.getContext('2d');
+  const frames = []; let prev = null, saved = null;
+  frames.alpha = false;
+  for (let i = 0; i < raw.length; i++) {
+    const f = raw[i], d = f.dims;
+    if (prev) {
+      if (prev.disposalType === 2) x.clearRect(prev.dims.left, prev.dims.top, prev.dims.width, prev.dims.height);
+      else if (prev.disposalType === 3 && saved) x.putImageData(saved, 0, 0);
+    }
+    if (f.disposalType === 3) saved = x.getImageData(0, 0, W, H);
+    tmp.width = d.width; tmp.height = d.height;
+    tx.putImageData(new ImageData(f.patch, d.width, d.height), 0, 0);
+    x.drawImage(tmp, d.left, d.top);
+    const img = x.getImageData(0, 0, W, H);
+    if (!frames.alpha) for (let q = 3; q < img.data.length; q += 4) if (img.data[q] < 128) { frames.alpha = true; break; }
+    frames.push({ bmp: await createImageBitmap(img), delay: f.delay >= 20 ? f.delay : 100 }); // browsers play <20 ms as 100 ms
+    prev = f;
+    if (i % 8 === 0) { it.progress(i / raw.length * 0.3, 'Reading frame ' + (i + 1) + ' of ' + raw.length); await tick(); }
+  }
+  frames.W = W; frames.H = H;
+  return frames;
+}
+// Fewer frames, same speed: a dropped frame's time goes to the frame before it.
+function pickFrames(frames, fps) {
+  if (!fps) return frames.map(f => ({ ...f }));
+  const step = 1000 / fps, out = []; let t = 0, next = 0;
+  for (const f of frames) {
+    if (!out.length || t >= next - 1) { out.push({ ...f }); while (next <= t + 1) next += step; }
+    else out[out.length - 1].delay += f.delay;
+    t += f.delay;
+  }
+  return out;
+}
+async function encodeGif(frames, side, colors, alpha, it, pass) {
+  const { GIFEncoder, quantize, applyPalette } = await import(GIFENC_URL);
+  const enc = GIFEncoder();
+  // Pixels within this distance of what's already on screen count as unchanged: they are left
+  // transparent so the previous frame shows through, and only the box around what changed is stored.
+  const lossy = { 256: 12, 128: 18, 64: 24, 32: 30 }[colors] || 18;
+  const fmt = alpha ? 'rgba4444' : 'rgb565';
+  const offsets = []; // where each frame's image descriptor starts, to write its position afterwards
+  let shown = null, W = 0, H = 0;
+  for (let i = 0; i < frames.length; i++) {
+    const fr = frames[i], img = resizeToPixels(fr.bmp, side, false), data = img.data;
+    W = img.width; H = img.height;
+    // 1. Which pixels need drawing, and the box around them.
+    const need = new Uint8Array(W * H);
+    let x0 = W, y0 = H, x1 = -1, y1 = -1;
+    for (let y = 0, p = 0; y < H; y++) for (let x = 0; x < W; x++, p++) {
+      const q = p * 4;
+      const n = alpha ? data[q + 3] >= 128
+        : !shown || Math.abs(data[q] - shown[p * 3]) + Math.abs(data[q + 1] - shown[p * 3 + 1]) + Math.abs(data[q + 2] - shown[p * 3 + 2]) > lossy;
+      if (n) { need[p] = 1; if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+    }
+    if (i === 0) { x0 = 0; y0 = 0; x1 = W - 1; y1 = H - 1; } // the first frame sets the canvas size
+    if (x1 < 0) { x0 = y0 = x1 = y1 = 0; }                   // nothing changed: a 1-pixel transparent frame
+    const rw = x1 - x0 + 1, rh = y1 - y0 + 1;
+    // 2. Quantize just that box.
+    const crop = new Uint8ClampedArray(rw * rh * 4);
+    for (let y = 0; y < rh; y++) crop.set(data.subarray(((y + y0) * W + x0) * 4, ((y + y0) * W + x0 + rw) * 4), y * rw * 4);
+    const pal = quantize(crop, alpha || i === 0 ? colors : colors - 1, alpha ? { format: fmt, oneBitAlpha: true } : {});
+    const idx = applyPalette(crop, pal, fmt);
+    let T = alpha ? pal.findIndex(c => c[3] === 0) : -1;
+    if (!alpha && i > 0) { T = pal.length; pal.push([0, 0, 0]); }
+    if (!alpha) {
+      if (!shown) shown = new Uint8Array(W * H * 3);
+      for (let y = 0; y < rh; y++) for (let x = 0; x < rw; x++) {
+        const k = y * rw + x, p = (y + y0) * W + x + x0;
+        if (i > 0 && !need[p]) idx[k] = T;
+        else { const c = pal[idx[k]]; shown[p * 3] = c[0]; shown[p * 3 + 1] = c[1]; shown[p * 3 + 2] = c[2]; }
+      }
+    }
+    offsets.push({ at: enc.bytesView().length, x: x0, y: y0, first: i === 0 });
+    // Transparent formats clear their box before the next frame (dispose 2); opaque ones build on it (dispose 1).
+    enc.writeFrame(idx, rw, rh, { palette: pal, delay: fr.delay, transparent: T >= 0, transparentIndex: Math.max(0, T), dispose: alpha ? 2 : 1 });
+    if (i % 3 === 0) { it.progress(0.3 + 0.7 * i / frames.length, (pass > 1 ? 'Pass ' + pass + ' · ' : '') + 'Encoding frame ' + (i + 1) + ' of ' + frames.length); await tick(); }
+  }
+  enc.finish();
+  const bytes = enc.bytes();
+  // gifenc always writes frames at 0,0 — put each box where it belongs (image descriptor follows the 8-byte control block).
+  for (const o of offsets) if (!o.first) {
+    const d = o.at + 8;
+    if (bytes[d] !== 0x2c) throw new Error('GIF writer changed shape');
+    bytes[d + 1] = o.x & 255; bytes[d + 2] = o.x >> 8; bytes[d + 3] = o.y & 255; bytes[d + 4] = o.y >> 8;
+  }
+  return { bytes, w: W, h: H };
+}
+async function gifToMp4(frames, side, it) {
+  const mb = await loadMB();
+  if (typeof VideoEncoder === 'undefined') throw new Error('This browser can’t make video. Choose GIF output, or use Chrome, Edge or Safari.');
+  const probe = resizeToPixels(frames[0].bmp, side, true);
+  const cw = Math.max(2, probe.width & ~1), ch = Math.max(2, probe.height & ~1);
+  const canvas = document.createElement('canvas'); canvas.width = cw; canvas.height = ch;
+  const ctx = canvas.getContext('2d');
+  const dur = frames.reduce((s, f) => s + f.delay, 0) / 1000;
+  const fps = Math.min(60, Math.max(10, frames.length / dur));
+  const bitrate = Math.round(Math.max(200000, cw * ch * fps * BPP.crisp));
+  const source = new mb.CanvasSource(canvas, { codec: 'avc', quality: new mb.Quality({ bitrate }), keyFrameInterval: 2 });
+  const output = new mb.Output({ format: new mb.Mp4OutputFormat({ fastStart: 'in-memory' }), target: new mb.BufferTarget() });
+  output.addVideoTrack(source);
+  await output.start();
+  let t = 0;
+  for (let i = 0; i < frames.length; i++) {
+    ctx.putImageData(resizeToPixels(frames[i].bmp, side, true), 0, 0);
+    await source.add(t / 1000, frames[i].delay / 1000);
+    t += frames[i].delay;
+    if (i % 4 === 0) it.progress(0.3 + 0.7 * i / frames.length, 'Encoding frame ' + (i + 1) + ' of ' + frames.length);
+  }
+  try { source.close(); } catch (e) {}
+  await output.finalize();
+  return { buf: output.target.buffer, w: cw, h: ch, bitrate };
+}
+async function squeezeGif(it) {
+  it.stage('Loading GIF tools');
+  const all = await decodeGif(it.file, it);
+  it.srcDims = all.W + '×' + all.H;
+  const frames = pickFrames(all, +S.gFps);
+  const longest = Math.max(all.W, all.H);
+  let side = +S.gSize && +S.gSize < longest ? +S.gSize : longest;
+  try {
+    if (S.gOut === 'mp4') {
+      const r = await gifToMp4(frames, side, it);
+      it.finish(new Blob([r.buf], { type: 'video/mp4' }), 'mp4', `${r.w}×${r.h} · MP4 loop · ${frames.length} frames`);
+      return;
+    }
+    const maxKB = parseFloat(S.gMax) || 0;
+    let colors = +S.gColors, pass = 1;
+    let r = await encodeGif(frames, side, colors, all.alpha, it, pass);
+    // Over the cap: halve the colours (down to 32), then shrink by a fifth, up to 6 more passes.
+    while (maxKB && r.bytes.length > maxKB * 1024 && pass < 7) {
+      if (colors > 32) colors /= 2; else side = Math.round(side * 0.8);
+      r = await encodeGif(frames, side, colors, all.alpha, it, ++pass);
+    }
+    if (maxKB && r.bytes.length > maxKB * 1024) it.warn = 'Couldn’t reach ' + maxKB + ' KB — try a lower frame rate or MP4.';
+    it.finish(new Blob([r.bytes], { type: 'image/gif' }), 'gif', `${r.w}×${r.h} · GIF · ${colors} colours · ${frames.length}${frames.length < all.length ? ' of ' + all.length : ''} frames`);
+  } finally { all.forEach(f => f.bmp.close && f.bmp.close()); }
+}
+
 /* ---------- queue ---------- */
 const items = [];
 let running = false;
 const isVideo = f => /^video\//.test(f.type) || /\.(mov|mp4|m4v|mkv|webm|avi)$/i.test(f.name);
+const isGif = f => f.type === 'image/gif' || /\.gif$/i.test(f.name);
 const isImage = f => /^image\//.test(f.type) || /\.(heic|heif|avif|webp|jpe?g|png|gif|bmp|tiff?)$/i.test(f.name);
 
 class Item {
   constructor(file) {
-    this.file = file; this.kind = isVideo(file) ? 'video' : 'photo';
+    this.file = file; this.kind = isVideo(file) ? 'video' : isGif(file) ? 'gif' : 'photo';
     this.srcURL = URL.createObjectURL(file);
     this.el = document.createElement('div'); this.el.className = 'item';
-    this.el.innerHTML = `<div class="thumb">${this.kind === 'video' ? `<video src="${this.srcURL}#t=0.1" muted playsinline preload="metadata"></video>` : `<img src="${this.srcURL}" alt="">`}<i>${this.kind === 'video' ? 'VID' : 'IMG'}</i></div>
+    this.el.innerHTML = `<div class="thumb">${this.kind === 'video' ? `<video src="${this.srcURL}#t=0.1" muted playsinline preload="metadata"></video>` : `<img src="${this.srcURL}" alt="">`}<i>${{ video: 'VID', gif: 'GIF', photo: 'IMG' }[this.kind]}</i></div>
       <div class="meta"><h3>${esc(file.name)}</h3><div class="line"></div><div class="prog"><span></span></div></div>
       <div class="acts"></div>`;
     this.line = this.el.querySelector('.line'); this.bar = this.el.querySelector('.prog'); this.acts = this.el.querySelector('.acts');
@@ -566,7 +837,7 @@ class Item {
       + (this.bigger ? `<br><span class="save">Came out heavier — the original is already lean. Try a smaller size or lower quality.</span>` : '')
       + (this.warn ? `<br><span class="save">${esc(this.warn)}</span>` : '')
       + (this.stale ? `<br>settings changed since — press Redo` : '');
-    this.acts.innerHTML = `<button class="btn sm" data-a="compare">${this.kind === 'video' ? 'Play' : 'Compare'}</button><button class="btn sm solid" data-a="dl">Download</button><button class="btn sm" data-a="remove" aria-label="Remove">×</button>`;
+    this.acts.innerHTML = `<button class="btn sm" data-a="compare">${this.out.type.startsWith('video') ? 'Play' : 'Compare'}</button><button class="btn sm solid" data-a="dl">Download</button><button class="btn sm" data-a="remove" aria-label="Remove">×</button>`;
   }
   fail(e) {
     this.state = 'err'; this.el.className = 'item err'; this.bar.hidden = true;
@@ -592,7 +863,7 @@ async function run() {
     let it;
     while ((it = items.find(i => i.state === 'wait'))) {
       it.state = 'run'; it.settings = JSON.stringify(settingsFor(it.kind));
-      try { await (it.kind === 'video' ? squeezeVideo(it) : squeezePhoto(it)); }
+      try { await ({ video: squeezeVideo, gif: squeezeGif, photo: squeezePhoto }[it.kind])(it); }
       catch (e) { if (items.includes(it)) { console.error(e); it.fail(e); } }
       refresh();
     }
@@ -600,6 +871,7 @@ async function run() {
 }
 const settingsFor = kind => kind === 'video'
   ? { vSize: S.vSize, vCodec: S.vCodec, vQuality: S.vQuality, vFps: S.vFps, vAudio: S.vAudio, vTarget: S.vTarget }
+  : kind === 'gif' ? { gOut: S.gOut, gSize: S.gSize, gColors: S.gColors, gFps: S.gFps, gMax: S.gMax }
   : { pSize: S.pSize, pFormat: S.pFormat, pQuality: S.pQuality, pMax: S.pMax };
 function markStale() {
   for (const it of items) if (it.state === 'done') { const st = it.settings !== JSON.stringify(settingsFor(it.kind)); if (st !== it.stale) { it.stale = st; it.paint(); } }
@@ -660,12 +932,14 @@ function closeCompare() { $('#modal').hidden = true; $('#stage').innerHTML = '';
 function paintCompare() {
   const it = cur, st = $('#stage');
   $('#m-title').textContent = it.outName + ' · ' + fmtBytes(it.out.size);
-  $('#m-zoom').hidden = it.kind === 'video'; $('#m-swap').hidden = it.kind !== 'video';
+  const vid = it.out.type.startsWith('video');
+  $('#m-zoom').hidden = vid; $('#m-swap').hidden = !vid;
   $('#m-zoom').textContent = actual ? 'Fit' : '100%';
-  if (it.kind === 'video') {
+  if (vid) {
     const prev = st.querySelector('video'); const t = prev ? prev.currentTime : 0, playing = prev && !prev.paused;
     $('#m-swap').textContent = showOrig ? 'Show compressed' : 'Show original';
-    st.innerHTML = `<video controls playsinline src="${showOrig ? it.srcURL : it.outURL}"></video>`;
+    if (showOrig && it.kind === 'gif') { st.innerHTML = `<img src="${it.srcURL}" alt="Original GIF" style="max-width:100%">`; return; }
+    st.innerHTML = `<video controls playsinline ${it.kind === 'gif' ? 'autoplay loop muted' : ''} src="${showOrig ? it.srcURL : it.outURL}"></video>`;
     const v = st.querySelector('video'); v.addEventListener('loadedmetadata', () => { v.currentTime = t; if (playing) v.play(); }, { once: true });
     return;
   }
@@ -693,7 +967,7 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#modal
     for (const c of ['hevc', 'av1']) {
       const ok = await mb.canEncodeVideo(c, { width: 1920, height: 1080, bitrate: 4e6 });
       const b = document.querySelector(`.seg[data-set="vCodec"] button[data-v="${c}"]`);
-      if (!ok) { b.disabled = true; b.title = 'Not available in this browser'; if (S.vCodec === c) { S.vCodec = 'avc'; save(); paintSettings(); } }
+      if (!ok) { codecOff.add(c); b.disabled = true; b.title = 'Not available in this browser'; if (S.vCodec === c) { S.vCodec = 'avc'; save(); paintSettings(); } }
     }
   } catch (e) { /* offline: checked again when a video is dropped */ }
 })();
