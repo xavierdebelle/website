@@ -5,6 +5,28 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v117 — 2026-10-22
+
+**What's new** · Fix · [tools/photo-review.html]
+### Photo Review: ShootProof galleries with albums
+Importing from a gallery split into albums works now, and the picker has a
+button per album, so you can show just "Retouched", for example.
+
+**Photo Review v11 — `tools/photo-review.html`, source `Tools files/de Belle Photography apps/photo-review-v11.html`**
+- Found by Xavier: a gallery with albums (Sami: Enhanced 70, Retouched 6)
+  failed — its `/data?cr=1` returns `type: "albums"` instead of photos.
+- **Helper** (`Cloudflare/shootproof-helper/worker.js`): walks the gallery —
+  photos directly, or each album via `/data?album_id={id}&cr=1`, albums in
+  albums up to 4 deep, at most 60 lists per request; albums with their own
+  password (`p`) are skipped and named. Returns `albums: [{ id, name,
+  count }]`, `skipped`, and each photo's `album`; photos de-duplicated.
+  **Xavier pastes the new worker.js into Cloudflare** for it to take effect.
+- **Picker:** album buttons (All · N, then one per album) filter the grid;
+  Select all picks only what's showing; the message says how many albums
+  and which were skipped. Pasted favourites still tick across all albums.
+- Tested: new helper run locally — Sami 76 photos in 2 albums, Humes 267
+  with none; on the mock, Retouched shows 6, Select all + Add → 6 photos.
+
 ## v116 — 2026-10-22
 
 **What's new** · Video Review · [tools/video-review.html]

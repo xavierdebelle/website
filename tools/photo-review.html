@@ -193,6 +193,9 @@ label.chk input{margin-top:3px;accent-color:var(--volt)}
 .sp .nm{position:absolute;left:0;bottom:0;right:0;background:rgba(0,0,0,.7);font:10px var(--mono);padding:2px 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:left}
 .sp.had{opacity:.35;cursor:default}
 .sprow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.chips button{background:none;border:2px solid var(--ash);padding:5px 9px;cursor:pointer;font-size:11px;font-weight:900;letter-spacing:.06em;text-transform:uppercase}
+.chips button[aria-pressed=true]{background:var(--volt);color:var(--ink);border-color:var(--volt)}
 
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);opacity:0;background:var(--volt);color:var(--ink);font-weight:900;font-size:13px;
   padding:10px 16px;transition:.2s;z-index:60;pointer-events:none;max-width:calc(100vw - 32px);text-align:center}
@@ -1103,9 +1106,9 @@ function openAddPhotos() {
 // Paste a gallery link → the helper returns its photos → tick the ones for
 // this review (paste the client's favourite file names to tick those) → Add.
 // Photos are stored as ShootProof image links (3000 px); nothing is copied.
-let spGallery = null, spPick = new Set();
+let spGallery = null, spPick = new Set(), spAlbum = '';   // '' = every album
 function openShootProof() {
-  spGallery = null; spPick = new Set();
+  spGallery = null; spPick = new Set(); spAlbum = '';
   dialog('<h3>Import from ShootProof</h3>' +
     (SP_HELPER ? '' : '<p class="note"><b>The ShootProof helper isn’t set up yet</b> — its address still needs adding to this tool.</p>') +
     '<div class="field linkbox"><input type="url" id="spLink" placeholder="https://333photo.shootproof.com/gallery/…" aria-label="ShootProof gallery link"><button type="button" class="btn solid sm" id="spLoad">Load</button></div>' +
@@ -1114,6 +1117,7 @@ function openShootProof() {
       '<div class="field"><p class="k">Client’s favourites (optional)</p>' +
         '<textarea id="spFav" placeholder="Paste the file names from ShootProof — e.g. the list in the “favourites sent” email, or Favorites → copy file names in your studio"></textarea>' +
         '<div class="sprow"><button type="button" class="btn sm" id="spTickFav">Tick these</button><span class="note" id="spFavMsg" style="margin:0"></span></div></div>' +
+      '<div class="chips" id="spAlbums" hidden></div>' +
       '<div class="sprow"><button type="button" class="btn sm ghost" id="spAll">Select all</button><button type="button" class="btn sm ghost" id="spNone">Select none</button>' +
         '<span class="note" id="spCount" style="margin:0 0 0 auto"></span></div>' +
       '<div class="spgrid" id="spGrid"></div></div>',
@@ -1122,7 +1126,8 @@ function openShootProof() {
   $('spLoad').onclick = loadShootProof;
   $('spLink').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); loadShootProof(); } });
   $('spTickFav').onclick = tickFavourites;
-  $('spAll').onclick = () => { spGallery && spGallery.photos.forEach(p => { if (!p.had) spPick.add(p.id); }); paintSP(); };
+  $('spAll').onclick = () => { spGallery && spGallery.photos.forEach(p => { if (!p.had && inAlbum(p)) spPick.add(p.id); }); paintSP(); };
+  $('spAlbums').addEventListener('click', e => { const b = e.target.closest('[data-album]'); if (!b) return; spAlbum = b.dataset.album; paintSP(); });
   $('spNone').onclick = () => { spPick.clear(); paintSP(); };
   $('spGrid').addEventListener('click', e => {
     const b = e.target.closest('.sp[data-id]'); if (!b || b.classList.contains('had')) return;
@@ -1139,19 +1144,28 @@ async function loadShootProof() {
     const j = await r.json().catch(() => ({}));
     if (!r.ok || !Array.isArray(j.photos)) throw new Error(j.error || 'the helper answered ' + r.status);
     const had = new Set(R.photos.flatMap(p => p.versions.map(v => v.url)).filter(Boolean));
-    spGallery = { title: j.title || '', photos: j.photos.map(p => Object.assign({}, p, { had: had.has(spUrl(p, '3x')) })) };
-    spPick = new Set();
-    msg.textContent = (spGallery.title ? spGallery.title + ' — ' : '') + plural(spGallery.photos.length, 'photo') + (spGallery.photos.some(p => p.had) ? ' (faded ones are already in this review)' : '') + '. Tick the ones to review.';
+    spGallery = { title: j.title || '', albums: Array.isArray(j.albums) ? j.albums : [], photos: j.photos.map(p => Object.assign({}, p, { had: had.has(spUrl(p, '3x')) })) };
+    spPick = new Set(); spAlbum = '';
+    msg.textContent = (spGallery.title ? spGallery.title + ' — ' : '') + plural(spGallery.photos.length, 'photo') +
+      (spGallery.albums.length ? ' in ' + plural(spGallery.albums.length, 'album') : '') +
+      (spGallery.photos.some(p => p.had) ? ' (faded ones are already in this review)' : '') + '. Tick the ones to review.' +
+      (j.skipped && j.skipped.length ? ' Skipped, they have their own password: ' + j.skipped.join(', ') + '.' : '');
     $('spBody').hidden = false; paintSP(true);
   } catch (e) { msg.textContent = 'Couldn’t read it: ' + (e && e.message || e) + '.'; }
   $('spLoad').disabled = false;
 }
+const inAlbum = p => !spAlbum || p.album === spAlbum;
 function paintSP(fresh) {
   if (!spGallery || !$('spGrid')) return;
+  const ab = $('spAlbums');
+  ab.hidden = spGallery.albums.length < 2;
+  if (!ab.hidden) ab.innerHTML = [['', 'All · ' + spGallery.photos.length]].concat(spGallery.albums.map(a => [a.name, a.name + ' · ' + a.count]))
+    .map(([k, label]) => '<button type="button" data-album="' + esc(k) + '" aria-pressed="' + (spAlbum === k) + '">' + esc(label) + '</button>').join('');
   if (fresh) $('spGrid').innerHTML = spGallery.photos.map(p =>
-    '<button type="button" class="sp' + (p.had ? ' had' : '') + '" data-id="' + esc(p.id) + '" title="' + esc(p.name) + '"><img loading="lazy" alt="" src="' + esc(spUrl(p, 'm')) + '">' +
+    '<button type="button" class="sp' + (p.had ? ' had' : '') + '" data-id="' + esc(p.id) + '" title="' + esc(p.name + (p.album ? ' — ' + p.album : '')) + '"><img loading="lazy" alt="" src="' + esc(spUrl(p, 'm')) + '">' +
     '<span class="tk">✓</span><span class="nm">' + esc(p.name) + '</span></button>').join('');
-  $('spGrid').querySelectorAll('.sp[data-id]').forEach(b => b.classList.toggle('on', spPick.has(b.dataset.id)));
+  const byId = new Map(spGallery.photos.map(p => [p.id, p]));
+  $('spGrid').querySelectorAll('.sp[data-id]').forEach(b => { b.classList.toggle('on', spPick.has(b.dataset.id)); b.hidden = !inAlbum(byId.get(b.dataset.id)); });
   $('spCount').textContent = plural(spPick.size, 'photo') + ' selected';
 }
 // file names → photos, ignoring case, folders and extensions (IMG_1234.CR3 finds IMG_1234.jpg)
