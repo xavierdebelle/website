@@ -5,6 +5,40 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v119 — 2026-10-22
+
+**What's new** · The Biz · [tools/wedding-schedule.html]
+### Wedding Day Schedule,<br>in de Belle's own look
+The schedule couples fill in before their wedding now looks like de Belle
+Photography: the real wordmark, Georgia headings, quiet spaced capitals, and
+a printed schedule that reads like the studio's own paperwork.
+
+**Wedding Day Schedule — `tools/wedding-schedule.html`, source `wedding-schedule-form-v2.html`**
+- Restyled to the de Belle Design System (Claude design system "de Belle
+  Design System"): Noir → White palette only, Georgia headings and italic
+  accents, Lato body and spaced-caps labels, square edges, no shadows, Mist
+  panels instead of bordered cards, buttons Noir / outlined with an opacity
+  hover. The de Belle wordmark (`logo-black.png` from the system) is
+  embedded as a data URI so the page and its print stay one file.
+- Printed schedule: wordmark, "Wedding Day Schedule" in spaced caps, the
+  couple in Georgia italic, spaced-caps section heads instead of black bars,
+  filled-in values in Noir Georgia (were red) against grey captions, hairline
+  rows, studio contact line at the foot, 16/18 mm page margins, headings kept
+  with what follows. The page header hides while the schedule is shown.
+- Copy brought to the brand rules: "de Belle Photography" casing, no em
+  dashes (the two preparation notes now use a full stop; "Hair & Make-up
+  must be COMPLETE" → "hair and make-up must be complete"), a Georgia-italic
+  intro instead of the red box, contact footer (Montréal · Est. 1993, email,
+  phone, site).
+- Unchanged: every field name, the order and content of the generated
+  schedule, nothing stored or sent.
+
+**Verified (Playwright Chromium)** — filled a sample wedding, generated,
+printed to PDF (Letter): layout, wordmark, values, empty fields shown as a
+quiet dot; 375 px phone without sideways scroll; no page errors.
+
+---
+
 ## v118 — 2026-10-22
 
 **Package Builder: prices editable from a back-end panel (studio only — no visitor-facing change)**

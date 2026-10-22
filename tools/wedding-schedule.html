@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Wedding Day Schedule — De Belle Photography</title>
+<title>Wedding Day Schedule — de Belle Photography</title>
 <!-- social preview: link cards on Instagram, iMessage, WhatsApp, Facebook, X -->
 <meta name="description" content="Build the timeline of the wedding day hour by hour, so the couple, the planner and the camera team all read from one page.">
 <link rel="canonical" href="https://xavierdebelle.com/tools/wedding-schedule.html">
@@ -18,101 +18,107 @@
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Wedding Day Schedule — de Belle Photography">
 <meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,300;0,400;0,700;1,400&display=swap" rel="stylesheet">
 <style>
+  /* de Belle Photography design system: pure black and white, Georgia for
+     headings and accents, Lato for text, spaced caps for labels, square
+     edges, no shadows. Space does the separating. */
   :root{
-    --ink:#1a1a1a; --muted:#6b6b6b; --red:#c0392b; --line:#d9d4cc;
-    --bg:#f4f1ec; --card:#ffffff; --accent:#1a1a1a;
+    --noir:#0D0D0D; --charcoal:#1A1A1A; --graphite:#4A4A4A; --grey:#888888;
+    --silver:#C2C2C2; --mist:#F5F5F5; --white:#FFFFFF;
+    --serif:Georgia,"Times New Roman",serif;
+    --sans:"Lato","Helvetica Neue",Helvetica,Arial,sans-serif;
   }
   *{box-sizing:border-box}
   body{
-    margin:0; background:var(--bg); color:var(--ink);
-    font-family:"Helvetica Neue",Arial,sans-serif; line-height:1.5;
+    margin:0; background:var(--white); color:var(--graphite);
+    font-family:var(--sans); font-size:15px; line-height:1.6;
     -webkit-font-smoothing:antialiased;
   }
-  .wrap{max-width:880px; margin:0 auto; padding:32px 20px 80px}
-  header.brand{text-align:center; margin-bottom:8px}
-  header.brand .logo{
-    font-family:"Georgia",serif; letter-spacing:3px; font-size:26px;
-    text-transform:uppercase;
-  }
-  header.brand .sub{color:var(--muted); font-size:12px; letter-spacing:2px; text-transform:uppercase}
+  .wrap{max-width:880px; margin:0 auto; padding:56px 24px 96px}
+  header.brand{text-align:center; margin-bottom:40px}
+  header.brand img{width:200px; height:auto; display:block; margin:0 auto}
+  header.brand .sub{margin-top:22px; font-size:11px; font-weight:300; letter-spacing:.32em; text-transform:uppercase; color:var(--grey)}
   .intro{
-    background:#fff7f5; border:1px solid #f0d6d0; border-radius:8px;
-    padding:14px 18px; margin:20px 0 28px; font-size:14px; color:#7a3b33;
+    font-family:var(--serif); font-style:italic; font-size:18px; line-height:1.7;
+    color:var(--graphite); text-align:center; max-width:620px; margin:0 auto 56px;
   }
-  .intro b{color:var(--red)}
+  .intro b{font-weight:400; color:var(--noir)}
   h2.section{
-    font-family:"Georgia",serif; font-size:15px; letter-spacing:2px; text-transform:uppercase;
-    border-bottom:2px solid var(--ink); padding-bottom:6px; margin:34px 0 16px;
+    font-family:var(--serif); font-weight:400; font-size:clamp(24px,3vw,30px); line-height:1.3;
+    color:var(--noir); margin:72px 0 22px;
   }
-  .card{
-    background:var(--card); border:1px solid var(--line); border-radius:10px;
-    padding:18px 20px; margin-bottom:16px;
-  }
-  .card h3{margin:0 0 4px; font-size:15px}
-  .card .note{color:var(--muted); font-size:12.5px; margin:0 0 14px}
-  .grid{display:grid; grid-template-columns:1fr 1fr; gap:12px 18px}
-  .grid-3{display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px 18px}
-  @media(max-width:640px){.grid,.grid-3{grid-template-columns:1fr}}
-  label{display:block; font-size:12px; font-weight:700; letter-spacing:.3px; margin-bottom:4px; color:#333}
-  label .opt{font-weight:400; color:var(--muted); text-transform:none; letter-spacing:0}
+  .lede{font-size:14px; color:var(--grey); margin:-12px 0 22px}
+  .card{background:var(--mist); padding:28px 30px; margin-bottom:16px}
+  .card h3{margin:0 0 6px; font-family:var(--serif); font-weight:400; font-size:21px; color:var(--noir)}
+  .card .note{font-family:var(--serif); font-style:italic; color:var(--graphite); font-size:15px; margin:0 0 18px}
+  .grid{display:grid; grid-template-columns:1fr 1fr; gap:18px 22px}
+  .grid-3{display:grid; grid-template-columns:1fr 1fr 1fr; gap:18px 22px}
+  @media(max-width:640px){.grid,.grid-3{grid-template-columns:1fr} .card{padding:22px 18px} .wrap{padding-top:40px}}
+  label{display:block; font-size:10px; font-weight:400; letter-spacing:.16em; text-transform:uppercase; margin-bottom:7px; color:var(--grey)}
+  label .opt{text-transform:none; letter-spacing:.02em; font-style:italic; font-family:var(--serif); font-size:12px}
   input,select,textarea{
-    width:100%; padding:9px 11px; border:1px solid var(--line); border-radius:6px;
-    font:inherit; font-size:14px; background:#fff; color:var(--ink);
+    width:100%; padding:11px 12px; border:1px solid var(--silver); border-radius:0;
+    font:inherit; font-size:15px; background:var(--white); color:var(--noir); -webkit-appearance:none; appearance:none;
+    transition:border-color .3s ease-in-out;
   }
-  input:focus,select:focus,textarea:focus{outline:2px solid #bfae93; outline-offset:0; border-color:#bfae93}
-  textarea{resize:vertical; min-height:52px}
+  select{background-image:linear-gradient(45deg,transparent 50%,var(--noir) 50%),linear-gradient(135deg,var(--noir) 50%,transparent 50%);
+    background-position:calc(100% - 16px) 50%,calc(100% - 11px) 50%; background-size:5px 5px; background-repeat:no-repeat; padding-right:30px}
+  input::placeholder,textarea::placeholder{color:var(--silver)}
+  input:focus,select:focus,textarea:focus{outline:none; border-color:var(--noir)}
+  textarea{resize:vertical; min-height:56px}
   .full{grid-column:1 / -1}
   .inline-yn{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
-  .inline-yn select{max-width:120px}
-  .actions{
-    padding:22px 0 4px; margin-top:28px; text-align:center;
-  }
+  .inline-yn select{max-width:110px}
+  .inline-yn input{flex:1; min-width:160px}
+  .actions{padding:40px 0 4px; margin-top:40px; text-align:center}
   button{
-    font:inherit; font-weight:700; letter-spacing:1px; text-transform:uppercase; font-size:13px;
-    padding:14px 30px; border-radius:8px; border:0; cursor:pointer;
+    font-family:var(--sans); font-weight:400; letter-spacing:.14em; text-transform:uppercase; font-size:11px;
+    padding:15px 32px; border-radius:0; border:0; cursor:pointer; transition:opacity .3s ease-in-out;
   }
-  .btn-primary{background:var(--accent); color:#fff}
-  .btn-primary:hover{background:#000}
-  .btn-ghost{background:transparent; color:var(--ink); border:1px solid var(--ink); margin-left:8px}
-  .btn-ghost:hover{background:var(--ink); color:#fff}
-  .hint{font-size:11px; color:var(--muted); margin-top:10px}
+  button:hover{opacity:.7}
+  .btn-primary{background:var(--noir); color:var(--white)}
+  .btn-ghost{background:transparent; color:var(--noir); border:1px solid var(--noir); padding:14px 31px; margin-left:10px}
+  .hint{font-size:13px; color:var(--grey); margin-top:16px; font-family:var(--serif); font-style:italic}
+  .studio{margin-top:96px; text-align:center; font-size:10px; font-weight:300; letter-spacing:.24em; text-transform:uppercase; color:var(--grey); line-height:2.2}
+  .studio a{color:var(--grey); text-decoration:none}
+  .studio a:hover{opacity:.6}
 
   /* ---------- Generated schedule ---------- */
   #output{display:none}
-  .doc{
-    background:#fff; border:1px solid var(--line); border-radius:6px;
-    padding:46px 54px; font-family:"Georgia",serif; color:#111;
-  }
-  .doc .dhead{text-align:center; margin-bottom:6px}
-  .doc .dhead .logo{letter-spacing:4px; font-size:24px; text-transform:uppercase}
-  .doc .dhead .sub{font-family:Arial,sans-serif; letter-spacing:2px; font-size:11px; color:#555; text-transform:uppercase}
+  .doc{background:var(--white); padding:56px 60px; font-family:var(--sans); color:var(--graphite); border:1px solid var(--mist)}
+  .doc .dhead{text-align:center; margin-bottom:8px}
+  .doc .dhead img{width:170px; height:auto; display:block; margin:0 auto}
+  .doc .dhead .sub{margin-top:18px; font-size:10px; font-weight:300; letter-spacing:.32em; text-transform:uppercase; color:var(--grey)}
+  .doc .couple{text-align:center; font-family:var(--serif); font-style:italic; font-size:22px; color:var(--noir); margin:14px 0 0}
   .doc h2{
-    font-size:14px; letter-spacing:2px; text-transform:uppercase; text-align:center;
-    background:#1a1a1a; color:#fff; padding:7px; margin:30px 0 14px; border-radius:3px;
+    font-family:var(--sans); font-size:11px; font-weight:400; letter-spacing:.28em; text-transform:uppercase; text-align:center;
+    color:var(--noir); margin:44px 0 16px; padding:0;
   }
-  .doc h3{font-size:15px; margin:20px 0 2px; border-bottom:1px solid #bbb; padding-bottom:3px}
-  .doc .blk-note{font-family:Arial,sans-serif; font-size:11px; color:#555; margin:2px 0 10px; font-style:italic}
-  .doc table{width:100%; border-collapse:collapse; margin:8px 0 6px; font-family:Arial,sans-serif; font-size:12.5px}
-  .doc td{border:1px solid #c9c9c9; padding:7px 10px; vertical-align:top; width:50%}
-  .doc td .cap{color:#111; font-weight:700}
-  .doc td .val{color:var(--red); font-weight:400}
+  .doc h3{font-family:var(--serif); font-weight:400; font-size:19px; color:var(--noir); margin:26px 0 4px; padding-bottom:0}
+  .doc .blk-note{font-family:var(--serif); font-size:13px; color:var(--graphite); margin:2px 0 10px; font-style:italic}
+  .doc table{width:100%; border-collapse:collapse; margin:8px 0 6px; font-size:13px}
+  .doc td{border-top:1px solid var(--silver); border-bottom:1px solid var(--silver); padding:9px 12px 9px 0; vertical-align:top; width:50%}
+  .doc td .cap{color:var(--grey); font-size:10px; letter-spacing:.12em; text-transform:uppercase; font-weight:400}
+  .doc td .val, .doc .val{color:var(--noir); font-family:var(--serif); font-size:14px}
   .doc .twocol{display:grid; grid-template-columns:1fr 1fr; gap:0}
-  .doc p.line{font-family:Arial,sans-serif; font-size:13px; margin:6px 0}
-  .doc p.line .cap{font-weight:700}
-  .doc p.line .val{color:var(--red)}
-  .doc .special{font-family:Arial,sans-serif; font-size:12.5px; margin:6px 0 0}
-  .doc .special .val{color:var(--red)}
-  .doc a{color:var(--red); word-break:break-all}
+  .doc p.line{font-size:13px; margin:8px 0}
+  .doc p.line .cap, .doc .special .cap{color:var(--grey); font-size:10px; letter-spacing:.12em; text-transform:uppercase}
+  .doc .special{font-size:13px; margin:8px 0 0}
+  .doc a{color:var(--noir); word-break:break-all; text-decoration:underline; text-decoration-color:var(--silver)}
+  .doc .dfoot{margin-top:48px; text-align:center; font-size:9px; font-weight:300; letter-spacing:.24em; text-transform:uppercase; color:var(--grey)}
+  .doc .empty{color:var(--silver)}
 
+  @page{margin:16mm 18mm}
   @media print{
     body{background:#fff}
     .wrap{max-width:100%; padding:0}
-    #formView,.actions,.intro,header.brand,.print-actions{display:none !important}
+    #formView,.actions,.intro,header.brand,.print-actions,.studio{display:none !important}
     #output{display:block !important}
     .doc{border:0; padding:0}
-    .doc h2{-webkit-print-color-adjust:exact; print-color-adjust:exact}
     .blk{page-break-inside:avoid}
+    .doc h2,.doc h3{break-after:avoid; page-break-after:avoid}
   }
 </style>
 <script defer src="../assets/stats.js"></script>
@@ -121,17 +127,16 @@
 <div class="wrap">
 
   <header class="brand">
-    <div class="logo">De Belle</div>
-    <div class="sub">Photography &amp; Cinematography</div>
+    <img src="data:image/png;base64,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" alt="de Belle Photography" width="361" height="145">
+    <div class="sub">Wedding Day Schedule</div>
   </header>
 
   <!-- ============ FORM ============ -->
   <div id="formView">
-    <div class="intro">
-      Fill in your details below, then click <b>Generate Schedule</b> at the bottom.
-      Only the fields you type into change &mdash; all the standard captions stay the same.
-      You can leave optional fields blank. Times use formats like <i>10:30 am</i>.
-    </div>
+    <p class="intro">
+      Tell us how your day will unfold, then press <b>Generate Schedule</b> at the bottom.
+      Only what you write here changes. Optional fields can stay blank, and times read best as 10:30 am.
+    </p>
 
     <form id="schedForm">
 
@@ -140,14 +145,14 @@
       <div class="card">
         <div class="grid">
           <div>
-            <label>Photography <span class="opt">— is De Belle your photographer?</span></label>
+            <label>Photography <span class="opt">is de Belle Photography your photographer?</span></label>
             <div class="inline-yn">
               <select name="photo_yn"><option>YES</option><option>NO</option></select>
               <input type="text" name="photo_who" placeholder="If not us, who?">
             </div>
           </div>
           <div>
-            <label>Cinematography <span class="opt">— is De Belle your videographer?</span></label>
+            <label>Cinematography <span class="opt">is de Belle Photography your videographer?</span></label>
             <div class="inline-yn">
               <select name="cine_yn"><option>YES</option><option>NO</option></select>
               <input type="text" name="cine_who" placeholder="If not us, who?">
@@ -185,9 +190,7 @@
 
       <!-- TIMELINE -->
       <h2 class="section">Timeline</h2>
-      <p style="font-size:13px;color:#6b6b6b;margin-top:-6px">
-        Fill in the blocks that apply to your day. Leave a whole block empty to omit it from the schedule.
-      </p>
+      <p class="lede">Fill in the moments that apply to your day. A moment left empty stays off the schedule.</p>
 
       <!-- Generic block template rendered via JS for the 6 stages -->
       <div id="timelineBlocks"></div>
@@ -202,9 +205,12 @@
       <div class="actions">
         <button type="button" class="btn-primary" onclick="generate()">Generate Schedule</button>
         <button type="reset" class="btn-ghost">Clear Form</button>
-        <div class="hint">Nothing is sent anywhere — everything stays on your device until you print or save.</div>
+        <div class="hint">Nothing is sent anywhere. Everything stays on your device until you print or save it.</div>
       </div>
     </form>
+    <footer class="studio">M O N T R É A L · E S T. 1 9 9 3<br>
+      <a href="mailto:yourwedding@debellephotography.com">yourwedding@debellephotography.com</a> · 514-887-4686 ·
+      <a href="https://debellephotography.com" target="_blank" rel="noopener">debellephotography.com</a></footer>
   </div>
 
   <!-- ============ OUTPUT ============ -->
@@ -225,9 +231,9 @@
 // ---- Timeline stage definitions ----
 const STAGES = [
   {key:'groom', title:"Groom's Preparation",
-   note:"Guys don't need their suits on when we arrive — we photograph everyone getting ready.", rain:false},
+   note:"Guys don't need their suits on when we arrive. We photograph everyone getting ready.", rain:false},
   {key:'bride', title:"Bride's Preparation",
-   note:"The girls don't need dresses on when we arrive. Important: Hair & Make-up must be COMPLETE by the time we arrive.", rain:false},
+   note:"The girls don't need dresses on when we arrive. Important: hair and make-up must be complete by the time we arrive.", rain:false},
   {key:'ceremony', title:"Ceremony", note:"", rain:false},
   {key:'family', title:"Family Photos", note:"", rain:true},
   {key:'couple', title:"Couple Photos", note:"", rain:true},
@@ -254,9 +260,9 @@ function buildTimelineForm(){
         ${s.receptionSimple?'':`<div><label># Guests at this location</label><input name="${s.key}_guests" placeholder="number"></div>`}
         ${s.rain?`
           <div><label>Backup rain location 1 <span class="opt">(name)</span></label><input name="${s.key}_rain1_name" placeholder="Name"></div>
-          <div class="full"><label>Backup rain location 1 — address</label><input name="${s.key}_rain1_addr" placeholder="Street, City, Postal Code"></div>
+          <div class="full"><label>Backup rain location 1 address</label><input name="${s.key}_rain1_addr" placeholder="Street, City, Postal Code"></div>
           <div><label>Backup rain location 2 <span class="opt">(name)</span></label><input name="${s.key}_rain2_name" placeholder="Name"></div>
-          <div class="full"><label>Backup rain location 2 — address</label><input name="${s.key}_rain2_addr" placeholder="Street, City, Postal Code"></div>
+          <div class="full"><label>Backup rain location 2 address</label><input name="${s.key}_rain2_addr" placeholder="Street, City, Postal Code"></div>
         `:''}
         <div class="full"><label>Any special pictures? <span class="opt">(optional)</span></label><textarea name="${s.key}_special" placeholder="Note anything specific you'd like us to capture"></textarea></div>
       </div>
@@ -269,8 +275,8 @@ function buildTimelineForm(){
 function buildVendorForm(){
   let html='<div class="grid">';
   VENDORS.forEach((v,i)=>{
-    html+=`<div><label>${v} — name</label><input name="vendor_${i}_name" placeholder="Name"></div>
-           <div><label>${v} — Instagram link</label><input name="vendor_${i}_ig" placeholder="@handle or link"></div>`;
+    html+=`<div><label>${v} · name</label><input name="vendor_${i}_name" placeholder="Name"></div>
+           <div><label>${v} · Instagram link</label><input name="vendor_${i}_ig" placeholder="@handle or link"></div>`;
   });
   html+='</div>';
   document.getElementById('vendorBlocks').innerHTML=html;
@@ -282,13 +288,13 @@ buildVendorForm();
 // ---- Helpers ----
 function val(n){const el=document.querySelector(`[name="${n}"]`);return el?el.value.trim():'';}
 function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-function v(s){return s?`<span class="val">${esc(s)}</span>`:`<span class="val" style="color:#bbb">—</span>`;}
+function v(s){return s?`<span class="val">${esc(s)}</span>`:`<span class="empty">·</span>`;}
 function yn(ynName,whoName){
   const a=val(ynName), w=val(whoName);
   return w?`${esc(a)} <span class="val">(${esc(w)})</span>`:esc(a);
 }
 function linkify(s){
-  if(!s) return '<span style="color:#bbb">—</span>';
+  if(!s) return '<span class="empty">·</span>';
   if(/^https?:\/\//i.test(s)) return `<a href="${esc(s)}">${esc(s)}</a>`;
   return `<span class="val">${esc(s)}</span>`;
 }
@@ -296,9 +302,9 @@ function linkify(s){
 // ---- Generate the schedule document ----
 function generate(){
   let h='';
-  h+=`<div class="dhead"><div class="logo">De Belle</div><div class="sub">Wedding Day Schedule</div></div>`;
+  h+=`<div class="dhead"><img src="${document.querySelector('header.brand img').src}" alt="de Belle Photography"><div class="sub">Wedding Day Schedule</div></div>`;
   const couple=[val('bride_name'),val('groom_name')].filter(Boolean).join(' & ');
-  if(couple) h+=`<p style="text-align:center;font-size:16px;margin:4px 0 0">${esc(couple)}</p>`;
+  if(couple) h+=`<p class="couple">${esc(couple)}</p>`;
 
   // GENERAL
   h+=`<h2>General Information</h2><div class="blk">`;
@@ -346,7 +352,7 @@ function generate(){
           <tr><td><span class="cap">Backup rain location:</span> ${v(val(s.key+'_rain2_name'))}</td><td><span class="cap">Address:</span> ${v(val(s.key+'_rain2_addr'))}</td></tr>`;
     }
     h+=`</table>`;
-    h+=`<p class="special"><span class="cap">Any special pictures? (optional):</span> ${special?`<span class="val">${esc(special)}</span>`:'<span style="color:#bbb">—</span>'}</p>`;
+    h+=`<p class="special"><span class="cap">Any special pictures? (optional):</span> ${special?`<span class="val">${esc(special)}</span>`:'<span class="empty">·</span>'}</p>`;
     h+=`</div>`;
   });
 
@@ -359,15 +365,18 @@ function generate(){
         <td style="width:68%"><span class="cap">Name:</span> ${v(name)}<br><span class="cap">Instagram:</span> ${linkify(ig)}</td></tr>`;
   });
   h+=`</table></div>`;
+  h+=`<div class="dfoot">de Belle Photography · yourwedding@debellephotography.com · 514-887-4686</div>`;
 
   document.getElementById('docBody').innerHTML=h;
   document.getElementById('formView').style.display='none';
+  document.querySelector('header.brand').style.display='none';   // the schedule carries its own wordmark
   document.getElementById('output').style.display='block';
   window.scrollTo(0,0);
 }
 
 function backToEdit(){
   document.getElementById('output').style.display='none';
+  document.querySelector('header.brand').style.display='';
   document.getElementById('formView').style.display='block';
   window.scrollTo(0,0);
 }
