@@ -352,7 +352,11 @@ const isHost = () => !!(R && me() && (me().uid === R.owner || me().uid === OWNER
 const params = new URLSearchParams(location.search);
 const reviewId = params.get('r');
 let R = null;            // the open review, as last read
-let photoKey = params.get('p') || null;
+// ?p= is the client portal this review was opened from (Video Review's portal
+// page links here that way); the photo on screen is ?ph=. Database push keys
+// start with "-", so an old link whose ?p= was a photo still opens that photo.
+const portalId = /^-/.test(params.get('p') || '') ? null : params.get('p');
+let photoKey = params.get('ph') || (portalId ? null : params.get('p')) || null;
 let verKey = params.get('v') || null;   // a version picked by hand; null = the photo's latest
 let seenAt = null;       // host: when they last looked (for the new dots)
 let pendingAdd = params.has('add');     // just created: open "Add photos" once sign-in is known
@@ -399,7 +403,7 @@ function write(p, v, fail) {
   return fb.f.set(dbRef(p), v).then(() => true, err => { console.warn('write refused', p, err); toast(fail || "Couldn't save — check your connection"); return false; });
 }
 function setUrl() {
-  const q = '?r=' + encodeURIComponent(R.id) + (curPhoto() ? '&p=' + encodeURIComponent(curPhoto().key) : '') + (verKey ? '&v=' + encodeURIComponent(verKey) : '');
+  const q = '?r=' + encodeURIComponent(R.id) + (portalId ? '&p=' + encodeURIComponent(portalId) : '') + (curPhoto() ? '&ph=' + encodeURIComponent(curPhoto().key) : '') + (verKey ? '&v=' + encodeURIComponent(verKey) : '');
   history.replaceState(null, '', q);
 }
 
@@ -488,7 +492,10 @@ function renderReview() {
   $('title').innerHTML = esc(R.title) + '<span>.</span>';
   const host = isHost(), v = curVer();
   $('btnShare').hidden = !host; $('btnHostMenu').hidden = !host; $('btnExport').hidden = !host;
-  $('navBack').hidden = !host; $('navBack').href = location.pathname;
+  // back: to the client's portal when opened from one, else the host's list
+  $('navBack').hidden = !(host || portalId);
+  $('navBack').href = portalId ? 'video-review.html?p=' + encodeURIComponent(portalId) : location.pathname;
+  $('navBack').textContent = portalId ? '← All reviews' : '← My reviews';
   $('acctSlot').hidden = !me();
   $('pname').innerHTML = p ? '<span>' + (photoIndex() + 1) + ' / ' + R.photos.length + '</span>' + esc(p.name || 'Photo ' + (photoIndex() + 1)) : '';
   // versions of this photo

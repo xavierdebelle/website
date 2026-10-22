@@ -5,6 +5,27 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v110 — 2026-10-22
+
+**What's new** · Update · [tools/photo-review.html]
+### Photo Review in client portals
+Photo reviews opened from a client portal keep the portal in view: an
+"All reviews" button takes the client straight back to it.
+
+**Photo Review v6 — `tools/photo-review.html`, source `Tools files/de Belle Photography apps/photo-review-v6.html`**
+- Video Review's portal page (v107/v109, other session) opens a photo set as
+  `photo-review.html?r={id}&p={portalId}`, but Photo Review used `?p=` for
+  the photo on screen, so the portal id was read as a photo and dropped on
+  the next move. Now `?p=` = portal, `?ph=` = photo; an old `?p=` that is a
+  database push key (starts with "-") still opens that photo.
+- `#navBack` shows **← All reviews** → `video-review.html?p={portalId}` for
+  anyone who came from a portal (client or host), else **← My reviews** for
+  the host. The portal id stays in the URL while moving between photos.
+- Adding photo reviews to a portal is on the portal page (Video Review), as
+  Xavier asked ("the same way as the video one").
+- Tested on the mock: portal link shows All reviews with the right href,
+  Next photo keeps `p` and adds `ph`.
+
 ## v109 — 2026-10-22
 
 **What's new** · Video Review · [tools/video-review.html]
