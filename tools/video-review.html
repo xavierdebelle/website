@@ -90,6 +90,13 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:var(--volt)}
 .rv-main{flex:1;min-width:0}
 .badge{background:var(--volt);color:var(--ink);font-weight:900;font-size:11px;letter-spacing:.06em;padding:4px 8px;white-space:nowrap;text-transform:uppercase}
 .empty{color:var(--dust);font-size:14px;padding:14px 0;border-top:3px solid var(--ash)}
+.ptHost{border:3px solid var(--ash);padding:12px;margin:0 0 24px}
+.ptHost select{flex:1;min-width:0;font-size:14px}
+.rv .x{background:none;border:0;color:var(--dust);font-size:20px;cursor:pointer;padding:0 4px}
+.rv .x:hover{color:var(--volt)}
+.badge.dim{background:var(--ash);color:var(--paper)}
+.pchk{display:flex;align-items:center;gap:10px;padding:6px 0;font-size:14px;cursor:pointer}
+.pchk input{width:18px;height:18px;accent-color:#ffe800}
 
 /* ---------- review layout: notes left, player right ---------- */
 .review{display:grid;grid-template-columns:minmax(300px,380px) minmax(0,1fr);gap:0;min-height:calc(100vh - 66px)}
@@ -208,6 +215,7 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:var(--volt)}
 <header class="top">
   <div class="brand"><a href="../index.html">Xavier de Belle</a><h1 id="title">Video Review<span>.</span></h1></div>
   <div class="topacts">
+    <a class="btn sm" id="navBack" href="?" hidden>← Reviews</a>
     <select id="verSel" hidden aria-label="Version"></select>
     <button type="button" class="btn sm" id="btnShare" hidden>Client link</button>
     <button type="button" class="btn sm" id="btnHostMenu" hidden>Manage</button>
@@ -229,8 +237,31 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:var(--volt)}
     </div>
     <p class="k">Your reviews</p>
     <div id="homeList"></div>
+    <p class="k" style="margin-top:40px">Client portals</p>
+    <p class="note" style="margin:0 0 12px">One link per client that lists every review you add to it — new versions and your replies show up as “New”.</p>
+    <div class="newrow">
+      <input type="text" id="newPortal" maxlength="200" placeholder="Client name, e.g. Smith family" aria-label="Portal name">
+      <button type="button" class="btn" id="btnPortal">Create portal</button>
+    </div>
+    <div id="portalList"></div>
   </div>
   <p class="note" style="margin-top:28px">Clients never need an account — they open the link, type their name and leave notes. Videos play from your GoHighLevel Media Storage.</p>
+</main>
+
+<!-- ================= CLIENT PORTAL ================= -->
+<main id="portalView" class="home" hidden>
+  <p class="k" id="ptKicker">Your reviews</p>
+  <h2 id="ptTitle"></h2>
+  <p class="note" id="ptIntro" style="margin:0 0 24px">Every video shared with you lands here. Open one to watch it and leave your notes.</p>
+  <div class="ptHost" id="ptHost" hidden>
+    <div class="linkbox"><input type="text" id="ptLink" readonly aria-label="Portal link"><button type="button" class="btn solid sm" id="ptCopy">Copy link</button></div>
+    <div class="newrow" style="margin:12px 0 0">
+      <select id="ptAddSel" aria-label="Add a review"></select>
+      <button type="button" class="btn sm" id="ptAdd">Add to portal</button>
+      <button type="button" class="btn sm ghost" id="ptManage">Rename / delete</button>
+    </div>
+  </div>
+  <div id="ptList"></div>
 </main>
 
 <!-- ================= REVIEW ================= -->
@@ -349,6 +380,9 @@ const isHost = () => !!(R && me() && (me().uid === R.owner || me().uid === OWNER
 
 const params = new URLSearchParams(location.search);
 const reviewId = params.get('r');
+const portalId = params.get('p');   // a client portal, or the portal a review was opened from
+const portalQ = portalId ? '&p=' + encodeURIComponent(portalId) : '';
+const PSEEN_KEY = 'xdb.portal.seen';   // client: when this browser last opened each review
 let R = null;          // the open review, as last read
 let verKey = params.get('v') || null;
 let seenAt = null;     // host: when they last looked (for the new dots)
@@ -378,12 +412,12 @@ function write(p, v, fail) {
 // ══════════════════ HOME ══════════════════
 let homeOff = null, homeUid, homeData = {}, homeWatch = {};
 function showHome(banner) {
-  $('reviewView').hidden = true; $('homeView').hidden = false; $('acctSlot').hidden = false;
+  $('reviewView').hidden = true; $('portalView').hidden = true; $('homeView').hidden = false; $('acctSlot').hidden = false; $('navBack').hidden = true;
   $('homeBanner').innerHTML = banner ? '<div class="gate">' + banner + '</div>' : '';
   renderHome();
 }
 function renderHome() {
-  if ($('homeView').hidden) return;
+  if ($('homeView').hidden && !portalId) return;   // a portal page still needs the host's list of reviews
   const s = acctState();
   const msg = {
     signedout: 'Sign in with Google to start a review.',
@@ -400,8 +434,9 @@ function renderHome() {
   if (homeOff) { homeOff(); homeOff = null; }
   Object.values(homeWatch).forEach(off => off()); homeWatch = {};
   homeUid = uidNow;
+  watchHomePortals(uidNow);
   if (!uidNow || !fb) { $('homeList').innerHTML = ''; return; }
-  homeOff = fb.f.onValue(dbRef('users/' + uidNow + '/reviews'), snap => { homeData = snap.val() || {}; watchHome(); renderHomeList(); }, () => {});
+  homeOff = fb.f.onValue(dbRef('users/' + uidNow + '/reviews'), snap => { homeData = snap.val() || {}; watchHome(); renderHomeList(); if (PT) renderPortal(); }, () => {});
 }
 // each review's notes, live, for the "N new" badge
 const homeNotes = {};
@@ -436,6 +471,34 @@ $('homeList').addEventListener('click', e => { const r = e.target.closest('.rv')
 $('gateBtn').onclick = () => acct() && acct().signIn();
 $('newTitle').addEventListener('keydown', e => { if (e.key === 'Enter') createReview(); });
 $('btnCreate').onclick = createReview;
+// ---------- client portals (host side) ----------
+let homePortalsOff = null, homePortals = {};
+function watchHomePortals(uid) {
+  if (homePortalsOff) { homePortalsOff(); homePortalsOff = null; }
+  homePortals = {};
+  if (!uid || !fb) { $('portalList').innerHTML = ''; return; }
+  homePortalsOff = fb.f.onValue(dbRef('users/' + uid + '/portals'), snap => { homePortals = snap.val() || {}; renderPortalList(); }, () => {});
+}
+function renderPortalList() {
+  const all = Object.entries(homePortals).sort((a, b) => (b[1].createdAt || 0) - (a[1].createdAt || 0));
+  $('portalList').innerHTML = all.length ? all.map(([id, d]) =>
+    '<div class="rv" data-portal="' + esc(id) + '"><div class="rv-main"><div class="rv-t">' + esc(d.title || 'Client portal') + '</div>' +
+    '<div class="rv-m">portal · started ' + esc(new Date(d.createdAt || 0).toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' })) + '</div></div><span style="font-weight:900">→</span></div>').join('')
+    : '<div class="empty">No portals yet.</div>';
+}
+$('portalList').addEventListener('click', e => { const r = e.target.closest('[data-portal]'); if (r) location.search = '?p=' + encodeURIComponent(r.dataset.portal); });
+$('newPortal').addEventListener('keydown', e => { if (e.key === 'Enter') createPortal(); });
+$('btnPortal').onclick = createPortal;
+function createPortal() {
+  if (!canHost() || !fb) { toast('Sign in first'); return; }
+  const title = $('newPortal').value.trim();
+  if (!title) { $('newPortal').focus(); toast('Give it the client’s name first'); return; }
+  const id = hex(16), now = Date.now(), host = me().uid;
+  fb.f.set(dbRef('portals/' + id), { owner: host, createdAt: now, title: title.slice(0, 200) })
+    .then(() => fb.f.set(dbRef('users/' + host + '/portals/' + id), { title: title.slice(0, 200), createdAt: now }))
+    .then(() => { location.search = '?p=' + id; }, err => { console.warn(err); toast("Couldn't create it — check your connection"); });
+}
+
 function createReview() {
   if (!canHost() || !fb) { toast('Sign in first'); return; }
   const title = $('newTitle').value.trim();
@@ -445,6 +508,119 @@ function createReview() {
     .then(() => fb.f.set(dbRef('users/' + host + '/reviews/' + id), { title, createdAt: now, seen: now }))
     .then(() => { location.search = '?r=' + id + '&add=1'; }, err => { console.warn(err); toast("Couldn't create it — check your connection"); });
 }
+
+// ══════════════════ CLIENT PORTAL ══════════════════
+// portals/{id} = { owner, createdAt, title, reviews: { reviewId: { at, kind } } },
+// readable by exact link. kind 'photo' = a Photo Review (photoReviews/{id},
+// opens photo-review.html); no kind = a video review. Each review is read on
+// its own, by exact id. Clients' "seen" times live in localStorage
+// `xdb.portal.seen` — Photo Review writes the same key.
+let PT = null;              // the open portal
+const ptReviews = {};       // reviewId → raw review, live
+const ptWatch = {};
+let hostPhotos = null, hostPhotosOff = null;   // host: their photo reviews, for "Add to portal"
+const ptKind = id => (PT && PT.reviews[id] && PT.reviews[id].kind === 'photo') ? 'photo' : 'video';
+const isPortalHost = () => !!(PT && me() && (me().uid === PT.owner || me().uid === OWNER));
+function portalSeen() { try { return JSON.parse(recall(PSEEN_KEY) || '{}') || {}; } catch (e) { return {}; } }
+function markPortalSeen(id) { const m = portalSeen(); m[id] = Date.now(); store(PSEEN_KEY, JSON.stringify(m)); }
+function openPortal(raw) {
+  PT = raw && raw.owner ? { id: portalId, owner: raw.owner, title: raw.title || 'Client portal', reviews: raw.reviews || {} } : null;
+  if (!PT) { showHome('<strong>Portal not found.</strong> The link may be wrong, or it was deleted.'); return; }
+  $('homeView').hidden = true; $('reviewView').hidden = true; $('portalView').hidden = false;
+  Object.keys(PT.reviews).forEach(id => {
+    if (ptWatch[id]) return;
+    ptWatch[id] = fb.f.onValue(dbRef((ptKind(id) === 'photo' ? 'photoReviews/' : 'reviews/') + id), snap => {
+      const r = snap.val();
+      if (!r) {   // the review was deleted: drop it from the portal (a photo review left at the wrong kind just hides)
+        delete ptReviews[id];
+        if (isPortalHost()) fb.f.remove(dbRef('portals/' + PT.id + '/reviews/' + id)).catch(() => {});
+      } else ptReviews[id] = r;
+      renderPortal();
+    }, () => {});
+  });
+  Object.keys(ptWatch).forEach(id => { if (!PT.reviews[id]) { ptWatch[id](); delete ptWatch[id]; delete ptReviews[id]; } });
+  renderPortal();
+}
+function renderPortal() {
+  if (!PT) return;
+  const host = isPortalHost(), seen = portalSeen();
+  document.title = PT.title + ' — Video Review';
+  $('title').innerHTML = 'Reviews<span>.</span>';
+  $('ptTitle').textContent = PT.title;
+  $('ptKicker').textContent = host ? 'Client portal' : 'Your reviews';
+  $('ptHost').hidden = !host;
+  $('navBack').hidden = !host; $('navBack').href = '?'; $('navBack').textContent = '← Reviews';
+  $('acctSlot').hidden = !me();
+  $('verSel').hidden = true; $('btnShare').hidden = true; $('btnHostMenu').hidden = true;
+  if (host) {
+    $('ptLink').value = location.origin + location.pathname + '?p=' + encodeURIComponent(PT.id);
+    if (!hostPhotosOff && me()) hostPhotosOff = fb.f.onValue(dbRef('users/' + me().uid + '/photoReviews'), snap => { hostPhotos = snap.val() || {}; renderPortal(); }, () => { hostPhotos = {}; });
+    const free = Object.entries(homeData).map(([id, d]) => ['video:' + id, 'Video — ' + (d.title || 'Video review'), d.createdAt || 0])
+      .concat(Object.entries(hostPhotos || {}).map(([id, d]) => ['photo:' + id, 'Photos — ' + (d.title || 'Photo review'), d.createdAt || 0]))
+      .filter(([v]) => !PT.reviews[v.slice(6)]).sort((a, b) => b[2] - a[2]);
+    $('ptAddSel').innerHTML = free.length ? free.map(([v, t]) => '<option value="' + esc(v) + '">' + esc(t) + '</option>').join('') : '<option value="">All your reviews are in this portal</option>';
+    $('ptAdd').disabled = !free.length;
+  }
+  const rows = Object.keys(PT.reviews).filter(id => ptReviews[id]).map(id => {
+    const r = ptReviews[id], kind = ptKind(id);
+    const vers = Object.values(r.versions || {}).sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0)), last = vers[vers.length - 1];
+    const notes = Object.values(r.comments || {}).filter(c => c && !c.gone);
+    const updated = Math.max(last ? last.createdAt || 0 : 0, r.createdAt || 0);
+    const seenAt = seen[id] || 0;
+    let badge = '';
+    if (!host) {
+      const replies = notes.filter(c => c.host && (c.at || 0) > seenAt).length;
+      if (!seenAt && last) badge = 'New';
+      else if (last && (last.createdAt || 0) > seenAt) badge = kind === 'photo' ? 'New photos' : 'New version';
+      else if (replies) badge = replies + (replies === 1 ? ' reply' : ' replies');
+    } else {
+      const open = notes.filter(c => !c.host && !c.re && !c.done).length;
+      if (open) badge = open + ' open';
+    }
+    const photos = kind === 'photo' ? Object.keys(r.photos || {}).length : 0;
+    return { id, r, kind, last, notes, updated, badge, photos };
+  }).sort((a, b) => b.updated - a.updated);
+  $('ptList').innerHTML = rows.length ? rows.map(x =>
+    '<div class="rv" data-open="' + esc(x.id) + '" data-kind="' + x.kind + '"><div class="rv-main"><div class="rv-t">' + esc(x.r.title || (x.kind === 'photo' ? 'Photo review' : 'Video review')) + '</div>' +
+    '<div class="rv-m">' + (x.kind === 'photo' ? (x.photos ? 'Photos · ' + x.photos + ' photo' + (x.photos === 1 ? '' : 's') + ' · ' : 'Photos · none yet · ') :
+      x.last ? 'Video · version ' + (x.last.n || 1) + (x.last.name ? ' — ' + esc(x.last.name) : '') + ' · ' : 'Video · none yet · ') +
+    'updated ' + esc(new Date(x.updated).toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' })) +
+    ' · ' + x.notes.filter(c => !c.re).length + ' note' + (x.notes.filter(c => !c.re).length === 1 ? '' : 's') + '</div></div>' +
+    (x.badge ? '<span class="badge' + (host ? ' dim' : '') + '">' + esc(x.badge) + '</span>' : '') +
+    (host ? '<button type="button" class="x" data-remove="' + esc(x.id) + '" title="Remove from this portal" aria-label="Remove from this portal">×</button>' : '') +
+    '<span style="font-weight:900">→</span></div>').join('')
+    : '<div class="empty">' + (host ? 'No reviews in this portal yet — add one above.' : 'Nothing here yet. New videos will show up here.') + '</div>';
+}
+$('ptList').addEventListener('click', e => {
+  const rm = e.target.closest('[data-remove]');
+  if (rm) { e.stopPropagation(); if (confirm('Take this review out of the portal? The review itself stays.')) fb.f.remove(dbRef('portals/' + PT.id + '/reviews/' + rm.dataset.remove)).catch(() => toast("Couldn't remove it")); return; }
+  const r = e.target.closest('[data-open]'); if (!r) return;
+  const q = '?r=' + encodeURIComponent(r.dataset.open) + '&p=' + encodeURIComponent(PT.id);
+  if (r.dataset.kind === 'photo') location.href = 'photo-review.html' + q; else location.search = q;
+});
+$('ptCopy').onclick = () => { copy($('ptLink').value); $('ptCopy').textContent = 'Copied ✓'; setTimeout(() => { $('ptCopy').textContent = 'Copy link'; }, 2000); };
+$('ptAdd').onclick = () => {
+  const v = $('ptAddSel').value; if (!v || !PT) return;
+  const id = v.slice(6), entry = v.startsWith('photo:') ? { at: Date.now(), kind: 'photo' } : { at: Date.now() };
+  write('portals/' + PT.id + '/reviews/' + id, entry).then(ok => { if (ok) toast('Added ✓'); });
+};
+$('ptManage').onclick = () => {
+  dialog('<h3>Portal</h3><div class="field"><p class="k">Client name</p><input type="text" id="dlgPT" maxlength="200" value="' + esc(PT.title) + '"></div>' +
+    '<div class="dlg-acts" style="justify-content:flex-start"><button type="button" class="btn sm" id="dlgDelP">Delete portal</button></div>' +
+    '<p class="note">Deleting the portal only removes this list and its link — the reviews stay.</p>',
+    [['Close', null], ['Save', () => $('dlgPT').value.trim(), true]], 'dlgPT').then(t => {
+      if (!t || !PT || t === PT.title) return;
+      write('portals/' + PT.id + '/title', t.slice(0, 200)).then(ok => { if (ok) toast('Renamed ✓'); });
+      fb.f.set(dbRef('users/' + PT.owner + '/portals/' + PT.id + '/title'), t.slice(0, 200)).catch(() => {});
+    });
+  $('dlgDelP').onclick = () => {
+    if (!confirm('Delete the portal “' + PT.title + '”? Its link stops working; the reviews stay.')) return;
+    const owner = PT.owner, id = PT.id;
+    fb.f.remove(dbRef('users/' + owner + '/portals/' + id)).catch(() => {})
+      .then(() => fb.f.remove(dbRef('portals/' + id)))
+      .then(() => { location.replace(location.pathname); }, () => toast("Couldn't delete it"));
+  };
+};
 
 // ══════════════════ REVIEW ══════════════════
 const vid = $('vid'), stage = $('stage'), ink = $('ink'), ctx = ink.getContext('2d'), frameHost = $('frameHost');
@@ -672,6 +848,10 @@ function renderReview() {
   $('title').innerHTML = esc(R.title) + '<span>.</span>';
   const host = isHost();
   $('btnShare').hidden = !host; $('btnHostMenu').hidden = !host; $('btnExport').hidden = !host;
+  // back: to the portal it was opened from, or (host) to the list of reviews
+  $('navBack').hidden = !(portalId || host);
+  $('navBack').href = portalId ? '?p=' + encodeURIComponent(portalId) : '?';
+  $('navBack').textContent = portalId ? '← All reviews' : '← Reviews';
   $('acctSlot').hidden = !me();
   // versions
   const sel = $('verSel'), v = curVer();
@@ -722,7 +902,7 @@ $('manT').addEventListener('input', () => paintCompose());
 $('verSel').onchange = e => {
   if (e.target.value === '__add') { e.target.value = curVer() ? curVer().key : ''; openAdd(); return; }
   verKey = e.target.value; shown = null; replyTo = null;
-  history.replaceState(null, '', '?r=' + encodeURIComponent(R.id) + '&v=' + encodeURIComponent(verKey));
+  history.replaceState(null, '', '?r=' + encodeURIComponent(R.id) + '&v=' + encodeURIComponent(verKey) + portalQ);
   renderReview();
 };
 
@@ -1052,7 +1232,8 @@ $('btnHostMenu').onclick = () => {
       (v ? '<button type="button" class="btn sm" id="dlgTxt">Download notes (.txt)</button>' : '') +
       (v && R.versions.length > 1 ? '<button type="button" class="btn sm" id="dlgDelV">Delete this version</button>' : '') +
       '<button type="button" class="btn sm" id="dlgDelR">Delete review</button></div>' +
-    '<p class="note">Deleting removes the notes here. The video files stay in GoHighLevel Media Storage.</p>',
+    '<div class="field"><p class="k">Client portals</p><div id="dlgPortals" class="note">Loading…</div></div>' +
+    '<p class="note">Deleting removes the notes here. The video files stay where they were uploaded.</p>',
     // read the fields while the box is still open — it's gone once Save resolves
     [['Close', null], ['Save', () => ({ title: $('dlgTitle').value.trim(), fps: $('dlgFps') ? Number($('dlgFps').value) : 0 }), true]]).then(got => {
       if (!got || !R) return;
@@ -1063,6 +1244,21 @@ $('btnHostMenu').onclick = () => {
       if (v && got.fps && Math.abs(got.fps - v.fps) > .001) write('reviews/' + R.id + '/versions/' + v.key + '/fps', got.fps);
     });
   $('dlgAdd').onclick = () => { closeDialog(); openAdd(); };
+  // which portals this review is in — ticking writes straight away
+  fb.f.get(dbRef('users/' + me().uid + '/portals')).then(snap => {
+    const list = Object.entries(snap.val() || {});
+    if (!$('dlgPortals')) return;
+    if (!list.length) { $('dlgPortals').innerHTML = 'No portals yet — create one on the <a href="?">Reviews</a> page.'; return; }
+    return Promise.all(list.map(([id]) => fb.f.get(dbRef('portals/' + id + '/reviews/' + R.id)).then(x => x.exists(), () => false))).then(ins => {
+      if (!$('dlgPortals')) return;
+      $('dlgPortals').innerHTML = list.map(([id, d], i) => '<label class="pchk"><input type="checkbox" data-pt="' + esc(id) + '"' + (ins[i] ? ' checked' : '') + '>' + esc(d.title || 'Client portal') + '</label>').join('');
+      $('dlgPortals').querySelectorAll('[data-pt]').forEach(cb => cb.onchange = () => {
+        const path = 'portals/' + cb.dataset.pt + '/reviews/' + R.id;
+        (cb.checked ? fb.f.set(dbRef(path), { at: Date.now() }) : fb.f.remove(dbRef(path)))
+          .then(() => toast(cb.checked ? 'Added to the portal ✓' : 'Taken out of the portal'), () => { cb.checked = !cb.checked; toast("Couldn't change it"); });
+      });
+    });
+  }, () => { if ($('dlgPortals')) $('dlgPortals').textContent = 'Couldn’t load your portals.'; });
   if ($('dlgTxt')) $('dlgTxt').onclick = () => {
     const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([exportText()], { type: 'text/plain' }));
     a.download = R.title.replace(/[^\w\- ]+/g, '').trim() + ' - v' + v.n + ' notes.txt'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
@@ -1165,7 +1361,7 @@ async function addVersion(n) {
 async function saveVersion(n, ver) {
   const key = fb.f.push(dbRef('reviews/' + R.id + '/versions')).key;
   if (!(await write('reviews/' + R.id + '/versions/' + key, ver))) return false;
-  verKey = key; history.replaceState(null, '', '?r=' + encodeURIComponent(R.id) + '&v=' + encodeURIComponent(key));
+  verKey = key; history.replaceState(null, '', '?r=' + encodeURIComponent(R.id) + '&v=' + encodeURIComponent(key) + portalQ);
   toast('Version ' + n + ' added ✓');
   return true;
 }
@@ -1288,6 +1484,7 @@ function closeDialog() { const d = document.querySelector('.dlg'); if (d) d.remo
 // ══════════════════ BOOT ══════════════════
 function onAuth() {
   renderHome();
+  if (PT) renderPortal();
   if (R) { renderReview(); if (isHost() && seenAt == null) startSeen(); maybeAdd(); }
 }
 function maybeAdd() {
@@ -1298,7 +1495,7 @@ function maybeAdd() {
 function startSeen() {
   fb.f.get(dbRef('users/' + R.owner + '/reviews/' + R.id + '/seen')).then(s => { seenAt = Number(s.val()) || 0; renderList(); markSeen(); }, () => { seenAt = 0; });
 }
-window.addEventListener('pagehide', markSeen);
+window.addEventListener('pagehide', () => { markSeen(); if (R && !isHost()) markPortalSeen(R.id); });
 document.addEventListener('visibilitychange', () => { if (document.hidden && R) markSeen(); });
 
 if (!acct()) {
@@ -1307,6 +1504,12 @@ if (!acct()) {
   acct().on(onAuth);
   acct().sdk().then(s => {
     fb = { db: s.db, f: s.f };
+    if (!reviewId && portalId) {
+      fb.f.onValue(dbRef('portals/' + portalId), snap => openPortal(snap.val()), err => { console.warn(err); showHome('<strong>Couldn’t open this portal.</strong> Check your connection and reload.'); });
+      // the host's own reviews feed the "Add to portal" list
+      renderHome();
+      return;
+    }
     if (!reviewId) { showHome(''); return; }
     let first = true;
     fb.f.onValue(dbRef('reviews/' + reviewId), snap => {
@@ -1316,8 +1519,8 @@ if (!acct()) {
       if (verKey && !R.versions.some(x => x.key === verKey)) verKey = null;
       if (first) {
         first = false; $('homeView').hidden = true; $('reviewView').hidden = false;
-        if (isHost()) startSeen();
-        if (pendingAdd) history.replaceState(null, '', '?r=' + encodeURIComponent(reviewId));
+        if (isHost()) startSeen(); else markPortalSeen(reviewId);
+        if (pendingAdd) history.replaceState(null, '', '?r=' + encodeURIComponent(reviewId) + portalQ);
       }
       renderReview(); maybeAdd();
       if (shown) redraw();

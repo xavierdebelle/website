@@ -5,7 +5,7 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
-## v107 — 2026-10-22
+## v109 — 2026-10-22
 
 **What's new** · Video Review · [tools/video-review.html]
 ### Client portals
