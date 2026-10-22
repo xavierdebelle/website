@@ -5,6 +5,75 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v107 — 2026-10-22
+
+**What's new** · Video Review · [tools/video-review.html]
+### Client portals
+One link per client that lists every review shared with them — videos and
+photo sets. New versions and replies show up as "New", and each review has
+a way back to the list. Inside a review, a "← Reviews" button now takes
+you back to all of yours.
+
+**Video Review v6 — `tools/video-review.html`, source `Tools files/de Belle Photography apps/video-review-v6.html`**
+- **Back buttons:** host sees "← Reviews" (home) in a review; anyone who
+  came from a portal sees "← All reviews" (`&p=` kept through version
+  changes).
+- **Client portals:** `portals/{id}` (32-hex link, read by exact id only)
+  = `{ owner, createdAt, title, reviews: { reviewId: { at, kind? } } }`;
+  host index `users/{uid}/portals/{id}` (`title`, `createdAt`). Home has a
+  Client portals section (create); the portal page (host) shows the link,
+  an "Add to portal" list of your video **and photo** reviews, × to take
+  one out, rename/delete; Manage in a review has portal checkboxes.
+- Client view (`?p=`): "Your reviews", newest activity first, badges New /
+  New version (New photos) / N replies since this browser last opened it
+  (`xdb.portal.seen` in localStorage, shared with Photo Review); host sees
+  "N open". Deleted reviews drop out and are cleaned up.
+- `kind: 'photo'` entries read `photoReviews/{id}` and open
+  `photo-review.html?r={id}&p={portal}` (agreed with the Photo Review
+  session, which adds its own picker and back button).
+- **Rules change:** new `portals` block (host write like `reviews`,
+  `reviews/$r` = `at` + optional `kind`, nothing else). Mock server mirrors
+  it. Privacy page: portal titles + per-device "seen" (EN + FR).
+
+**Tested on the mock (two browsers):** create portal, add a review from
+the portal page and one from Manage; client (signed out) sees both as New,
+opens one → badge clears, "← All reviews" returns; host adds version 2 /
+replies → client portal shows "New version" / "1 reply" live; photo review
+added from the portal page shows "Photos · 2 photos" and links to Photo
+Review. Rules: list portals 401, read by link 200, client add/rename/
+delete 401, other member editing Xavier's portal 401.
+
+**Outstanding (Xavier):** publish the updated rules — portals don't save
+until then.
+
+---
+
+## v107 — 2026-10-22
+
+**What's new** · Update · [tools/photo-review.html]
+### Photo Review: reorder, remove, approve
+Drag the thumbnails to put the photos in the order you want, or take one
+out with its ×. Xavier can now approve photos too, next to the client's
+approval, and a "My reviews" button goes straight back to the list.
+
+**Photo Review v5 — `tools/photo-review.html`, source `Tools files/de Belle Photography apps/photo-review-v5.html`**
+- **← My reviews** in the top bar for the host (`#navBack`), back to the list.
+- **Reorder:** host drags thumbnails in the filmstrip (HTML5 drag and drop,
+  yellow marker shows where it lands); writes every `photos/{p}/pos`.
+  Manage's Move earlier / later (for phones) now uses the same `reorder()`.
+- **Remove:** × on the current / hovered thumbnail removes the photo, its
+  versions and notes after a confirm (`deletePhoto()`, shared with Manage).
+  The Drive file stays.
+- **Host approves:** the host gets the Approve button too; a host approval is
+  an `ok` note with `host: true` (rules already allow it), undo removes it.
+  The button shows "Client approved · approve too" when only the client has;
+  its tooltip names who approved. Client approvals unchanged.
+- Tested on the mock: drag swapped the two photos (pos 0/1), × removed one,
+  host approve + undo, client view has no ×, no dragging, and its own
+  Approve still works.
+- Client portals for photo reviews: next, built the same way as Video
+  Review's (in progress in another session).
+
 ## v106 — 2026-10-22
 
 **What's new** · Web Squeeze · [tools/web-squeeze.html]

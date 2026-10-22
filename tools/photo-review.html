@@ -163,6 +163,12 @@ label.chk input{margin-top:3px;accent-color:var(--volt)}
 .th .ty{position:absolute;right:0;top:0;background:var(--paper);color:var(--ink);font:900 11px var(--stack);padding:1px 5px}
 .th.add{display:flex;align-items:center;justify-content:center;font-weight:900;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--paper);border-style:dashed}
 .th.add:hover{border-color:var(--volt);color:var(--volt)}
+.th .rm{position:absolute;left:0;bottom:0;background:var(--ink);color:var(--paper);font:900 13px/1 var(--stack);padding:3px 6px;display:none}
+.th:hover .rm,.th.on .rm{display:block}
+.th .rm:hover{background:var(--red)}
+.th.drag{opacity:.35}
+.th.over{border-color:var(--paper);box-shadow:-6px 0 0 var(--volt)}
+.th.over.after{box-shadow:6px 0 0 var(--volt)}
 .help{margin-top:12px;font-size:12px;color:var(--dust);line-height:1.6}
 .help kbd{font-family:var(--mono);font-size:10px;border:1px solid var(--dust);padding:1px 4px;color:var(--paper)}
 
@@ -204,6 +210,7 @@ label.chk input{margin-top:3px;accent-color:var(--volt)}
 <header class="top">
   <div class="brand"><a href="../index.html">Xavier de Belle</a><h1 id="title">Photo Review<span>.</span></h1></div>
   <div class="topacts">
+    <a class="btn sm" id="navBack" href="photo-review.html" hidden>← My reviews</a>
     <button type="button" class="btn sm" id="btnShare" hidden>Client link</button>
     <button type="button" class="btn sm" id="btnHostMenu" hidden>Manage</button>
     <span id="acctSlot" data-xdb-account hidden></span>
@@ -288,7 +295,7 @@ label.chk input{margin-top:3px;accent-color:var(--volt)}
       <button type="button" class="ib" id="btnPins" aria-pressed="true" aria-label="Hide pins">Pins</button>
     </div>
     <div class="strip" id="strip" aria-label="Photos"></div>
-    <p class="help">Click the photo to pin a note there · <kbd>←</kbd> <kbd>→</kbd> previous / next photo · <kbd>+</kbd> <kbd>−</kbd> zoom, <kbd>0</kbd> fit, drag to move around · <kbd>c</kbd> write a note · <kbd>Esc</kbd> cancel the pin.</p>
+    <p class="help">Click the photo to pin a note there · drag thumbnails to reorder (host) · <kbd>←</kbd> <kbd>→</kbd> previous / next photo · <kbd>+</kbd> <kbd>−</kbd> zoom, <kbd>0</kbd> fit, drag to move around · <kbd>c</kbd> write a note · <kbd>Esc</kbd> cancel the pin.</p>
   </section>
 </div>
 
@@ -399,7 +406,7 @@ function setUrl() {
 // ══════════════════ HOME ══════════════════
 let homeOff = null, homeUid, homeData = {}, homeWatch = {};
 function showHome(banner) {
-  $('reviewView').hidden = true; $('homeView').hidden = false; $('acctSlot').hidden = false;
+  $('reviewView').hidden = true; $('homeView').hidden = false; $('acctSlot').hidden = false; $('navBack').hidden = true;
   $('homeBanner').innerHTML = banner ? '<div class="gate">' + banner + '</div>' : '';
   renderHome();
 }
@@ -481,6 +488,7 @@ function renderReview() {
   $('title').innerHTML = esc(R.title) + '<span>.</span>';
   const host = isHost(), v = curVer();
   $('btnShare').hidden = !host; $('btnHostMenu').hidden = !host; $('btnExport').hidden = !host;
+  $('navBack').hidden = !host; $('navBack').href = location.pathname;
   $('acctSlot').hidden = !me();
   $('pname').innerHTML = p ? '<span>' + (photoIndex() + 1) + ' / ' + R.photos.length + '</span>' + esc(p.name || 'Photo ' + (photoIndex() + 1)) : '';
   // versions of this photo
@@ -490,12 +498,12 @@ function renderReview() {
     const n = R.comments.filter(c => c.v === x.key && !c.re && !c.gone && !c.ok).length;
     return '<option value="' + esc(x.key) + '"' + (v && x.key === v.key ? ' selected' : '') + '>Version ' + x.n + (x.name ? ' — ' + esc(x.name) : '') + ' (' + n + ')</option>';
   }).join('') + (host ? '<option value="__add">+ Retouched version…</option>' : '') : '';
-  // approve (clients) / approved by (host)
-  const ap = v ? approvals(v) : [], mineOk = ap.find(c => c.by === myBy);
+  // approve: clients and the host each have their own approval on a version
+  const ap = v ? approvals(v) : [], mineOk = myApproval(v);
   $('btnApprove').hidden = !v;
   $('btnApprove').className = 'btn sm' + (ap.length ? ' ok' : '');
-  $('btnApprove').textContent = host ? (ap.length ? '✓ Approved' : 'Not approved yet') : (mineOk ? '✓ Approved — undo' : '✓ Approve this photo');
-  $('btnApprove').disabled = host;
+  $('btnApprove').textContent = mineOk ? '✓ Approved — undo' : host ? (ap.length ? '✓ Client approved · approve too' : '✓ Approve') : '✓ Approve this photo';
+  $('btnApprove').title = ap.length ? 'Approved by ' + ap.map(c => c.name).join(', ') : '';
   $('btnPrev').disabled = photoIndex() <= 0; $('btnNext').disabled = photoIndex() < 0 || photoIndex() >= R.photos.length - 1;
   loadPhoto();
   renderStrip(); renderList(); renderPins(); paintCompose();
@@ -539,14 +547,22 @@ function goPhoto(i) {
 }
 $('btnPrev').onclick = () => goPhoto(photoIndex() - 1);
 $('btnNext').onclick = () => goPhoto(photoIndex() + 1);
+// the host's approval is any host-made one (whichever device); a client's is this browser's
+function myApproval(v) { return v ? approvals(v).find(c => isHost() ? c.host : c.by === myBy && !c.host) : null; }
 $('btnApprove').onclick = async () => {
-  const v = curVer(); if (!v || isHost()) return;
-  const mine = approvals(v).find(c => c.by === myBy);
-  if (mine) { fb.f.update(dbRef(ROOT + '/' + R.id + '/comments/' + mine.key), { gone: true, by: mine.by }).catch(() => toast("Couldn't undo it")); return; }
+  const v = curVer(); if (!v) return;
+  const mine = myApproval(v);
+  if (mine) {
+    (isHost() ? fb.f.remove(dbRef(ROOT + '/' + R.id + '/comments/' + mine.key)) : fb.f.update(dbRef(ROOT + '/' + R.id + '/comments/' + mine.key), { gone: true, by: mine.by }))
+      .catch(() => toast("Couldn't undo it"));
+    return;
+  }
   const name = await askName(false); if (!name) return;
+  const c = { p: curPhoto().key, v: v.key, ok: true, text: '', name: name.slice(0, 60), by: myBy, at: Date.now() };
+  if (isHost()) c.host = true;
   const key = fb.f.push(dbRef(ROOT + '/' + R.id + '/comments')).key;
-  const ok = await write(ROOT + '/' + R.id + '/comments/' + key, { p: curPhoto().key, v: v.key, ok: true, text: '', name: name.slice(0, 60), by: myBy, at: Date.now() });
-  if (ok) { toast('Approved ✓'); if (window.xdbTrack) window.xdbTrack('photo-approve'); }
+  const ok = await write(ROOT + '/' + R.id + '/comments/' + key, c);
+  if (ok) { toast('Approved ✓'); if (window.xdbTrack && !isHost()) window.xdbTrack('photo-approve'); }
 };
 
 // ---------- filmstrip ----------
@@ -556,17 +572,50 @@ function renderStrip() {
   $('strip').innerHTML = R.photos.map((p, i) => {
     const v = latest(p); if (!v) return '';
     const open = openNotes(R.comments, v), ok = approvals(v).length;
-    return '<button type="button" class="th' + (cur && p.key === cur.key ? ' on' : '') + '" data-i="' + i + '" title="' + esc(p.name || 'Photo ' + (i + 1)) + '">' +
-      '<img loading="lazy" alt="" src="' + esc(thumbOf(v)) + '" data-full="' + esc(srcOf(v)) + '"><span class="tn">' + (i + 1) + '</span>' +
-      (ok ? '<span class="ty">✓</span>' : '') + (open ? '<span class="tc">' + open + '</span>' : '') + '</button>';
+    return '<button type="button" class="th' + (cur && p.key === cur.key ? ' on' : '') + '" data-i="' + i + '"' + (host ? ' draggable="true"' : '') + ' title="' + esc(p.name || 'Photo ' + (i + 1)) + (host ? ' — drag to reorder' : '') + '">' +
+      '<img loading="lazy" alt="" draggable="false" src="' + esc(thumbOf(v)) + '" data-full="' + esc(srcOf(v)) + '"><span class="tn">' + (i + 1) + '</span>' +
+      (ok ? '<span class="ty">✓</span>' : '') + (open ? '<span class="tc">' + open + '</span>' : '') +
+      (host ? '<span class="rm" data-rm="' + i + '" title="Remove this photo" aria-label="Remove this photo">×</span>' : '') + '</button>';
   }).join('') + (host ? '<button type="button" class="th add" id="stripAdd">+ Photos</button>' : '');
   // Drive's thumbnail endpoint can refuse; fall back to the picture itself
   $('strip').querySelectorAll('img').forEach(im => im.addEventListener('error', () => { if (im.dataset.full && im.src !== im.dataset.full) im.src = im.dataset.full; }, { once: true }));
 }
 $('strip').addEventListener('click', e => {
   if (e.target.closest('#stripAdd')) { openAddPhotos(); return; }
+  const rm = e.target.closest('[data-rm]');
+  if (rm) { e.stopPropagation(); deletePhoto(R.photos[Number(rm.dataset.rm)]); return; }
   const t = e.target.closest('.th[data-i]'); if (t) goPhoto(Number(t.dataset.i));
 });
+// host: drag a thumbnail to a new place (mouse; on a phone, Manage has Move earlier / later)
+(function () {
+  let from = null;
+  const strip = $('strip'), clear = () => strip.querySelectorAll('.over,.drag').forEach(x => x.classList.remove('over', 'after', 'drag'));
+  const spot = e => { const t = e.target.closest('.th[data-i]'); if (!t) return null; const b = t.getBoundingClientRect(); return { t, i: Number(t.dataset.i), after: e.clientX > b.left + b.width / 2 }; };
+  strip.addEventListener('dragstart', e => { const t = e.target.closest('.th[data-i]'); if (!t || !isHost()) return; from = Number(t.dataset.i); t.classList.add('drag'); e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', String(from)); });
+  strip.addEventListener('dragover', e => { if (from == null) return; const s = spot(e); if (!s) return; e.preventDefault(); clear(); const f = strip.querySelector('[data-i="' + from + '"]'); if (f) f.classList.add('drag'); s.t.classList.add('over'); s.t.classList.toggle('after', s.after); });
+  strip.addEventListener('drop', e => {
+    if (from == null) return; e.preventDefault();
+    const s = spot(e); clear();
+    if (s) { let to = s.i + (s.after ? 1 : 0); if (to > from) to--; reorder(from, to); }
+    from = null;
+  });
+  strip.addEventListener('dragend', () => { from = null; clear(); });
+})();
+function reorder(i, j) {
+  if (!R || i === j || j < 0 || j >= R.photos.length) return;
+  const order = R.photos.slice(); order.splice(j, 0, order.splice(i, 1)[0]);
+  const change = {}; order.forEach((x, k) => { change['photos/' + x.key + '/pos'] = k; });
+  fb.f.update(dbRef(ROOT + '/' + R.id), change).catch(() => toast("Couldn't move it"));
+}
+function deletePhoto(p) {
+  if (!p || !isHost()) return Promise.resolve(false);
+  if (!confirm('Remove “' + (p.name || 'this photo') + '” from the review, with every version of it and its notes? The file stays in your Google Drive.')) return Promise.resolve(false);
+  const change = { ['photos/' + p.key]: null };
+  p.versions.forEach(x => { change['versions/' + x.key] = null; });
+  R.comments.filter(c => c.p === p.key).forEach(c => { change['comments/' + c.key] = null; });
+  if (curPhoto() && curPhoto().key === p.key) { photoKey = null; verKey = null; shown = null; }
+  return fb.f.update(dbRef(ROOT + '/' + R.id), change).then(() => { toast('Removed ✓'); return true; }, () => { toast("Couldn't remove it"); return false; });
+}
 
 // ---------- notes list ----------
 function notesFor() { const v = curVer(); return v ? R.comments.filter(c => c.v === v.key) : []; }
@@ -590,7 +639,7 @@ function renderList() {
     if (!isReply && !c.ok) acts.push('<button type="button" data-act="reply">Reply</button>');
     if (host && !isReply && !c.ok) acts.push('<button type="button" class="chk" data-act="done">' + (c.done ? '✓ Done' : '○ Mark done') + '</button>');
     if (mine(c) && !c.ok) acts.push('<button type="button" data-act="edit">Edit</button>');
-    if (c.ok ? c.by === myBy && !host : mine(c)) acts.push('<button type="button" data-act="del">' + (c.ok ? 'Undo' : 'Delete') + '</button>');
+    if (c.ok ? (host ? c.host : c.by === myBy && !c.host) : mine(c)) acts.push('<button type="button" data-act="del">' + (c.ok ? 'Undo' : 'Delete') + '</button>');
     return '<div class="' + (isReply ? 'reply' : 'cm' + (c.done ? ' done' : '') + (c.ok ? ' okay' : '') + (shown === c.key ? ' on' : '')) + '" data-k="' + esc(c.key) + '">' +
       '<div class="cm-top">' + (isReply ? '' : tag(c)) + '<span class="cm-name' + (c.host ? ' host' : '') + '">' + esc(c.name) + '</span>' +
       (isNew(c) ? '<span class="cm-new" title="New since you last looked"></span>' : '') + '<span class="cm-ago">' + ago(c.at) + (c.edited ? ' · edited' : '') + '</span></div>' +
@@ -934,12 +983,7 @@ $('btnHostMenu').onclick = () => {
     });
   $('dlgAddP').onclick = () => { closeDialog(); openAddPhotos(); };
   if ($('dlgAddV')) $('dlgAddV').onclick = () => { closeDialog(); openAddVersion(); };
-  const move = d => {
-    const i = photoIndex(), j = i + d; if (j < 0 || j >= R.photos.length) return;
-    const order = R.photos.slice(); order.splice(j, 0, order.splice(i, 1)[0]);
-    const change = {}; order.forEach((x, k) => { change['photos/' + x.key + '/pos'] = k; });
-    fb.f.update(dbRef(ROOT + '/' + R.id), change).catch(() => toast("Couldn't move it"));
-  };
+  const move = d => reorder(photoIndex(), photoIndex() + d);
   if ($('dlgLeft')) { $('dlgLeft').onclick = () => move(-1); $('dlgRight').onclick = () => move(1); }
   $('dlgTxt').onclick = () => {
     const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([exportText()], { type: 'text/plain' }));
@@ -951,13 +995,7 @@ $('btnHostMenu').onclick = () => {
     R.comments.filter(c => c.v === v.key).forEach(c => { change['comments/' + c.key] = null; });
     fb.f.update(dbRef(ROOT + '/' + R.id), change).then(() => { closeDialog(); verKey = null; }, () => toast("Couldn't delete it"));
   };
-  if ($('dlgDelP')) $('dlgDelP').onclick = () => {
-    if (!confirm('Delete this photo, every version of it and its notes?')) return;
-    const change = { ['photos/' + p.key]: null };
-    p.versions.forEach(x => { change['versions/' + x.key] = null; });
-    R.comments.filter(c => c.p === p.key).forEach(c => { change['comments/' + c.key] = null; });
-    fb.f.update(dbRef(ROOT + '/' + R.id), change).then(() => { closeDialog(); photoKey = null; verKey = null; shown = null; }, () => toast("Couldn't delete it"));
-  };
+  if ($('dlgDelP')) $('dlgDelP').onclick = () => { deletePhoto(p).then(ok => { if (ok) closeDialog(); }); };
   $('dlgDelR').onclick = () => {
     if (!confirm('Delete “' + R.title + '” and every note on it? The client link stops working.')) return;
     // take the ids now: deleting fires the live listener, which clears R
