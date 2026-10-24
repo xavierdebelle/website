@@ -503,7 +503,8 @@
           <p style="font-size: 13px; line-height: 1.5; color: #6a6a6a; margin: 10px 0 0">{{ d.timeNote }}</p>
           <sc-if value="{{ d.hasLog }}" hint-placeholder-val="{{ false }}">
             <div style="margin-top: 14px">
-              <span style="font-family: var(--mono); font-size: 10px; letter-spacing: .22em; text-transform: uppercase; color: #6a6a6a">{{ d.logHead }}</span>
+              <button type="button" onClick="{{ d.toggleLog }}" aria-expanded="{{ d.logShown }}" style="background: transparent; border: 2px solid #dcdcdc; color: var(--ink); font-family: var(--mono); font-size: 10px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; padding: 8px 11px; cursor: pointer" style-hover="border-color: var(--ink)">{{ d.logHead }}</button>
+              <sc-if value="{{ d.logShown }}" hint-placeholder-val="{{ false }}">
               <sc-for list="{{ d.log }}" as="l" hint-placeholder-count="2">
                 <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 8px 0; border-bottom: 2px solid #e2e2e2">
                   <input type="date" value="{{ l.date }}" onChange="{{ l.setDate }}" aria-label="Day" style="border: 2px solid #dcdcdc; padding: 7px 8px; font-family: var(--mono); font-size: 12px; color: var(--ink); background: #fff; border-radius: 0; outline: none" style-focus="border-color: var(--ink)">
@@ -514,6 +515,7 @@
                   <button type="button" onClick="{{ l.del }}" aria-label="{{ l.aria }}" style="background: transparent; border: 0; color: #6a6a6a; font-family: var(--mono); font-size: 9px; letter-spacing: .16em; text-transform: uppercase; padding: 6px 2px; cursor: pointer" style-hover="color: var(--ink)">Del</button>
                 </div>
               </sc-for>
+              </sc-if>
             </div>
           </sc-if>
         </div>
@@ -742,6 +744,8 @@ class Component extends DCLogic {
   }
   componentDidUpdate(prev) {
     prev = prev || {};
+    // closing or switching ideas folds the session log again
+    if (this._open !== this.state.openId) { this._open = this.state.openId; if (this.state.logFor) this.setState({ logFor: null }); }
     if (prev.dataset !== this.props.dataset) this.applyDataset();
     else if (prev.openSample !== this.props.openSample) this.applySample();
     if (this.live && (this._savedRev !== this.state.rev || this._savedCur !== this.state.cur)) {
@@ -925,8 +929,8 @@ class Component extends DCLogic {
     const e = Date.now() - Date.now() % 6e4, s = e - 30 * 6e4;
     i.log.push({ id: uid('l'), s, e });
     i.spent += e - s;
-    this.touch();
-    this.toast('Logged 30 min ending now · change the times below');
+    this.touch({ logFor: i.id });
+    this.toast('Logged 30 min ending now · change its times in the log');
   }
   delLog(i, l) {
     const k = i.log.indexOf(l); if (k < 0) return;
@@ -1248,7 +1252,9 @@ class Component extends DCLogic {
         timer: () => this.toggleTimer(di), more: () => this.nudgeTime(di, 15), less: () => this.nudgeTime(di, -15),
         cantLess: di.spent <= 0, lessOp: di.spent <= 0 ? .4 : 1,
         addLog: () => this.addLog(di), hasLog: di.log.length > 0,
-        logHead: 'Sessions · ' + di.log.length + (di.spent - logged(di) >= 6e4 ? ' · ' + fmtTime(di.spent - logged(di)) + ' outside the log' : ''),
+        // the log stays folded until asked for, per idea
+        logShown: s.logFor === di.id, toggleLog: () => this.setState({ logFor: s.logFor === di.id ? null : di.id }),
+        logHead: (s.logFor === di.id ? '▴ Hide' : '▾ Show') + ' sessions · ' + di.log.length + (di.spent - logged(di) >= 6e4 ? ' · ' + fmtTime(di.spent - logged(di)) + ' outside the log' : ''),
         log: di.log.slice().sort((a, b) => b.s - a.s).map(l => ({
           date: dayOf(l.s), start: hm(l.s), end: hm(l.e), dur: fmtTime(l.e - l.s),
           aria: 'Remove the session of ' + dayOf(l.s) + ' ' + hm(l.s),
@@ -1258,7 +1264,7 @@ class Component extends DCLogic {
           del: () => this.delLog(di, l)
         })),
         timeNote: di.timerStart ? 'Running since ' + new Date(di.timerStart).toTimeString().slice(0, 5) + '. Keeps going if you close the page.'
-          : di.stage === 'next' ? 'Starting the timer moves it to In progress. One timer runs at a time.' : 'One timer runs at a time. Each stop goes in the log below; change its times to fix a forgotten one.',
+          : di.stage === 'next' ? 'Starting the timer moves it to In progress. One timer runs at a time.' : 'One timer runs at a time. Each stop goes in the session log; change its times to fix a forgotten one.',
         steps: di.steps.map((x, k, all) => ({
           text: x.text,
           first: k === 0, last: k === all.length - 1, upOp: k === 0 ? .3 : 1, downOp: k === all.length - 1 ? .3 : 1,

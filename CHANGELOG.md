@@ -5,6 +5,25 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v122 — 2026-10-24
+
+**What's new** · The Biz · [tools/idea-bank.html]
+### Idea Bank's session log<br>stays folded until you want it
+The timer's session log is now tucked behind a "Show sessions" button, so an
+idea's panel stays short. Adding a session opens it so you can set the times.
+
+**Idea Bank — `tools/idea-bank.html`**
+- The log rows sit behind a toggle button ("▾ Show sessions · N" / "▴ Hide
+  sessions · N", plus the time outside the log when there is any). Folded by
+  default; "+ Session" opens it; closing or switching ideas folds it again
+  (`logFor` in state, never saved). No data change.
+
+**Verified (built-in browser, signed out, local data only)** — folded on
+open, Show/Hide toggles the rows, + Session opens it, Escape and reopen folds
+it again; no new console errors.
+
+---
+
 ## v121 — 2026-10-24
 
 **What's new** · My Wife's Tools · [tools/kitchen.html]
