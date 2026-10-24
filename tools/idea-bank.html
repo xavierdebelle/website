@@ -498,8 +498,24 @@
             <button type="button" onClick="{{ d.timer }}" aria-pressed="{{ d.running }}" style="border: 3px solid var(--ink); background: {{ d.timerBg }}; color: {{ d.timerInk }}; font-family: var(--stack); font-weight: 900; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; padding: 11px 16px; cursor: pointer; white-space: nowrap" style-hover="background: var(--volt); color: var(--ink); border-color: var(--volt)">{{ d.timerLabel }}</button>
             <button type="button" onClick="{{ d.less }}" disabled="{{ d.cantLess }}" style="background: transparent; border: 2px solid #dcdcdc; color: var(--ink); font-family: var(--mono); font-size: 11px; font-weight: 700; padding: 9px 11px; cursor: pointer; opacity: {{ d.lessOp }}" style-hover="border-color: var(--ink)">−15 min</button>
             <button type="button" onClick="{{ d.more }}" style="background: transparent; border: 2px solid #dcdcdc; color: var(--ink); font-family: var(--mono); font-size: 11px; font-weight: 700; padding: 9px 11px; cursor: pointer" style-hover="border-color: var(--ink)">+15 min</button>
+            <button type="button" onClick="{{ d.addLog }}" style="background: transparent; border: 2px solid #dcdcdc; color: var(--ink); font-family: var(--mono); font-size: 11px; font-weight: 700; padding: 9px 11px; cursor: pointer" style-hover="border-color: var(--ink)">+ Session</button>
           </div>
           <p style="font-size: 13px; line-height: 1.5; color: #6a6a6a; margin: 10px 0 0">{{ d.timeNote }}</p>
+          <sc-if value="{{ d.hasLog }}" hint-placeholder-val="{{ false }}">
+            <div style="margin-top: 14px">
+              <span style="font-family: var(--mono); font-size: 10px; letter-spacing: .22em; text-transform: uppercase; color: #6a6a6a">{{ d.logHead }}</span>
+              <sc-for list="{{ d.log }}" as="l" hint-placeholder-count="2">
+                <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 8px 0; border-bottom: 2px solid #e2e2e2">
+                  <input type="date" value="{{ l.date }}" onChange="{{ l.setDate }}" aria-label="Day" style="border: 2px solid #dcdcdc; padding: 7px 8px; font-family: var(--mono); font-size: 12px; color: var(--ink); background: #fff; border-radius: 0; outline: none" style-focus="border-color: var(--ink)">
+                  <input type="time" value="{{ l.start }}" onChange="{{ l.setStart }}" aria-label="Start" style="border: 2px solid #dcdcdc; padding: 7px 8px; font-family: var(--mono); font-size: 12px; color: var(--ink); background: #fff; border-radius: 0; outline: none" style-focus="border-color: var(--ink)">
+                  <span style="font-family: var(--mono); font-size: 12px; color: #6a6a6a">to</span>
+                  <input type="time" value="{{ l.end }}" onChange="{{ l.setEnd }}" aria-label="End" style="border: 2px solid #dcdcdc; padding: 7px 8px; font-family: var(--mono); font-size: 12px; color: var(--ink); background: #fff; border-radius: 0; outline: none" style-focus="border-color: var(--ink)">
+                  <span style="flex: 1; min-width: 48px; text-align: right; font-family: var(--mono); font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums">{{ l.dur }}</span>
+                  <button type="button" onClick="{{ l.del }}" aria-label="{{ l.aria }}" style="background: transparent; border: 0; color: #6a6a6a; font-family: var(--mono); font-size: 9px; letter-spacing: .16em; text-transform: uppercase; padding: 6px 2px; cursor: pointer" style-hover="color: var(--ink)">Del</button>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
         </div>
 
         <div style="border-top: 3px solid var(--ink); padding-top: 16px">
@@ -628,6 +644,13 @@ const tagsOf = (s) => s.split(',').map(t => t.trim()).filter(Boolean);
 // Time on an idea: what's banked plus the timer that's running, if any.
 const timeOn = (i) => i.spent + (i.timerStart ? Math.max(0, Date.now() - i.timerStart) : 0);
 const fmtTime = (ms) => { const m = Math.floor(ms / 6e4); return m < 60 ? m + 'm' : Math.floor(m / 60) + 'h ' + pad(m % 60) + 'm'; };
+// The session log: each start/stop is an entry {s, e} you can correct.
+// A session is a day, a start time and an end time (past midnight = next day).
+const hm = (ms) => { const d = new Date(ms); return pad(d.getHours()) + ':' + pad(d.getMinutes()); };
+const dayOf = (ms) => iso(new Date(ms));
+const at = (day, t) => new Date(day + 'T' + t).getTime();
+const endAt = (s, t) => { let e = at(dayOf(s), t); if (e <= s) e += 864e5; return e; };
+const logged = (i) => i.log.reduce((a, l) => a + l.e - l.s, 0);
 const fmtClock = (ms) => { const t = Math.floor(ms / 1000); return Math.floor(t / 3600) + ':' + pad(Math.floor(t / 60) % 60) + ':' + pad(t % 60); };
 
 const listOf = (v) => Array.isArray(v) ? v : (!v || typeof v !== 'object') ? [] : Object.keys(v).map(k => v[k]);
@@ -641,6 +664,7 @@ function normaliseIdea(i) {
     steps: listOf(i.steps).map(s => { s = s || {}; return { id: s.id || uid(), text: s.text || '', done: !!s.done }; }),
     owner: i.owner || '', due: i.due || '', notes: i.notes || '',
     spent: Math.max(0, Math.round(Number(i.spent) || 0)), timerStart: Math.max(0, Math.round(Number(i.timerStart) || 0)),
+    log: listOf(i.log).map(l => { l = l || {}; return { id: l.id || uid('l'), s: Math.round(Number(l.s) || 0), e: Math.round(Number(l.e) || 0) }; }).filter(l => l.s > 0 && l.e > l.s),
     createdAt: i.createdAt || new Date().toISOString(), shippedAt: i.shippedAt || ''
   };
 }
@@ -783,7 +807,7 @@ class Component extends DCLogic {
   adapter() {
     return {
       doc: 'idea-bank', storageKey: KEY, noun: 'ideas',
-      payload: () => ({ projects: this.state.projects, ideaBank: 8 }),
+      payload: () => ({ projects: this.state.projects, ideaBank: 9 }),
       apply: (d) => {
         let ps = listOf(d.projects);
         // A page from before timers (v7 and older) drops the time fields when it
@@ -792,6 +816,12 @@ class Component extends DCLogic {
           const had = {};
           this.state.projects.forEach(p => p.ideas.forEach(i => { if (i.spent || i.timerStart) had[i.id] = i; }));
           if (Object.keys(had).length) ps = ps.map(p => Object.assign({}, p, { ideas: listOf(p && p.ideas).map(i => i && had[i.id] && i.spent == null ? Object.assign({}, i, { spent: had[i.id].spent, timerStart: had[i.id].timerStart }) : i) }));
+        }
+        // A page from before the session log (v8) drops `log` the same way.
+        if ((d.ideaBank || 0) < 9 && ps.length) {
+          const had = {};
+          this.state.projects.forEach(p => p.ideas.forEach(i => { if (i.log.length) had[i.id] = i.log; }));
+          if (Object.keys(had).length) ps = ps.map(p => Object.assign({}, p, { ideas: listOf(p && p.ideas).map(i => i && had[i.id] && i.log == null ? Object.assign({}, i, { log: had[i.id] }) : i) }));
         }
         if (!ps.length) {
           if (!listOf(d.ideas).length || this.state.projects.length > 1) return false;
@@ -863,7 +893,9 @@ class Component extends DCLogic {
   running() { return this.allIdeas().find(i => i.timerStart); }
   stopTimer(i, quiet) {
     if (!i.timerStart) return;
-    i.spent += Math.max(0, Date.now() - i.timerStart);
+    const now = Date.now();
+    i.spent += Math.max(0, now - i.timerStart);
+    if (now - i.timerStart >= 6e4) i.log.push({ id: uid('l'), s: i.timerStart, e: now });
     i.timerStart = 0;
     if (!quiet) { this.touch(); this.toast('Timer stopped · ' + fmtTime(i.spent) + ' on “' + clip(i.title, 26) + '”'); }
   }
@@ -880,6 +912,28 @@ class Component extends DCLogic {
   nudgeTime(i, mins) {
     i.spent = Math.max(0, i.spent + mins * 6e4);
     this.touch();
+  }
+  // Editing a session moves the total by the same amount, so ±15 min and
+  // time from before the log stay as they were.
+  editLog(i, l, s, e) {
+    if (!(s > 0) || !(e > s)) return;
+    i.spent = Math.max(0, i.spent + (e - s) - (l.e - l.s));
+    l.s = s; l.e = e;
+    this.touch();
+  }
+  addLog(i) {
+    const e = Date.now() - Date.now() % 6e4, s = e - 30 * 6e4;
+    i.log.push({ id: uid('l'), s, e });
+    i.spent += e - s;
+    this.touch();
+    this.toast('Logged 30 min ending now · change the times below');
+  }
+  delLog(i, l) {
+    const k = i.log.indexOf(l); if (k < 0) return;
+    i.log.splice(k, 1);
+    i.spent = Math.max(0, i.spent - (l.e - l.s));
+    this.touch();
+    this.toast('Session removed · ' + fmtTime(l.e - l.s), () => { i.log.splice(k, 0, l); i.spent += l.e - l.s; this.touch(); });
   }
   addBuild() {
     const t = this.state.bText.trim(); if (!t) return;
@@ -1193,8 +1247,18 @@ class Component extends DCLogic {
         timerLabel: di.timerStart ? 'Stop timer' : 'Start timer', timerBg: di.timerStart ? VOLT : INK, timerInk: di.timerStart ? INK : VOLT,
         timer: () => this.toggleTimer(di), more: () => this.nudgeTime(di, 15), less: () => this.nudgeTime(di, -15),
         cantLess: di.spent <= 0, lessOp: di.spent <= 0 ? .4 : 1,
+        addLog: () => this.addLog(di), hasLog: di.log.length > 0,
+        logHead: 'Sessions · ' + di.log.length + (di.spent - logged(di) >= 6e4 ? ' · ' + fmtTime(di.spent - logged(di)) + ' outside the log' : ''),
+        log: di.log.slice().sort((a, b) => b.s - a.s).map(l => ({
+          date: dayOf(l.s), start: hm(l.s), end: hm(l.e), dur: fmtTime(l.e - l.s),
+          aria: 'Remove the session of ' + dayOf(l.s) + ' ' + hm(l.s),
+          setDate: (e) => { const v = e.target.value; if (v) { const s0 = at(v, hm(l.s)); this.editLog(di, l, s0, s0 + l.e - l.s); } },
+          setStart: (e) => { const v = e.target.value; if (v) { const s0 = at(dayOf(l.s), v); this.editLog(di, l, s0, endAt(s0, hm(l.e))); } },
+          setEnd: (e) => { const v = e.target.value; if (v) this.editLog(di, l, l.s, endAt(l.s, v)); },
+          del: () => this.delLog(di, l)
+        })),
         timeNote: di.timerStart ? 'Running since ' + new Date(di.timerStart).toTimeString().slice(0, 5) + '. Keeps going if you close the page.'
-          : di.stage === 'next' ? 'Starting the timer moves it to In progress. One timer runs at a time.' : 'One timer runs at a time. Use ±15 min to fix a forgotten one.',
+          : di.stage === 'next' ? 'Starting the timer moves it to In progress. One timer runs at a time.' : 'One timer runs at a time. Each stop goes in the log below; change its times to fix a forgotten one.',
         steps: di.steps.map((x, k, all) => ({
           text: x.text,
           first: k === 0, last: k === all.length - 1, upOp: k === 0 ? .3 : 1, downOp: k === all.length - 1 ? .3 : 1,

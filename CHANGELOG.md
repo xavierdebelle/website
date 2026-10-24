@@ -5,6 +5,38 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v120 — 2026-10-24
+
+**What's new** · The Biz · [tools/idea-bank.html]
+### Idea Bank keeps<br>a log of your timer
+Every time you stop the timer on an idea, the session is written down: the
+day, when it started, when it ended. Forgot to stop it overnight? Change the
+end time and the total follows. Worked without the timer? Add a session and
+set its times. Delete one you didn't mean.
+
+**Idea Bank — `tools/idea-bank.html` (site copy; source `ideas-v10` untouched)**
+- Each idea now carries `log: [{id, s, e}]` (ms). Stopping the timer, by
+  hand or by a stage change, adds an entry when the session ran a minute or
+  more. `spent` stays the total; editing an entry moves `spent` by the
+  difference, deleting one subtracts it (with Undo), so ±15 min and time
+  banked before the log are kept as they were. The log header says how much
+  of the total is outside the log.
+- Detail panel, under Time spent: "+ Session" (30 min ending now), then one
+  row per session, newest first: day, start, end (an end earlier than the
+  start means past midnight), duration, Del.
+- Sync payload marked `ideaBank: 9`. Data saved by an older page (no `log`
+  field) keeps this device's log for those ideas, the same way time fields
+  were kept from pre-timer pages. No database rule change (the doc has no
+  field validation).
+
+**Verified (built-in browser, signed out, local data only)** — started and
+stopped the timer, added a session, changed its end time (total 30m → 1h
+41m), deleted it with the Undo toast, reloaded and the log was still there;
+375 px phone: a row wraps to two lines, no sideways scroll; console shows
+only the known `_ds_bundle.js` jsx error. Sync not exercised.
+
+---
+
 ## v119 — 2026-10-22
 
 **What's new** · The Biz · [tools/wedding-schedule.html]
