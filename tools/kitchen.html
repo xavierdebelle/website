@@ -199,6 +199,9 @@ select.in{font-weight:700;padding-right:28px}
 .drop{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:150px;border:3px dashed var(--ink);padding:22px;text-align:center;background:var(--mist);cursor:pointer}
 .drop .hint{max-width:34ch}
 .drop:hover{background:var(--volt)}
+.drop .pick2{justify-content:center;margin-top:4px}
+.pick2{display:flex;gap:8px;flex-wrap:wrap}
+.pick2 .btn{flex:1 1 0;min-width:120px;justify-content:center}
 .drop b{display:block;font-size:16px;text-transform:uppercase;letter-spacing:.02em}
 
 /* ---------- ideas ---------- */
@@ -469,7 +472,7 @@ select.in{font-weight:700;padding-right:28px}
       <div>
         <div class="box">
           <span class="k">1 · Snap the fridge (optional)</span>
-          <label class="btn" style="width:100%"><input type="file" id="l-photo" accept="image/*" capture="environment" hidden>Take or choose a photo</label>
+          <div class="row pick2"><label class="btn"><input type="file" id="l-photo" accept="image/*" capture="environment" hidden>Take a photo</label><label class="btn"><input type="file" id="l-roll" accept="image/*" hidden>Camera roll</label></div>
           <div class="fridge-photo" id="l-photo-view"></div>
           <div id="l-ai"></div>
           <p class="hint" style="margin:10px 0 0" id="l-photo-hint"></p>
@@ -549,6 +552,7 @@ select.in{font-weight:700;padding-right:28px}
 
 <div class="sheet" id="sheet" hidden><div class="sheet-box" id="sheet-box" role="dialog" aria-modal="true"></div></div>
 <input type="file" id="card-file" accept="image/*" capture="environment" hidden>
+<input type="file" id="card-roll" accept="image/*" hidden>
 <input type="file" id="import-file" accept="application/json,.json" hidden>
 <input type="file" id="recipes-file" accept="application/json,.json" hidden>
 <div id="toast" role="status"><span id="toast-msg"></span><button id="toast-undo" type="button">Undo</button></div>
@@ -1434,6 +1438,7 @@ function paintEditor() {
     return '<button type="button" data-act="ed-kind" data-v="' + k + '" class="' + (d.kind === k ? 'on' : '') + '">' + KINDS[k] + '</button>';
   }).join('');
   var photoCol = '';
+  var pick2 = '<div class="row pick2"><label class="btn y" for="card-file">Take a photo</label><label class="btn" for="card-roll">Camera roll</label></div>';
   var fold = '<button class="ghost fold-btn" type="button" data-act="ed-fold">' + (ed.fold ? 'Show photo' : 'Hide photo') + '</button>';
   if (d.kind !== 'card' && ed.dish) {
     photoCol = '<div class="ed-photo dish-photo' + (ed.photo ? ' has-photo' : '') + (ed.fold ? ' folded' : '') + '">' +
@@ -1442,16 +1447,16 @@ function paintEditor() {
       (ed.photo ?
       '<div class="frame" data-act="zoom" title="Tap to zoom"><img src="' + ed.photo + '" alt="The dish"></div>' +
       '<div class="row" style="margin-top:8px">' + (aiKey() ? '<button class="btn sm y' + (ed.reading ? ' busy' : '') + '" type="button" data-act="ai-dish"' + (ed.reading ? ' disabled' : '') + '>' + (ed.reading ? 'Looking at it…' : 'Guess the recipe') + '</button>' : '') +
-      '<label class="btn sm" for="card-file">Retake</label><button class="ghost" type="button" data-act="ed-nophoto">Remove</button>' + fold + '</div>' +
+      '<label class="btn sm" for="card-file">Retake</label><label class="btn sm" for="card-roll">Camera roll</label><button class="ghost" type="button" data-act="ed-nophoto">Remove</button>' + fold + '</div>' +
       '<p class="hint">' + (aiKey() ? 'Claude works out what it is and writes a recipe for it; you adjust it to how you made it.' : 'Add a Claude key in Taste and it can guess the recipe from the photo.') + ' The photo stays on this device with the recipe.</p>'
-      : '<label class="drop" for="card-file"><b>Take a photo of the dish</b><span class="hint">' + (aiKey() ? 'Claude guesses what it is and fills in the ingredients and method.' : 'It’s kept with the recipe on this device.') + '</span></label>') + '</div>';
+      : '<div class="drop"><b>Photo of the dish</b><span class="hint">' + (aiKey() ? 'Claude guesses what it is and fills in the ingredients and method.' : 'It’s kept with the recipe on this device.') + '</span>' + pick2 + '</div>') + '</div>';
   } else if (d.kind === 'card') {
     photoCol = '<div class="ed-photo card-photo' + (ed.photo ? ' has-photo' : '') + (ed.fold ? ' folded' : '') + '">' + (ed.photo ?
       '<div class="frame" data-act="zoom" title="Tap to zoom"><img src="' + ed.photo + '" alt="The handwritten card"></div>' +
       '<div class="row" style="margin-top:8px">' + (aiKey() ? '<button class="btn sm y' + (ed.reading ? ' busy' : '') + '" type="button" data-act="ai-card"' + (ed.reading ? ' disabled' : '') + '>' + (ed.reading ? 'Reading the card…' : 'Read it for me') + '</button>' : '') +
-      '<label class="btn sm" for="card-file">Retake</label><button class="ghost" type="button" data-act="ed-nophoto">Remove</button>' + fold + '</div>' +
+      '<label class="btn sm" for="card-file">Retake</label><label class="btn sm" for="card-roll">Camera roll</label><button class="ghost" type="button" data-act="ed-nophoto">Remove</button>' + fold + '</div>' +
       '<p class="hint">Tap the photo to zoom. ' + (aiKey() ? 'Claude can read it into the form, or type' : 'Type') + ' it in on the ' + (innerWidth > 900 ? 'right' : 'form below') + '; the photo stays on this device with the recipe.</p>'
-      : '<label class="drop" for="card-file"><b>Take a photo of the card</b><span class="hint">It sits beside the form while you type it in, and stays with the recipe on this device.</span></label>') + '</div>';
+      : '<div class="drop"><b>Photo of the card</b><span class="hint">It sits beside the form while you type it in, and stays with the recipe on this device.</span>' + pick2 + '</div>') + '</div>';
   }
   var dishLink = d.kind === 'home' && !ed.dish ? '<div class="f6"><button class="ghost" type="button" data-act="ed-dish" style="padding-left:0">+ Photo of the dish' + (aiKey() ? ' (Claude can guess the recipe)' : '') + '</button></div>' : '';
   var pasteBox = (d.kind !== 'card') ? (ed.paste ?
@@ -2113,8 +2118,8 @@ function act(a, el, ev) {
     /* book */
     case 'new': openEditor(null, { kind: 'home' }); break;
     case 'new-online': openEditor(null, { kind: 'online' }); break;
-    case 'new-card': openEditor(null, { kind: 'card' }); $('card-file').click(); break;
-    case 'new-dish': openEditor(null, { kind: 'home', dish: true, from: 'Me' }); $('card-file').click(); break;
+    case 'new-card': openEditor(null, { kind: 'card' }); if (!phone()) $('card-roll').click(); break;
+    case 'new-dish': openEditor(null, { kind: 'home', dish: true, from: 'Me' }); if (!phone()) $('card-roll').click(); break;
     case 'ed-dish': readEditor(); ed.dish = true; paintEditor(); break;
     case 'ed-fold': readEditor(); ed.fold = !ed.fold; paintEditor(); break;
     case 'ai-dish': aiGuessDish(); break;
@@ -2430,17 +2435,22 @@ document.addEventListener('keydown', function (ev) {
   var typing = /INPUT|TEXTAREA|SELECT/.test((document.activeElement || {}).tagName || '');
   if (ev.key === '/' && !typing && !ui.sheet) { ev.preventDefault(); showView('book'); $('b-q').focus(); }
 });
-$('l-photo').addEventListener('change', function () {
+function phone() { return matchMedia('(pointer:coarse)').matches; }
+function fridgeFile() {
   var f = this.files && this.files[0]; this.value = '';
   if (!f) return;
   shrink(f, 1400, 0.8).then(function (src) { ui.fridgePhoto = src; ui.fridgeAi = null; renderLeft(); }).catch(function (e) { toast(e.message); });
-});
-$('card-file').addEventListener('change', function () {
+}
+$('l-photo').addEventListener('change', fridgeFile);
+$('l-roll').addEventListener('change', fridgeFile);
+function cardFile() {
   var f = this.files && this.files[0]; this.value = '';
   if (!f || !ed) return;
   shrink(f, 1800, 0.82).then(function (src) { readEditor(); ed.photo = src; ed.photoChanged = true; ed.dirty = true; if (!ed.dish) ed.draft.kind = 'card'; paintEditor(); })
     .catch(function (e) { toast(e.message); });
-});
+}
+$('card-file').addEventListener('change', cardFile);
+$('card-roll').addEventListener('change', cardFile);
 $('import-file').addEventListener('change', function () {
   var f = this.files && this.files[0]; this.value = '';
   if (!f) return;

@@ -5,6 +5,34 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v121 — 2026-10-24
+
+**What's new** · My Wife's Tools · [tools/kitchen.html]
+### Kitchen: take a photo,<br>or pick one you already have
+On a phone, every photo in Kitchen used to open the camera and nothing else.
+Now the card, the dish and the fridge each offer two buttons: Take a photo, or
+Camera roll for a picture that's already on the phone.
+
+**Kitchen — `tools/kitchen.html`, source `kitchen_v8.html`**
+- Every photo input had `capture="environment"`, which makes phones go
+  straight to the camera with no library option. Kept that input for
+  "Take a photo" and added a second one without `capture` (`card-roll`,
+  `l-roll`) for "Camera roll"; both share the same handler.
+- Card and dish photo box: a two-button choice instead of one tap-to-shoot
+  label. With a photo in: Retake + Camera roll + Remove.
+- Leftovers fridge photo: Take a photo / Camera roll.
+- Scan a card / Snap a dish: on touch screens (`pointer: coarse`) they open
+  the recipe with the two choices instead of launching the camera; on a
+  computer they still open the file picker straight away.
+- Tools card: search words "camera roll", "gallery".
+- Scan: Firebase (`xdb-tools`), gstatic and the Claude SDK from jsDelivr, all
+  already live; nothing new. Storage key unchanged (`xdb.kitchen.v1`).
+- Verified at 375×812 in the in-app browser: both buttons on card, dish and
+  fridge; a picture fed through Camera roll lands in the recipe and shows
+  Retake / Camera roll / Remove. Not tried on a real iPhone.
+
+---
+
 ## v120 — 2026-10-24
 
 **What's new** · The Biz · [tools/idea-bank.html]
