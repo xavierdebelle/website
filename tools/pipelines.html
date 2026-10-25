@@ -1,0 +1,1284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="../assets/account.js"></script>   <!-- site-wide account; the tool falls back to its own sign-in without it -->
+<script defer src="../assets/stats.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pipelines — Xavier de Belle</title>
+<meta name="description" content="Boards for work that repeats. Your own stages, card fields and checklist, so fifty weddings or a season of shoots stay in order.">
+<link rel="icon" href="../assets/logo.svg" type="image/svg+xml">
+<!-- installable app: works offline once opened, syncs when back online (pwa.js, pwa-sw.js) -->
+<link rel="manifest" href="pipelines.webmanifest">
+<link rel="apple-touch-icon" href="icons/pipelines-180.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Pipelines">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="theme-color" content="#000000">
+<script src="pwa.js" data-app="pipelines"></script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&display=swap">
+<style>
+:root{
+  --red:#E8232D; --red-dark:#B81D25; --yellow:#F8C135; --black:#000; --text:#282828;
+  --g7:#484848; --g6:#5A5A5A; --white:#fff; --bg:#f3f1f1; --line:#e2dcdc; --col:#e9e5e5;
+  --wide:700 11px/1.2 "Inter Tight",sans-serif; --ease:cubic-bezier(.4,0,.2,1);
+  --gut:clamp(14px,2.4vw,24px);
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+html,body{margin:0}
+body{background:var(--bg);color:var(--text);font:15px/1.5 "Inter Tight",system-ui,sans-serif;-webkit-font-smoothing:antialiased;min-height:100vh}
+button{font:inherit;color:inherit;cursor:pointer}
+input,select,textarea{font:inherit;color:inherit}
+h1,h2,h3{margin:0}
+[hidden]{display:none!important}
+
+/* ---------- top bar ---------- */
+.top{background:var(--black);color:var(--white);padding:14px var(--gut) 0;padding-top:max(14px,env(safe-area-inset-top))}
+.top-row{display:flex;align-items:center;gap:10px 14px;flex-wrap:wrap}
+.brand{margin-right:auto;min-width:0}
+.brand a{display:block;color:#bbb;text-decoration:none;font:var(--wide);font-size:10px;letter-spacing:.1em;text-transform:uppercase}
+.brand a:hover{color:var(--yellow)}
+.brand h1{font:800 24px/1.05 "Inter Tight",sans-serif;text-transform:uppercase;letter-spacing:.2px}
+.brand h1 span{color:var(--yellow)}
+.tbtn{background:transparent;border:1px solid var(--g7);color:var(--white);padding:8px 12px;font:var(--wide);font-size:10px;letter-spacing:.07em;text-transform:uppercase}
+.tbtn:hover{border-color:var(--white)}
+.tbtn.ok{border-color:var(--yellow);color:var(--yellow)}
+.tbtn.bad{border-color:var(--red);background:var(--red)}
+.pswitch{display:flex;gap:0;margin-top:14px;overflow-x:auto;scrollbar-width:none}
+.pswitch::-webkit-scrollbar{display:none}
+.pswitch button{border:0;border-bottom:4px solid transparent;background:transparent;padding:11px 14px 9px;font:800 13px/1 "Inter Tight",sans-serif;text-transform:uppercase;letter-spacing:.05em;color:var(--white);white-space:nowrap;display:flex;gap:8px;align-items:center}
+.pswitch button span{font:var(--wide);font-size:10px;background:#333;color:var(--white);padding:3px 6px}
+.pswitch button[aria-pressed=true]{border-bottom-color:var(--yellow);color:var(--yellow)}
+.pswitch button[aria-pressed=true] span{background:var(--yellow);color:var(--black)}
+.pswitch .newp{color:var(--yellow);font-size:12px}
+
+/* ---------- sync bar ---------- */
+#sync-bar{display:none;align-items:center;gap:10px 18px;flex-wrap:wrap;background:var(--yellow);color:var(--black);padding:12px var(--gut)}
+#sync-bar.on{display:flex}
+#sync-bar .sync-dot{width:10px;height:10px;background:var(--black);flex:none}
+#sync-what{flex:1;min-width:220px;font-size:14px;line-height:1.45}
+#sync-bar button{border:2px solid var(--black);background:var(--black);color:var(--yellow);font:var(--wide);font-size:11px;letter-spacing:.08em;text-transform:uppercase;padding:8px 12px}
+#sync-bar button+button{background:transparent;color:var(--black)}
+
+/* ---------- board ---------- */
+main{padding:18px var(--gut) 40px}
+.phead{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.phead h2{font:800 clamp(24px,3.6vw,38px)/1 "Inter Tight",sans-serif;text-transform:uppercase;color:var(--black);margin-right:auto;overflow-wrap:anywhere}
+.b{border:1px solid var(--black);background:var(--white);color:var(--black);padding:6px 10px;font:var(--wide);font-size:10px;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap}
+.b:hover{background:var(--black);color:var(--white)}
+.b.y{background:var(--yellow);border-color:var(--yellow)}
+.b.y:hover{background:var(--black);border-color:var(--black);color:var(--yellow)}
+.b.r{border-color:var(--red);color:var(--red)}
+.b.r:hover{background:var(--red);color:var(--white)}
+.b.ghost{border-color:transparent;background:transparent;color:var(--g6)}
+.b.ghost:hover{background:var(--white);color:var(--black)}
+.psum{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.psum span{background:var(--white);padding:6px 10px;font-size:13px;font-weight:700;border-left:3px solid var(--black)}
+.psum span.late{border-left-color:var(--red);color:var(--red-dark)}
+.psum span.stuck{border-left-color:var(--yellow)}
+.psum span.money-sum{border-left-color:var(--yellow);background:var(--black);color:var(--yellow)}
+.pboard{display:flex;gap:12px;align-items:flex-start;overflow-x:auto;padding-bottom:14px;scroll-snap-type:x proximity}
+.pcol{flex:0 0 280px;background:var(--col);padding:0 0 8px;min-height:120px;scroll-snap-align:start}
+.pcol.over{background:#fdf1cf;outline:2px dashed var(--black)}
+.pcol .ch{display:flex;align-items:center;gap:8px;padding:12px 12px 8px;border-top:4px solid var(--black)}
+.pcol.donecol .ch{border-top-color:var(--yellow)}
+.pcol .ch b{flex:1;font:800 14px/1.2 "Inter Tight",sans-serif;color:var(--black)}
+.pcol .ch span{font:var(--wide);font-size:10px;background:var(--white);padding:3px 6px}
+.padd{display:block;width:calc(100% - 16px);margin:0 8px 8px;border:0;background:transparent;text-align:left;padding:8px;font-weight:700;color:var(--g6)}
+.padd:hover{background:var(--white);color:var(--black)}
+.pcard{background:var(--white);margin:0 8px 8px;padding:10px 12px 8px;cursor:pointer;border-left:4px solid transparent;box-shadow:0 1px 0 rgba(0,0,0,.08);-webkit-user-select:none;user-select:none}
+.pcard:hover{border-left-color:var(--black)}
+.pcard.late{border-left-color:var(--red)}
+.pcard.dragging{opacity:.4}
+.pcard .pt{font-weight:700;color:var(--black);line-height:1.3;overflow-wrap:anywhere}
+.pcard .pf{font-size:12px;color:var(--g6);margin-top:3px;overflow-wrap:anywhere}
+.pcard .nx{font-size:12px;color:var(--text);margin-top:6px;padding-top:6px;border-top:1px solid var(--line)}
+.pcard .nx b{font-weight:700}
+.pm{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:8px}
+.cl{font:var(--wide);font-size:10px;padding:3px 6px;background:var(--bg);color:var(--black)}
+.cl.full{background:var(--black);color:var(--yellow)}
+.cm{font-size:11px;color:var(--g6);font-weight:700}
+.age{font-size:11px;color:var(--g6)}
+.age.stuck{color:var(--red-dark);font-weight:700}
+.amb{margin-left:auto;border:1px solid #cfc7c7;background:var(--white);color:var(--black);padding:3px 9px;font:800 14px/1 "Inter Tight",sans-serif;letter-spacing:.1em}
+.amb:hover,.amb.open{background:var(--black);color:var(--yellow);border-color:var(--black)}
+.due{display:inline-flex;align-items:center;gap:4px;border:1px solid #cfc7c7;padding:2px 8px;font-size:11px;font-weight:600;border-radius:999px;color:var(--g7);white-space:nowrap}
+.due.over{color:var(--red-dark);border-color:var(--red)}
+.due.today{color:var(--black);border-color:var(--black);background:var(--yellow)}
+.flash{animation:flash 1.4s var(--ease)}
+@keyframes flash{0%{background:var(--yellow)}100%{background:var(--white)}}
+.arch{background:var(--white);margin-top:8px}
+.arch h3{font:800 16px/1 "Inter Tight",sans-serif;text-transform:uppercase;padding:14px 16px;border-bottom:2px solid var(--black)}
+.arch .row{display:flex;align-items:center;gap:10px;padding:9px 16px;border-bottom:1px solid var(--line)}
+.arch .row span{flex:1;font-weight:600}
+.empty-board{background:var(--white);padding:30px;text-align:center;color:var(--g6)}
+
+/* ---------- ⋯ menu ---------- */
+#amenu{position:fixed;z-index:80;background:var(--white);border:2px solid var(--black);box-shadow:0 8px 24px rgba(0,0,0,.18);min-width:220px;max-width:280px;padding:6px 0;max-height:calc(100vh - 24px);overflow:auto}
+#amenu button{display:flex;gap:10px;align-items:center;width:100%;border:0;background:transparent;text-align:left;padding:10px 14px;font:600 14px/1.2 "Inter Tight",sans-serif;color:var(--black)}
+#amenu button:hover{background:var(--yellow)}
+#amenu button i{font-style:normal;width:16px;text-align:center;color:var(--g6)}
+#amenu button.red{color:var(--red)}
+#amenu button.sub{padding-left:40px;font-weight:500}
+#amenu .sec{font:var(--wide);font-size:9px;letter-spacing:.07em;text-transform:uppercase;color:var(--g6);padding:8px 14px 4px;border-top:1px solid var(--line);margin-top:4px}
+#amenu .sec:first-child{border-top:0;margin-top:0}
+
+/* ---------- dialogs ---------- */
+#dlg{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;place-items:center;z-index:60;padding:16px}
+#dlg.on{display:grid}
+#dlg .box{background:var(--white);max-width:480px;width:100%;border-top:6px solid var(--black);max-height:calc(100vh - 32px);overflow:auto}
+#dlg .box.wide{max-width:660px}
+#dlg h3{font:800 20px/1.15 "Inter Tight",sans-serif;padding:18px 18px 6px}
+#dlg .body{padding:6px 18px 12px}
+#dlg label{display:block;font:var(--wide);font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:var(--g6);margin:12px 0 4px}
+#dlg input,#dlg textarea,#dlg select{width:100%;border:1px solid #cfc7c7;padding:9px 10px;background:var(--white);border-radius:0}
+#dlg textarea{min-height:84px;resize:vertical}
+#dlg .foot{padding:12px 18px;display:flex;gap:8px;border-top:1px solid var(--line);flex-wrap:wrap;align-items:center;position:sticky;bottom:0;background:var(--white)}
+#dlg .foot .sp{flex:1}
+.lead{font-size:13px;color:var(--g6);margin:0 0 10px}
+#dlg textarea.cw-title{line-height:1.2!important;width:100%;border:0!important;font:800 22px/1.2 "Inter Tight",sans-serif;padding:0!important;outline:none;resize:none;overflow:hidden;min-height:0!important;display:block}
+.cw-stage{display:flex;gap:4px;flex-wrap:wrap;margin:4px 0 2px}
+.cw-stage button{border:1px solid #cfc7c7;background:var(--white);padding:7px 10px;font:var(--wide);font-size:10px;letter-spacing:.05em;text-transform:uppercase}
+.cw-stage button:hover{border-color:var(--black)}
+.cw-stage button.on{background:var(--black);color:var(--yellow);border-color:var(--black)}
+.cw-fields{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
+.cw-fields .full{grid-column:1/-1}
+.money{position:relative}
+.money span{position:absolute;left:10px;top:50%;transform:translateY(-50%);font-weight:700;color:var(--g6);pointer-events:none}
+#dlg .money input{padding-left:22px}
+textarea[data-grow]{min-height:40px!important;height:40px;overflow:hidden;resize:none;line-height:1.45}
+.sec-h{margin:16px 0 8px;padding-top:12px;border-top:2px solid var(--black);font:800 14px/1 "Inter Tight",sans-serif;text-transform:uppercase;display:flex;gap:10px;align-items:center}
+.pill{font:var(--wide);font-size:10px;letter-spacing:.06em;color:var(--black);background:var(--yellow);padding:4px 7px;white-space:nowrap}
+.bar{flex:1;height:6px;background:var(--line)}
+.bar i{display:block;height:100%;background:var(--black)}
+.task{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line)}
+.task .chk{width:22px;height:22px;border:2px solid var(--black);background:var(--white);flex:none;display:grid;place-items:center;padding:0;font-weight:800;font-size:13px;line-height:1}
+.task .chk.on{background:var(--black);color:var(--yellow)}
+#dlg .task .tt{flex:1;border:0;padding:4px 2px;font-weight:600;min-width:0;background:transparent}
+#dlg .task.done .tt{text-decoration:line-through;color:#999}
+#dlg .task .td{width:auto;flex:none;border:1px solid #cfc7c7;padding:3px 6px;font-size:12px;max-width:140px}
+#dlg .task .td.empty{opacity:.45}
+#dlg .task .td.over{border-color:var(--red);color:var(--red-dark)}
+.task .x{border:0;background:transparent;color:#bbb;font-size:17px;padding:0 4px;flex:none}
+.task .x:hover{color:var(--red)}
+.addrow{display:flex;gap:6px;margin-top:8px}
+.addrow input{flex:1}
+.cm-new textarea{margin-bottom:6px}
+.cm-new .row{display:flex;gap:8px;align-items:center}
+.cm-new .row span{font-size:11px;color:var(--g6);flex:1}
+.cm-list{max-height:260px;overflow-y:auto;border:1px solid var(--line);background:#faf8f8;margin-top:10px}
+.cm-item{padding:10px 12px;border-bottom:1px solid var(--line);background:var(--white)}
+.cm-item:last-child{border-bottom:0}
+.cm-item .cd{display:flex;align-items:center;gap:8px;font:var(--wide);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--g6);margin-bottom:4px}
+.cm-item .cd button{margin-left:auto;border:0;background:transparent;color:#bbb;font-size:15px;padding:0 2px}
+.cm-item .cd button:hover{color:var(--red)}
+.cm-item .ct{white-space:pre-wrap;overflow-wrap:anywhere;font-size:14px;line-height:1.45}
+/* builder */
+.bl-row{display:flex;gap:6px;align-items:center;margin-bottom:6px}
+#dlg .bl-row input[type=text]{flex:1}
+.bl-row .mini{border:1px solid #cfc7c7;background:var(--white);width:32px;height:38px;padding:0;font-weight:800;flex:none}
+.bl-row .mini:hover{background:var(--black);color:var(--white)}
+#dlg .bl-row label.dn{display:flex;gap:4px;align-items:center;margin:0;font-size:10px;white-space:nowrap;flex:none}
+#dlg .bl-row label.dn input{width:auto}
+#dlg .bl-row select{width:auto;flex:none}
+.bl-sec{font:800 13px/1 "Inter Tight",sans-serif;text-transform:uppercase;margin:18px 0 8px;padding-top:12px;border-top:2px solid var(--black)}
+.bl-sec small{font:500 12px/1.3 "Inter Tight",sans-serif;text-transform:none;color:var(--g6);display:block;margin-top:4px}
+.tpl-pick{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:6px}
+.tpl-pick button{border:2px solid var(--black);background:var(--white);padding:12px 10px;text-align:left;font-weight:800;font-size:14px}
+.tpl-pick button small{display:block;font-weight:500;font-size:11px;color:var(--g6);margin-top:4px}
+.tpl-pick button.on{background:var(--black);color:var(--yellow)}
+.tpl-pick button.on small{color:#ccc}
+
+/* toast */
+#toast{position:fixed;left:50%;bottom:max(22px,env(safe-area-inset-bottom));transform:translate(-50%,180%);background:var(--black);color:var(--white);padding:12px 16px;display:flex;gap:14px;align-items:center;transition:transform .25s var(--ease);z-index:90;max-width:calc(100vw - 32px);border-left:4px solid var(--yellow)}
+#toast.on{transform:translate(-50%,0)}
+#toast button{background:var(--yellow);border:0;color:var(--black);padding:6px 10px;font:var(--wide);font-size:10px;letter-spacing:.06em;text-transform:uppercase}
+
+@media (max-width:700px){
+  .pcol{flex-basis:84vw}
+  .cw-fields,.tpl-pick{grid-template-columns:1fr}
+  #dlg{padding:0;place-items:stretch}
+  #dlg .box,#dlg .box.wide{max-width:none;max-height:100vh;height:100%;border-top-width:4px}
+}
+@media print{.top,#sync-bar,.amb,.padd{display:none!important}}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="top-row">
+    <div class="brand"><a href="../tools.html">Xavier de Belle · Tools</a><h1>Pipelines<span>.</span></h1></div>
+    <button class="tbtn" type="button" data-pwa-install style="display:none" title="Install as an app: its own icon, works offline">Install app</button>
+    <button class="tbtn sync-btn" id="btn-sync" onclick="syncClick()" style="display:none">Sign in to sync</button>
+    <button class="tbtn" id="btn-signout" onclick="signOutNow()" style="display:none" title="Sign out of sync">Sign out</button>
+  </div>
+  <nav class="pswitch" id="pswitch" aria-label="Pipelines"></nav>
+</header>
+
+<div id="sync-bar" role="status">
+  <span class="sync-dot"></span>
+  <span id="sync-what"></span>
+  <button id="sync-keep-local" onclick="keepLocal()">Keep this device</button>
+  <button id="sync-keep-cloud" onclick="keepCloud()">Keep cloud copy</button>
+</div>
+
+<main id="main"></main>
+
+<div id="toast" role="status"><span id="toast-msg"></span><button id="toast-btn" hidden></button></div>
+<div id="dlg"><div class="box" id="dlg-box" role="dialog" aria-modal="true"></div></div>
+
+<script>
+/* ============================================================
+   Pipelines — boards for work that repeats.
+   A pipeline = stages (left to right), card fields, and the checklist
+   every new card starts with. "Projects" always exists and can't be deleted.
+   Data: { pipelines: [ { id, name, stages, fields, checklist, cards } ] }
+   ============================================================ */
+var STORAGE_KEY = 'xdb.pipelines.v1';
+var UI_KEY = 'xdb.pipelines.v1.ui';          // which board is open etc. — never synced
+
+var FIELD_TYPES = [['text', 'Text'], ['multi', 'Multi-line text'], ['number', 'Number'], ['money', 'Money'], ['date', 'Date']];
+var TEMPLATES = {
+  wedding: { name: 'Wedding video', sub: 'Client info to accounting',
+    stages: [['Begin'], ['Client Info Request'], ['In Progress'], ['Client Review'], ['Corrections'], ['Done', true], ['Accounting']],
+    fields: [['Wedding date', 'date'], ['Package', 'text'], ['Hours', 'number'], ['Price', 'money'], ['Notes', 'multi']],
+    checklist: ['Back up the cards', 'Import + sync footage', 'Pick the music', 'Edit the highlight film', 'Colour grade', 'Sound mix', 'Export + upload', 'Send to client for review', 'Corrections (if needed)'] },
+  commercial: { name: 'Commercial shoot', sub: 'Quote to paid',
+    stages: [['Inquiry'], ['Quote sent'], ['Booked'], ['Shoot'], ['Editing'], ['Client review'], ['Delivered', true], ['Paid']],
+    fields: [['Client', 'text'], ['Shoot date', 'date'], ['Budget', 'money'], ['Brief', 'multi']],
+    checklist: ['Send quote', 'Contract + deposit', 'Shot list / brief', 'Shoot', 'Cull + edit', 'Send proofs', 'Final delivery', 'Send invoice', 'Payment received'] },
+  blank: { name: 'Blank', sub: 'Start from scratch', stages: [['To do'], ['Doing'], ['Done', true]], fields: [], checklist: [] }
+};
+
+function $(id) { return document.getElementById(id); }
+function uid(p) { return (p || 'x') + Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-3); }
+function listOf(v) { return Array.isArray(v) ? v : (v && typeof v === 'object' ? Object.values(v) : []); }
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+function today() { var d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+function isDate(v) { return typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v); }
+function daysBetween(a, b) { return Math.round((new Date(b + 'T12:00') - new Date(a + 'T12:00')) / 864e5); }
+function niceDate(v, withDay) { return new Date(v + 'T12:00').toLocaleDateString('en-CA', withDay ? { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' } : { month: 'short', day: 'numeric', year: 'numeric' }); }
+
+/* ---------- state ---------- */
+function defaultState() {
+  return { pipelines: [{ id: 'projects', name: 'Projects', stages: [{ id: 'doing', name: 'Doing', done: false }, { id: 'next', name: 'Coming up', done: false }], fields: [], checklist: [], cards: [] }] };
+}
+function normTask(t) {
+  t = t || {};
+  return { id: String(t.id || uid('t')), title: String(t.title == null ? 'Task' : t.title), done: !!t.done, due: isDate(t.due) ? t.due : null, doneAt: t.done && isDate(t.doneAt) ? t.doneAt : null };
+}
+function normCard(c, pl) {
+  c = c || {};
+  var f = {}, src = c.fields && typeof c.fields === 'object' ? c.fields : {};
+  Object.keys(src).forEach(function (k) { var v = src[k]; if (v !== '' && v != null) f[k] = typeof v === 'number' ? v : String(v); });
+  return {
+    id: String(c.id || uid('c')),
+    title: String(c.title == null ? 'Card' : c.title),
+    stage: pl.stages.some(function (s) { return s.id === c.stage; }) ? c.stage : pl.stages[0].id,
+    stageAt: isDate(c.stageAt) ? c.stageAt : today(),
+    createdAt: isDate(c.createdAt) ? c.createdAt : (isDate(c.stageAt) ? c.stageAt : today()),
+    fields: f,
+    tasks: listOf(c.tasks).map(normTask),
+    comments: listOf(c.comments).filter(function (m) { return m && m.text; }).map(function (m) { return { id: String(m.id || uid('m')), text: String(m.text), at: isDate(m.at) ? m.at : today() }; }),
+    pinned: !!c.pinned,               // kept for the Production Hub's Pull in
+    archived: !!c.archived
+  };
+}
+function normPipe(p) {
+  p = p || {};
+  var stages = listOf(p.stages).filter(Boolean).map(function (s) { return { id: String(s.id || uid('s')), name: String(s.name == null ? 'Stage' : s.name), done: !!s.done }; });
+  if (!stages.length) stages = [{ id: uid('s'), name: 'To do', done: false }];
+  var pl = {
+    id: String(p.id || uid('p')),
+    name: String(p.name == null ? 'Pipeline' : p.name),
+    stages: stages,
+    fields: listOf(p.fields).filter(Boolean).map(function (f) { return { id: String(f.id || uid('f')), name: String(f.name == null ? 'Field' : f.name), type: FIELD_TYPES.some(function (t) { return t[0] === f.type; }) ? f.type : 'text' }; }),
+    checklist: listOf(p.checklist).map(String).filter(Boolean),
+    cards: []
+  };
+  pl.cards = listOf(p.cards).filter(Boolean).map(function (c) { return normCard(c, pl); });
+  return pl;
+}
+function normalise(s) {
+  if (!s || typeof s !== 'object') return null;
+  var out = { pipelines: listOf(s.pipelines).filter(Boolean).map(normPipe) };
+  if (!out.pipelines.some(function (p) { return p.id === 'projects'; })) out.pipelines.unshift(defaultState().pipelines[0]);
+  return out;
+}
+
+var state = defaultState(), ui = { view: 'projects', showArch: false };
+try { var saved = normalise(JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null')); if (saved) state = saved; } catch (e) {}
+try { var su = JSON.parse(localStorage.getItem(UI_KEY) || 'null'); if (su) ui = Object.assign(ui, su); } catch (e) {}
+
+var saveTimer = null;
+function saveNow() {
+  clearTimeout(saveTimer);
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
+  cloudTouch();
+}
+function save() { clearTimeout(saveTimer); saveTimer = setTimeout(saveNow, 350); }
+function saveUi() { try { localStorage.setItem(UI_KEY, JSON.stringify(ui)); } catch (e) {} }
+function commit() { save(); render(); }
+
+function pipe(id) { return state.pipelines.find(function (p) { return p.id === id; }); }
+function current() { return pipe(ui.view) || state.pipelines[0]; }
+function stage(pl, id) { return pl.stages.find(function (s) { return s.id === id; }) || pl.stages[0]; }
+function findCard(cid) {
+  for (var i = 0; i < state.pipelines.length; i++) { var c = state.pipelines[i].cards.find(function (x) { return x.id === cid; }); if (c) return { pl: state.pipelines[i], c: c }; }
+  return null;
+}
+function cardLate(c) { var t = today(); return c.tasks.some(function (x) { return !x.done && x.due && x.due < t; }); }
+function daysIn(c) { return daysBetween(c.stageAt, today()); }
+function money(v) { var n = Number(v); return '$' + n.toLocaleString('en-CA', { minimumFractionDigits: n % 1 ? 2 : 0, maximumFractionDigits: 2 }); }
+function fieldText(f, v) {
+  if (v === '' || v == null) return '';
+  if (f.type === 'date') return isDate(v) ? niceDate(v) : String(v);
+  if (f.type === 'money') return isNaN(Number(v)) ? String(v) : money(v);
+  if (f.type === 'number') return isNaN(Number(v)) ? String(v) : Number(v).toLocaleString('en-CA') + ' ' + f.name.toLowerCase();
+  if (f.type === 'multi') { var l = String(v).split('\n')[0]; return l.length > 40 ? l.slice(0, 39) + '…' : l + (String(v).indexOf('\n') > -1 ? '…' : ''); }
+  return String(v);
+}
+function dueChip(due) {
+  var d = daysBetween(today(), due), txt, cls = '';
+  if (d === 0) { txt = 'Today'; cls = 'today'; }
+  else if (d === 1) txt = 'Tomorrow';
+  else if (d < 0) { cls = 'over'; var n = -d; txt = n < 7 ? n + ' day' + (n > 1 ? 's' : '') + ' ago' : Math.floor(n / 7) + ' week' + (n >= 14 ? 's' : '') + ' ago'; }
+  else txt = new Date(due + 'T12:00').toLocaleDateString('en-CA', { weekday: 'short', month: 'short', day: 'numeric' });
+  return '<span class="due ' + cls + '">◷ ' + txt + '</span>';
+}
+function newCard(pl, stageId, title) {
+  var c = normCard({ title: title, stage: stageId, tasks: pl.checklist.map(function (t) { return { title: t }; }) }, pl);
+  pl.cards.push(c); return c;
+}
+function makePipe(name, key) {
+  var t = TEMPLATES[key];
+  return normPipe({ name: name, checklist: t.checklist.slice(),
+    stages: t.stages.map(function (s) { return { name: s[0], done: !!s[1] }; }),
+    fields: t.fields.map(function (f) { return { name: f[0], type: f[1] }; }) });
+}
+
+/* ---------- toast ---------- */
+var toastTimer = null;
+function toast(msg, label, fn) {
+  var el = $('toast'), b = $('toast-btn');
+  $('toast-msg').textContent = msg;
+  b.hidden = !label; b.textContent = label || '';
+  b.onclick = function () { el.classList.remove('on'); if (fn) fn(); };
+  el.classList.add('on'); clearTimeout(toastTimer); toastTimer = setTimeout(function () { el.classList.remove('on'); }, 4500);
+}
+
+/* ---------- dialogs (the card window remembers itself so small dialogs can return to it) ---------- */
+var dlgKind = null, openCard = null, flashId = null;
+function openDlg(html, kind) { dlgKind = kind || null; var box = $('dlg-box'); box.innerHTML = html; box.classList.toggle('wide', !!kind); $('dlg').classList.add('on'); }
+function closeDlg() {
+  var k = dlgKind; $('dlg').classList.remove('on'); dlgKind = null;
+  if (k === 'card') openCard = null; else if (openCard) cardDlg(openCard);
+}
+$('dlg').addEventListener('click', function (e) { if (e.target === $('dlg')) closeDlg(); });
+document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { if ($('amenu')) closeMenu(); else if ($('dlg').classList.contains('on')) closeDlg(); } });
+
+/* ---------- render ---------- */
+function render() {
+  if (!pipe(ui.view)) ui.view = state.pipelines[0].id;
+  var pl = current();
+  $('pswitch').innerHTML = state.pipelines.map(function (p) {
+    var open = p.cards.filter(function (c) { return !c.archived && !stage(p, c.stage).done; }).length;
+    return '<button aria-pressed="' + (p.id === pl.id) + '" data-view="' + p.id + '">' + esc(p.name) + ' <span>' + open + '</span></button>';
+  }).join('') + '<button class="newp" data-newpipe>+ New pipeline</button>';
+
+  var live = pl.cards.filter(function (c) { return !c.archived; }), arch = pl.cards.filter(function (c) { return c.archived; });
+  var dateF = pl.fields.find(function (f) { return f.type === 'date'; });
+  var otherF = pl.fields.filter(function (f) { return f !== dateF && f.type !== 'multi'; }).slice(0, 2);
+  var moneyF = pl.fields.find(function (f) { return f.type === 'money'; });
+  var lateN = live.filter(cardLate).length;
+  var stuckN = live.filter(function (c) { return !stage(pl, c.stage).done && daysIn(c) > 14; }).length;
+  var openCards = live.filter(function (c) { return !stage(pl, c.stage).done; });
+  var sum = moneyF ? openCards.reduce(function (n, c) { return n + (Number(c.fields[moneyF.id]) || 0); }, 0) : 0;
+
+  function card(c) {
+    var done = c.tasks.filter(function (t) { return t.done; }).length, next = c.tasks.find(function (t) { return !t.done; });
+    var isDone = stage(pl, c.stage).done, d = daysIn(c);
+    var bits = [dateF && c.fields[dateF.id] ? fieldText(dateF, c.fields[dateF.id]) : ''].concat(otherF.map(function (f) { return fieldText(f, c.fields[f.id]); })).filter(Boolean);
+    return '<div class="pcard' + (cardLate(c) ? ' late' : '') + (flashId === c.id ? ' flash' : '') + '" draggable="true" data-card="' + c.id + '">'
+      + '<div class="pt">' + esc(c.title) + '</div>'
+      + (bits.length ? '<div class="pf">' + bits.map(esc).join(' · ') + '</div>' : '')
+      + (next && !isDone ? '<div class="nx">Next: <b>' + esc(next.title) + '</b>' + (next.due ? ' ' + dueChip(next.due) : '') + '</div>' : '')
+      + '<div class="pm">'
+      + (c.tasks.length ? '<span class="cl' + (done === c.tasks.length ? ' full' : '') + '">☑ ' + done + '/' + c.tasks.length + '</span>' : '')
+      + (c.comments.length ? '<span class="cm">💬 ' + c.comments.length + '</span>' : '')
+      + (!isDone ? '<span class="age' + (d > 14 ? ' stuck' : '') + '">' + (d > 0 ? d + 'd in stage' : 'new here') + '</span>' : '')
+      + '<button class="amb" data-menu="' + c.id + '" title="Actions" aria-label="Actions">⋯</button></div></div>';
+  }
+
+  $('main').innerHTML =
+    '<div class="phead"><h2>' + esc(pl.name) + '</h2>'
+    + (arch.length ? '<button class="b ghost" data-toggle-arch>' + (ui.showArch ? 'Hide' : 'Show') + ' archived (' + arch.length + ')</button>' : '')
+    + '<button class="b" data-edit-pipe="' + pl.id + '">⚙ Edit pipeline</button></div>'
+    + '<div class="psum">' + pl.stages.map(function (s) { var n = live.filter(function (c) { return c.stage === s.id; }).length; return n ? '<span>' + n + ' ' + esc(s.name) + '</span>' : ''; }).join('')
+    + (lateN ? '<span class="late">' + lateN + ' late</span>' : '') + (stuckN ? '<span class="stuck">' + stuckN + ' stuck 14+ days</span>' : '')
+    + (sum ? '<span class="money-sum">' + money(sum) + ' ' + esc(moneyF.name.toLowerCase()) + ' open</span>' : '') + '</div>'
+    + '<div class="pboard">' + pl.stages.map(function (s) {
+      var cs = live.filter(function (c) { return c.stage === s.id; });
+      return '<div class="pcol' + (s.done ? ' donecol' : '') + '" data-col="' + s.id + '"><div class="ch"><b>' + esc(s.name) + (s.done ? ' ✓' : '') + '</b><span>' + cs.length + '</span></div>'
+        + '<button class="padd" data-add="' + s.id + '">+ Add a card</button>' + cs.map(card).join('') + '</div>';
+    }).join('') + '</div>'
+    + (ui.showArch && arch.length ? '<div class="arch"><h3>Archived</h3>' + arch.map(function (c) { return '<div class="row"><span>' + esc(c.title) + '</span><button class="b ghost" data-unarch="' + c.id + '">Restore</button><button class="b ghost" data-open="' + c.id + '">Open</button></div>'; }).join('') + '</div>' : '');
+
+  var f = document.querySelector('.flash'); if (f) f.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
+  flashId = null;
+  if (dlgKind === 'card' && openCard && $('dlg').classList.contains('on')) {
+    var a = document.activeElement && document.activeElement.id; cardDlg(openCard);
+    if (a && $(a)) $(a).focus();
+  }
+}
+
+/* ---------- card window: stage, fields, one checklist, dated comments ---------- */
+function fieldInput(f, v) {
+  v = v == null ? '' : v;
+  if (f.type === 'multi') return '<div class="full"><label>' + esc(f.name) + '</label><textarea data-f="' + f.id + '" data-grow rows="1">' + esc(v) + '</textarea></div>';
+  if (f.type === 'money') return '<div><label>' + esc(f.name) + '</label><div class="money"><span>$</span><input type="number" step="0.01" min="0" inputmode="decimal" value="' + esc(v) + '" data-f="' + f.id + '"></div></div>';
+  return '<div><label>' + esc(f.name) + '</label><input type="' + (f.type === 'date' ? 'date' : f.type === 'number' ? 'number' : 'text') + '"' + (f.type === 'number' ? ' step="any" inputmode="decimal"' : '') + ' value="' + esc(v) + '" data-f="' + f.id + '"></div>';
+}
+function cardDlg(cid) {
+  var hit = findCard(cid);
+  if (!hit) { openCard = null; return; }
+  var pl = hit.pl, c = hit.c; openCard = cid;
+  var done = c.tasks.filter(function (t) { return t.done; }).length, pct = c.tasks.length ? done / c.tasks.length * 100 : 0, t0 = today();
+  var comments = c.comments.slice().reverse().sort(function (a, b) { return b.at.localeCompare(a.at); });
+  openDlg('<h3><textarea class="cw-title" id="cw-title" data-f="title" data-grow rows="1" aria-label="Card title">' + esc(c.title) + '</textarea></h3><div class="body">'
+    + '<p class="lead">' + esc(pl.name) + (c.archived ? ' · archived' : '') + '</p>'
+    + '<label>Stage</label><div class="cw-stage">' + pl.stages.map(function (s) { return '<button class="' + (s.id === c.stage ? 'on' : '') + '" data-stage="' + s.id + '">' + esc(s.name) + '</button>'; }).join('') + '</div>'
+    + (pl.fields.length ? '<div class="cw-fields">' + pl.fields.map(function (f) { return fieldInput(f, c.fields[f.id]); }).join('') + '</div>' : '')
+    + '<div class="sec-h">Checklist <span class="pill">' + done + '/' + c.tasks.length + '</span><span class="bar"><i style="width:' + pct + '%"></i></span></div>'
+    + c.tasks.map(function (t) {
+      return '<div class="task' + (t.done ? ' done' : '') + '"><button class="chk' + (t.done ? ' on' : '') + '" data-tick="' + t.id + '" aria-label="Done">' + (t.done ? '✓' : '') + '</button>'
+        + '<input class="tt" value="' + esc(t.title) + '" data-tt="' + t.id + '" aria-label="Task">'
+        + (t.done && !t.due ? '' : '<input type="date" class="td' + (t.due ? (t.due < t0 && !t.done ? ' over' : '') : ' empty') + '" value="' + (t.due || '') + '" data-td="' + t.id + '" title="Due date" aria-label="Due date">')
+        + '<button class="x" data-tdel="' + t.id + '" title="Remove">×</button></div>';
+    }).join('')
+    + '<form class="addrow" id="cw-add"><input id="cw-add-in" placeholder="Add an item" autocomplete="off"><button class="b">Add</button></form>'
+    + '<div class="sec-h">Comments' + (c.comments.length ? ' <span class="pill">' + c.comments.length + '</span>' : '') + '</div>'
+    + '<div class="cm-new"><textarea id="cw-cm-in" data-grow rows="1" placeholder="Write a comment…"></textarea><div class="row"><span>Dated today · ⌘ Enter to post</span><button class="b y" id="cw-cm-post" type="button">Add comment</button></div></div>'
+    + (comments.length ? '<div class="cm-list">' + comments.map(function (m) { return '<div class="cm-item"><div class="cd">' + niceDate(m.at, true) + '<button data-cdel="' + m.id + '" title="Delete comment">×</button></div><div class="ct">' + esc(m.text) + '</div></div>'; }).join('') + '</div>' : '')
+    + '</div><div class="foot"><button class="b r" data-delcard="' + c.id + '">Delete</button><button class="amb" data-menu="' + c.id + '" style="margin-left:0;padding:7px 12px;font-size:11px;letter-spacing:.06em">ACTIONS ⋯</button><span class="sp"></span><button class="b y" data-close>Done</button></div>', 'card');
+
+  var box = $('dlg-box');
+  box.querySelectorAll('[data-f]').forEach(function (inp) {
+    inp.addEventListener('input', function () {
+      var k = inp.getAttribute('data-f');
+      if (k === 'title') c.title = inp.value; else if (inp.value === '') delete c.fields[k]; else c.fields[k] = inp.value;
+      save();
+    });
+    inp.addEventListener('change', function () { render(); });
+  });
+  $('cw-title').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); this.blur(); } });
+  box.querySelectorAll('[data-tt]').forEach(function (inp) {
+    inp.addEventListener('input', function () { var t = c.tasks.find(function (x) { return x.id === inp.getAttribute('data-tt'); }); if (t) { t.title = inp.value; save(); } });
+    inp.addEventListener('change', function () { render(); });
+  });
+  box.querySelectorAll('[data-td]').forEach(function (inp) {
+    inp.addEventListener('change', function () { var t = c.tasks.find(function (x) { return x.id === inp.getAttribute('data-td'); }); if (t) { t.due = inp.value || null; commit(); } });
+  });
+  box.querySelectorAll('[data-grow]').forEach(function (t) { var g = function () { t.style.height = 'auto'; t.style.height = (t.scrollHeight + 2) + 'px'; }; t.addEventListener('input', g); g(); });
+  $('cw-add').onsubmit = function (e) { e.preventDefault(); var v = $('cw-add-in').value.trim(); if (!v) return; c.tasks.push(normTask({ title: v })); commit(); $('cw-add-in').focus(); };
+  var cm = $('cw-cm-in');
+  var post = function () { var v = cm.value.trim(); if (!v) return; c.comments.push({ id: uid('m'), text: v, at: today() }); commit(); };
+  cm.addEventListener('keydown', function (e) { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); post(); } });
+  $('cw-cm-post').onclick = post;
+}
+
+/* ---------- ⋯ menu ---------- */
+function closeMenu() { var m = $('amenu'); if (m) m.remove(); document.querySelectorAll('.amb.open').forEach(function (b) { b.classList.remove('open'); }); }
+function openMenu(btn, cid) {
+  closeMenu(); btn.classList.add('open');
+  var hit = findCard(cid), pl = hit.pl, c = hit.c;
+  function it(icon, label, attrs, cls) { return '<button class="' + (cls || '') + '" ' + attrs + '><i>' + icon + '</i>' + label + '</button>'; }
+  var html = it('+', 'Add a task', 'data-quick-task="' + cid + '"')
+    + (pl.stages.length > 1 ? '<div class="sec">Move to stage</div>' + pl.stages.filter(function (s) { return s.id !== c.stage; }).map(function (s) { return it('→', esc(s.name), 'data-move="' + cid + '" data-to="' + s.id + '"', 'sub'); }).join('') : '')
+    + '<div class="sec">More</div>'
+    + (state.pipelines.length > 1 ? it('⇄', 'Move to another pipeline…', 'data-other="' + cid + '"') : '')
+    + it('▢', c.archived ? 'Restore from archive' : 'Archive', (c.archived ? 'data-unarch="' : 'data-arch="') + cid + '"')
+    + it('×', 'Delete', 'data-delcard="' + cid + '"', 'red');
+  var m = document.createElement('div'); m.id = 'amenu'; m.setAttribute('role', 'menu'); m.innerHTML = html; document.body.appendChild(m);
+  var r = btn.getBoundingClientRect(), mw = m.offsetWidth, mh = m.offsetHeight;
+  m.style.left = Math.max(8, Math.min(r.right - mw, innerWidth - mw - 8)) + 'px';
+  m.style.top = (r.bottom + mh + 8 > innerHeight ? Math.max(8, r.top - mh - 4) : r.bottom + 4) + 'px';
+}
+addEventListener('scroll', closeMenu, true);
+addEventListener('resize', closeMenu);
+
+/* ---------- move a card to another pipeline: same-named fields carry over, the rest becomes a dated comment ---------- */
+function otherDlg(cid) {
+  var hit = findCard(cid), others = state.pipelines.filter(function (p) { return p !== hit.pl; });
+  openDlg('<h3>Move to another pipeline</h3><div class="body"><p class="lead">Pick the pipeline and the stage. Tasks, comments and matching fields come along.</p>'
+    + others.map(function (o) { return '<label>' + esc(o.name) + '</label><div class="cw-stage">' + o.stages.map(function (s) { return '<button data-domove="' + cid + '" data-pl="' + o.id + '" data-st="' + s.id + '">' + esc(s.name) + '</button>'; }).join('') + '</div>'; }).join('')
+    + '</div><div class="foot"><span class="sp"></span><button class="b ghost" data-close>Cancel</button></div>');
+}
+function moveCard(cid, toId, stageId) {
+  var hit = findCard(cid), from = hit.pl, c = hit.c, to = pipe(toId), fields = {}, left = [];
+  from.fields.forEach(function (sf) {
+    var v = c.fields[sf.id]; if (v === '' || v == null) return;
+    var tf = to.fields.find(function (x) { return x.name.toLowerCase() === sf.name.toLowerCase(); });
+    if (tf) fields[tf.id] = v; else left.push(sf.name + ': ' + (sf.type === 'multi' ? v : fieldText(sf, v)));
+  });
+  if (left.length) c.comments.push({ id: uid('m'), text: 'Moved from ' + from.name + '.\n' + left.join('\n'), at: today() });
+  c.fields = fields; c.stage = stageId; c.stageAt = today();
+  from.cards = from.cards.filter(function (x) { return x !== c; }); to.cards.push(c);
+  openCard = null; dlgKind = null; $('dlg').classList.remove('on'); flashId = c.id; commit();
+  toast('Moved to ' + to.name + ' · ' + stage(to, stageId).name, 'View', function () { ui.view = to.id; saveUi(); flashId = c.id; render(); });
+}
+
+/* ---------- pipeline builder: name, stages, card fields, checklist for new cards ---------- */
+var draft = null;
+function pipeDlg(plid) {
+  var pl = plid ? pipe(plid) : null;
+  if (!draft) draft = pl ? JSON.parse(JSON.stringify({ id: pl.id, name: pl.name, stages: pl.stages, fields: pl.fields, checklist: pl.checklist }))
+    : Object.assign(JSON.parse(JSON.stringify(makePipe('', 'wedding'))), { id: null, tpl: 'wedding', name: '' });
+  var D = draft;
+  function row(kind, i, inner) { return '<div class="bl-row">' + inner + '<button class="mini" type="button" data-dmv="' + kind + ':' + i + ':-1" title="Up">↑</button><button class="mini" type="button" data-dmv="' + kind + ':' + i + ':1" title="Down">↓</button><button class="mini" type="button" data-drm="' + kind + ':' + i + '" title="Remove">×</button></div>'; }
+  openDlg('<h3>' + (pl ? 'Edit pipeline' : 'New pipeline') + '</h3><div class="body">'
+    + (pl ? '' : '<label>Start from</label><div class="tpl-pick">' + Object.keys(TEMPLATES).map(function (k) { var t = TEMPLATES[k]; return '<button type="button" class="' + (D.tpl === k ? 'on' : '') + '" data-tpl="' + k + '">' + t.name + '<small>' + t.sub + '</small></button>'; }).join('') + '</div>')
+    + '<label>Name</label><input type="text" id="d-name" value="' + esc(D.name) + '" placeholder="e.g. Weddings 2027">'
+    + '<div class="bl-sec">Stages<small>Left to right on the board. Tick “Done” on the stage that means finished.</small></div>'
+    + D.stages.map(function (s, i) { return row('stages', i, '<input type="text" data-dst="' + i + '" value="' + esc(s.name) + '" placeholder="Stage name"><label class="dn"><input type="radio" name="dn" data-ddone="' + i + '"' + (s.done ? ' checked' : '') + '> Done</label>'); }).join('')
+    + '<button class="b ghost" type="button" data-dadd="stages">+ Stage</button>'
+    + '<div class="bl-sec">Card fields<small>The details each card holds. Dates and the first two short fields show on the card; money adds up in the summary.</small></div>'
+    + D.fields.map(function (f, i) { return row('fields', i, '<input type="text" data-dfn="' + i + '" value="' + esc(f.name) + '" placeholder="Field name"><select data-dft="' + i + '">' + FIELD_TYPES.map(function (t) { return '<option value="' + t[0] + '"' + (f.type === t[0] ? ' selected' : '') + '>' + t[1] + '</option>'; }).join('') + '</select>'); }).join('')
+    + '<button class="b ghost" type="button" data-dadd="fields">+ Field</button>'
+    + '<div class="bl-sec">Checklist for new cards<small>One item per line. Every new card starts with this list. Changing it doesn’t touch existing cards.</small></div>'
+    + '<textarea id="d-cl" style="min-height:150px">' + esc(D.checklist.join('\n')) + '</textarea>'
+    + '</div><div class="foot">' + (pl && pl.id !== 'projects' ? '<button class="b r" data-delpipe="' + pl.id + '">Delete pipeline</button>' : '')
+    + '<span class="sp"></span><button class="b ghost" data-dcancel>Cancel</button><button class="b y" data-dsave>' + (pl ? 'Save' : 'Create pipeline') + '</button></div>');
+  var box = $('dlg-box');
+  $('d-name').oninput = function () { D.name = this.value; };
+  box.querySelectorAll('[data-dst]').forEach(function (i) { i.oninput = function () { D.stages[+i.getAttribute('data-dst')].name = i.value; }; });
+  box.querySelectorAll('[data-ddone]').forEach(function (i) { i.onchange = function () { D.stages.forEach(function (s, k) { s.done = k === +i.getAttribute('data-ddone'); }); }; });
+  box.querySelectorAll('[data-dfn]').forEach(function (i) { i.oninput = function () { D.fields[+i.getAttribute('data-dfn')].name = i.value; }; });
+  box.querySelectorAll('[data-dft]').forEach(function (i) { i.onchange = function () { D.fields[+i.getAttribute('data-dft')].type = i.value; }; });
+  $('d-cl').oninput = function () { D.checklist = this.value.split('\n').map(function (x) { return x.trim(); }).filter(Boolean); };
+}
+function savePipe() {
+  var D = draft;
+  if (!D.name.trim()) { toast('Give the pipeline a name'); $('d-name').focus(); return; }
+  D.stages = D.stages.filter(function (s) { return s.name.trim(); });
+  if (!D.stages.length) { toast('Add at least one stage'); return; }
+  D.fields = D.fields.filter(function (f) { return f.name.trim(); });
+  var pl = D.id ? pipe(D.id) : null;
+  if (pl) {
+    pl.name = D.name.trim(); pl.stages = D.stages; pl.fields = D.fields; pl.checklist = D.checklist;
+    pl.cards.forEach(function (c) { if (!pl.stages.some(function (s) { return s.id === c.stage; })) { c.stage = pl.stages[0].id; c.stageAt = today(); } });   // cards on a removed stage go to the first one
+  } else {
+    pl = normPipe({ name: D.name.trim(), stages: D.stages, fields: D.fields, checklist: D.checklist });
+    state.pipelines.push(pl);
+  }
+  draft = null; ui.view = pl.id; saveUi(); dlgKind = null; $('dlg').classList.remove('on'); commit();
+  toast(pl.name + ' saved');
+}
+
+/* ---------- clicks ---------- */
+document.addEventListener('click', function (e) {
+  if (!e.target.closest('[data-menu]')) closeMenu();
+  var el = e.target.closest('button,[data-card]'); if (!el) return;
+  var d = el.dataset;
+  if (d.menu) { e.stopPropagation(); if (el.classList.contains('open')) return closeMenu(); return openMenu(el, d.menu); }
+  if ('close' in d) return closeDlg();
+  if (d.view) { ui.view = d.view; ui.showArch = false; saveUi(); return render(); }
+  if (d.card) return cardDlg(d.card);
+  if (d.open) return cardDlg(d.open);
+  if (d.add) {
+    var pl0 = current();
+    openDlg('<h3>New card</h3><form class="body" id="nc"><label>Title</label><input id="nc-t" placeholder="' + (pl0.id === 'projects' ? 'Project name' : 'e.g. 270612SMJO · Sam & Jordan') + '" autocomplete="off"><p class="lead" style="margin-top:8px">Into “' + esc(stage(pl0, d.add).name) + '”' + (pl0.checklist.length ? ', with the ' + pl0.checklist.length + '-item checklist.' : '.') + '</p></form>'
+      + '<div class="foot"><span class="sp"></span><button class="b ghost" data-close>Cancel</button><button class="b y" data-addgo="' + d.add + '">Add card</button></div>');
+    $('nc').onsubmit = function (ev) { ev.preventDefault(); $('dlg-box').querySelector('[data-addgo]').click(); };
+    setTimeout(function () { $('nc-t').focus(); }, 30);
+    return;
+  }
+  if (d.addgo) { var t = $('nc-t').value.trim(); if (!t) return $('nc-t').focus(); var pl1 = current(), c1 = newCard(pl1, d.addgo, t); dlgKind = null; flashId = c1.id; commit(); return cardDlg(c1.id); }
+  if (d.stage) { var h = findCard(openCard); if (h.c.stage !== d.stage) { h.c.stage = d.stage; h.c.stageAt = today(); } return commit(); }
+  if (d.tick) { var hc = findCard(openCard), tk = hc.c.tasks.find(function (x) { return x.id === d.tick; }); tk.done = !tk.done; tk.doneAt = tk.done ? today() : null; return commit(); }
+  if (d.tdel) { var ht = findCard(openCard); ht.c.tasks = ht.c.tasks.filter(function (x) { return x.id !== d.tdel; }); return commit(); }
+  if (d.cdel) { if (!confirm('Delete this comment?')) return; var hm = findCard(openCard); hm.c.comments = hm.c.comments.filter(function (m) { return m.id !== d.cdel; }); return commit(); }
+  if (d.quickTask) { var hq = findCard(d.quickTask), v = prompt('New task for “' + hq.c.title + '”'); if (v && v.trim()) { hq.c.tasks.push(normTask({ title: v.trim() })); flashId = hq.c.id; commit(); } return; }
+  if (d.move) { var hv = findCard(d.move); hv.c.stage = d.to; hv.c.stageAt = today(); flashId = hv.c.id; return commit(); }
+  if (d.other) { openCard = null; return otherDlg(d.other); }
+  if (d.domove) return moveCard(d.domove, d.pl, d.st);
+  if (d.arch) { var ha = findCard(d.arch); ha.c.archived = true; if (openCard === ha.c.id) { openCard = null; dlgKind = null; $('dlg').classList.remove('on'); } commit(); return toast('Archived “' + ha.c.title + '”', 'Undo', function () { ha.c.archived = false; commit(); }); }
+  if (d.unarch) { var hu = findCard(d.unarch); hu.c.archived = false; flashId = hu.c.id; return commit(); }
+  if (d.delcard) {
+    var hd = findCard(d.delcard); if (!confirm('Delete “' + hd.c.title + '” for good?')) return;
+    hd.pl.cards = hd.pl.cards.filter(function (x) { return x !== hd.c; });
+    if (openCard === hd.c.id) { openCard = null; dlgKind = null; $('dlg').classList.remove('on'); }
+    return commit();
+  }
+  if ('toggleArch' in d) { ui.showArch = !ui.showArch; saveUi(); return render(); }
+  if ('newpipe' in d) { draft = null; return pipeDlg(null); }
+  if (d.editPipe) { draft = null; return pipeDlg(d.editPipe); }
+  if (d.tpl) { var nm = draft.name; draft = Object.assign(JSON.parse(JSON.stringify(makePipe(nm, d.tpl))), { id: null, tpl: d.tpl, name: nm }); return pipeDlg(null); }
+  if (d.dadd) { draft[d.dadd].push(d.dadd === 'stages' ? { id: uid('s'), name: '', done: false } : { id: uid('f'), name: '', type: 'text' }); pipeDlg(draft.id); var ins = $('dlg-box').querySelectorAll(d.dadd === 'stages' ? '[data-dst]' : '[data-dfn]'); if (ins.length) ins[ins.length - 1].focus(); return; }
+  if (d.dmv) { var p = d.dmv.split(':'), a = draft[p[0]], i = +p[1], j = i + +p[2]; if (j >= 0 && j < a.length) { var tmp = a[i]; a[i] = a[j]; a[j] = tmp; } return pipeDlg(draft.id); }
+  if (d.drm) { var q = d.drm.split(':'); draft[q[0]].splice(+q[1], 1); return pipeDlg(draft.id); }
+  if ('dsave' in d) return savePipe();
+  if ('dcancel' in d) { draft = null; return closeDlg(); }
+  if (d.delpipe) {
+    var pd = pipe(d.delpipe); if (!confirm('Delete “' + pd.name + '” and its ' + pd.cards.length + ' card' + (pd.cards.length === 1 ? '' : 's') + '?')) return;
+    state.pipelines = state.pipelines.filter(function (x) { return x !== pd; });
+    draft = null; ui.view = 'projects'; saveUi(); dlgKind = null; $('dlg').classList.remove('on'); return commit();
+  }
+});
+
+/* ---------- drag a card to another stage (mouse; on phones use ⋯ → Move to stage) ---------- */
+var dragId = null;
+document.addEventListener('dragstart', function (e) { var c = e.target.closest && e.target.closest('[data-card]'); if (!c) return; dragId = c.getAttribute('data-card'); c.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', dragId); });
+document.addEventListener('dragend', function () { dragId = null; document.querySelectorAll('.dragging,.pcol.over').forEach(function (x) { x.classList.remove('dragging', 'over'); }); });
+document.addEventListener('dragover', function (e) { var col = e.target.closest && e.target.closest('[data-col]'); if (!col || !dragId) return; e.preventDefault(); document.querySelectorAll('.pcol.over').forEach(function (x) { if (x !== col) x.classList.remove('over'); }); col.classList.add('over'); });
+document.addEventListener('drop', function (e) {
+  var col = e.target.closest && e.target.closest('[data-col]'); if (!col || !dragId) return; e.preventDefault();
+  var hit = findCard(dragId), to = col.getAttribute('data-col');
+  if (hit && hit.c.stage !== to) { hit.c.stage = to; hit.c.stageAt = today(); flashId = hit.c.id; commit(); }
+});
+
+addEventListener('pagehide', saveNow);
+document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'hidden') saveNow(); });
+setInterval(function () { if (!$('dlg').classList.contains('on')) render(); }, 30 * 60 * 1000);   // "new here" → "1d in stage" after midnight
+
+/* ---------- sync adapter: what this tool hands the shared sync code ---------- */
+var SYNC = {
+  doc: 'pipelines',                          // users/{uid}/tools/pipelines
+  storageKey: STORAGE_KEY,
+  noun: 'pipelines',
+
+  payload: function () { return { pipelines: state.pipelines }; },   // which board is open is not an edit
+
+  /* The database drops empty arrays and objects; normalise() rebuilds them. */
+  apply: function (d, remote) {
+    var next = normalise(d);
+    if (!next) return false;
+    state = next;
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
+    if (openCard && !findCard(openCard)) { openCard = null; dlgKind = null; $('dlg').classList.remove('on'); }
+    render();
+    return true;
+  },
+
+  /* Only the empty Projects board: nothing worth protecting. */
+  untouched: function () { return JSON.stringify(state) === JSON.stringify(defaultState()); },
+
+  flush: function () { saveNow(); },
+
+  describe: function (d) {
+    var ps = listOf(d && d.pipelines), cards = ps.reduce(function (n, p) { return n + listOf(p && p.cards).length; }, 0);
+    return ps.length + ' pipeline' + (ps.length === 1 ? '' : 's') + ', ' + cards + ' card' + (cards === 1 ? '' : 's');
+  },
+
+  buttonClass: function (s) {
+    return 'tbtn sync-btn' + (s === 'synced' ? ' ok' : '') + ((s === 'conflict' || s === 'error') ? ' bad' : '');
+  }
+};
+
+/* ============================================================
+   Cloud sync — local first, optional, live while signed in
+
+   Shared by Project Phases, Budget Tracker and Idea Bank. Keep the copies
+   identical: everything tool-specific lives in the SYNC adapter just above.
+
+   Sync is by invitation: Xavier's account, plus the people he approves on
+   the Access page (members/{uid}). Signing in is how someone asks — their
+   request appears there, and sync starts on its own once it is approved.
+
+   Signed out, the tool is purely local and the Firebase SDK is never
+   fetched. Signed in as the owner, the cloud copy is watched live, so a
+   change on one device shows up on the other within a second or two.
+
+   Every write goes through the same pass — read the cloud, compare it
+   with the watermark, then act — so a device that is behind can never
+   overwrite a newer copy. When both sides changed, it asks.
+   ============================================================ */
+
+/* Public Firebase identifiers — not secrets. They ship in every Firebase
+   web app; the database rules are what protect the data. */
+var FIREBASE = {
+  apiKey:      'AIzaSyCu0CA6eLWIkhhl-Z7jr_dDisuXDt1dKco',
+  authDomain:  'xdb-tools.firebaseapp.com',
+  databaseURL: 'https://xdb-tools-default-rtdb.firebaseio.com',
+  projectId:   'xdb-tools',
+  appId:       '1:6009567091:web:f7ee8c43ebe1bd25fcb706'
+};
+var SDK = 'https://www.gstatic.com/firebasejs/10.12.2/';
+
+/* Who may sync. Courtesy checks only — the database rules enforce all of
+   it, and would refuse anyone else even if these lines were edited away. */
+var OWNER = 'jGJdt3h4EeaOL3mYWUHA4yMZsRx2';
+var ACCESS_URL = '../access.html';   // where requests are approved; tools live in tools/
+var META_KEY = SYNC.storageKey + '.meta';   // watermarks live beside the data, not in it
+
+var cloud = {
+  on: !!FIREBASE.databaseURL,
+  status: 'signedout',  // signedout | working | synced | conflict | pending | private | error
+  uid: null,            // set only when the signed-in account owns this sync
+  authed: false,
+  listening: false,
+  at: 0,
+  msg: '',
+  fb: null,
+  timer: null,
+  busy: false,          // a sync pass is in flight
+  again: false,         // something changed while it was, so run one more
+  pending: null,        // a conflict waiting on a decision
+  print: null,          // the synced data as last seen, to tell edits from re-saves
+  outgoing: 0,          // stamp of our own latest write, so its echo is not news
+  unwatch: null,
+  unmember: null,       // live watch on this account's membership
+  asked: false          // an access request was sent this session
+};
+
+function syncEl(id) { return document.getElementById(id); }
+
+/* No connection is not a failure: the tool keeps saving here and sends it all
+   once the connection is back. Firebase says "Client is offline" without a code. */
+function errCode(err) {
+  var c = (err && err.code) || '', m = (err && err.message) || '';
+  if (navigator.onLine === false) return 'unavailable';
+  if (!c && /offline|network|failed to fetch|load failed|dynamically imported/i.test(m)) return 'unavailable';
+  return c || 'failed';
+}
+function isOffline(code) { return code === 'unavailable' || code === 'timeout' || code === 'auth/network-request-failed'; }
+
+function explain(code) {
+  var offline = 'No connection. Everything still saves on this device and will sync when you are back online.';
+  var map = {
+    'auth/unauthorized-domain':
+      'This site is not on the Firebase authorised domains list. Add ' + location.hostname +
+      ' under Authentication → Settings → Authorized domains.',
+    'auth/operation-not-allowed':
+      'Google sign-in is not enabled for this Firebase project. Turn it on under Authentication → Sign-in method.',
+    'auth/popup-blocked':
+      'Your browser blocked the sign-in popup. Allow popups for this site, or try again.',
+    'auth/popup-closed-by-user':
+      'The sign-in window closed before it finished.',
+    'auth/network-request-failed': offline,
+    'unavailable': offline,
+    'timeout': offline,
+    'PERMISSION_DENIED':
+      'The database rules refused this account. Check the rules allow users/<your uid>.'
+  };
+  return map[code] || ('Sync failed' + (code ? ' (' + code + ')' : '') + '.');
+}
+
+function deviceName() {
+  var ua = navigator.userAgent;
+  if (/iPhone/.test(ua)) return 'iPhone';
+  if (/iPad/.test(ua)) return 'iPad';
+  if (/Android/.test(ua)) return 'Android';
+  if (/Mac OS X/.test(ua)) return 'Mac';
+  if (/Windows/.test(ua)) return 'Windows';
+  return 'this device';
+}
+
+/* Kept out of the tool's own data so exports stay clean and an imported
+   file never carries another device's watermark. */
+function meta() {
+  try {
+    var m = JSON.parse(localStorage.getItem(META_KEY) || '{}');
+    return { updatedAt: +m.updatedAt || 0, lastSyncedAt: +m.lastSyncedAt || 0, signedIn: !!m.signedIn };
+  } catch (e) { return { updatedAt: 0, lastSyncedAt: 0, signedIn: false }; }
+}
+function setMeta(patch) {
+  var m = meta();
+  for (var k in patch) m[k] = patch[k];
+  try { localStorage.setItem(META_KEY, JSON.stringify(m)); } catch (e) {}
+  return m;
+}
+
+/* Stamps only ever move forward past the watermark. Phone and laptop clocks
+   disagree by a second or two; without this, an edit made just after
+   taking a copy from a device whose clock runs ahead would look older than
+   the copy and never be sent. */
+function nextStamp() {
+  return Math.max(Date.now(), meta().lastSyncedAt + 1, cloud.outgoing + 1);
+}
+
+function syncPrint() { return JSON.stringify(SYNC.payload()); }
+
+/* A device that already held real data before sync existed has no
+   watermark, which would read as "never edited" and let the cloud replace
+   it silently. Mark it as holding unsynced work instead, so the worst case
+   is being asked. Runs once at boot, before anything is compared. */
+function seedMeta() {
+  var noWatermark = false;
+  try { noWatermark = localStorage.getItem(META_KEY) == null; } catch (e) {}
+  if (noWatermark && !SYNC.untouched()) setMeta({ updatedAt: 1 });
+  cloud.print = syncPrint();
+}
+
+/* ---- SDK, loaded once and only on demand ---- */
+/* With the site-wide account (assets/account.js) present, the tool shares
+   its one Firebase connection and its sign-in; opened on its own, it runs
+   its own. */
+function account() { return window.xdbAccount || null; }
+function loadSDK() {
+  if (cloud.fb) return Promise.resolve(cloud.fb);
+  if (account()) return account().sdk().then(function (s) {
+    cloud.fb = { auth: s.auth, db: s.db, a: s.a, f: s.f };
+    return cloud.fb;
+  });
+  return Promise.all([
+    import(SDK + 'firebase-app.js'),
+    import(SDK + 'firebase-auth.js'),
+    import(SDK + 'firebase-database.js')
+  ]).then(function (mods) {
+    var application = mods[0].initializeApp(FIREBASE);
+    cloud.fb = { auth: mods[1].getAuth(application), db: mods[2].getDatabase(application), a: mods[1], f: mods[2] };
+    return cloud.fb;
+  });
+}
+function docRef() { return cloud.fb.f.ref(cloud.fb.db, 'users/' + cloud.uid + '/tools/' + SYNC.doc); }
+
+function withTimeout(p, ms) {
+  return Promise.race([p, new Promise(function (_, no) {
+    setTimeout(function () { no({ code: 'timeout' }); }, ms);
+  })]);
+}
+
+/* ---- the three way decision ----------------------------------------
+   Local and cloud timestamps alone cannot tell an edit from a stale copy.
+   The watermark — the cloud stamp we last agreed with — is what makes
+   "both changed since we last spoke" detectable. */
+function reconcile(remote) {
+  var m = meta();
+  var localAt = m.updatedAt, syncedAt = m.lastSyncedAt;
+  var remoteAt = remote ? (+remote.updatedAt || 0) : 0;
+  if (!remote) return localAt ? 'push' : 'idle';
+  if (remoteAt === syncedAt) return localAt > syncedAt ? 'push' : 'idle';
+  return localAt > syncedAt ? 'conflict' : 'pull';
+}
+
+/* Taking a copy re-renders the page. If a field had the cursor, put it
+   back, so a change arriving from the other device does not throw you out
+   of where you were. */
+function keepingFocus(fn) {
+  function fields() { return Array.prototype.slice.call(document.querySelectorAll('input,textarea,select')); }
+  var a = document.activeElement, i = fields().indexOf(a), sel = null;
+  try { if (i >= 0 && a.selectionStart != null) sel = [a.selectionStart, a.selectionEnd]; } catch (e) {}
+  var result = fn();
+  var b = i >= 0 ? fields()[i] : null;
+  if (b && b !== document.activeElement) {
+    try { b.focus({ preventScroll: true }); if (sel) b.setSelectionRange(sel[0], sel[1]); } catch (e) {}
+  }
+  return result;
+}
+
+function adopt(remote) {
+  var d = remote && remote.data;
+  if (!d) return false;
+  if (!keepingFocus(function () { return SYNC.apply(d, remote); })) return false;
+  cloud.print = syncPrint();
+  var stamp = +remote.updatedAt || Date.now();
+  setMeta({ updatedAt: stamp, lastSyncedAt: stamp });
+  return true;
+}
+
+function pushNow() {
+  var stamp = nextStamp();
+  var print = syncPrint();
+  cloud.outgoing = stamp;
+  return cloud.fb.f.set(docRef(), { data: JSON.parse(print), updatedAt: stamp, device: deviceName() })
+    .then(function () {
+      var ahead = syncPrint() !== print;   // edited again while this was on its way
+      setMeta({ lastSyncedAt: stamp, updatedAt: ahead ? Math.max(meta().updatedAt, stamp + 1) : stamp });
+      cloud.at = stamp;
+      if (ahead) cloud.again = true;
+    });
+}
+function pullNow() {
+  return withTimeout(cloud.fb.f.get(docRef()), 12000).then(function (snap) {
+    return snap.exists() ? snap.val() : null;
+  });
+}
+
+function decide(remote) {
+  var move = reconcile(remote);
+  if (move === 'pull')     { adopt(remote); cloud.at = Date.now(); setStatus('synced'); return; }
+  if (move === 'push')     { return pushNow().then(function () { setStatus('synced'); }); }
+  if (move === 'conflict') { cloud.pending = remote; setStatus('conflict'); return; }
+  cloud.at = Date.now();
+  setStatus('synced');
+}
+
+/* One pass. Only one runs at a time; anything that asks while one is in
+   flight gets a second pass afterwards rather than being dropped. `known`
+   is a copy the live listener already has in hand, which saves a read. */
+function syncNow(userAsked, known) {
+  if (!cloud.on || !cloud.uid) return Promise.resolve();
+  if (cloud.busy) { cloud.again = true; return Promise.resolve(); }
+  if (cloud.status === 'conflict' && !userAsked) return Promise.resolve();
+  cloud.busy = true;
+  cloud.again = false;
+  clearTimeout(cloud.timer);
+  setStatus('working');
+  return (known ? Promise.resolve(known) : pullNow()).then(decide).then(function () {
+    cloud.busy = false;
+    if (cloud.again && cloud.status !== 'conflict') return syncNow();
+  }, function (err) {
+    cloud.busy = false;
+    cloud.msg = errCode(err);
+    setStatus('error');
+    if (userAsked) console.warn('[sync]', err);
+  });
+}
+
+/* Called on every save. Tools re-save on load, on navigation and on the
+   way out, so the fingerprint decides whether anything was really edited —
+   otherwise merely opening the tool would count as a change. */
+function cloudTouch() {
+  if (cloud.print === null) return;          // still booting
+  var p = syncPrint();
+  if (p === cloud.print) return;
+  cloud.print = p;
+  setMeta({ updatedAt: nextStamp() });
+  if (!cloud.on || !cloud.uid) return;
+  clearTimeout(cloud.timer);
+  cloud.timer = setTimeout(function () { syncNow(); }, 600);
+}
+
+/* ---- live ---- */
+function watch() {
+  if (cloud.unwatch || !cloud.uid) return;
+  cloud.unwatch = cloud.fb.f.onValue(docRef(), function (snap) {
+    var remote = snap.exists() ? snap.val() : null;
+    if (!remote) return;
+    var at = +remote.updatedAt || 0;
+    if (at === cloud.outgoing || at === meta().lastSyncedAt) return;   // our own write, or one we already have
+    if (cloud.status === 'conflict') { cloud.pending = remote; paintSync(); return; }
+    if (cloud.busy) { cloud.again = true; return; }
+    syncNow(false, remote);
+  }, function (err) {
+    cloud.unwatch = null;
+    cloud.msg = errCode(err);
+    setStatus('error');
+  });
+}
+function stopWatching() {
+  if (cloud.unwatch) { cloud.unwatch(); cloud.unwatch = null; }
+}
+
+/* ---- membership ----
+   Xavier always syncs. Anyone else is watched live at members/{uid}: when
+   he approves them, sync starts without a reload; if he removes them, it
+   stops and the tool carries on locally. Until then signing in files a
+   request (once per session) and the tool says so. */
+function admit(uid) {
+  if (cloud.uid === uid) return;
+  cloud.uid = uid;
+  syncNow();
+  watch();
+}
+function stopMembership() {
+  if (cloud.unmember) { cloud.unmember(); cloud.unmember = null; }
+}
+function askForAccess(user) {
+  if (cloud.asked) { setStatus('pending'); return; }
+  cloud.asked = true;
+  var ref = cloud.fb.f.ref(cloud.fb.db, 'requests/' + user.uid);
+  cloud.fb.f.set(ref, {
+    email: user.email || '', name: (user.displayName || '').slice(0, 120), at: Date.now(), tool: SYNC.doc
+  }).then(function () {
+    if (!cloud.uid) setStatus('pending');
+  }, function () {
+    // refused: this account was declined — say so, and keep working locally
+    if (!cloud.uid) setStatus('private');
+  });
+}
+function checkMembership(user) {
+  if (user.uid === OWNER) { admit(user.uid); return; }
+  setStatus('working');
+  cloud.unmember = cloud.fb.f.onValue(cloud.fb.f.ref(cloud.fb.db, 'members/' + user.uid), function (snap) {
+    if (snap.exists()) { admit(user.uid); return; }
+    if (cloud.uid) { cloud.uid = null; stopWatching(); clearTimeout(cloud.timer); }
+    askForAccess(user);
+  }, function () {
+    cloud.uid = null;
+    stopWatching();
+    setStatus('private');
+  });
+}
+
+/* ---- sign in / out ---- */
+function listen(fb) {
+  if (cloud.listening) return;
+  cloud.listening = true;
+  fb.a.onAuthStateChanged(fb.auth, function (user) {
+    cloud.authed = !!user;
+    setMeta({ signedIn: !!user });
+    stopWatching();
+    stopMembership();
+    cloud.uid = null;
+    cloud.asked = false;
+    if (!user) { setStatus('signedout'); return; }
+    checkMembership(user);
+  });
+}
+
+function signIn() {
+  if (!cloud.on) return;
+  setMeta({ signedIn: true });   // so a redirect sign-in is picked up when the page comes back
+  setStatus('working');
+  if (account()) {
+    loadSDK().then(listen).catch(function () {});
+    account().signIn().catch(function (err) {
+      if (err && err.code === 'auth/popup-closed-by-user') { if (!cloud.authed) setStatus('signedout'); return; }
+      cloud.msg = errCode(err);
+      setStatus('error');
+    });
+    return;
+  }
+  loadSDK().then(function (fb) {
+    listen(fb);
+    var provider = new fb.a.GoogleAuthProvider();
+    if (provider.setCustomParameters) provider.setCustomParameters({ prompt: 'select_account' });   // always offer the account picker
+    return fb.a.signInWithPopup(fb.auth, provider).catch(function (err) {
+      // iOS and locked-down browsers block popups; a redirect always works
+      if (err && /popup-blocked|operation-not-supported/i.test(err.code || '')) return fb.a.signInWithRedirect(fb.auth, provider);
+      throw err;
+    });
+  }).catch(function (err) {
+    setMeta({ signedIn: false });
+    cloud.msg = errCode(err);
+    setStatus('error');
+  });
+}
+function signOutNow() {
+  if (account()) { account().signOut(); return; }
+  if (cloud.fb) cloud.fb.a.signOut(cloud.fb.auth);
+}
+function syncClick() {
+  if (account() && cloud.authed) { account().openPanel(); return; }   // signed in: the account panel has it all
+  if (!cloud.uid) signIn(); else syncNow(true);
+}
+
+/* ---- the choice, in plain words ----
+   Two situations ask: a browser with work of its own signing in for the
+   first time, and two devices that both changed things before they could
+   sync. The text says which, what each side holds, and which is newer. */
+function summary(d) {
+  var s = '';
+  try { s = String(SYNC.describe(d) || ''); } catch (e) {}
+  return s.replace(/^It holds /, '').replace(/\.$/, '') || 'a copy';
+}
+function whenLabel(ms) {
+  if (!ms) return '';
+  var d = new Date(ms), now = new Date();
+  var day = d.toDateString() === now.toDateString() ? 'today'
+    : new Date(now.getTime() - 864e5).toDateString() === d.toDateString() ? 'yesterday'
+    : d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  return day + ' at ' + hhmm(ms);
+}
+function otherDevice(remote) {
+  var other = (remote && remote.device) || '';
+  if (!other) return 'your other device';
+  return other === deviceName() ? 'your other ' + other : 'your ' + other;
+}
+function choiceWords(remote) {
+  var here = deviceName(), m = meta();
+  var mine = summary(JSON.parse(syncPrint())), theirs = summary(remote.data);
+  var remoteAt = +remote.updatedAt || 0;
+  var other = otherDevice(remote), otherShort = other.replace(/^your /, 'the ');
+  if (!m.lastSyncedAt) {
+    return {
+      text: 'This browser already has its own ' + SYNC.noun + ' (' + mine + '). Your account has ' + theirs +
+        ', last saved from ' + other + ' ' + whenLabel(remoteAt) + '. Which should this browser use? ' +
+        'Whichever you don\u2019t pick is kept here as a backup for ' + BACKUP_DAYS + ' days.',
+      local: 'Keep this browser\u2019s',
+      cloud: 'Use my account\u2019s'
+    };
+  }
+  var localNewer = m.updatedAt > remoteAt;
+  return {
+    text: 'This ' + here + ' and ' + other + ' both made changes before they could sync. ' +
+      'This ' + here + (m.updatedAt > 1e12 ? ', ' + whenLabel(m.updatedAt) : '') + ': ' + mine + (localNewer ? ' (newer)' : '') + '. ' +
+      other.charAt(0).toUpperCase() + other.slice(1) + ', ' + whenLabel(remoteAt) + ': ' + theirs + (localNewer ? '' : ' (newer)') + '. ' +
+      'Which version do you want? The other is kept here as a backup for ' + BACKUP_DAYS + ' days.',
+    local: 'Keep this ' + here + '\u2019s',
+    cloud: 'Use ' + otherShort + '\u2019s'
+  };
+}
+
+/* ---- backup of the version not chosen ----
+   Whichever side loses a choice is saved on this device for a week, with
+   Restore on the bar. Restoring is itself undoable: the version it replaces
+   becomes the backup. */
+var BACKUP_KEY = SYNC.storageKey + '.backup';
+var BACKUP_DAYS = 7;
+function readBackup() {
+  try {
+    var b = JSON.parse(localStorage.getItem(BACKUP_KEY) || 'null');
+    if (b && b.data && Date.now() - (+b.at || 0) < BACKUP_DAYS * 864e5) return b;
+  } catch (e) {}
+  return null;
+}
+function writeBackup(b) {
+  try { localStorage.setItem(BACKUP_KEY, JSON.stringify(b)); } catch (e) {}
+}
+function keepBackup(data, label, restored) {
+  writeBackup({ data: data, at: Date.now(), label: label, summary: summary(data), shown: true, restored: !!restored });
+}
+function dismissBackup() {
+  var b = readBackup();
+  if (b) { b.shown = false; writeBackup(b); }
+  paintSync();
+}
+function restoreBackup() {
+  var b = readBackup();
+  if (!b) return;
+  var current = JSON.parse(syncPrint());
+  var ok = keepingFocus(function () { return SYNC.apply(b.data, { data: b.data, updatedAt: Date.now(), device: deviceName() }); });
+  if (!ok) return;
+  keepBackup(current, 'the version you just replaced', true);
+  cloud.print = syncPrint();
+  setMeta({ updatedAt: nextStamp() });   // the restored version is now the newest edit, and goes up as one
+  if (cloud.uid) syncNow(true); else paintSync();
+}
+
+/* ---- conflict resolution ----
+   The bar's two buttons also serve the backup: with no choice pending,
+   the first restores it and the second puts the note away. */
+function keepLocal() {
+  var remote = cloud.pending;
+  if (!remote) { restoreBackup(); return; }
+  keepBackup(remote.data, 'the version from ' + otherDevice(remote).replace(/^your /, 'the '));
+  cloud.pending = null;
+  var seen = +remote.updatedAt || 0;
+  // acknowledge the copy we saw, and stay ahead of it so this device wins
+  setMeta({ lastSyncedAt: seen, updatedAt: Math.max(meta().updatedAt, seen + 1) });
+  cloud.status = 'working';
+  syncNow(true);
+}
+function keepCloud() {
+  var remote = cloud.pending;
+  if (!remote) { dismissBackup(); return; }
+  keepBackup(JSON.parse(syncPrint()), 'this ' + deviceName() + '\u2019s version');
+  cloud.pending = null;
+  adopt(remote);
+  cloud.at = Date.now();
+  setStatus('synced');
+}
+
+/* ---- the visible half ---- */
+function hhmm(ms) {
+  var d = new Date(ms);
+  return (d.getHours() < 10 ? '0' : '') + d.getHours() + ':' + (d.getMinutes() < 10 ? '0' : '') + d.getMinutes();
+}
+function setStatus(s) {
+  cloud.status = s;
+  if (s === 'synced') cloud.at = cloud.at || Date.now();
+  paintSync();
+}
+
+function paintSync() {
+  var btn = syncEl('btn-sync'), out = syncEl('btn-signout'), bar = syncEl('sync-bar');
+  if (!btn) return;
+  if (!cloud.on) { btn.style.display = 'none'; out.style.display = 'none'; bar.classList.remove('on'); return; }
+
+  var label, title;
+  switch (cloud.status) {
+    case 'working':  label = 'Syncing…';                   title = 'Talking to the cloud'; break;
+    case 'synced':   label = 'Live · ' + hhmm(cloud.at);   title = 'Signed in — changes on your other devices appear here as they happen'; break;
+    case 'conflict': label = 'Pick a version';             title = 'Two versions to choose between \u2014 see the note below'; break;
+    case 'pending':  label = 'Access requested';           title = 'Waiting for Xavier to approve this account'; break;
+    case 'private':  label = 'No access';                  title = 'This account is not on the invitation list'; break;
+    case 'error':    label = isOffline(cloud.msg) ? 'Offline \u00b7 saved here' : 'Sync failed';                title = explain(cloud.msg); break;
+    default:         label = 'Sign in to sync';            title = 'Keep this in step across your devices';
+  }
+  var acct = account();
+  if (acct && cloud.authed) {
+    btn.innerHTML = acct.badgeHTML() + ' <span>' + label.replace(/[&<>]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]; }) + '</span>';
+    title += ' \u2014 open your account';
+  } else {
+    btn.textContent = label;
+  }
+  btn.title = title;
+  btn.className = SYNC.buttonClass(cloud.status);
+  btn.style.display = '';
+  out.style.display = cloud.authed && !acct ? '' : 'none';   // with the site account, signing out lives in its panel
+
+  var what = syncEl('sync-what'), kl = syncEl('sync-keep-local'), kc = syncEl('sync-keep-cloud');
+  if (cloud.status === 'pending' || cloud.status === 'private' || cloud.status === 'error') {
+    what.textContent = cloud.status === 'pending'
+      ? 'Sync is by invitation, and your request is in. Once Xavier approves it, syncing starts here on its own. ' +
+        'Until then everything keeps saving in this browser as usual. '
+      : cloud.status === 'private'
+      ? 'Sync on this site is by invitation, and this account isn\u2019t on the list. ' +
+        'Everything still saves in this browser exactly as before, and nothing is sent anywhere. '
+      : explain(cloud.msg);
+    if (cloud.status !== 'error') {
+      var more = document.createElement('a');
+      more.href = ACCESS_URL;
+      more.textContent = 'About access \u2192';
+      what.appendChild(more);
+    }
+    kl.style.display = 'none';
+    kc.style.display = 'none';
+    bar.classList.add('on');
+    return;
+  }
+  kl.style.display = '';
+  kc.style.display = '';
+  var b = readBackup();
+  if (cloud.status === 'conflict' && cloud.pending) {
+    var w = choiceWords(cloud.pending);
+    what.textContent = w.text;
+    kl.textContent = w.local;
+    kc.textContent = w.cloud;
+    bar.classList.add('on');
+  } else if (b && b.shown) {
+    what.textContent = b.restored
+      ? 'Restored. The version you replaced (' + b.summary + ') is saved here in case you want it back.'
+      : 'Done. The version you didn\u2019t keep \u2014 ' + b.label + ' (' + b.summary + ') \u2014 is saved on this device for ' + BACKUP_DAYS + ' days.';
+    kl.textContent = b.restored ? 'Switch back' : 'Restore it';
+    kc.textContent = 'OK';
+    bar.classList.add('on');
+  } else {
+    bar.classList.remove('on');
+  }
+}
+
+function initCloud() {
+  seedMeta();
+  paintSync();
+  if (!cloud.on) return;
+
+  /* Only someone who has signed in here before gets the SDK on load; a
+     visitor who never touches the button never fetches it. Signed in
+     anywhere on the site counts. */
+  var acct = account();
+  if (acct) {
+    acct.registerTool({ doc: SYNC.doc, syncNow: function () { syncNow(true); } });
+    acct.on(function (st) {
+      if (st.user && !cloud.listening) loadSDK().then(listen).catch(function () {});   // signed in from the panel
+      paintSync();
+    });
+  }
+  if (meta().signedIn || (acct && acct.wanted())) {
+    setStatus('working');
+    loadSDK().then(listen).catch(function (err) { cloud.msg = errCode(err); setStatus('error'); });
+  }
+
+  document.addEventListener('visibilitychange', function () {
+    if (!cloud.uid) return;
+    if (document.hidden) {
+      // a phone suspends the page soon after it hides: send anything unsent now
+      SYNC.flush();
+      if (meta().updatedAt > meta().lastSyncedAt) syncNow();
+    } else {
+      syncNow();
+    }
+  });
+  window.addEventListener('focus', function () { if (cloud.uid) syncNow(); });
+  window.addEventListener('online', function () { if (cloud.uid) syncNow(); });
+}
+
+render();
+initCloud();
+</script>
+</body>
+</html>

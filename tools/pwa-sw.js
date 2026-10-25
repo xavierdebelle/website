@@ -28,7 +28,7 @@
    ============================================================ */
 'use strict';
 
-var VERSION = 'v86';
+var VERSION = 'v87';
 var NET_WAIT = 3500; // ms before a slow network gives way to the kept copy
 
 var APPS = {
@@ -60,6 +60,11 @@ var APPS = {
     'idea-bank/_ds/xavier-de-belle-website-a7c85075-e389-43a8-89e9-7fca43266e85/styles.css',
     'icons/idea-bank-180.png', 'icons/idea-bank-192.png',
     'icons/idea-bank-512.png', 'icons/idea-bank-maskable-512.png'
+  ],
+  'pipelines': [
+    'pipelines.html', 'pipelines.webmanifest', 'pwa.js', '../assets/account.js', '../assets/logo.svg',
+    'icons/pipelines-180.png', 'icons/pipelines-192.png',
+    'icons/pipelines-512.png', 'icons/pipelines-maskable-512.png'
   ],
   'notes': [
     'notes.html', 'notes.webmanifest', 'pwa.js', '../assets/account.js', '../assets/logo.svg',
@@ -99,6 +104,9 @@ var LIBS = {
     'https://unpkg.com/react@18.3.1/umd/react.production.min.js',
     'https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js',
     'https://unpkg.com/@babel/standalone@7.29.0/babel.min.js'
+  ]),
+  'pipelines': FIREBASE.concat([
+    'https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&display=swap'
   ]),
   'notes': FIREBASE,
   'journal': FIREBASE,

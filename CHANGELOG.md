@@ -5,6 +5,66 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v123 — 2026-10-25
+
+**What's new** · New tool · [tools.html#debelle]
+### Pipelines
+Boards for work that repeats. Make a pipeline with your own stages, decide what
+every card holds (a date, a price, a few lines of notes) and the checklist each
+new card starts with. Then move cards left to right.
+
+- Cards show their next task and when it's due, and flag anything late or
+  sitting in one stage for more than two weeks.
+- Money fields add up across the open cards.
+- Every card keeps dated comments, can move to another pipeline, and can be
+  archived when it's done.
+- Starts with a Projects board; templates for a wedding season or commercial
+  shoots are two clicks away. Syncs between devices and installs as an app.
+
+**Pipelines — `tools/pipelines.html`, source `Tools files/Tools/pipelines_v1.html`** (new, The Biz)
+- The standalone "In Production" app from the Production Hub plan
+  (`Tools files/Tools/production-hub-prototype/BUILD-PLAN.md`): the hub will
+  read it later; it works fully on its own.
+- Data `{ pipelines: [{ id, name, stages[{id,name,done}], fields[{id,name,type}],
+  checklist[], cards[{ id, title, stage, stageAt, createdAt, fields{}, tasks[{id,
+  title, done, due, doneAt}], comments[{id,text,at}], pinned, archived }] }] }`.
+  Field types text / multi / number / money / date. `projects` always exists
+  and can't be deleted; neutral start (empty Projects board). `pinned` is
+  stored for the hub's Pull in, not shown yet.
+- Board: stage columns (drag with a mouse; ⋯ → Move to stage on phones),
+  summary strip (per stage, late, stuck 14+ days, open money total), archived
+  list. Card window: wrapping title, stage, fields, checklist with hand-set due
+  dates, dated comments (newest first, scrolls when long). ⋯ menu: add a task,
+  move to stage, move to another pipeline (same-named fields carry over, the
+  rest becomes a dated "Moved from…" comment), archive, delete. Builder: name,
+  stages (rename / reorder / remove / Done), fields, checklist for new cards;
+  templates Wedding video, Commercial shoot, Blank.
+- Sync: doc `pipelines`, storage key `xdb.pipelines.v1` (UI state in
+  `xdb.pipelines.v1.ui`, never synced); the shared sync core pasted verbatim;
+  registered in `assets/account.js`. No Firebase rules change (the `users/`
+  rule covers it).
+- Installable: `pipelines.webmanifest`, icons `icons/pipelines-*.png`,
+  `pwa-sw.js` APPS + LIBS (Inter Tight) and `VERSION` v86 → v87.
+
+**Scan** — only the Firebase connection every synced tool already uses; nothing new.
+
+**Verified**
+- Mock database, two devices (127.0.0.1 / localhost): sign-in with the empty
+  board writes nothing; edits flow live both ways; edits on both while one
+  was offline → "Pick a version", Keep this device works; reload on both → no
+  write; a non-member signing in only files `requests/{uid}`; empty lists
+  survive the round trip.
+- Workflow in the browser: new pipeline from a template, add cards (checklist
+  filled), fields incl. money total, tick and date tasks, comments, ⋯ menu
+  moves, move to Projects (fields → comment), archive / restore, edit
+  Projects' stages; phone width (card window full screen, title wraps). No
+  console errors.
+- Offline (Playwright Chromium): two visits online cache the app, account.js
+  and the font; with the network gone it opens, takes an edit and keeps it
+  across a reload.
+
+---
+
 ## v122 — 2026-10-24
 
 **What's new** · The Biz · [tools/idea-bank.html]
