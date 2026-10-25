@@ -5,6 +5,82 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v124 — 2026-10-25
+
+**What's new** · New tool · [tools.html#debelle]
+### Production Hub
+One page for the day, the work, the year and the ideas.
+
+- **Today**: your own lists, Google Tasks style, with details, dates and repeats.
+  A Pull in column suggests the next tasks from your projects and quests,
+  dated ones first.
+- **In Production**: your Pipelines boards, live. Tick, move and comment here
+  and it's done in Pipelines too.
+- **Big Picture**: your Project Phases projects as quests, each phase a project.
+  Ticks and new tasks go straight back to Project Phases.
+- **Goals**: the year's goals, linked to quests, a quarter check and a
+  year-end review.
+- **Brainstorm**: raw ideas with Fresh / On the shelf / Archived, scores out
+  of 100, an impact-against-effort graph and search.
+
+Idea Bank moves to Archived Tools. It still works and still holds your ideas.
+
+**Production Hub — `tools/production-hub.html`, source `Tools files/Tools/production_hub_v1.html`** (new, The Biz)
+- Built from the prototype and `Tools files/Tools/production-hub-prototype/BUILD-PLAN.md`
+  (step 3). Tabs: Today · tasks, In Production · projects, Big Picture ·
+  quests, Goals · this year, Brainstorm · raw ideas.
+- **Three synced docs** through `create-cloud-sync.js` (pasted verbatim, three
+  instances): `production-hub` (ours: lists, tasks, brain, goals, checks,
+  pins, `due` per Project Phases step, `stage` per phase on the Projects
+  board), and the hub's own copies of `pipelines` and `project-phases`
+  (keys `xdb.hub.v1.pipelines` / `xdb.hub.v1.phases`, so the hub is its own
+  "device" for those docs even on the same browser as the apps).
+- **The other apps' data is kept exactly as it arrived**; the hub only
+  changes the fields it touches (a tick, a stage, a title, a new task /
+  card / phase / project / comment) and pushes the whole copy back, so
+  nothing Project Phases knows about (homework, agenda, notes, time log,
+  `client: 1`) is ever dropped. Hub-only facts about their items live in the
+  hub doc, never inside theirs. New Project Phases objects use its own id
+  style and shape; steps ticked here get `status: 'done'` + `doneAt`.
+- Links: a Today task linked to a card task or a step reads its title, tick
+  and date from the source; ticking writes the source. Links whose source was
+  deleted are dropped once that app's copy has loaded.
+- Moves: Brainstorm → Today / In Production (Projects card, "- " lines →
+  tasks) / Big Picture (new quest or next project of a quest); Today task →
+  In Production or Big Picture; card → another pipeline / Brainstorm / Big
+  Picture (its tasks become steps; dates and Today links follow).
+- Each app's sync status shows in the top bar; a conflict on any of the three
+  docs gets its own bar naming the app.
+- Installable: `production-hub.webmanifest`, icons `icons/production-hub-*.png`,
+  `pwa-sw.js` APPS + LIBS, `VERSION` v87 → v88; `assets/account.js` TOOLS entry.
+
+**Tools page** — Production Hub card in The Biz; Idea Bank card moved to
+Archived Tools (copy says its job now belongs to Brainstorm). Sync line in
+the masthead updated.
+
+**Scan** — only the Firebase connection every synced tool already uses; nothing new.
+
+**Verified**
+- Mock database with all three apps (Project Phases and Pipelines signed in
+  on one origin, the hub on the other): the hub signs in and follows both
+  docs without writing anything; ticking a linked step from Today changes
+  only that step in `project-phases` (rest byte-identical: homework, agenda,
+  notes, log, `client`), and Project Phases on the other device picks it up
+  live with no conflict; same for a Pipelines task (fields and comments
+  kept); an edit in Pipelines shows in the hub live (Pull in and board).
+- Hub-made card, comment, stage moves, new step + date, new phase, pin, goal
+  linked to a quest (progress shown), Brainstorm → In Production and →
+  Big Picture (added as the next project of a quest) all land in the right
+  doc; Project Phases shows the new phase and step.
+- Offline hub edit vs a Pipelines edit on the other device → a "Pipelines"
+  conflict bar in the hub; "Use the other Mac's" keeps the phone's comment.
+  Reload → no write to any of the three docs. No console errors; phone width
+  checked.
+- Offline (Playwright Chromium): opens with no network after two visits and
+  keeps an edit across a reload.
+
+---
+
 ## v123 — 2026-10-25
 
 **What's new** · New tool · [tools.html#debelle]

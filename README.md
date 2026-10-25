@@ -25,7 +25,8 @@ tools' originals and the publishing scripts); edit there, not here.
     tools/          the tools themselves, one self-contained file each
     tools/pwa.js, tools/pwa-sw.js   install + offline for Feed Planner, Carousel Planner,
                                     Budget Tracker, Project Phases, Idea Bank, Notes,
-                                    Journal, Kitchen, Cards and Cycle Calendar
+                                    Journal, Kitchen, Cards, Cycle Calendar, Pipelines
+                                    and Production Hub
     versions/       local-only archive of past versions (not deployed)
     CHANGELOG.md    what changed, version by version
 

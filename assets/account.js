@@ -53,6 +53,7 @@
     { doc: 'budget-tracker', name: 'Budget Tracker', href: 'tools/budget-tracker.html', meta: 'debelle.budget-tracker.v3.meta' },
     { doc: 'idea-bank',      name: 'Idea Bank',      href: 'tools/idea-bank.html',      meta: 'ideabank.v1.meta' },
     { doc: 'pipelines',      name: 'Pipelines',      href: 'tools/pipelines.html',      meta: 'xdb.pipelines.v1.meta' },
+    { doc: 'production-hub', name: 'Production Hub', href: 'tools/production-hub.html', meta: 'xdb.hub.v1.meta' },
     { doc: 'notes',          name: 'Notes',          href: 'tools/notes.html',          meta: 'xdb.notes.v1.meta' },
     { doc: 'journal',        name: 'Journal',        href: 'tools/journal.html',        meta: 'xdb.journal.v1.meta' },
     { doc: 'kitchen',        name: 'Kitchen',        href: 'tools/kitchen.html',        meta: 'xdb.kitchen.v1.meta' },

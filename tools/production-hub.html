@@ -1,0 +1,1759 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="../assets/account.js"></script>   <!-- site-wide account; the tool falls back to its own sign-in without it -->
+<script defer src="../assets/stats.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Production Hub — Xavier de Belle</title>
+<meta name="description" content="Today, the work in production, the big picture, the year's goals and the raw ideas, in one place. Reads Pipelines and Project Phases and keeps them in step.">
+<link rel="icon" href="../assets/logo.svg" type="image/svg+xml">
+<!-- installable app: works offline once opened, syncs when back online (pwa.js, pwa-sw.js) -->
+<link rel="manifest" href="production-hub.webmanifest">
+<link rel="apple-touch-icon" href="icons/production-hub-180.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Hub">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="theme-color" content="#000000">
+<script src="pwa.js" data-app="production-hub"></script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&display=swap">
+<style>
+:root{
+  --red:#E8232D; --red-dark:#B81D25; --yellow:#F8C135; --black:#000; --text:#282828;
+  --g7:#484848; --g6:#5A5A5A; --white:#fff; --bg:#f3f1f1; --line:#e2dcdc; --col:#e9e5e5;
+  --wide:700 11px/1.2 "Inter Tight",sans-serif; --ease:cubic-bezier(.4,0,.2,1);
+  --gut:clamp(14px,2.4vw,24px);
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+html,body{margin:0}
+body{background:var(--bg);color:var(--text);font:15px/1.5 "Inter Tight",system-ui,sans-serif;-webkit-font-smoothing:antialiased;min-height:100vh}
+button{font:inherit;color:inherit;cursor:pointer}
+input,select,textarea{font:inherit;color:inherit}
+h1,h2,h3,h4{margin:0}
+[hidden]{display:none!important}
+a{color:inherit}
+
+/* ---------- top ---------- */
+.top{background:var(--black);color:var(--white);padding:14px var(--gut) 0;padding-top:max(14px,env(safe-area-inset-top))}
+.top-row{display:flex;align-items:center;gap:10px 14px;flex-wrap:wrap}
+.brand{margin-right:auto;min-width:0}
+.brand a{display:block;color:#bbb;text-decoration:none;font:var(--wide);font-size:10px;letter-spacing:.1em;text-transform:uppercase}
+.brand a:hover{color:var(--yellow)}
+.brand h1{font:800 24px/1.05 "Inter Tight",sans-serif;text-transform:uppercase;letter-spacing:.2px}
+.brand h1 span{color:var(--yellow)}
+.tbtn{background:transparent;border:1px solid var(--g7);color:var(--white);padding:8px 12px;font:var(--wide);font-size:10px;letter-spacing:.07em;text-transform:uppercase;text-decoration:none}
+.tbtn:hover{border-color:var(--white)}
+.tbtn.ok{border-color:var(--yellow);color:var(--yellow)}
+.tbtn.bad{border-color:var(--red);background:var(--red)}
+.conn{display:flex;gap:10px;font:var(--wide);font-size:9px;letter-spacing:.07em;text-transform:uppercase;color:#999}
+.conn span::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:#555;margin-right:5px;vertical-align:1px}
+.conn span.live::before{background:var(--yellow)}
+.conn span.bad::before{background:var(--red)}
+.tabs{display:flex;gap:2px;margin-top:14px;overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{background:transparent;border:0;border-bottom:4px solid transparent;padding:12px 14px;color:var(--white);font:800 13px/1 "Inter Tight",sans-serif;letter-spacing:.07em;text-transform:uppercase;white-space:nowrap;display:flex;gap:7px;align-items:center}
+.tab[aria-selected=true]{border-bottom-color:var(--yellow);color:var(--yellow)}
+.tab .lvl{font-size:9px;letter-spacing:.06em;color:#999;font-weight:700;text-transform:lowercase}
+.tab[aria-selected=true] .lvl{color:#d9c48a}
+.tab .count{background:var(--yellow);color:var(--black);font-size:10px;padding:3px 6px}
+.tab .dot{width:8px;height:8px;border-radius:50%;background:var(--red);display:inline-block}
+
+/* ---------- sync bars ---------- */
+.sbar{display:flex;align-items:center;gap:10px 18px;flex-wrap:wrap;background:var(--yellow);color:var(--black);padding:12px var(--gut);border-bottom:1px solid rgba(0,0,0,.15)}
+.sbar .sync-dot{width:10px;height:10px;background:var(--black);flex:none}
+.sbar .what{flex:1;min-width:220px;font-size:14px;line-height:1.45}
+.sbar .what b{text-transform:uppercase;font-size:11px;letter-spacing:.06em;margin-right:6px}
+.sbar button,.sbar a{border:2px solid var(--black);background:var(--black);color:var(--yellow);font:var(--wide);font-size:11px;letter-spacing:.08em;text-transform:uppercase;padding:8px 12px;text-decoration:none}
+.sbar button+button{background:transparent;color:var(--black)}
+
+main{padding:20px var(--gut) 60px}
+.wrap{max-width:1180px;margin:0 auto}
+.view{display:none}.view.on{display:block}
+
+/* ---------- shared ---------- */
+.b{border:1px solid var(--black);background:var(--white);color:var(--black);padding:6px 10px;font:var(--wide);font-size:10px;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap;text-decoration:none;display:inline-block}
+.b:hover{background:var(--black);color:var(--white)}
+.b.y{background:var(--yellow);border-color:var(--yellow)}
+.b.y:hover{background:var(--black);border-color:var(--black);color:var(--yellow)}
+.b.r{border-color:var(--red);color:var(--red)}
+.b.r:hover{background:var(--red);color:var(--white)}
+.b.ghost{border-color:transparent;background:transparent;color:var(--g6)}
+.b.ghost:hover{background:var(--white);color:var(--black)}
+.b.on{background:var(--black);color:var(--yellow)}
+.pill{font:var(--wide);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--black);background:var(--yellow);padding:4px 7px;white-space:nowrap}
+.empty{padding:14px 18px;color:var(--g6);font-size:14px}
+.lead{font-size:13px;color:var(--g6);margin:0 0 12px}
+.tag{display:inline-block;padding:3px 6px;font:var(--wide);font-size:9px;letter-spacing:.06em;text-transform:uppercase;background:var(--bg);color:var(--black);border:0;cursor:pointer;text-align:left;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:middle}
+.tag.pl{border-left:3px solid var(--yellow)}
+.tag.pp{border-left:3px solid var(--red)}
+.tag.on{background:var(--black);color:var(--yellow);cursor:default}
+.due{display:inline-flex;align-items:center;gap:4px;border:1px solid #cfc7c7;padding:2px 8px;font-size:11px;font-weight:600;border-radius:999px;color:var(--g7);white-space:nowrap}
+.due.over{color:var(--red-dark);border-color:var(--red)}
+.due.today{color:var(--black);border-color:var(--black);background:var(--yellow)}
+.flash{animation:flash 1.4s var(--ease)}
+@keyframes flash{0%{background:var(--yellow)}100%{background:var(--white)}}
+.connect{background:var(--white);padding:28px;max-width:620px;border-top:6px solid var(--black)}
+.connect h2{font:800 22px/1.15 "Inter Tight",sans-serif;text-transform:uppercase;margin-bottom:8px}
+.connect p{margin:0 0 14px;color:var(--g6)}
+.phead{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.phead h2{font:800 clamp(24px,3.6vw,38px)/1 "Inter Tight",sans-serif;text-transform:uppercase;color:var(--black);margin-right:auto;overflow-wrap:anywhere}
+.model{font-size:12px;color:var(--g6);margin:0 0 14px}
+.model b{color:var(--black)}
+
+/* ---------- Today ---------- */
+.lists{display:flex;gap:18px;align-items:flex-start;overflow-x:auto;padding-bottom:12px}
+.list{background:var(--white);flex:0 0 340px;border-top:4px solid var(--black)}
+.list.pullcol{border-top-color:var(--yellow);flex-basis:320px}
+.lh{display:flex;align-items:center;gap:8px;padding:16px 14px 6px 20px}
+.lh h2{flex:1;font:800 20px/1.15 "Inter Tight",sans-serif;color:var(--black);overflow-wrap:anywhere}
+.lh .sub{font-size:12px;color:var(--g6)}
+.menu{border:0;background:transparent;font-size:20px;line-height:1;padding:4px 8px;color:var(--g6)}
+.menu:hover{color:var(--black);background:var(--bg)}
+.addtask{display:flex;align-items:center;gap:12px;margin:4px 10px 6px;padding:8px 10px;cursor:text}
+.addtask:hover,.addtask:focus-within{background:var(--bg)}
+.addtask .plus{width:22px;height:22px;display:grid;place-items:center;font-weight:800;color:var(--red);font-size:20px;flex:none}
+.addtask input{flex:1;border:0;background:transparent;outline:none;font-weight:600;color:var(--black);min-width:0;padding:0}
+.addtask input::placeholder{color:var(--red);font-weight:700}
+.task{display:flex;gap:12px;padding:9px 16px 9px 20px;align-items:flex-start;cursor:pointer}
+.task:hover{background:#faf8f8}
+.circ{width:22px;height:22px;border:2px solid var(--black);border-radius:50%;background:var(--white);flex:none;margin-top:1px;padding:0;display:grid;place-items:center;font-size:12px;font-weight:800;line-height:1}
+.circ:hover{background:var(--yellow)}
+.circ.on{background:var(--black);color:var(--yellow)}
+.tb{flex:1;min-width:0}
+.tb .t{font-weight:600;color:var(--black);overflow-wrap:anywhere}
+.tb .n{font-size:13px;color:var(--g6);white-space:pre-wrap;overflow-wrap:anywhere;margin-top:1px}
+.tb .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px}
+.task.done .t{text-decoration:line-through;color:#999;font-weight:500}
+.done-toggle{display:flex;align-items:center;gap:10px;width:100%;border:0;border-top:1px solid var(--line);background:transparent;padding:12px 20px;font-weight:700;color:var(--black);text-align:left}
+.done-toggle .car{display:inline-block;transition:transform .15s var(--ease);font-size:11px}
+.done-toggle.open .car{transform:rotate(90deg)}
+.newlist{flex:0 0 200px;border:2px dashed #cfc7c7;background:transparent;padding:22px;font:var(--wide);letter-spacing:.07em;text-transform:uppercase;color:var(--g6)}
+.newlist:hover{border-color:var(--black);color:var(--black)}
+.grp{padding:12px 20px 4px;font:var(--wide);font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:var(--g6)}
+.prow{display:flex;gap:10px;align-items:center;padding:8px 16px 8px 20px}
+.prow .tb .t{font-size:14px}
+.prow .tag{margin-top:3px}
+
+/* ---------- boards (In Production) ---------- */
+.pswitch{display:flex;gap:0;margin-bottom:16px;border-bottom:3px solid var(--black);overflow-x:auto}
+.pswitch button,.pswitch a{border:0;background:transparent;padding:12px 16px 10px;font:800 14px/1 "Inter Tight",sans-serif;text-transform:uppercase;letter-spacing:.04em;color:var(--g6);white-space:nowrap;display:flex;gap:8px;align-items:center;text-decoration:none}
+.pswitch button span{font:var(--wide);font-size:10px;background:var(--line);color:var(--black);padding:3px 6px}
+.pswitch button[aria-pressed=true]{background:var(--black);color:var(--yellow)}
+.pswitch button[aria-pressed=true] span{background:var(--yellow)}
+.pswitch a{color:var(--red);font-size:12px;margin-left:auto}
+.psum{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.psum span{background:var(--white);padding:6px 10px;font-size:13px;font-weight:700;border-left:3px solid var(--black)}
+.psum span.late{border-left-color:var(--red);color:var(--red-dark)}
+.psum span.stuck{border-left-color:var(--yellow)}
+.psum span.money-sum{border-left-color:var(--yellow);background:var(--black);color:var(--yellow)}
+.pboard{display:flex;gap:12px;align-items:flex-start;overflow-x:auto;padding-bottom:14px;scroll-snap-type:x proximity}
+.pcol{flex:0 0 280px;background:var(--col);padding:0 0 8px;min-height:120px;scroll-snap-align:start}
+.pcol.over{background:#fdf1cf;outline:2px dashed var(--black)}
+.pcol .ch{display:flex;align-items:center;gap:8px;padding:12px 12px 8px;border-top:4px solid var(--black)}
+.pcol.donecol .ch{border-top-color:var(--yellow)}
+.pcol .ch b{flex:1;font:800 14px/1.2 "Inter Tight",sans-serif;color:var(--black)}
+.pcol .ch span{font:var(--wide);font-size:10px;background:var(--white);padding:3px 6px}
+.padd{display:block;width:calc(100% - 16px);margin:0 8px 8px;border:0;background:transparent;text-align:left;padding:8px;font-weight:700;color:var(--g6)}
+.padd:hover{background:var(--white);color:var(--black)}
+.pcard{background:var(--white);margin:0 8px 8px;padding:10px 12px 8px;cursor:pointer;border-left:4px solid transparent;box-shadow:0 1px 0 rgba(0,0,0,.08);-webkit-user-select:none;user-select:none}
+.pcard:hover{border-left-color:var(--black)}
+.pcard.late{border-left-color:var(--red)}
+.pcard.quest{border-left-color:var(--red)}
+.pcard.dragging{opacity:.4}
+.pcard .pt{font-weight:700;color:var(--black);line-height:1.3;overflow-wrap:anywhere}
+.pcard .pf{font-size:12px;color:var(--g6);margin-top:3px;overflow-wrap:anywhere}
+.pcard .nx{font-size:12px;color:var(--text);margin-top:6px;padding-top:6px;border-top:1px solid var(--line)}
+.pcard .nx b{font-weight:700}
+.pcard .qtag{display:inline-block;margin-top:4px;padding:2px 5px;font:var(--wide);font-size:9px;letter-spacing:.05em;text-transform:uppercase;background:var(--black);color:var(--white);border-left:3px solid var(--red)}
+.pm{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:8px}
+.cl{font:var(--wide);font-size:10px;padding:3px 6px;background:var(--bg);color:var(--black)}
+.cl.full{background:var(--black);color:var(--yellow)}
+.cm{font-size:11px;color:var(--g6);font-weight:700}
+.age{font-size:11px;color:var(--g6)}
+.age.stuck{color:var(--red-dark);font-weight:700}
+.amb{margin-left:auto;border:1px solid #cfc7c7;background:var(--white);color:var(--black);padding:3px 9px;font:800 14px/1 "Inter Tight",sans-serif;letter-spacing:.1em}
+.amb:hover,.amb.open{background:var(--black);color:var(--yellow);border-color:var(--black)}
+
+/* ---------- Big Picture ---------- */
+.qpick{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.qpick .b[aria-pressed=true]{background:var(--black);color:var(--yellow)}
+.qhead{background:var(--black);color:var(--white);padding:18px;display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap}
+.qhead .eyebrow{font:var(--wide);letter-spacing:.08em;text-transform:uppercase;color:var(--yellow)}
+.qhead h2{font:800 clamp(26px,4vw,40px)/.95 "Inter Tight",sans-serif;text-transform:uppercase;overflow-wrap:anywhere}
+.qhead .b{border-color:var(--yellow)}
+.qgoal{all:unset;cursor:pointer;font:var(--wide);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--yellow);margin-top:8px;display:inline-block;border:1px solid #555;padding:5px 8px}
+.qgoal.none{color:#999}
+.panel{background:var(--white);margin-bottom:16px}
+.ph{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:2px solid var(--black);flex-wrap:wrap}
+.ph h3{font:800 18px/1.1 "Inter Tight",sans-serif;text-transform:uppercase;color:var(--black)}
+.ph .hint{font-size:12px;color:var(--g6);margin-left:auto;display:flex;gap:10px;align-items:center}
+.panel.cur .ph{border-bottom-color:var(--yellow)}
+.bar{height:6px;background:var(--line);width:120px;display:inline-block}
+.bar i{display:block;height:100%;background:var(--black)}
+.srow{display:flex;align-items:center;gap:10px;padding:8px 18px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.srow .ttl{flex:1;min-width:140px;font-weight:600}
+.srow.done .ttl{text-decoration:line-through;color:#999}
+.chk{width:22px;height:22px;border:2px solid var(--black);background:var(--white);flex:none;display:grid;place-items:center;padding:0;font-weight:800;font-size:13px;line-height:1}
+.chk.on{background:var(--black);color:var(--yellow)}
+.srow .doing{font:var(--wide);font-size:9px;letter-spacing:.06em;text-transform:uppercase;background:var(--yellow);padding:3px 6px}
+.dt{border:1px solid #cfc7c7;padding:3px 6px;font-size:12px;background:var(--white)}
+.dt.empty{opacity:.45}
+.dt.over{border-color:var(--red);color:var(--red-dark)}
+.addphase{width:100%;border:2px dashed #cfc7c7;background:transparent;padding:16px;font:var(--wide);letter-spacing:.07em;text-transform:uppercase;color:var(--g6)}
+.addphase:hover{border-color:var(--black);color:var(--black)}
+
+/* ---------- Goals ---------- */
+.ghead{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.ghead h2{font:800 clamp(34px,5vw,56px)/.9 "Inter Tight",sans-serif;color:var(--black);letter-spacing:-.5px}
+.ghead .yr{border:2px solid var(--black);background:var(--white);font:800 18px/1 "Inter Tight",sans-serif;padding:6px 12px}
+.ghead .yr:hover{background:var(--black);color:var(--yellow)}
+.ghead .sp{flex:1}
+.qcheck{background:var(--black);color:var(--white);padding:14px 18px;display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-bottom:16px;border-left:6px solid var(--red)}
+.qcheck b{color:var(--yellow);font:800 14px/1.2 "Inter Tight",sans-serif;text-transform:uppercase;letter-spacing:.05em}
+.qcheck span{flex:1;min-width:200px;font-size:14px}
+.gsum{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.gsum span{background:var(--white);padding:8px 12px;font-weight:700;font-size:14px;border-top:3px solid var(--black)}
+.gsum .hit{border-top-color:var(--yellow)}
+.gsum .missed{border-top-color:var(--red)}
+.ggrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px;align-items:start}
+.goal{background:var(--white);border-top:6px solid var(--black)}
+.goal.hit{border-top-color:var(--yellow)}
+.goal.partly{border-top-color:#999}
+.goal.missed{border-top-color:var(--red)}
+.goal .gh{padding:16px 18px 6px;display:flex;gap:10px;align-items:flex-start;cursor:pointer}
+.goal .gh b{flex:1;font:800 21px/1.15 "Inter Tight",sans-serif;color:var(--black)}
+.goal .res{font:var(--wide);font-size:10px;letter-spacing:.06em;text-transform:uppercase;padding:5px 8px;background:var(--black);color:var(--yellow);white-space:nowrap}
+.goal .res.missed{background:var(--red);color:var(--white)}
+.goal .res.partly{background:#ddd;color:var(--black)}
+.goal .ms{padding:0 18px 10px;font-size:13px;color:var(--g6)}
+.goal .ms::before{content:"How I’ll know: ";font-weight:700;color:var(--black)}
+.gbar{margin:0 18px 12px;height:8px;background:var(--line)}
+.gbar i{display:block;height:100%;background:var(--black)}
+.gq{display:flex;align-items:center;gap:10px;padding:8px 18px;border-top:1px solid var(--line);font-size:14px}
+.gq button.qn{all:unset;cursor:pointer;flex:1;font-weight:700;color:var(--black)}
+.gq button.qn:hover{text-decoration:underline}
+.gq .mini{width:70px;height:5px;background:var(--line)}
+.gq .mini i{display:block;height:100%;background:var(--black)}
+.gq .pc{font-size:12px;font-weight:700;width:36px;text-align:right}
+.gwarn{margin:4px 18px 12px;padding:8px 10px;background:#fdecec;color:var(--red-dark);font-size:13px;font-weight:600}
+.gf{display:flex;gap:6px;flex-wrap:wrap;padding:10px 18px;border-top:1px solid var(--line)}
+.greview{padding:12px 18px;border-top:2px solid var(--black);background:#faf8f8}
+.greview .rb{display:flex;gap:6px;margin-bottom:8px}
+.greview .rb button{flex:1;border:2px solid var(--black);background:var(--white);padding:8px;font:var(--wide);font-size:10px;letter-spacing:.06em;text-transform:uppercase}
+.greview .rb button.on{background:var(--black);color:var(--yellow)}
+.greview .rb button.on.missed{background:var(--red);border-color:var(--red);color:var(--white)}
+.greview textarea{width:100%;border:1px solid #cfc7c7;padding:8px 10px;min-height:60px;resize:vertical;background:var(--white)}
+.gnote{padding:8px 18px 14px;font-size:13px;white-space:pre-wrap;border-top:1px solid var(--line)}
+.gnote::before{content:"Learned: ";font-weight:700}
+.bigin{display:flex;background:var(--white);border:3px solid var(--black);margin-bottom:6px}
+.bigin input,.bigin textarea{flex:1;border:0;padding:14px 16px;font-size:17px;font-weight:600;min-width:0;outline:none;resize:none;background:transparent}
+.bigin button{border:0;background:var(--black);color:var(--yellow);padding:0 20px;font:var(--wide);letter-spacing:.07em;text-transform:uppercase}
+.tip{font-size:12px;color:var(--g6);margin:0 0 18px}
+.tip.warn{color:var(--red-dark);font-weight:600}
+
+/* ---------- Brainstorm ---------- */
+.bbox{display:flex;gap:0;margin-bottom:18px;border-bottom:3px solid var(--black);overflow-x:auto}
+.bbox button{border:0;background:transparent;padding:12px 18px 10px;font:800 15px/1 "Inter Tight",sans-serif;text-transform:uppercase;letter-spacing:.04em;color:var(--g6);white-space:nowrap;display:flex;gap:8px;align-items:center}
+.bbox button span{font:var(--wide);font-size:10px;background:var(--line);color:var(--black);padding:3px 6px}
+.bbox button[aria-pressed=true]{background:var(--black);color:var(--yellow)}
+.bbox button[aria-pressed=true] span{background:var(--yellow)}
+.bbox-hint{font-size:13px;color:var(--g6);margin:-8px 0 16px}
+.bfilter{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;align-items:center}
+.bfilter .b[aria-pressed=true]{background:var(--black);color:var(--yellow)}
+.bsearch{display:flex;align-items:center;background:var(--white);border:2px solid var(--black);flex:1 1 220px;max-width:340px}
+.bsearch span{padding:0 4px 0 10px;font-size:14px;color:var(--g6)}
+.bsearch input{flex:1;border:0;outline:none;padding:8px 6px;font-weight:600;min-width:0;background:transparent}
+.bsearch button{border:0;background:transparent;color:var(--g6);font-size:16px;padding:0 10px}
+.bsearch:focus-within{box-shadow:0 0 0 3px var(--yellow)}
+.vsw{display:flex;margin-left:auto}
+.vsw .b{border-width:2px}
+.vsw .b[aria-pressed=true]{background:var(--black);color:var(--yellow)}
+.bfound{font-size:13px;color:var(--g6);margin:-6px 0 14px;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.bfound button{border:0;background:var(--line);padding:4px 8px;font:var(--wide);font-size:10px;letter-spacing:.05em;text-transform:uppercase}
+.bfound button:hover{background:var(--black);color:var(--yellow)}
+mark{background:var(--yellow);color:inherit;padding:0 1px}
+.bgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px;align-items:start}
+.bcard{background:var(--white);border-top:4px solid var(--black);display:flex;flex-direction:column}
+.bcard.lit{border-top-color:var(--yellow);box-shadow:inset 0 0 0 2px var(--yellow)}
+.bcard.shelf{border-top-color:#999}
+.bcard.archive{border-top-color:#ccc;opacity:.75}
+.bcard .bb{padding:14px 16px 8px;cursor:pointer;flex:1}
+.bcard .bt{font:700 17px/1.3 "Inter Tight",sans-serif;color:var(--black);overflow-wrap:anywhere;flex:1}
+.bcard .bn{font-size:13px;color:var(--g6);white-space:pre-wrap;margin-top:4px;overflow-wrap:anywhere}
+.bcard .bm{font-size:11px;color:#aaa;margin-top:8px}
+.bcard .ied{font-size:11px;color:var(--g6);margin-top:6px}
+.bcard .bf{display:flex;gap:6px;flex-wrap:wrap;padding:10px 16px;border-top:1px solid var(--line)}
+.spark{border:0;background:transparent;font-size:18px;line-height:1;padding:2px 4px;color:#ccc}
+.spark.on{color:var(--black);background:var(--yellow)}
+.bscore{border:0;font:800 16px/1 "Inter Tight",sans-serif;background:var(--black);color:var(--yellow);padding:5px 7px;flex:none}
+.bscore.none{background:transparent;border:1px dashed #bbb;color:#999;font:var(--wide);font-size:10px;letter-spacing:.06em;text-transform:uppercase}
+.graph-wrap{background:var(--white);padding:16px}
+.graph{width:100%;height:auto;display:block}
+.graph text{font-family:"Inter Tight",sans-serif}
+.graph .dot{cursor:pointer}
+.graph .dot:hover circle{stroke-width:4}
+.unplot{margin-top:14px}
+.unplot h4{margin:0 0 8px;font:var(--wide);font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:var(--g6)}
+.unplot .chips{display:flex;flex-wrap:wrap;gap:6px}
+
+/* ---------- menu ---------- */
+#amenu{position:fixed;z-index:80;background:var(--white);border:2px solid var(--black);box-shadow:0 8px 24px rgba(0,0,0,.18);min-width:220px;max-width:290px;padding:6px 0;max-height:calc(100vh - 24px);overflow:auto}
+#amenu button{display:flex;gap:10px;align-items:center;width:100%;border:0;background:transparent;text-align:left;padding:10px 14px;font:600 14px/1.2 "Inter Tight",sans-serif;color:var(--black)}
+#amenu button:hover{background:var(--yellow)}
+#amenu button i{font-style:normal;width:16px;text-align:center;color:var(--g6)}
+#amenu button.red{color:var(--red)}
+#amenu button.sub{padding-left:40px;font-weight:500}
+#amenu .sec{font:var(--wide);font-size:9px;letter-spacing:.07em;text-transform:uppercase;color:var(--g6);padding:8px 14px 4px;border-top:1px solid var(--line);margin-top:4px}
+#amenu .sec:first-child{border-top:0;margin-top:0}
+
+/* ---------- dialogs ---------- */
+#dlg{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;place-items:center;z-index:60;padding:16px}
+#dlg.on{display:grid}
+#dlg .box{background:var(--white);max-width:480px;width:100%;border-top:6px solid var(--black);max-height:calc(100vh - 32px);overflow:auto}
+#dlg .box.wide{max-width:660px}
+#dlg h3{font:800 20px/1.15 "Inter Tight",sans-serif;padding:18px 18px 6px}
+#dlg .body{padding:6px 18px 12px}
+#dlg label{display:block;font:var(--wide);font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:var(--g6);margin:12px 0 4px}
+#dlg input,#dlg textarea,#dlg select{width:100%;border:1px solid #cfc7c7;padding:9px 10px;background:var(--white);border-radius:0}
+#dlg textarea{min-height:84px;resize:vertical}
+#dlg .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+#dlg .foot{padding:12px 18px;display:flex;gap:8px;border-top:1px solid var(--line);flex-wrap:wrap;align-items:center;position:sticky;bottom:0;background:var(--white)}
+#dlg .foot .sp{flex:1}
+#dlg .pick{display:flex;flex-direction:column;gap:6px}
+#dlg .pick button{text-align:left;padding:12px 14px;font-size:15px;font-weight:700;letter-spacing:0;text-transform:none}
+#dlg textarea.cw-title{line-height:1.2!important;width:100%;border:0!important;font:800 22px/1.2 "Inter Tight",sans-serif;padding:0!important;outline:none;resize:none;overflow:hidden;min-height:0!important;display:block}
+textarea[data-grow]{min-height:40px!important;height:40px;overflow:hidden;resize:none;line-height:1.45}
+.cw-stage{display:flex;gap:4px;flex-wrap:wrap;margin:4px 0 2px}
+.cw-stage button{border:1px solid #cfc7c7;background:var(--white);padding:7px 10px;font:var(--wide);font-size:10px;letter-spacing:.05em;text-transform:uppercase}
+.cw-stage button:hover{border-color:var(--black)}
+.cw-stage button.on{background:var(--black);color:var(--yellow);border-color:var(--black)}
+.cw-fields{display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;margin-top:8px}
+.cw-fields div{font-size:14px}
+.cw-fields div small{display:block;font:var(--wide);font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:var(--g6)}
+.cw-fields .full{grid-column:1/-1;white-space:pre-wrap}
+.sec-h{margin:16px 0 8px;padding-top:12px;border-top:2px solid var(--black);font:800 14px/1 "Inter Tight",sans-serif;text-transform:uppercase;display:flex;gap:10px;align-items:center}
+.sec-h .bar{flex:1;width:auto}
+.ctask{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line)}
+#dlg .ctask .tt{flex:1;border:0;padding:4px 2px;font-weight:600;min-width:0;background:transparent}
+#dlg .ctask.done .tt{text-decoration:line-through;color:#999}
+#dlg .ctask .td{width:auto;flex:none;border:1px solid #cfc7c7;padding:3px 6px;font-size:12px;max-width:140px}
+#dlg .ctask .td.empty{opacity:.45}
+#dlg .ctask .td.over{border-color:var(--red);color:var(--red-dark)}
+.ctask .x{border:0;background:transparent;color:#bbb;font-size:17px;padding:0 4px;flex:none}
+.ctask .x:hover{color:var(--red)}
+.ctask .tod{border:0;background:var(--yellow);font:var(--wide);font-size:9px;letter-spacing:.05em;text-transform:uppercase;padding:4px 6px;flex:none}
+.addrow{display:flex;gap:6px;margin-top:8px}
+.addrow input{flex:1}
+.cm-new .row{display:flex;gap:8px;align-items:center;margin-top:6px}
+.cm-new .row span{font-size:11px;color:var(--g6);flex:1}
+.cm-list{max-height:260px;overflow-y:auto;border:1px solid var(--line);background:#faf8f8;margin-top:10px}
+.cm-item{padding:10px 12px;border-bottom:1px solid var(--line);background:var(--white)}
+.cm-item:last-child{border-bottom:0}
+.cm-item .cd{display:flex;align-items:center;gap:8px;font:var(--wide);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--g6);margin-bottom:4px}
+.cm-item .cd button{margin-left:auto;border:0;background:transparent;color:#bbb;font-size:15px;padding:0 2px}
+.cm-item .ct{white-space:pre-wrap;overflow-wrap:anywhere;font-size:14px;line-height:1.45}
+.smode{display:flex;margin:4px 0 6px}
+.smode button{flex:1;border:2px solid var(--black);background:var(--white);padding:9px;font:var(--wide);letter-spacing:.06em;text-transform:uppercase}
+.smode button[aria-pressed=true]{background:var(--black);color:var(--yellow)}
+.big-score{font:800 64px/1 "Inter Tight",sans-serif;color:var(--black);text-align:center;margin:12px 0 2px}
+.big-score small{font-size:20px;color:#aaa}
+.sl{margin:14px 0 4px}
+.sl .top2{display:flex;justify-content:space-between;align-items:baseline}
+.sl .top2 b{font:800 15px/1 "Inter Tight",sans-serif}
+.sl .top2 span{font:800 18px/1 "Inter Tight",sans-serif}
+.sl .ends{display:flex;justify-content:space-between;font-size:11px;color:var(--g6)}
+#dlg input[type=range]{accent-color:var(--black);padding:0;border:0;height:26px}
+.formula{font-size:12px;color:var(--g6);margin-top:12px;background:var(--bg);padding:8px 10px}
+
+/* toast */
+#toast{position:fixed;left:50%;bottom:max(22px,env(safe-area-inset-bottom));transform:translate(-50%,180%);background:var(--black);color:var(--white);padding:12px 16px;display:flex;gap:14px;align-items:center;transition:transform .25s var(--ease);z-index:90;max-width:calc(100vw - 32px);border-left:4px solid var(--yellow)}
+#toast.on{transform:translate(-50%,0)}
+#toast button{background:var(--yellow);border:0;color:var(--black);padding:6px 10px;font:var(--wide);font-size:10px;letter-spacing:.06em;text-transform:uppercase}
+
+@media (max-width:760px){
+  .lists{flex-direction:column;overflow:visible}
+  .list,.list.pullcol,.newlist{flex:none;width:100%}
+  .pcol{flex-basis:84vw}
+  .cw-fields,#dlg .two{grid-template-columns:1fr}
+  .conn{display:none}
+  #dlg{padding:0;place-items:stretch}
+  #dlg .box,#dlg .box.wide{max-width:none;max-height:100vh;height:100%;border-top-width:4px}
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="top-row">
+    <div class="brand"><a href="../tools.html">Xavier de Belle · Tools</a><h1>Production Hub<span>.</span></h1></div>
+    <div class="conn" id="conn" title="Connected apps"></div>
+    <button class="tbtn" type="button" data-pwa-install style="display:none" title="Install as an app: its own icon, works offline">Install app</button>
+    <button class="tbtn" id="btn-sync" type="button">Sign in to sync</button>
+  </div>
+  <nav class="tabs" role="tablist">
+    <button class="tab" role="tab" data-tab="today"><span>Today</span><span class="lvl">tasks</span><span class="count" id="c-today"></span></button>
+    <button class="tab" role="tab" data-tab="prod"><span>In Production</span><span class="lvl">projects</span><span class="count" id="c-prod"></span></button>
+    <button class="tab" role="tab" data-tab="big"><span>Big Picture</span><span class="lvl">quests</span><span class="count" id="c-big"></span></button>
+    <button class="tab" role="tab" data-tab="goals"><span>Goals</span><span class="lvl" id="l-goals">this year</span><span class="count" id="c-goals"></span></button>
+    <button class="tab" role="tab" data-tab="brain"><span>Brainstorm</span><span class="lvl">raw ideas</span><span class="count" id="c-brain"></span></button>
+  </nav>
+</header>
+<div id="bars"></div>
+
+<main>
+  <section class="view" id="v-today"></section>
+  <section class="view" id="v-prod"></section>
+  <section class="view wrap" id="v-big"></section>
+  <section class="view wrap" id="v-goals"></section>
+  <section class="view wrap" id="v-brain"></section>
+</main>
+
+<div id="toast" role="status"><span id="toast-msg"></span><button id="toast-btn" hidden></button></div>
+<div id="dlg"><div class="box" id="dlg-box" role="dialog" aria-modal="true"></div></div>
+
+<script>
+/* Cloud sync — local first, optional, live while signed in.
+   Ported unchanged in behaviour from Idea Bank v3 (shared with Project Phases
+   and Budget Tracker), including membership: sync is by invitation. Everything tool-specific lives in the adapter passed in;
+   the UI is painted through adapter.paint(view) instead of touching the DOM. */
+(function () {
+  'use strict';
+
+  var FIREBASE = {
+    apiKey:      'AIzaSyCu0CA6eLWIkhhl-Z7jr_dDisuXDt1dKco',
+    authDomain:  'xdb-tools.firebaseapp.com',
+    databaseURL: 'https://xdb-tools-default-rtdb.firebaseio.com',
+    projectId:   'xdb-tools',
+    appId:       '1:6009567091:web:f7ee8c43ebe1bd25fcb706'
+  };
+  var SDK = 'https://www.gstatic.com/firebasejs/10.12.2/';
+  var OWNER = 'jGJdt3h4EeaOL3mYWUHA4yMZsRx2';
+  var ACCESS_URL = '../access.html';   // where requests are approved; tools live in tools/
+
+  function createCloudSync(SYNC) {
+    var META_KEY = SYNC.storageKey + '.meta';
+    var cloud = {
+      on: !!FIREBASE.databaseURL, status: 'signedout', uid: null, authed: false, listening: false,
+      at: 0, msg: '', fb: null, timer: null, busy: false, again: false, pending: null,
+      print: null, outgoing: 0, unwatch: null, unmember: null, asked: false
+    };
+
+    function explain(code) {
+      var offline = 'No connection. Everything still saves on this device and will sync when you are back online.';
+      var map = {
+        'auth/unauthorized-domain': 'This site is not on the Firebase authorised domains list. Add ' + location.hostname + ' under Authentication → Settings → Authorized domains.',
+        'auth/operation-not-allowed': 'Google sign-in is not enabled for this Firebase project. Turn it on under Authentication → Sign-in method.',
+        'auth/popup-blocked': 'Your browser blocked the sign-in popup. Allow popups for this site, or try again.',
+        'auth/popup-closed-by-user': 'The sign-in window closed before it finished.',
+        'auth/network-request-failed': offline, 'unavailable': offline, 'timeout': offline,
+        'PERMISSION_DENIED': 'The database rules refused this account. Check the rules allow users/<your uid>.'
+      };
+      return map[code] || ('Sync failed' + (code ? ' (' + code + ')' : '') + '.');
+    }
+    function deviceName() {
+      var ua = navigator.userAgent;
+      if (/iPhone/.test(ua)) return 'iPhone';
+      if (/iPad/.test(ua)) return 'iPad';
+      if (/Android/.test(ua)) return 'Android';
+      if (/Mac OS X/.test(ua)) return 'Mac';
+      if (/Windows/.test(ua)) return 'Windows';
+      return 'this device';
+    }
+    function meta() {
+      try {
+        var m = JSON.parse(localStorage.getItem(META_KEY) || '{}');
+        return { updatedAt: +m.updatedAt || 0, lastSyncedAt: +m.lastSyncedAt || 0, signedIn: !!m.signedIn };
+      } catch (e) { return { updatedAt: 0, lastSyncedAt: 0, signedIn: false }; }
+    }
+    function setMeta(patch) {
+      var m = meta();
+      for (var k in patch) m[k] = patch[k];
+      try { localStorage.setItem(META_KEY, JSON.stringify(m)); } catch (e) {}
+      return m;
+    }
+    function nextStamp() { return Math.max(Date.now(), meta().lastSyncedAt + 1, cloud.outgoing + 1); }
+    function syncPrint() { return JSON.stringify(SYNC.payload()); }
+    function seedMeta() {
+      var noWatermark = false;
+      try { noWatermark = localStorage.getItem(META_KEY) == null; } catch (e) {}
+      if (noWatermark && !SYNC.untouched()) setMeta({ updatedAt: 1 });
+      cloud.print = syncPrint();
+    }
+    /* With the site-wide account (assets/account.js) present, share its
+       Firebase connection and its sign-in — same as the classic core. */
+    function account() { return window.xdbAccount || null; }
+    function loadSDK() {
+      if (cloud.fb) return Promise.resolve(cloud.fb);
+      if (account()) return account().sdk().then(function (s) {
+        cloud.fb = { auth: s.auth, db: s.db, a: s.a, f: s.f };
+        return cloud.fb;
+      });
+      if (window.__xdbFirebase) return window.__xdbFirebase.then(function (fb) { cloud.fb = fb; return fb; });
+      return (window.__xdbFirebase = Promise.all([
+        import(SDK + 'firebase-app.js'), import(SDK + 'firebase-auth.js'), import(SDK + 'firebase-database.js')
+      ]).then(function (mods) {
+        var app = mods[0].initializeApp(FIREBASE);
+        cloud.fb = { auth: mods[1].getAuth(app), db: mods[2].getDatabase(app), a: mods[1], f: mods[2] };
+        return cloud.fb;
+      }).catch(function (err) { window.__xdbFirebase = null; throw err; }));
+    }
+    function docRef() { return cloud.fb.f.ref(cloud.fb.db, 'users/' + cloud.uid + '/tools/' + SYNC.doc); }
+    function withTimeout(p, ms) {
+      return Promise.race([p, new Promise(function (_, no) { setTimeout(function () { no({ code: 'timeout' }); }, ms); })]);
+    }
+    function reconcile(remote) {
+      var m = meta(), localAt = m.updatedAt, syncedAt = m.lastSyncedAt;
+      var remoteAt = remote ? (+remote.updatedAt || 0) : 0;
+      if (!remote) return localAt ? 'push' : 'idle';
+      if (remoteAt === syncedAt) return localAt > syncedAt ? 'push' : 'idle';
+      return localAt > syncedAt ? 'conflict' : 'pull';
+    }
+    function adopt(remote) {
+      var d = remote && remote.data;
+      if (!d) return false;
+      if (!SYNC.apply(d, remote)) return false;
+      cloud.print = syncPrint();
+      var stamp = +remote.updatedAt || Date.now();
+      setMeta({ updatedAt: stamp, lastSyncedAt: stamp });
+      return true;
+    }
+    function pushNow() {
+      var stamp = nextStamp(), print = syncPrint();
+      cloud.outgoing = stamp;
+      return cloud.fb.f.set(docRef(), { data: JSON.parse(print), updatedAt: stamp, device: deviceName() }).then(function () {
+        var ahead = syncPrint() !== print;
+        setMeta({ lastSyncedAt: stamp, updatedAt: ahead ? Math.max(meta().updatedAt, stamp + 1) : stamp });
+        cloud.at = stamp;
+        if (ahead) cloud.again = true;
+      });
+    }
+    function pullNow() {
+      return withTimeout(cloud.fb.f.get(docRef()), 12000).then(function (snap) { return snap.exists() ? snap.val() : null; });
+    }
+    function decide(remote) {
+      var move = reconcile(remote);
+      if (move === 'pull') { adopt(remote); cloud.at = Date.now(); setStatus('synced'); return; }
+      if (move === 'push') { return pushNow().then(function () { setStatus('synced'); }); }
+      if (move === 'conflict') { cloud.pending = remote; setStatus('conflict'); return; }
+      cloud.at = Date.now();
+      setStatus('synced');
+    }
+    function syncNow(userAsked, known) {
+      if (!cloud.on || !cloud.uid) return Promise.resolve();
+      if (cloud.busy) { cloud.again = true; return Promise.resolve(); }
+      if (cloud.status === 'conflict' && !userAsked) return Promise.resolve();
+      cloud.busy = true; cloud.again = false;
+      clearTimeout(cloud.timer);
+      setStatus('working');
+      return (known ? Promise.resolve(known) : pullNow()).then(decide).then(function () {
+        cloud.busy = false;
+        if (cloud.again && cloud.status !== 'conflict') return syncNow();
+      }, function (err) {
+        cloud.busy = false;
+        cloud.msg = (err && err.code) || 'failed';
+        setStatus('error');
+        if (userAsked) console.warn('[sync]', err);
+      });
+    }
+    function touch() {
+      if (cloud.print === null) return;
+      var p = syncPrint();
+      if (p === cloud.print) return;
+      cloud.print = p;
+      setMeta({ updatedAt: nextStamp() });
+      if (!cloud.on || !cloud.uid) return;
+      clearTimeout(cloud.timer);
+      cloud.timer = setTimeout(function () { syncNow(); }, 600);
+    }
+    function watch() {
+      if (cloud.unwatch || !cloud.uid) return;
+      cloud.unwatch = cloud.fb.f.onValue(docRef(), function (snap) {
+        var remote = snap.exists() ? snap.val() : null;
+        if (!remote) return;
+        var at = +remote.updatedAt || 0;
+        if (at === cloud.outgoing || at === meta().lastSyncedAt) return;
+        if (cloud.status === 'conflict') { cloud.pending = remote; paint(); return; }
+        if (cloud.busy) { cloud.again = true; return; }
+        syncNow(false, remote);
+      }, function (err) {
+        cloud.unwatch = null;
+        cloud.msg = (err && err.code) || 'failed';
+        setStatus('error');
+      });
+    }
+    function stopWatching() { if (cloud.unwatch) { cloud.unwatch(); cloud.unwatch = null; } }
+    /* Membership — same rules as the classic core: Xavier always syncs;
+       anyone else is watched live at members/{uid}, and signing in files an
+       access request that he approves on the Access page. */
+    function admit(uid) {
+      if (cloud.uid === uid) return;
+      cloud.uid = uid;
+      syncNow();
+      watch();
+    }
+    function stopMembership() { if (cloud.unmember) { cloud.unmember(); cloud.unmember = null; } }
+    function askForAccess(user) {
+      if (cloud.asked) { setStatus('pending'); return; }
+      cloud.asked = true;
+      cloud.fb.f.set(cloud.fb.f.ref(cloud.fb.db, 'requests/' + user.uid), {
+        email: user.email || '', name: (user.displayName || '').slice(0, 120), at: Date.now(), tool: SYNC.doc
+      }).then(function () { if (!cloud.uid) setStatus('pending'); },
+              function () { if (!cloud.uid) setStatus('private'); });
+    }
+    function checkMembership(user) {
+      if (user.uid === OWNER) { admit(user.uid); return; }
+      setStatus('working');
+      cloud.unmember = cloud.fb.f.onValue(cloud.fb.f.ref(cloud.fb.db, 'members/' + user.uid), function (snap) {
+        if (!cloud.on) return;
+        if (snap.exists()) { admit(user.uid); return; }
+        if (cloud.uid) { cloud.uid = null; stopWatching(); clearTimeout(cloud.timer); }
+        askForAccess(user);
+      }, function () {
+        cloud.uid = null;
+        stopWatching();
+        setStatus('private');
+      });
+    }
+    function listen(fb) {
+      if (cloud.listening) return;
+      cloud.listening = true;
+      cloud.unauth = fb.a.onAuthStateChanged(fb.auth, function (user) {
+        if (!cloud.on) return;
+        cloud.authed = !!user;
+        setMeta({ signedIn: !!user });
+        stopWatching();
+        stopMembership();
+        cloud.uid = null;
+        cloud.asked = false;
+        if (!user) { setStatus('signedout'); return; }
+        checkMembership(user);
+      });
+    }
+    function signIn() {
+      if (!cloud.on) return;
+      setMeta({ signedIn: true });
+      setStatus('working');
+      if (account()) {
+        loadSDK().then(listen).catch(function () {});
+        account().signIn().catch(function (err) {
+          if (err && err.code === 'auth/popup-closed-by-user') { if (!cloud.authed) setStatus('signedout'); return; }
+          cloud.msg = (err && err.code) || 'failed';
+          setStatus('error');
+        });
+        return;
+      }
+      loadSDK().then(function (fb) {
+        listen(fb);
+        var provider = new fb.a.GoogleAuthProvider();
+        if (provider.setCustomParameters) provider.setCustomParameters({ prompt: 'select_account' });
+        return fb.a.signInWithPopup(fb.auth, provider).catch(function (err) {
+          if (err && /popup-blocked|operation-not-supported/i.test(err.code || '')) return fb.a.signInWithRedirect(fb.auth, provider);
+          throw err;
+        });
+      }).catch(function (err) {
+        setMeta({ signedIn: false });
+        cloud.msg = (err && err.code) || 'failed';
+        setStatus('error');
+      });
+    }
+    function signOut() {
+      if (account()) { account().signOut(); return; }
+      if (cloud.fb) cloud.fb.a.signOut(cloud.fb.auth);
+    }
+    function click() {
+      if (account() && cloud.authed) { account().openPanel(); return; }
+      if (!cloud.uid) signIn(); else syncNow(true);
+    }
+    /* The choice in plain words, and a week-long backup of the version not
+       chosen — same behaviour as the classic core. */
+    var BACKUP_KEY = SYNC.storageKey + '.backup', BACKUP_DAYS = 7;
+    function summary(d) {
+      var s = '';
+      try { s = String(SYNC.describe(d) || ''); } catch (e) {}
+      return s.replace(/^It holds /, '').replace(/\.$/, '') || 'a copy';
+    }
+    function whenLabel(ms) {
+      if (!ms) return '';
+      var d = new Date(ms), now = new Date();
+      var day = d.toDateString() === now.toDateString() ? 'today'
+        : new Date(now.getTime() - 864e5).toDateString() === d.toDateString() ? 'yesterday'
+        : d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+      return day + ' at ' + hhmm(ms);
+    }
+    function otherDevice(remote) {
+      var other = (remote && remote.device) || '';
+      if (!other) return 'your other device';
+      return other === deviceName() ? 'your other ' + other : 'your ' + other;
+    }
+    function choiceWords(remote) {
+      var here = deviceName(), m = meta();
+      var mine = summary(JSON.parse(syncPrint())), theirs = summary(remote.data);
+      var remoteAt = +remote.updatedAt || 0;
+      var other = otherDevice(remote), otherShort = other.replace(/^your /, 'the ');
+      if (!m.lastSyncedAt) {
+        return {
+          text: 'This browser already has its own ' + SYNC.noun + ' (' + mine + '). Your account has ' + theirs +
+            ', last saved from ' + other + ' ' + whenLabel(remoteAt) + '. Which should this browser use? ' +
+            'Whichever you don\u2019t pick is kept here as a backup for ' + BACKUP_DAYS + ' days.',
+          local: 'Keep this browser\u2019s', cloud: 'Use my account\u2019s'
+        };
+      }
+      var localNewer = m.updatedAt > remoteAt;
+      return {
+        text: 'This ' + here + ' and ' + other + ' both made changes before they could sync. ' +
+          'This ' + here + (m.updatedAt > 1e12 ? ', ' + whenLabel(m.updatedAt) : '') + ': ' + mine + (localNewer ? ' (newer)' : '') + '. ' +
+          other.charAt(0).toUpperCase() + other.slice(1) + ', ' + whenLabel(remoteAt) + ': ' + theirs + (localNewer ? '' : ' (newer)') + '. ' +
+          'Which version do you want? The other is kept here as a backup for ' + BACKUP_DAYS + ' days.',
+        local: 'Keep this ' + here + '\u2019s', cloud: 'Use ' + otherShort + '\u2019s'
+      };
+    }
+    function readBackup() {
+      try {
+        var b = JSON.parse(localStorage.getItem(BACKUP_KEY) || 'null');
+        if (b && b.data && Date.now() - (+b.at || 0) < BACKUP_DAYS * 864e5) return b;
+      } catch (e) {}
+      return null;
+    }
+    function writeBackup(b) { try { localStorage.setItem(BACKUP_KEY, JSON.stringify(b)); } catch (e) {} }
+    function keepBackup(data, label, restored) {
+      writeBackup({ data: data, at: Date.now(), label: label, summary: summary(data), shown: true, restored: !!restored });
+    }
+    function dismissBackup() {
+      var b = readBackup();
+      if (b) { b.shown = false; writeBackup(b); }
+      paint();
+    }
+    function restoreBackup() {
+      var b = readBackup(); if (!b) return;
+      var current = JSON.parse(syncPrint());
+      if (!SYNC.apply(b.data, { data: b.data, updatedAt: Date.now(), device: deviceName() })) return;
+      keepBackup(current, 'the version you just replaced', true);
+      cloud.print = syncPrint();
+      setMeta({ updatedAt: nextStamp() });
+      if (cloud.uid) syncNow(true); else paint();
+    }
+
+    function keepLocal() {
+      var remote = cloud.pending;
+      if (!remote) { restoreBackup(); return; }
+      keepBackup(remote.data, 'the version from ' + otherDevice(remote).replace(/^your /, 'the '));
+      cloud.pending = null;
+      var seen = +remote.updatedAt || 0;
+      setMeta({ lastSyncedAt: seen, updatedAt: Math.max(meta().updatedAt, seen + 1) });
+      cloud.status = 'working';
+      syncNow(true);
+    }
+    function keepCloud() {
+      var remote = cloud.pending;
+      if (!remote) { dismissBackup(); return; }
+      keepBackup(JSON.parse(syncPrint()), 'this ' + deviceName() + '\u2019s version');
+      cloud.pending = null;
+      adopt(remote);
+      cloud.at = Date.now();
+      setStatus('synced');
+    }
+    function hhmm(ms) {
+      var d = new Date(ms);
+      return (d.getHours() < 10 ? '0' : '') + d.getHours() + ':' + (d.getMinutes() < 10 ? '0' : '') + d.getMinutes();
+    }
+    function setStatus(s) {
+      cloud.status = s;
+      if (s === 'synced') cloud.at = cloud.at || Date.now();
+      paint();
+    }
+    function paint() {
+      var v = { status: cloud.status, authed: cloud.authed, barOn: false, barText: '', showKeep: false };
+      var acct = account();
+      if (acct && cloud.authed) {
+        var st = acct.state(), u = st.user;
+        v.initial = u ? ((u.name || u.email || '?').trim().charAt(0).toUpperCase() || '?') : '';
+        v.accountDot = st.status === 'owner' || st.status === 'member' ? 'live' : st.status === 'pending' || st.status === 'checking' ? 'wait' : 'no';
+        v.siteAccount = true;              // signing out lives in the account panel
+      }
+      switch (cloud.status) {
+        case 'working':  v.label = 'Syncing…'; v.title = 'Talking to the cloud'; break;
+        case 'synced':   v.label = 'Live · ' + hhmm(cloud.at); v.title = 'Signed in. Changes on your other devices appear here as they happen'; break;
+        case 'conflict': v.label = 'Pick a version'; v.title = 'Two versions to choose between \u2014 see the note below'; break;
+        case 'pending':  v.label = 'Access requested'; v.title = 'Waiting for Xavier to approve this account'; break;
+        case 'private':  v.label = 'No access'; v.title = 'This account is not on the invitation list'; break;
+        case 'error':    v.label = 'Sync failed'; v.title = explain(cloud.msg); break;
+        default:         v.label = 'Sign in to sync'; v.title = 'Keep this in step across your devices';
+      }
+      if (cloud.status === 'pending' || cloud.status === 'private' || cloud.status === 'error') {
+        v.barOn = true;
+        v.barText = cloud.status === 'pending'
+          ? 'Sync is by invitation, and your request is in. Once Xavier approves it, syncing starts here on its own. Until then everything keeps saving in this browser as usual.'
+          : cloud.status === 'private'
+          ? 'Sync on this site is by invitation, and this account isn\u2019t on the list. Everything still saves in this browser exactly as before, and nothing is sent anywhere.'
+          : explain(cloud.msg);
+        if (cloud.status !== 'error') v.link = { href: ACCESS_URL, text: 'About access \u2192' };
+      } else if (cloud.status === 'conflict' && cloud.pending) {
+        var w = choiceWords(cloud.pending);
+        v.barOn = true; v.showKeep = true;
+        v.barText = w.text; v.keepLabel = w.local; v.cloudLabel = w.cloud;
+      } else {
+        var b = readBackup();
+        if (b && b.shown) {
+          v.barOn = true; v.showKeep = true;
+          v.barText = b.restored
+            ? 'Restored. The version you replaced (' + b.summary + ') is saved here in case you want it back.'
+            : 'Done. The version you didn\u2019t keep \u2014 ' + b.label + ' (' + b.summary + ') \u2014 is saved on this device for ' + BACKUP_DAYS + ' days.';
+          v.keepLabel = b.restored ? 'Switch back' : 'Restore it';
+          v.cloudLabel = 'OK';
+        }
+      }
+      SYNC.paint(v);
+    }
+    function onVis() {
+      if (!cloud.uid) return;
+      if (document.hidden) { SYNC.flush(); if (meta().updatedAt > meta().lastSyncedAt) syncNow(); }
+      else syncNow();
+    }
+    function onWake() { if (cloud.uid) syncNow(); }
+    function init() {
+      seedMeta();
+      paint();
+      if (!cloud.on) return;
+      var acct = account();
+      if (acct) {
+        acct.registerTool({ doc: SYNC.doc, syncNow: function () { syncNow(true); } });
+        cloud.unacct = acct.on(function (st) {
+          if (!cloud.on) return;
+          if (st.user && !cloud.listening) loadSDK().then(listen).catch(function () {});
+          paint();
+        });
+      }
+      if (meta().signedIn || (acct && acct.wanted())) {
+        setStatus('working');
+        loadSDK().then(listen).catch(function (err) { cloud.msg = (err && err.code) || 'failed'; setStatus('error'); });
+      }
+      document.addEventListener('visibilitychange', onVis);
+      window.addEventListener('focus', onWake);
+      window.addEventListener('online', onWake);
+    }
+    function destroy() {
+      cloud.on = false;
+      cloud.uid = null;
+      if (cloud.unauth) { cloud.unauth(); cloud.unauth = null; }
+      if (cloud.unacct) { cloud.unacct(); cloud.unacct = null; }
+      stopWatching();
+      stopMembership();
+      clearTimeout(cloud.timer);
+      document.removeEventListener('visibilitychange', onVis);
+      window.removeEventListener('focus', onWake);
+      window.removeEventListener('online', onWake);
+    }
+    return { init: init, destroy: destroy, touch: touch, click: click, signOut: signOut, keepLocal: keepLocal, keepCloud: keepCloud,
+             cloud: cloud, meta: meta, reconcile: reconcile };
+  }
+
+  window.createCloudSync = createCloudSync;
+})();
+</script>
+<script>
+/* ============================================================
+   Production Hub — one place for:
+     Today        · tasks       (this hub's own lists)
+     In Production · projects   (reads + writes the Pipelines app's doc)
+     Big Picture  · quests      (reads + writes the Project Phases app's doc)
+     Goals        · this year   (this hub)
+     Brainstorm   · raw ideas   (this hub)
+
+   Three synced docs: production-hub (ours), pipelines, project-phases.
+   The other two apps own their data. The hub keeps the copy exactly as it
+   arrived and only changes the few fields it touches (a tick, a stage, a
+   new task), so nothing those apps know about is ever dropped. Extra things
+   the hub knows about their items (step dates, which stage a phase sits in
+   on the Projects board, pinned quests) live in the hub's own doc.
+   ============================================================ */
+var HUB_KEY = 'xdb.hub.v1', UI_KEY = 'xdb.hub.v1.ui';
+var PL_KEY = 'xdb.hub.v1.pipelines', PP_KEY = 'xdb.hub.v1.phases';   // the hub's copies of the other apps' docs
+
+function $(id) { return document.getElementById(id); }
+function uid(p) { return (p || 'x') + Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-3); }
+function ppid(p) { return p + '-' + Math.random().toString(36).slice(2, 9); }   // Project Phases' own id style
+function listOf(v) { return Array.isArray(v) ? v : (v && typeof v === 'object' ? Object.values(v) : []); }
+function arr(o, k) { if (!Array.isArray(o[k])) o[k] = listOf(o[k]); return o[k]; }   // a real array we can push to
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+function today() { var d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+function dayOff(n) { var d = new Date(); d.setHours(12, 0, 0, 0); d.setDate(d.getDate() + n); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+function isDate(v) { return typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v); }
+function daysBetween(a, b) { return Math.round((new Date(b + 'T12:00') - new Date(a + 'T12:00')) / 864e5); }
+function niceDate(v, withDay) { return new Date(v + 'T12:00').toLocaleDateString('en-CA', withDay ? { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' } : { month: 'short', day: 'numeric', year: 'numeric' }); }
+function clone(o) { return o == null ? o : JSON.parse(JSON.stringify(o)); }
+function linesOf(note) { return String(note || '').split('\n').map(function (l) { return l.replace(/^\s*[-•]\s*/, '').trim(); }).filter(Boolean); }
+function dueChip(due, repeat) {
+  if (!isDate(due)) return '';
+  var d = daysBetween(today(), due), txt, cls = '';
+  if (d === 0) { txt = 'Today'; cls = 'today'; }
+  else if (d === 1) txt = 'Tomorrow';
+  else if (d < 0) { cls = 'over'; var n = -d; txt = n < 7 ? n + ' day' + (n > 1 ? 's' : '') + ' ago' : Math.floor(n / 7) + ' week' + (n >= 14 ? 's' : '') + ' ago'; }
+  else txt = new Date(due + 'T12:00').toLocaleDateString('en-CA', { weekday: 'short', month: 'short', day: 'numeric' });
+  return '<span class="due ' + cls + '">◷ ' + txt + (repeat ? ' ⟳' : '') + '</span>';
+}
+function money(v) { var n = Number(v); return '$' + n.toLocaleString('en-CA', { minimumFractionDigits: n % 1 ? 2 : 0, maximumFractionDigits: 2 }); }
+function shortCard(t) { return /^\d{6}\S* · /.test(t) ? t.replace(/^\S+ · /, '') : t; }
+
+/* ============================================================ hub state */
+function defaultHub() {
+  return { lists: [{ id: 'l1', name: 'Tasks' }], tasks: [], brain: [], goals: [], checks: {}, pins: {}, due: {}, stage: {} };
+}
+function normHub(s) {
+  if (!s || typeof s !== 'object') return null;
+  var out = defaultHub();
+  var lists = listOf(s.lists).filter(Boolean).map(function (l) { return { id: String(l.id || uid('l')), name: String(l.name == null ? 'List' : l.name) }; });
+  if (lists.length) out.lists = lists;
+  out.tasks = listOf(s.tasks).filter(Boolean).map(function (t) {
+    var ref = t.ref && typeof t.ref === 'object' ? t.ref : null;
+    if (ref && ref.app === 'pl') ref = { app: 'pl', pl: String(ref.pl), c: String(ref.c), t: String(ref.t) };
+    else if (ref && ref.app === 'pp') ref = { app: 'pp', p: String(ref.p), ph: String(ref.ph), s: String(ref.s) };
+    else ref = null;
+    return { id: String(t.id || uid('t')), list: String(t.list || out.lists[0].id), title: String(t.title == null ? '' : t.title), notes: String(t.notes || ''),
+      due: isDate(t.due) ? t.due : null, repeat: ['daily', 'weekly', 'monthly'].indexOf(t.repeat) > -1 ? t.repeat : null,
+      done: !!t.done, doneAt: isDate(t.doneAt) ? t.doneAt : null, ref: ref, at: isDate(t.at) ? t.at : today() };
+  });
+  out.tasks.forEach(function (t) { if (!out.lists.some(function (l) { return l.id === t.list; })) t.list = out.lists[0].id; });
+  out.brain = listOf(s.brain).filter(Boolean).map(function (b) {
+    var o = { id: String(b.id || uid('b')), text: String(b.text || ''), note: String(b.note || ''), spark: !!b.spark, at: isDate(b.at) ? b.at : today(),
+      box: b.box === 'shelf' || b.box === 'archive' ? b.box : 'fresh', movedAt: isDate(b.movedAt) ? b.movedAt : null, why: String(b.why || '') };
+    ['score', 'impact', 'time', 'ease'].forEach(function (k) { if (b[k] != null && isFinite(+b[k])) o[k] = Math.max(0, Math.min(100, Math.round(+b[k]))); });
+    if (o.impact == null || o.time == null || o.ease == null) { delete o.impact; delete o.time; delete o.ease; }
+    return o;
+  }).filter(function (b) { return b.text; });
+  out.goals = listOf(s.goals).filter(Boolean).map(function (g) {
+    return { id: String(g.id || uid('g')), year: +g.year || new Date().getFullYear(), title: String(g.title || 'Goal'), measure: String(g.measure || ''),
+      result: ['hit', 'partly', 'missed'].indexOf(g.result) > -1 ? g.result : null, note: String(g.note || ''), quests: listOf(g.quests).map(String) };
+  });
+  ['checks', 'pins'].forEach(function (k) { var v = s[k] && typeof s[k] === 'object' ? s[k] : {}; Object.keys(v).forEach(function (x) { if (v[x]) out[k][x] = true; }); });
+  var due = s.due && typeof s.due === 'object' ? s.due : {}; Object.keys(due).forEach(function (x) { if (isDate(due[x])) out.due[x] = due[x]; });
+  var st = s.stage && typeof s.stage === 'object' ? s.stage : {}; Object.keys(st).forEach(function (x) { if (st[x]) out.stage[x] = String(st[x]); });
+  return out;
+}
+
+var S = defaultHub();
+try { var sv = normHub(JSON.parse(localStorage.getItem(HUB_KEY) || 'null')); if (sv) S = sv; } catch (e) {}
+var U = { tab: 'today', lastList: null, open: {}, showPull: true, brainBox: 'fresh', brainFilter: 'all', brainSort: 'new', brainView: 'cards', brainQ: '', year: new Date().getFullYear(), review: false, prodView: 'projects', quest: null, showArch: false };
+try { var su = JSON.parse(localStorage.getItem(UI_KEY) || 'null'); if (su) U = Object.assign(U, su); } catch (e) {}
+U.year = U.year || new Date().getFullYear();
+
+/* The other apps' docs, exactly as they came from the cloud (null until known) */
+var PLD = null, PPD = null;
+try { PLD = JSON.parse(localStorage.getItem(PL_KEY) || 'null'); } catch (e) {}
+try { PPD = JSON.parse(localStorage.getItem(PP_KEY) || 'null'); } catch (e) {}
+
+var hubTimer = null;
+function saveHubNow() { clearTimeout(hubTimer); try { localStorage.setItem(HUB_KEY, JSON.stringify(S)); } catch (e) {} if (SH) SH.touch(); }
+function saveHub() { clearTimeout(hubTimer); hubTimer = setTimeout(saveHubNow, 300); }
+function saveUi() { try { localStorage.setItem(UI_KEY, JSON.stringify(U)); } catch (e) {} }
+function savePL() { try { localStorage.setItem(PL_KEY, JSON.stringify(PLD)); } catch (e) {} if (SP) SP.touch(); }
+function savePP() { try { localStorage.setItem(PP_KEY, JSON.stringify(PPD)); } catch (e) {} if (SQ) SQ.touch(); }
+function commit() { saveHub(); render(); }
+
+/* ============================================================ reading Pipelines (raw) */
+function pls() { return PLD ? listOf(PLD.pipelines).filter(Boolean) : []; }
+function plById(id) { return pls().find(function (p) { return p.id === id; }); }
+function stagesOf(pl) { var s = listOf(pl.stages).filter(Boolean); return s.length ? s : [{ id: '_', name: 'To do' }]; }
+function stageOf(pl, c) { var st = stagesOf(pl); return st.some(function (x) { return x.id === c.stage; }) ? c.stage : st[0].id; }
+function stageObj(pl, id) { var st = stagesOf(pl); return st.find(function (x) { return x.id === id; }) || st[0]; }
+function cardsOf(pl) { return listOf(pl.cards).filter(Boolean); }
+function ctasks(c) { return listOf(c.tasks).filter(Boolean); }
+function cfields(pl) { return listOf(pl.fields).filter(Boolean); }
+function findCard(plid, cid) { var pl = plById(plid); var c = pl && cardsOf(pl).find(function (x) { return x.id === cid; }); return c ? { pl: pl, c: c } : null; }
+function cardLate(c) { var t = today(); return ctasks(c).some(function (x) { return !x.done && isDate(x.due) && x.due < t; }); }
+function daysIn(c) { return isDate(c.stageAt) ? daysBetween(c.stageAt, today()) : 0; }
+function fieldText(f, v) {
+  if (v === '' || v == null) return '';
+  if (f.type === 'date') return isDate(v) ? niceDate(v) : String(v);
+  if (f.type === 'money') return isNaN(Number(v)) ? String(v) : money(v);
+  if (f.type === 'number') return isNaN(Number(v)) ? String(v) : Number(v).toLocaleString('en-CA') + ' ' + String(f.name).toLowerCase();
+  if (f.type === 'multi') { var l = String(v).split('\n')[0]; return l.length > 40 ? l.slice(0, 39) + '…' : l + (String(v).indexOf('\n') > -1 ? '…' : ''); }
+  return String(v);
+}
+function newPlTask(title) { return { id: uid('t'), title: title, done: false, due: null, doneAt: null }; }
+function newPlCard(pl, stageId, title, taskTitles) {
+  return { id: uid('c'), title: title, stage: stageId, stageAt: today(), createdAt: today(), fields: {},
+    tasks: taskTitles.map(newPlTask), comments: [], pinned: false, archived: false };
+}
+function projectsPipe() { return plById('projects') || pls()[0] || null; }
+
+/* ============================================================ reading Project Phases (raw) */
+function quests() { return PPD ? listOf(PPD.projects).filter(Boolean) : []; }
+function questById(id) { return quests().find(function (p) { return p.id === id; }); }
+function phasesOf(p) { return listOf(p.phases).filter(Boolean); }
+function stepsOf(ph) { return listOf(ph.steps).filter(Boolean); }
+function stepDone(st) { return st.status === 'done'; }
+function phaseNow(p) { return phasesOf(p).find(function (ph) { var s = stepsOf(ph); return !s.length || s.some(function (x) { return !stepDone(x); }); }) || null; }
+function findStep(pid, phid, sid) {
+  var p = questById(pid), ph = p && phasesOf(p).find(function (x) { return x.id === phid; }), st = ph && stepsOf(ph).find(function (x) { return x.id === sid; });
+  return st ? { p: p, ph: ph, st: st } : null;
+}
+function questPct(p) { var all = phasesOf(p).reduce(function (a, ph) { return a.concat(stepsOf(ph)); }, []); return all.length ? Math.round(all.filter(stepDone).length / all.length * 100) : 0; }
+function newStep(name) { return { id: ppid('st'), name: name, status: 'todo', estimate: 0, notes: '', doneAt: 0 }; }
+function newPhase(name, steps) { return { id: ppid('ph'), name: name, collapsed: false, steps: steps }; }
+function setStepDone(st, done) { st.status = done ? 'done' : 'todo'; st.doneAt = done ? Date.now() : 0; }
+function questLogged(p) {
+  var ms = listOf(PPD && PPD.log).filter(function (e) { return e && e.projectId === p.id && e.start; }).reduce(function (n, e) { return n + ((e.end || Date.now()) - e.start); }, 0);
+  var h = Math.floor(ms / 36e5), m = Math.round(ms % 36e5 / 6e4);
+  return ms ? (h ? h + 'h' + String(m).padStart(2, '0') : m + 'm') : '';
+}
+
+/* ============================================================ Today: linked tasks read through to their owner */
+function resolve(t) {
+  if (!t.ref) return { title: t.title, done: t.done, due: t.due, repeat: t.repeat, tag: null };
+  if (t.ref.app === 'pl') {
+    if (!PLD) return { title: t.title, done: false, due: null, tag: { cls: 'pl', label: 'Pipelines · not loaded' }, waiting: true };
+    var h = findCard(t.ref.pl, t.ref.c), x = h && ctasks(h.c).find(function (y) { return y.id === t.ref.t; });
+    if (!x) return null;
+    return { title: x.title, done: !!x.done, due: isDate(x.due) ? x.due : null, src: x, tag: { cls: 'pl', label: shortCard(h.c.title) + ' · ' + h.pl.name, go: function () { openCard(h.pl.id, h.c.id); } } };
+  }
+  if (!PPD) return { title: t.title, done: false, due: null, tag: { cls: 'pp', label: 'Project Phases · not loaded' }, waiting: true };
+  var f = findStep(t.ref.p, t.ref.ph, t.ref.s);
+  if (!f) return null;
+  return { title: f.st.name, done: stepDone(f.st), due: S.due[f.st.id] || null, src: f.st, tag: { cls: 'pp', label: f.p.name + ' · ' + f.ph.name, go: function () { U.quest = f.p.id; flashId = f.st.id; show('big'); } } };
+}
+/* A linked task whose source was deleted in its own app quietly leaves the list (only once that app's copy is here). */
+function pruneLinks() {
+  var keep = S.tasks.filter(function (t) {
+    if (!t.ref) return true;
+    if (t.ref.app === 'pl') { if (!PLD) return true; var h = findCard(t.ref.pl, t.ref.c); return !!(h && ctasks(h.c).some(function (x) { return x.id === t.ref.t; })); }
+    if (!PPD) return true; return !!findStep(t.ref.p, t.ref.ph, t.ref.s);
+  });
+  if (keep.length !== S.tasks.length) { S.tasks = keep; saveHub(); }
+}
+function linkedTo(id) { return S.tasks.find(function (t) { return t.ref && (t.ref.t === id || t.ref.s === id); }); }
+function listName(id) { return (S.lists.find(function (l) { return l.id === id; }) || {}).name || ''; }
+
+/* ============================================================ UI bits */
+var toastTimer = null, flashId = null;
+function toast(msg, label, fn) {
+  var el = $('toast'), b = $('toast-btn');
+  $('toast-msg').textContent = msg; b.hidden = !label; b.textContent = label || '';
+  b.onclick = function () { el.classList.remove('on'); if (fn) fn(); };
+  el.classList.add('on'); clearTimeout(toastTimer); toastTimer = setTimeout(function () { el.classList.remove('on'); }, 4500);
+}
+var dlgKind = null, cardOpen = null;   // the card window remembers itself so small dialogs can go back to it
+function openDlg(html, kind) { dlgKind = kind || null; var box = $('dlg-box'); box.innerHTML = html; box.classList.toggle('wide', !!kind); $('dlg').classList.add('on'); }
+function closeDlg() { var k = dlgKind; $('dlg').classList.remove('on'); dlgKind = null; if (k === 'card') cardOpen = null; else if (cardOpen) cardDlg(cardOpen.pl, cardOpen.c); }
+function shutDlg() { $('dlg').classList.remove('on'); dlgKind = null; cardOpen = null; }
+$('dlg').addEventListener('click', function (e) { if (e.target === $('dlg')) closeDlg(); });
+document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { if ($('amenu')) closeMenu(); else if ($('dlg').classList.contains('on')) closeDlg(); } });
+function grow(root) { (root || document).querySelectorAll('[data-grow]').forEach(function (t) { var g = function () { t.style.height = 'auto'; t.style.height = (t.scrollHeight + 2) + 'px'; }; t.addEventListener('input', g); g(); }); }
+function show(tab) { U.tab = tab; saveUi(); render(); window.scrollTo(0, 0); }
+function listPick(title, lead, attr) {
+  openDlg('<h3>' + title + '</h3><div class="body"><p class="lead">' + lead + '</p><div class="pick">'
+    + S.lists.map(function (l) { return '<button class="b' + (l.id === (U.lastList || S.lists[0].id) ? ' y' : '') + '" ' + attr + ' data-list="' + l.id + '">' + esc(l.name) + '</button>'; }).join('')
+    + '</div></div><div class="foot"><span class="sp"></span><button class="b ghost" data-close>Cancel</button></div>');
+}
+function needs(doc) {
+  if (doc === 'pl' && !PLD) { toast('Pipelines isn’t connected yet. Sign in, or open Pipelines once.'); return true; }
+  if (doc === 'pp' && !PPD) { toast('Project Phases isn’t connected yet. Sign in, or open Project Phases once.'); return true; }
+  return false;
+}
+
+/* ============================================================ render */
+function render() {
+  document.querySelectorAll('.tab').forEach(function (t) { t.setAttribute('aria-selected', t.getAttribute('data-tab') === U.tab); });
+  document.querySelectorAll('.view').forEach(function (v) { v.classList.toggle('on', v.id === 'v-' + U.tab); });
+  var at = document.querySelector('.tab[aria-selected=true]'), bar = at && at.parentNode;
+  if (at && (at.offsetLeft < bar.scrollLeft || at.offsetLeft + at.offsetWidth > bar.scrollLeft + bar.clientWidth)) bar.scrollLeft = at.offsetLeft - 16;   // keep the open tab in view on a phone
+  $('c-today').textContent = S.tasks.filter(function (t) { var r = resolve(t); return r && !r.done; }).length;
+  $('c-prod').textContent = pls().reduce(function (n, pl) { return n + cardsOf(pl).filter(function (c) { return !c.archived && !stageObj(pl, stageOf(pl, c)).done; }).length; }, 0);
+  $('c-big').textContent = quests().length;
+  $('c-goals').textContent = S.goals.filter(function (g) { return g.year === new Date().getFullYear(); }).length;
+  $('l-goals').innerHTML = checkDue() ? '<span class="dot" title="Quarter check due"></span>' : 'this year';
+  $('c-brain').textContent = S.brain.filter(function (b) { return b.box === 'fresh'; }).length;
+  ({ today: renderToday, prod: renderProd, big: renderBig, goals: renderGoals, brain: renderBrain })[U.tab]();
+  var f = document.querySelector('.view.on .flash'); if (f) f.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
+  flashId = null;
+  if (dlgKind === 'card' && cardOpen && $('dlg').classList.contains('on')) {
+    var a = document.activeElement && document.activeElement.id; cardDlg(cardOpen.pl, cardOpen.c); if (a && $(a)) $(a).focus();
+  }
+}
+function connectBox(what) {
+  var name = what === 'pl' ? 'Pipelines' : 'Project Phases', href = what === 'pl' ? 'pipelines.html' : 'project-tracker.html';
+  var signed = SH && SH.cloud.uid;
+  return '<div class="connect"><h2>' + name + ' isn’t here yet</h2><p>' + (signed
+    ? 'You’re signed in, but there’s no ' + name + ' in your account yet. Open ' + name + ', sign in there once, and it shows up here.'
+    : 'This tab reads the ' + name + ' app. Sign in with the same account and it appears here, live, and anything you tick here is ticked there too.')
+    + '</p>' + (signed ? '' : '<button class="b y" data-signin>Sign in</button> ') + '<a class="b" href="' + href + '" target="_blank" rel="noopener">Open ' + name + ' ↗</a></div>';
+}
+
+/* ---------------------------------------------------------------- Today */
+function taskRow(t) {
+  var r = resolve(t); if (!r) return '';
+  var chips = (r.done ? '' : dueChip(r.due, r.repeat)) + (r.tag ? '<button class="tag ' + r.tag.cls + '" data-go="' + t.id + '">' + esc(r.tag.label) + (r.tag.go ? ' ↗' : '') + '</button>' : '');
+  return '<div class="task' + (r.done ? ' done' : '') + (flashId === t.id ? ' flash' : '') + '" data-edit="' + t.id + '">'
+    + '<button class="circ' + (r.done ? ' on' : '') + '" data-tick="' + t.id + '" aria-label="Done">' + (r.done ? '✓' : '') + '</button>'
+    + '<div class="tb"><div class="t">' + esc(r.title) + '</div>' + (t.notes && !r.done ? '<div class="n">' + esc(t.notes) + '</div>' : '')
+    + (chips && !r.done ? '<div class="chips">' + chips + '</div>' : '') + '</div></div>';
+}
+function pullItems() {
+  var soon = dayOff(14), free = function (id) { return !linkedTo(id); }, dated = [], seen = {};
+  pls().forEach(function (pl) { cardsOf(pl).forEach(function (c) { if (c.archived) return; ctasks(c).forEach(function (x) {
+    if (!x.done && isDate(x.due) && x.due <= soon && free(x.id)) dated.push({ title: x.title, due: x.due, tag: shortCard(c.title) + ' · ' + pl.name, cls: 'pl', ref: { app: 'pl', pl: pl.id, c: c.id, t: x.id } });
+  }); }); });
+  quests().forEach(function (p) { phasesOf(p).forEach(function (ph) { stepsOf(ph).forEach(function (st) {
+    var d = S.due[st.id]; if (!stepDone(st) && d && d <= soon && free(st.id)) dated.push({ title: st.name, due: d, tag: p.name + ' · ' + ph.name, cls: 'pp', ref: { app: 'pp', p: p.id, ph: ph.id, s: st.id } });
+  }); }); });
+  dated.sort(function (a, b) { return a.due.localeCompare(b.due); });
+  dated.forEach(function (x) { seen[x.ref.t || x.ref.s] = 1; });
+  var ok = function (id) { return free(id) && !seen[id]; };
+  var pinnedCards = [];
+  pls().forEach(function (pl) { cardsOf(pl).forEach(function (c) { if (c.pinned && !c.archived) pinnedCards.push({ pl: pl, c: c }); }); });
+  var pinC = pinnedCards.length > 0, pp = projectsPipe();
+  var prodSrc = pinC ? pinnedCards : (pp ? cardsOf(pp).filter(function (c) { return !c.archived && stageOf(pp, c) === stagesOf(pp)[0].id; }).slice(0, 4).map(function (c) { return { pl: pp, c: c }; }) : []);
+  var prod = prodSrc.map(function (o) { var x = ctasks(o.c).find(function (y) { return !y.done && ok(y.id); }); return x && { title: x.title, due: x.due, tag: shortCard(o.c.title) + ' · ' + o.pl.name, cls: 'pl', ref: { app: 'pl', pl: o.pl.id, c: o.c.id, t: x.id } }; }).filter(Boolean);
+  var pinQ = quests().some(function (p) { return S.pins[p.id]; });
+  var big = quests().filter(function (p) { return !pinQ || S.pins[p.id]; }).map(function (p) {
+    var ph = phaseNow(p), st = ph && stepsOf(ph).find(function (x) { return !stepDone(x) && ok(x.id); });
+    return st && { title: st.name, due: S.due[st.id], tag: p.name + ' · ' + ph.name, cls: 'pp', ref: { app: 'pp', p: p.id, ph: ph.id, s: st.id } };
+  }).filter(Boolean);
+  return { dated: dated, prod: prod, pinC: pinC, big: big, pinQ: pinQ };
+}
+function renderToday() {
+  var cols = S.lists.map(function (l) {
+    var all = S.tasks.filter(function (t) { return t.list === l.id && resolve(t); });
+    var open = all.filter(function (t) { return !resolve(t).done; }), done = all.filter(function (t) { return resolve(t).done; }), isOpen = !!U.open[l.id];
+    return '<div class="list"><div class="lh"><h2>' + esc(l.name) + '</h2><button class="menu" data-lmenu="' + l.id + '" aria-label="List options">⋮</button></div>'
+      + '<form class="addtask" data-addto="' + l.id + '"><span class="plus">+</span><input placeholder="Add a task" aria-label="Add a task to ' + esc(l.name) + '"></form>'
+      + open.map(taskRow).join('')
+      + (done.length ? '<button class="done-toggle' + (isOpen ? ' open' : '') + '" data-dt="' + l.id + '"><span class="car">▶</span>Completed (' + done.length + ')</button>' + (isOpen ? done.map(taskRow).join('') : '') : '')
+      + '</div>';
+  }).join('');
+  var pull = '';
+  if (U.showPull) {
+    var P = pullItems();
+    var row = function (x) { return '<div class="prow"><div class="tb"><div class="t">' + esc(x.title) + '</div><span class="tag ' + x.cls + '">' + esc(x.tag) + '</span>' + (x.due ? '<div class="chips">' + dueChip(x.due) + '</div>' : '') + '</div>'
+      + '<button class="b y" data-pull=\'' + esc(JSON.stringify(x.ref)) + '\' data-title="' + esc(x.title) + '">+ Add</button></div>'; };
+    var none = '<div class="empty">Nothing waiting.</div>';
+    pull = '<div class="list pullcol"><div class="lh"><div style="flex:1"><h2>Pull in</h2><div class="sub">Next tasks from In Production and Big Picture</div></div><button class="menu" data-hidepull aria-label="Hide">×</button></div>'
+      + (!PLD && !PPD ? '<div class="empty">Sign in to pull tasks from Pipelines and Project Phases.</div>' : '')
+      + (P.dated.length ? '<div class="grp">Coming up · next 14 days</div>' + P.dated.map(row).join('') : '')
+      + (PLD ? '<div class="grp">' + (P.pinC ? '● Pinned · In Production' : 'Doing · In Production') + '</div>' + (P.prod.map(row).join('') || none) : '')
+      + (PPD ? '<div class="grp">' + (P.pinQ ? '● Pinned · Big Picture' : 'Big Picture · current projects') + '</div>' + (P.big.map(row).join('') || none) : '')
+      + ((PLD || PPD) && !P.pinC && !P.pinQ ? '<div class="empty" style="font-size:12px">Tip: pin cards or quests to keep only those here.</div>' : '')
+      + '<div style="height:10px"></div></div>';
+  } else pull = '<button class="newlist" data-showpull>Show “Pull in”</button>';
+  $('v-today').innerHTML = '<div class="lists">' + cols + '<button class="newlist" data-newlist>+ New list</button>' + pull + '</div>';
+}
+function nextDue(due, rep) {
+  var d = new Date((isDate(due) ? due : today()) + 'T12:00'), t = today(), g = 0;
+  do { if (rep === 'daily') d.setDate(d.getDate() + 1); else if (rep === 'weekly') d.setDate(d.getDate() + 7); else d.setMonth(d.getMonth() + 1); g++; }
+  while (dateStr(d) < t && g < 4000);
+  return dateStr(d);
+}
+function dateStr(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+function tickTask(t) {
+  var r = resolve(t); if (!r || r.waiting) return;
+  if (!t.ref) {
+    if (!t.done && t.repeat) { t.due = nextDue(t.due, t.repeat); flashId = t.id; commit(); return toast('Done. Next one ' + niceDate(t.due, true)); }
+    t.done = !t.done; t.doneAt = t.done ? today() : null; return commit();
+  }
+  if (t.ref.app === 'pl') { r.src.done = !r.src.done; r.src.doneAt = r.src.done ? today() : null; savePL(); }
+  else { setStepDone(r.src, !stepDone(r.src)); savePP(); }
+  commit();
+  if (!r.done) toast('Ticked here and in ' + (t.ref.app === 'pl' ? 'Pipelines' : 'Project Phases'));
+}
+function editTask(t) {
+  var r = resolve(t); if (!r) return;
+  var linked = !!t.ref;
+  openDlg('<h3>' + (linked ? 'Linked task' : 'Task') + '</h3><div class="body">'
+    + '<label>Title</label><input id="e-title" value="' + esc(r.title) + '"' + (r.waiting ? ' disabled' : '') + '>'
+    + '<label>Details</label><textarea id="e-notes" placeholder="Notes, links, sub-points…">' + esc(t.notes) + '</textarea>'
+    + '<div class="two"><div><label>Date</label><input type="date" id="e-due" value="' + (r.due || '') + '"' + (r.waiting ? ' disabled' : '') + '></div>'
+    + '<div><label>Repeat</label><select id="e-rep"' + (linked ? ' disabled' : '') + '>' + [['', 'Doesn’t repeat'], ['daily', 'Daily'], ['weekly', 'Weekly'], ['monthly', 'Monthly']].map(function (o) { return '<option value="' + o[0] + '"' + ((t.repeat || '') === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select></div></div>'
+    + '<label>List</label><select id="e-list">' + S.lists.map(function (l) { return '<option value="' + l.id + '"' + (l.id === t.list ? ' selected' : '') + '>' + esc(l.name) + '</option>'; }).join('') + '</select>'
+    + '<p class="lead" style="margin-top:12px">' + (linked ? 'Linked to <b>' + esc(r.tag.label) + '</b>. The title, tick and date are shared with it.' : 'Bigger than a task? Make it a project in In Production, or part of a quest in Big Picture.') + '</p>'
+    + '</div><div class="foot"><button class="b r" data-tdel="' + t.id + '">' + (linked ? 'Remove from list' : 'Delete') + '</button>'
+    + (linked ? '' : '<button class="b ghost" data-t2prod="' + t.id + '">→ In Production</button><button class="b ghost" data-t2big="' + t.id + '">→ Big Picture</button>')
+    + '<span class="sp"></span><button class="b ghost" data-close>Cancel</button><button class="b y" data-tsave="' + t.id + '">Save</button></div>');
+}
+function saveTaskDlg(t) {
+  var r = resolve(t), title = $('e-title').value.trim(), due = $('e-due').value || null;
+  t.notes = $('e-notes').value; t.list = $('e-list').value;
+  if (!t.ref) { if (title) t.title = title; t.due = due; t.repeat = $('e-rep').value || null; }
+  else if (!r.waiting) {
+    if (t.ref.app === 'pl') { if (title) r.src.title = title; r.src.due = due; savePL(); }
+    else { if (title) r.src.name = title; if (due) S.due[r.src.id] = due; else delete S.due[r.src.id]; savePP(); }
+    t.title = title || t.title;
+  }
+  shutDlg(); flashId = t.id; commit();
+}
+function addLinked(ref, title, listId) {
+  var t = { id: uid('t'), list: listId, title: title, notes: '', due: null, repeat: null, done: false, doneAt: null, ref: ref, at: today() };
+  S.tasks.unshift(t); U.lastList = listId; saveUi(); flashId = t.id; commit();
+  toast('Added to ' + listName(listId), U.tab === 'today' ? '' : 'View', function () { flashId = t.id; show('today'); });
+}
+
+/* ---------------------------------------------------------------- In Production (Pipelines) */
+function renderProd() {
+  var el = $('v-prod');
+  if (!PLD) { el.innerHTML = connectBox('pl'); return; }
+  if (!plById(U.prodView)) U.prodView = (projectsPipe() || {}).id;
+  var pl = plById(U.prodView);
+  var sw = '<div class="pswitch">' + pls().map(function (p) {
+    var n = cardsOf(p).filter(function (c) { return !c.archived && !stageObj(p, stageOf(p, c)).done; }).length;
+    return '<button aria-pressed="' + (p.id === pl.id) + '" data-pview="' + p.id + '">' + esc(p.name) + ' <span>' + n + '</span></button>';
+  }).join('') + '<a href="pipelines.html" target="_blank" rel="noopener">Open Pipelines ↗</a></div>';
+  var isProj = pl.id === 'projects';
+  var live = cardsOf(pl).filter(function (c) { return !c.archived; }), arch = cardsOf(pl).filter(function (c) { return c.archived; });
+  var fs = cfields(pl), dateF = fs.find(function (f) { return f.type === 'date'; }), otherF = fs.filter(function (f) { return f !== dateF && f.type !== 'multi'; }).slice(0, 2), moneyF = fs.find(function (f) { return f.type === 'money'; });
+  var done = function (id) { return !!stageObj(pl, id).done; };
+  var lateN = live.filter(cardLate).length, stuckN = live.filter(function (c) { return !done(stageOf(pl, c)) && daysIn(c) > 14; }).length;
+  var sum = moneyF ? live.filter(function (c) { return !done(stageOf(pl, c)); }).reduce(function (n, c) { return n + (Number((c.fields || {})[moneyF.id]) || 0); }, 0) : 0;
+  function card(c) {
+    var ts = ctasks(c), dn = ts.filter(function (t) { return t.done; }).length, next = ts.find(function (t) { return !t.done; }), st = stageOf(pl, c), d = daysIn(c), f = c.fields || {};
+    var bits = [dateF && f[dateF.id] ? fieldText(dateF, f[dateF.id]) : ''].concat(otherF.map(function (x) { return fieldText(x, f[x.id]); })).filter(Boolean);
+    return '<div class="pcard' + (cardLate(c) ? ' late' : '') + (flashId === c.id ? ' flash' : '') + '" draggable="true" data-card="' + c.id + '">'
+      + '<div class="pt">' + esc(c.title) + '</div>' + (bits.length ? '<div class="pf">' + bits.map(esc).join(' · ') + '</div>' : '')
+      + (next && !done(st) ? '<div class="nx">Next: <b>' + esc(next.title) + '</b>' + (next.due ? ' ' + dueChip(next.due) : '') + '</div>' : '')
+      + '<div class="pm">' + (c.pinned ? '<span class="cl full">● Pinned</span>' : '') + (ts.length ? '<span class="cl' + (dn === ts.length ? ' full' : '') + '">☑ ' + dn + '/' + ts.length + '</span>' : '')
+      + (listOf(c.comments).length ? '<span class="cm">💬 ' + listOf(c.comments).length + '</span>' : '')
+      + (!done(st) && c.stageAt ? '<span class="age' + (d > 14 ? ' stuck' : '') + '">' + (d > 0 ? d + 'd in stage' : 'new here') + '</span>' : '')
+      + '<button class="amb" data-menu="c:' + c.id + '" title="Actions">⋯</button></div></div>';
+  }
+  // on the Projects board, each quest's current project (a Project Phases phase) shows too, in red
+  var stIds = stagesOf(pl).map(function (s) { return s.id; });
+  var qcards = function (sid) {
+    if (!isProj) return '';
+    return quests().map(function (p) { var ph = phaseNow(p); return ph && { p: p, ph: ph, n: phasesOf(p).indexOf(ph) + 1 }; }).filter(Boolean)
+      .filter(function (x) { return (stIds.indexOf(S.stage[x.ph.id]) > -1 ? S.stage[x.ph.id] : stIds[0]) === sid; })
+      .map(function (x) { var ss = stepsOf(x.ph), dn = ss.filter(stepDone).length, nx = ss.find(function (y) { return !stepDone(y); });
+        return '<div class="pcard quest' + (flashId === x.ph.id ? ' flash' : '') + '" data-qopen="' + x.p.id + '"><div class="pt">' + esc(x.ph.name) + '</div><span class="qtag">Quest · ' + esc(x.p.name) + ' · ' + x.n + '/' + phasesOf(x.p).length + '</span>'
+          + (nx ? '<div class="nx">Next: <b>' + esc(nx.name) + '</b>' + (S.due[nx.id] ? ' ' + dueChip(S.due[nx.id]) : '') + '</div>' : '')
+          + '<div class="pm">' + (ss.length ? '<span class="cl' + (dn === ss.length ? ' full' : '') + '">☑ ' + dn + '/' + ss.length + '</span>' : '') + '<button class="amb" data-menu="q:' + x.p.id + ':' + x.ph.id + '" title="Actions">⋯</button></div></div>'; }).join('');
+  };
+  el.innerHTML = sw + (isProj ? '<p class="model"><b>Today</b> = tasks → <b>In Production</b> = projects → <b>Big Picture</b> = quests. Red cards are the project a quest is on right now.</p>' : '')
+    + '<div class="phead"><h2>' + esc(pl.name) + '</h2>' + (arch.length ? '<button class="b ghost" data-togglearch>' + (U.showArch ? 'Hide' : 'Show') + ' archived (' + arch.length + ')</button>' : '')
+    + '<a class="b" href="pipelines.html" target="_blank" rel="noopener" title="Stages, fields and checklists are edited in Pipelines">⚙ Edit in Pipelines ↗</a></div>'
+    + '<div class="psum">' + stagesOf(pl).map(function (s) { var n = live.filter(function (c) { return stageOf(pl, c) === s.id; }).length; return n ? '<span>' + n + ' ' + esc(s.name) + '</span>' : ''; }).join('')
+    + (lateN ? '<span class="late">' + lateN + ' late</span>' : '') + (stuckN ? '<span class="stuck">' + stuckN + ' stuck 14+ days</span>' : '') + (sum ? '<span class="money-sum">' + money(sum) + ' ' + esc(String(moneyF.name).toLowerCase()) + ' open</span>' : '') + '</div>'
+    + '<div class="pboard">' + stagesOf(pl).map(function (s) {
+      var cs = live.filter(function (c) { return stageOf(pl, c) === s.id; }), qs = qcards(s.id);
+      return '<div class="pcol' + (s.done ? ' donecol' : '') + '" data-col="' + s.id + '"><div class="ch"><b>' + esc(s.name) + (s.done ? ' ✓' : '') + '</b><span>' + (cs.length + (qs.match(/pcard quest/g) || []).length) + '</span></div>'
+        + '<button class="padd" data-padd="' + s.id + '">+ Add a ' + (isProj ? 'project' : 'card') + '</button>' + qs + cs.map(card).join('') + '</div>';
+    }).join('') + '</div>'
+    + (U.showArch && arch.length ? '<div class="panel" style="margin-top:8px"><div class="ph"><h3>Archived</h3></div>' + arch.map(function (c) { return '<div class="srow"><span class="ttl">' + esc(c.title) + '</span><button class="b ghost" data-unarch="' + c.id + '">Restore</button></div>'; }).join('') + '</div>' : '');
+}
+function openCard(plid, cid) { U.prodView = plid; U.tab = 'prod'; saveUi(); render(); cardDlg(plid, cid); }
+function cardDlg(plid, cid) {
+  var h = findCard(plid, cid); if (!h) { cardOpen = null; return; }
+  var pl = h.pl, c = h.c, ts = ctasks(c), dn = ts.filter(function (t) { return t.done; }).length, pct = ts.length ? dn / ts.length * 100 : 0, t0 = today(), f = c.fields || {};
+  cardOpen = { pl: plid, c: cid };
+  var comments = listOf(c.comments).filter(Boolean).slice().reverse().sort(function (a, b) { return String(b.at).localeCompare(String(a.at)); });
+  var fl = cfields(pl).filter(function (x) { return f[x.id] !== undefined && f[x.id] !== ''; });
+  openDlg('<h3><textarea class="cw-title" id="cw-title" data-grow rows="1" aria-label="Card title">' + esc(c.title) + '</textarea></h3><div class="body">'
+    + '<p class="lead">' + esc(pl.name) + (c.archived ? ' · archived' : '') + ' · <a href="pipelines.html" target="_blank" rel="noopener">fields are edited in Pipelines ↗</a></p>'
+    + '<label>Stage</label><div class="cw-stage">' + stagesOf(pl).map(function (s) { return '<button class="' + (s.id === stageOf(pl, c) ? 'on' : '') + '" data-cstage="' + s.id + '">' + esc(s.name) + '</button>'; }).join('') + '</div>'
+    + (fl.length ? '<div class="cw-fields">' + fl.map(function (x) { return '<div class="' + (x.type === 'multi' ? 'full' : '') + '"><small>' + esc(x.name) + '</small>' + esc(x.type === 'multi' ? f[x.id] : fieldText(x, f[x.id])) + '</div>'; }).join('') + '</div>' : '')
+    + '<div class="sec-h">Checklist <span class="pill">' + dn + '/' + ts.length + '</span><span class="bar"><i style="width:' + pct + '%"></i></span></div>'
+    + ts.map(function (t) {
+      var lk = linkedTo(t.id);
+      return '<div class="ctask' + (t.done ? ' done' : '') + '"><button class="chk' + (t.done ? ' on' : '') + '" data-ctick="' + t.id + '" aria-label="Done">' + (t.done ? '✓' : '') + '</button>'
+        + '<input class="tt" value="' + esc(t.title) + '" data-ctt="' + t.id + '" aria-label="Task">'
+        + (t.done && !t.due ? '' : '<input type="date" class="td' + (t.due ? (t.due < t0 && !t.done ? ' over' : '') : ' empty') + '" value="' + (t.due || '') + '" data-ctd="' + t.id + '" aria-label="Due date">')
+        + (t.done ? '' : lk ? '<span class="tag on">In ' + esc(listName(lk.list)) + '</span>' : '<button class="tod" data-pull=\'' + esc(JSON.stringify({ app: 'pl', pl: plid, c: cid, t: t.id })) + '\' data-title="' + esc(t.title) + '">→ Today</button>')
+        + '<button class="x" data-ctdel="' + t.id + '" title="Remove">×</button></div>';
+    }).join('')
+    + '<form class="addrow" id="cw-add"><input id="cw-add-in" placeholder="Add an item" autocomplete="off"><button class="b">Add</button></form>'
+    + '<div class="sec-h">Comments' + (comments.length ? ' <span class="pill">' + comments.length + '</span>' : '') + '</div>'
+    + '<div class="cm-new"><textarea id="cw-cm-in" data-grow rows="1" placeholder="Write a comment…"></textarea><div class="row"><span>Dated today · ⌘ Enter to post</span><button class="b y" id="cw-cm-post" type="button">Add comment</button></div></div>'
+    + (comments.length ? '<div class="cm-list">' + comments.map(function (m) { return '<div class="cm-item"><div class="cd">' + (isDate(m.at) ? niceDate(m.at, true) : '') + '<button data-cmdel="' + m.id + '" title="Delete comment">×</button></div><div class="ct">' + esc(m.text) + '</div></div>'; }).join('') + '</div>' : '')
+    + '</div><div class="foot"><button class="b r" data-cdel="' + c.id + '">Delete</button><button class="amb" data-menu="c:' + c.id + '" style="margin-left:0;padding:7px 12px;font-size:11px;letter-spacing:.06em">ACTIONS ⋯</button><span class="sp"></span><button class="b y" data-close>Done</button></div>', 'card');
+  var box = $('dlg-box'); grow(box);
+  var ttl = $('cw-title');
+  ttl.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); ttl.blur(); } });
+  ttl.addEventListener('input', function () { c.title = ttl.value; savePL(); });
+  ttl.addEventListener('change', function () { render(); });
+  box.querySelectorAll('[data-ctt]').forEach(function (inp) {
+    inp.addEventListener('input', function () { var t = ts.find(function (x) { return x.id === inp.getAttribute('data-ctt'); }); if (t) { t.title = inp.value; savePL(); } });
+    inp.addEventListener('change', function () { render(); });
+  });
+  box.querySelectorAll('[data-ctd]').forEach(function (inp) { inp.addEventListener('change', function () { var t = ts.find(function (x) { return x.id === inp.getAttribute('data-ctd'); }); if (t) { t.due = inp.value || null; savePL(); render(); } }); });
+  $('cw-add').onsubmit = function (e) { e.preventDefault(); var v = $('cw-add-in').value.trim(); if (!v) return; arr(c, 'tasks').push(newPlTask(v)); savePL(); render(); $('cw-add-in').focus(); };
+  var cm = $('cw-cm-in'), post = function () { var v = cm.value.trim(); if (!v) return; arr(c, 'comments').push({ id: uid('m'), text: v, at: today() }); savePL(); render(); };
+  cm.addEventListener('keydown', function (e) { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); post(); } });
+  $('cw-cm-post').onclick = post;
+}
+function cardHit(id) { var pl = plById(U.prodView); var c = pl && cardsOf(pl).find(function (x) { return x.id === id; }); if (c) return { pl: pl, c: c }; for (var i = 0; i < pls().length; i++) { var h = findCard(pls()[i].id, id); if (h) return h; } return null; }
+function moveStage(c, sid) { if (c.stage !== sid) { c.stage = sid; c.stageAt = today(); } }
+function dropCardLinks(cid) { S.tasks = S.tasks.filter(function (t) { return !(t.ref && t.ref.app === 'pl' && t.ref.c === cid); }); }
+function moveCardTo(h, toId, sid) {
+  var to = plById(toId), fields = {}, left = [], f = h.c.fields || {};
+  cfields(h.pl).forEach(function (sf) { var v = f[sf.id]; if (v === '' || v == null) return; var tf = cfields(to).find(function (x) { return String(x.name).toLowerCase() === String(sf.name).toLowerCase(); }); if (tf) fields[tf.id] = v; else left.push(sf.name + ': ' + (sf.type === 'multi' ? v : fieldText(sf, v))); });
+  if (left.length) arr(h.c, 'comments').push({ id: uid('m'), text: 'Moved from ' + h.pl.name + '.\n' + left.join('\n'), at: today() });
+  h.c.fields = fields; h.c.stage = sid; h.c.stageAt = today();
+  h.pl.cards = cardsOf(h.pl).filter(function (x) { return x !== h.c; }); arr(to, 'cards').push(h.c);
+  S.tasks.forEach(function (t) { if (t.ref && t.ref.app === 'pl' && t.ref.c === h.c.id) t.ref.pl = to.id; });
+  savePL(); shutDlg(); flashId = h.c.id; commit();
+  toast('Moved to ' + to.name + ' · ' + stageObj(to, sid).name, 'View', function () { U.prodView = to.id; saveUi(); flashId = h.c.id; render(); });
+}
+
+/* ---------------------------------------------------------------- Big Picture (Project Phases) */
+function renderBig() {
+  var el = $('v-big');
+  if (!PPD) { el.innerHTML = connectBox('pp'); return; }
+  var qs = quests();
+  if (!qs.length) { el.innerHTML = '<div class="connect"><h2>No quests yet</h2><p>Quests are the projects in Project Phases. Start one there, or send something here from Brainstorm or In Production.</p><a class="b" href="project-tracker.html" target="_blank" rel="noopener">Open Project Phases ↗</a></div>'; return; }
+  var p = questById(U.quest) || qs[0]; U.quest = p.id;
+  var cur = phaseNow(p), g = S.goals.find(function (x) { return x.year === new Date().getFullYear() && x.quests.indexOf(p.id) > -1; }), logged = questLogged(p), t0 = today();
+  el.innerHTML = '<div class="qpick">' + qs.map(function (x) { return '<button class="b" aria-pressed="' + (x.id === p.id) + '" data-quest="' + x.id + '">' + (S.pins[x.id] ? '● ' : '') + esc(x.name) + '</button>'; }).join('') + '</div>'
+    + '<div class="qhead"><div style="flex:1;min-width:0"><div class="eyebrow">Quest · in Project Phases</div><h2>' + esc(p.name) + '</h2>'
+    + '<button class="qgoal' + (g ? '' : ' none') + '" data-qgoal="' + p.id + '">' + (g ? '◎ Goal: ' + esc(g.title) : '+ Link to a goal') + '</button></div>'
+    + '<button class="b' + (S.pins[p.id] ? ' on' : '') + '" data-qpin="' + p.id + '">' + (S.pins[p.id] ? 'Pinned to Pull in' : 'Pin to Pull in') + '</button>'
+    + (logged ? '<span class="pill">' + logged + ' logged</span>' : '') + '<a class="b" href="project-tracker.html" target="_blank" rel="noopener">Open ↗</a></div>'
+    + '<p class="model" style="margin-top:10px">Each project below is a phase in Project Phases, and each task a step. Ticks, new tasks and new projects go straight back there. Dates and pins are kept by the hub.</p>'
+    + phasesOf(p).map(function (ph, i) {
+      var ss = stepsOf(ph), dn = ss.filter(stepDone).length, pct = ss.length ? dn / ss.length * 100 : 0;
+      return '<div class="panel' + (ph === cur ? ' cur' : '') + (flashId === ph.id ? ' flash' : '') + '"><div class="ph"><h3>' + esc(ph.name) + '</h3>'
+        + (ph === cur ? '<button class="pill" style="border:0" data-goprod title="See it on the Projects board">In Production ↗</button>' : '')
+        + '<button class="b ghost" data-addstep="' + p.id + ':' + ph.id + '">+ Task</button><span class="hint">' + dn + '/' + ss.length + '<span class="bar"><i style="width:' + pct + '%"></i></span></span></div>'
+        + (ss.map(function (st) {
+          var d = S.due[st.id], lk = linkedTo(st.id), done = stepDone(st);
+          return '<div class="srow' + (done ? ' done' : '') + (flashId === st.id ? ' flash' : '') + '"><button class="chk' + (done ? ' on' : '') + '" data-step="' + p.id + ':' + ph.id + ':' + st.id + '" aria-label="Done">' + (done ? '✓' : '') + '</button>'
+            + '<span class="ttl">' + esc(st.name) + '</span>' + (st.status === 'doing' ? '<span class="doing">Doing</span>' : '')
+            + (done ? '' : '<input type="date" class="dt' + (d ? (d < t0 ? ' over' : '') : ' empty') + '" value="' + (d || '') + '" data-sdue="' + st.id + '" aria-label="Date">')
+            + (done ? '' : lk ? '<span class="tag on">In ' + esc(listName(lk.list)) + '</span>' : '<button class="b y" data-pull=\'' + esc(JSON.stringify({ app: 'pp', p: p.id, ph: ph.id, s: st.id })) + '\' data-title="' + esc(st.name) + '">→ Today</button>')
+            + '</div>';
+        }).join('') || '<div class="empty">No tasks yet.</div>') + '</div>';
+    }).join('') + '<button class="addphase" data-addphase="' + p.id + '">+ Project</button>';
+  el.querySelectorAll('[data-sdue]').forEach(function (inp) { inp.addEventListener('change', function () { var id = inp.getAttribute('data-sdue'); if (inp.value) S.due[id] = inp.value; else delete S.due[id]; commit(); }); });
+}
+/* → Big Picture, from a Brainstorm idea or a card: a new quest, or the next project of one */
+function bigDlg(kind, id) {
+  if (needs('pp')) return;
+  var name = kind === 'brain' ? (S.brain.find(function (b) { return b.id === id; }) || {}).text : kind === 'card' ? (cardHit(id) || { c: {} }).c.title : (S.tasks.find(function (t) { return t.id === id; }) || {}).title;
+  openDlg('<h3>→ Big Picture</h3><div class="body"><p class="lead">“' + esc(name) + '” becomes a project inside a quest (a phase in Project Phases). Start a new quest with it, or add it to one you have.</p><div class="pick">'
+    + '<button class="b y" data-tobig="' + kind + ':' + id + '" data-q="">+ New quest</button>'
+    + quests().map(function (q) { return '<button class="b" data-tobig="' + kind + ':' + id + '" data-q="' + q.id + '">Add to ' + esc(q.name) + ' <span style="font-weight:500;color:var(--g6)">· project ' + (phasesOf(q).length + 1) + '</span></button>'; }).join('')
+    + '</div></div><div class="foot"><span class="sp"></span><button class="b ghost" data-close>Cancel</button></div>');
+}
+function toBig(src, qid) {
+  var k = src.split(':')[0], id = src.slice(k.length + 1), name, steps = [], remap = {};
+  if (k === 'brain') { var b = S.brain.find(function (x) { return x.id === id; }); name = b.text; steps = linesOf(b.note).map(newStep); S.brain = S.brain.filter(function (x) { return x !== b; }); }
+  else if (k === 'card') {
+    var h = cardHit(id); name = h.c.title;
+    steps = ctasks(h.c).map(function (t) { var st = newStep(t.title); if (t.done) setStepDone(st, true); if (isDate(t.due)) S.due[st.id] = t.due; remap[t.id] = st.id; return st; });
+    h.pl.cards = cardsOf(h.pl).filter(function (x) { return x !== h.c; }); savePL();
+  } else { var t = S.tasks.find(function (x) { return x.id === id; }); name = t.title; steps = (linesOf(t.notes).length ? linesOf(t.notes) : [t.title]).map(newStep); S.tasks = S.tasks.filter(function (x) { return x !== t; }); }
+  var ph = newPhase(qid ? name : 'Phase 1', steps), p = qid && questById(qid);
+  if (p) arr(p, 'phases').push(ph);
+  else { p = { id: ppid('p'), name: name, shareId: null, createdAt: Date.now(), homework: [], agenda: [], notes: [], phases: [ph] }; arr(PPD, 'projects').push(p); }
+  // tasks in your lists that pointed at the card follow it into Project Phases
+  S.tasks.forEach(function (t) { if (t.ref && t.ref.app === 'pl' && remap[t.ref.t]) t.ref = { app: 'pp', p: p.id, ph: ph.id, s: remap[t.ref.t] }; });
+  savePP(); shutDlg(); U.quest = p.id; flashId = ph.id; commit();
+  toast(qid ? 'Added to the quest ' + p.name + ' as project ' + phasesOf(p).length : 'New quest in Project Phases, with this as its first project.', 'Open', function () { show('big'); });
+}
+
+/* ---------------------------------------------------------------- Goals */
+function quarter() { return Math.floor(new Date().getMonth() / 3) + 1; }
+function checkDue() { var y = new Date().getFullYear(); return S.goals.some(function (g) { return g.year === y; }) && !S.checks[y + '-Q' + quarter()]; }
+function renderGoals() {
+  var Y = U.year, now = new Date().getFullYear(), list = S.goals.filter(function (g) { return g.year === Y; }), review = U.review || Y < now;
+  var res = { hit: 'Hit', partly: 'Partly', missed: 'Missed' };
+  var card = function (g) {
+    var qs = g.quests.map(questById).filter(Boolean), pct = qs.length ? Math.round(qs.reduce(function (n, p) { return n + questPct(p); }, 0) / qs.length) : 0;
+    return '<div class="goal ' + (g.result || '') + (flashId === g.id ? ' flash' : '') + '"><div class="gh" data-gedit="' + g.id + '"><b>' + esc(g.title) + '</b>' + (g.result ? '<span class="res ' + g.result + '">' + res[g.result] + '</span>' : '') + '</div>'
+      + (g.measure ? '<div class="ms">' + esc(g.measure) + '</div>' : '')
+      + (qs.length ? '<div class="gbar" title="' + pct + '% of its quests’ tasks done"><i style="width:' + pct + '%"></i></div>' : '')
+      + qs.map(function (p) { var q = questPct(p); return '<div class="gq"><button class="qn" data-quest="' + p.id + '" data-gotobig>' + esc(p.name) + ' ↗</button><span class="mini"><i style="width:' + q + '%"></i></span><span class="pc">' + q + '%</span></div>'; }).join('')
+      + (!qs.length && Y >= now && !g.result ? '<div class="gwarn">No quest yet. Nothing is moving this goal forward.</div>' : '')
+      + (Y >= now && !review ? '<div class="gf"><button class="b" data-glink="' + g.id + '">+ Link a quest</button><button class="b ghost" data-gnewq="' + g.id + '">+ New quest for it</button></div>' : '')
+      + (review ? '<div class="greview"><div class="rb">' + Object.keys(res).map(function (k) { return '<button class="' + (g.result === k ? 'on ' + k : '') + '" data-gres="' + g.id + '" data-r="' + k + '">' + res[k] + '</button>'; }).join('') + '</div><textarea data-gnote="' + g.id + '" placeholder="What did you learn?">' + esc(g.note) + '</textarea></div>'
+        : g.note ? '<div class="gnote">' + esc(g.note) + '</div>' : '')
+      + '</div>';
+  };
+  var cnt = function (k) { return list.filter(function (g) { return g.result === k; }).length; }, unrev = list.length - cnt('hit') - cnt('partly') - cnt('missed');
+  $('v-goals').innerHTML = '<div class="ghead"><button class="yr" data-gyear="' + (Y - 1) + '" aria-label="Previous year">‹</button><h2>' + Y + ' GOALS</h2><button class="yr" data-gyear="' + (Y + 1) + '" aria-label="Next year">›</button><span class="sp"></span>'
+    + (Y === now ? '<button class="b' + (U.review ? ' y' : '') + '" data-greview>' + (U.review ? 'Done reviewing' : 'Year-end review') + '</button>' : '') + '</div>'
+    + (Y === now && checkDue() && !U.review ? '<div class="qcheck"><b>Quarter check · Q' + quarter() + '</b><span>One minute: look at each goal. Still on track? Does every goal have a quest moving it?</span><button class="b y" data-qdone>Done for Q' + quarter() + '</button></div>' : '')
+    + (review && list.length ? '<div class="gsum"><span class="hit">' + cnt('hit') + ' hit</span><span>' + cnt('partly') + ' partly</span><span class="missed">' + cnt('missed') + ' missed</span>' + (unrev ? '<span>' + unrev + ' not reviewed</span>' : '') + '</div>' : '')
+    + (Y >= now ? '<form class="bigin" id="gadd"><input id="gadd-in" placeholder="Add a goal for ' + Y + '" autocomplete="off"><button>Add goal</button></form>'
+      + (list.length > 5 ? '<p class="tip warn">' + list.length + ' goals. Tip: 3 to 5 usually works best, so each one gets real attention. Your call though.</p>' : '<p class="tip">Tip: 3 to 5 goals usually works best. Link each one to a quest so it actually moves.</p>') : '')
+    + '<div class="ggrid">' + (list.map(card).join('') || '<div class="empty" style="background:#fff">No goals for ' + Y + (Y < now ? '.' : ' yet.') + '</div>') + '</div>';
+  var f = $('gadd');
+  if (f) f.onsubmit = function (e) { e.preventDefault(); var v = $('gadd-in').value.trim(); if (!v) return; var g = { id: uid('g'), year: Y, title: v, measure: '', result: null, note: '', quests: [] }; S.goals.push(g); flashId = g.id; commit(); $('gadd-in').focus(); };
+  document.querySelectorAll('[data-gnote]').forEach(function (t) { t.oninput = function () { S.goals.find(function (g) { return g.id === t.getAttribute('data-gnote'); }).note = t.value; saveHub(); }; });
+}
+
+/* ---------------------------------------------------------------- Brainstorm */
+var BOX = { fresh: 'Fresh', shelf: 'On the shelf', archive: 'Archived' };
+function calcScore(im, tm, ea) { return Math.round(im * 0.5 + ea * 0.25 + (100 - tm) * 0.25); }
+function ago(d) { var n = daysBetween(d, today()); return n <= 0 ? 'today' : n === 1 ? 'yesterday' : n + ' days ago'; }
+function renderBrain() {
+  var box = U.brainBox, f = U.brainFilter, sort = U.brainSort, mode = box === 'fresh' ? U.brainView : 'cards';
+  var qy = (U.brainQ || '').trim().toLowerCase();
+  var match = function (b) { return !qy || [b.text, b.note, b.why].join(' ').toLowerCase().indexOf(qy) > -1; };
+  var hl = function (t) { var e = esc(t); if (!qy) return e; var k = esc(qy).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); return e.replace(new RegExp(k, 'gi'), function (m) { return '<mark>' + m + '</mark>'; }); };
+  var inBox = function (b) { return b.box === box; }, boxN = function (k) { return S.brain.filter(function (b) { return b.box === k; }).length; };
+  var list = S.brain.filter(inBox).filter(match).filter(function (b) { return f === 'all' || b.spark; })
+    .sort(function (a, b) { return sort === 'score' ? ((b.score == null ? -1 : b.score) - (a.score == null ? -1 : a.score)) : ((b.spark - a.spark) || b.at.localeCompare(a.at)); });
+  var foot = function (b) {
+    if (box === 'fresh') return '<button class="b" data-b2today="' + b.id + '">→ Today</button><button class="b y" data-b2prod="' + b.id + '">→ In Production</button><button class="b r" data-b2big="' + b.id + '">→ Big Picture</button><span style="flex:1"></span><button class="b ghost" data-bmove="' + b.id + '" data-to="shelf">Shelf it</button><button class="b ghost" data-bmove="' + b.id + '" data-to="archive">Archive</button>';
+    if (box === 'shelf') return '<button class="b y" data-bmove="' + b.id + '" data-to="fresh">← Back to Fresh</button><button class="b ghost" data-b2prod="' + b.id + '">→ In Production</button><span style="flex:1"></span><button class="b ghost" data-bmove="' + b.id + '" data-to="archive">Archive</button>';
+    return '<button class="b" data-bmove="' + b.id + '" data-to="fresh">Restore</button><span style="flex:1"></span><button class="b r" data-bkill="' + b.id + '">Delete forever</button>';
+  };
+  var cards = '<div class="bgrid">' + (list.map(function (b) {
+    return '<div class="bcard ' + (b.spark && box === 'fresh' ? 'lit ' : '') + box + (flashId === b.id ? ' flash' : '') + '"><div class="bb" data-bedit="' + b.id + '"><div style="display:flex;gap:8px;align-items:flex-start"><div class="bt">' + hl(b.text) + '</div>'
+      + '<button class="spark' + (b.spark ? ' on' : '') + '" data-spark="' + b.id + '" title="Sparks joy">⚡</button>' + (b.score != null ? '<button class="bscore" data-score="' + b.id + '" title="Change score">' + b.score + '</button>' : '<button class="bscore none" data-score="' + b.id + '">Score</button>') + '</div>'
+      + (b.note ? '<div class="bn">' + hl(b.note) + '</div>' : '') + (b.impact != null ? '<div class="ied">Impact ' + b.impact + ' · Time ' + b.time + ' · Easy ' + b.ease + '</div>' : '')
+      + (b.why && box === 'archive' ? '<div class="bn"><b>Why:</b> ' + hl(b.why) + '</div>' : '') + '<div class="bm">added ' + ago(b.at) + (box !== 'fresh' && b.movedAt ? ' · ' + (box === 'shelf' ? 'shelved' : 'archived') + ' ' + ago(b.movedAt) : '') + '</div></div>'
+      + '<div class="bf">' + foot(b) + '</div></div>';
+  }).join('') || '<div class="empty">' + (qy ? 'No ideas match “' + esc(U.brainQ.trim()) + '” here.' : { fresh: 'Empty. Brain is clear.', shelf: 'Nothing on the shelf.', archive: 'Nothing archived.' }[box]) + '</div>') + '</div>';
+  $('v-brain').innerHTML = '<form class="bigin" id="cap"><textarea id="cap-in" rows="1" placeholder="Dump it here. Half-baked is fine."></textarea><button>Drop it</button></form>'
+    + '<p class="tip">Enter to save · Shift+Enter for a new line · ⚡ the ones that excite you. When one’s ready, send it to Today, In Production or Big Picture.</p>'
+    + '<div class="bbox">' + Object.keys(BOX).map(function (k) { return '<button aria-pressed="' + (box === k) + '" data-bbox="' + k + '">' + BOX[k] + ' <span>' + boxN(k) + '</span></button>'; }).join('') + '</div>'
+    + ({ shelf: '<p class="bbox-hint">Good ideas, just not now. They stay out of the way until you bring them back.</p>', archive: '<p class="bbox-hint">Not relevant anymore. Kept so you remember why you let them go.</p>' }[box] || '')
+    + '<div class="bfilter"><label class="bsearch"><span>⌕</span><input id="b-q" type="search" placeholder="Search ideas" value="' + esc(U.brainQ || '') + '" autocomplete="off">' + (qy ? '<button type="button" data-bqclear title="Clear search">×</button>' : '') + '</label>'
+    + '<button class="b" aria-pressed="' + (f === 'all') + '" data-bf="all">All ' + boxN(box) + '</button><button class="b" aria-pressed="' + (f === 'spark') + '" data-bf="spark">⚡ Sparked ' + S.brain.filter(inBox).filter(function (b) { return b.spark; }).length + '</button>'
+    + (mode === 'cards' ? '<button class="b" aria-pressed="' + (sort === 'new') + '" data-bsort="new">Newest</button><button class="b" aria-pressed="' + (sort === 'score') + '" data-bsort="score">Top score</button>' : '')
+    + (box === 'fresh' ? '<div class="vsw"><button class="b" aria-pressed="' + (mode === 'cards') + '" data-bview="cards">▦ Cards</button><button class="b" aria-pressed="' + (mode === 'graph') + '" data-bview="graph">◉ Graph</button></div>' : '') + '</div>'
+    + (qy ? '<div class="bfound">' + list.length + ' result' + (list.length === 1 ? '' : 's') + ' for “' + esc(U.brainQ.trim()) + '” in ' + BOX[box] + Object.keys(BOX).filter(function (k) { return k !== box; }).map(function (k) { var n = S.brain.filter(function (b) { return b.box === k && match(b); }).length; return n ? '<button data-bbox="' + k + '">' + n + ' in ' + BOX[k] + ' →</button>' : ''; }).join('') + '</div>' : '')
+    + (mode === 'graph' ? brainGraph(list) : cards);
+  var sq = $('b-q');
+  sq.oninput = function () { var pos = sq.selectionStart; U.brainQ = sq.value; saveUi(); renderBrain(); var n = $('b-q'); n.focus(); n.setSelectionRange(pos, pos); };
+  sq.onkeydown = function (e) { if (e.key === 'Escape') { e.stopPropagation(); U.brainQ = ''; saveUi(); renderBrain(); } };
+  var inp = $('cap-in'), go = function () {
+    var v = inp.value.trim(); if (!v) return; var parts = v.split('\n');
+    var b = { id: uid('b'), text: parts[0].trim(), note: parts.slice(1).join('\n').trim(), spark: false, at: today(), box: 'fresh', movedAt: null, why: '' };
+    S.brain.unshift(b); U.brainBox = 'fresh'; saveUi(); flashId = b.id; commit(); $('cap-in').focus();
+  };
+  $('cap').onsubmit = function (e) { e.preventDefault(); go(); };
+  inp.onkeydown = function (e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); go(); } };
+}
+function brainGraph(list) {
+  var W = 760, H = 520, L = 56, R = 20, T = 20, B = 52, pw = W - L - R, ph = H - T - B;
+  var X = function (e) { return L + e / 100 * pw; }, Y = function (i) { return T + (1 - i / 100) * ph; };
+  var plotted = list.filter(function (b) { return b.impact != null; }), rest = list.filter(function (b) { return b.impact == null; });
+  var quad = function (x, y, label, sub, fill) { return '<rect x="' + x + '" y="' + y + '" width="' + pw / 2 + '" height="' + ph / 2 + '" fill="' + fill + '"/><text x="' + (x + 12) + '" y="' + (y + 24) + '" font-size="13" font-weight="800" fill="#000" letter-spacing=".06em">' + label + '</text><text x="' + (x + 12) + '" y="' + (y + 40) + '" font-size="11" fill="#5A5A5A">' + sub + '</text>'; };
+  var short = function (t) { return t.length > 26 ? t.slice(0, 25) + '…' : t; };
+  var dots = plotted.map(function (b) {
+    var eff = (b.time + (100 - b.ease)) / 2, cx = X(eff), cy = Y(b.impact), r = 9 + b.score / 12, left = cx > L + pw * 0.72;
+    return '<g class="dot" data-score="' + b.id + '"><title>' + esc(b.text) + ' — score ' + b.score + '</title><circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="' + (b.spark ? '#F8C135' : '#000') + '" stroke="#000" stroke-width="2"/>'
+      + '<text x="' + cx + '" y="' + (cy + 4) + '" font-size="10" font-weight="800" text-anchor="middle" fill="' + (b.spark ? '#000' : '#F8C135') + '">' + b.score + '</text>'
+      + '<text x="' + (left ? cx - r - 6 : cx + r + 6) + '" y="' + (cy + 4) + '" font-size="12" font-weight="600" text-anchor="' + (left ? 'end' : 'start') + '" fill="#000" stroke="#fff" stroke-width="4" paint-order="stroke">' + esc(short(b.text)) + '</text></g>';
+  }).join('');
+  return '<div class="graph-wrap"><svg class="graph" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Ideas by impact and effort">'
+    + quad(L, T, 'QUICK WINS', 'Big impact, low effort: do these', '#fdf1cf') + quad(L + pw / 2, T, 'BIG BETS', 'Big impact, big effort: plan them', '#f6f4f4')
+    + quad(L, T + ph / 2, 'FILL-INS', 'Small but easy: for slow days', '#fbfafa') + quad(L + pw / 2, T + ph / 2, 'TIME SINKS', 'Small impact, lots of effort: think twice', '#f3eded')
+    + '<rect x="' + L + '" y="' + T + '" width="' + pw + '" height="' + ph + '" fill="none" stroke="#000" stroke-width="3"/>'
+    + '<line x1="' + (L + pw / 2) + '" y1="' + T + '" x2="' + (L + pw / 2) + '" y2="' + (T + ph) + '" stroke="#000" stroke-dasharray="4 4"/><line x1="' + L + '" y1="' + (T + ph / 2) + '" x2="' + (L + pw) + '" y2="' + (T + ph / 2) + '" stroke="#000" stroke-dasharray="4 4"/>'
+    + '<text x="' + (L + pw / 2) + '" y="' + (H - 14) + '" font-size="11" font-weight="700" text-anchor="middle" letter-spacing=".08em">EFFORT → (time + difficulty)</text>'
+    + '<text x="' + L + '" y="' + (H - 30) + '" font-size="10" fill="#5A5A5A">Easy &amp; quick</text><text x="' + (L + pw) + '" y="' + (H - 30) + '" font-size="10" fill="#5A5A5A" text-anchor="end">Hard &amp; long</text>'
+    + '<text transform="translate(20 ' + (T + ph / 2) + ') rotate(-90)" font-size="11" font-weight="700" text-anchor="middle" letter-spacing=".08em">IMPACT →</text>' + dots + '</svg>'
+    + (rest.length ? '<div class="unplot"><h4>Not on the graph yet · give them an Impact / Time / Easiness score</h4><div class="chips">' + rest.map(function (b) { return '<button class="b" data-score="' + b.id + '" data-mode="break">' + esc(b.text) + (b.score != null ? ' · ' + b.score : '') + '</button>'; }).join('') + '</div></div>' : '')
+    + '<p class="lead" style="margin:12px 0 0">Bigger dot = higher score · yellow = ⚡ sparked · click a dot to rescore it.</p></div>';
+}
+function scoreDlg(id, mode) {
+  var b = S.brain.find(function (x) { return x.id === id; }); if (!b) return;
+  mode = mode || (b.impact != null ? 'break' : 'quick');
+  var sl = function (sid, label, lo, hi, v) { return '<div class="sl"><div class="top2"><b>' + label + '</b><span id="' + sid + '-v">' + v + '</span></div><input type="range" min="0" max="100" step="1" id="' + sid + '" value="' + v + '"><div class="ends"><span>' + lo + '</span><span>' + hi + '</span></div></div>'; };
+  openDlg('<h3>Score: ' + esc(b.text) + '</h3><div class="body"><div class="smode"><button aria-pressed="' + (mode === 'quick') + '" data-smode="quick" data-id="' + id + '">Quick score</button><button aria-pressed="' + (mode === 'break') + '" data-smode="break" data-id="' + id + '">Impact · Time · Easiness</button></div>'
+    + '<div class="big-score"><span id="s-out">' + (b.score == null ? 50 : b.score) + '</span><small>/100</small></div>'
+    + (mode === 'quick' ? sl('s-q', 'Gut feeling', 'Meh', 'Must do', b.score == null ? 50 : b.score)
+      : sl('s-i', 'Impact', 'Small', 'Huge', b.impact == null ? 50 : b.impact) + sl('s-t', 'Time to do', 'Quick', 'Takes forever', b.time == null ? 50 : b.time) + sl('s-e', 'Easiness', 'Hard', 'Easy', b.ease == null ? 50 : b.ease)
+        + '<div class="formula">Score = half Impact + a quarter Easiness + a quarter “quickness” (100 − Time). Big impact counts most.</div>')
+    + '</div><div class="foot">' + (b.score != null ? '<button class="b r" data-sclear="' + id + '">Clear score</button>' : '') + '<span class="sp"></span><button class="b ghost" data-close>Cancel</button><button class="b y" data-ssave="' + id + '" data-mode="' + mode + '">Save</button></div>');
+  var v = function (x) { return $(x) ? +$(x).value : 0; };
+  var live = function () { ['s-q', 's-i', 's-t', 's-e'].forEach(function (x) { if ($(x)) $(x + '-v').textContent = v(x); }); $('s-out').textContent = $('s-q') ? v('s-q') : calcScore(v('s-i'), v('s-t'), v('s-e')); };
+  $('dlg-box').querySelectorAll('input[type=range]').forEach(function (r) { r.oninput = live; }); live();
+}
+
+/* ============================================================ the ⋯ menu */
+function closeMenu() { var m = $('amenu'); if (m) m.remove(); document.querySelectorAll('.amb.open').forEach(function (b) { b.classList.remove('open'); }); }
+function openMenu(btn, key) {
+  closeMenu(); btn.classList.add('open');
+  var it = function (icon, label, attrs, cls) { return '<button class="' + (cls || '') + '" ' + attrs + '><i>' + icon + '</i>' + label + '</button>'; }, html = '', pp = projectsPipe();
+  if (key.indexOf('q:') === 0) {
+    var a = key.split(':'), p = questById(a[1]), ph = p && phasesOf(p).find(function (x) { return x.id === a[2]; }); if (!ph) return;
+    var ids = stagesOf(pp).map(function (s) { return s.id; }), cur = ids.indexOf(S.stage[ph.id]) > -1 ? S.stage[ph.id] : ids[0];
+    html = it('+', 'Add a task', 'data-addstep="' + p.id + ':' + ph.id + '"')
+      + (ids.length > 1 ? '<div class="sec">Move to stage</div>' + stagesOf(pp).filter(function (s) { return s.id !== cur; }).map(function (s) { return it('→', esc(s.name), 'data-qstage="' + ph.id + '" data-to="' + s.id + '"', 'sub'); }).join('') : '')
+      + '<div class="sec">Quest</div>' + it('↗', 'Open quest', 'data-quest="' + p.id + '" data-gotobig');
+  } else {
+    var h = cardHit(key.slice(2)); if (!h) return;
+    var c = h.c, cur2 = stageOf(h.pl, c);
+    html = it(c.pinned ? '●' : '○', c.pinned ? 'Unpin' : 'Pin to Pull in', 'data-cpin="' + c.id + '"') + it('+', 'Add a task', 'data-cadd="' + c.id + '"')
+      + (stagesOf(h.pl).length > 1 ? '<div class="sec">Move to stage</div>' + stagesOf(h.pl).filter(function (s) { return s.id !== cur2; }).map(function (s) { return it('→', esc(s.name), 'data-cmove="' + c.id + '" data-to="' + s.id + '"', 'sub'); }).join('') : '')
+      + '<div class="sec">Move elsewhere</div>' + (pls().length > 1 ? it('⇄', 'Another pipeline…', 'data-cother="' + c.id + '"') : '')
+      + it('←', 'Back to Brainstorm', 'data-c2brain="' + c.id + '"') + it('↑', 'Big Picture…', 'data-c2big="' + c.id + '"', 'red')
+      + it('▢', c.archived ? 'Restore from archive' : 'Archive', (c.archived ? 'data-unarch="' : 'data-carch="') + c.id + '"');
+  }
+  var m = document.createElement('div'); m.id = 'amenu'; m.setAttribute('role', 'menu'); m.innerHTML = html; document.body.appendChild(m);
+  var r = btn.getBoundingClientRect(), mw = m.offsetWidth, mh = m.offsetHeight;
+  m.style.left = Math.max(8, Math.min(r.right - mw, innerWidth - mw - 8)) + 'px';
+  m.style.top = (r.bottom + mh + 8 > innerHeight ? Math.max(8, r.top - mh - 4) : r.bottom + 4) + 'px';
+}
+addEventListener('scroll', closeMenu, true);
+addEventListener('resize', closeMenu);
+
+/* ============================================================ clicks */
+document.addEventListener('submit', function (e) {
+  var f = e.target.closest('[data-addto]'); if (!f) return;
+  e.preventDefault(); var inp = f.querySelector('input'), v = inp.value.trim(); if (!v) return;
+  var t = { id: uid('t'), list: f.getAttribute('data-addto'), title: v, notes: '', due: null, repeat: null, done: false, doneAt: null, ref: null, at: today() };
+  S.tasks.unshift(t); flashId = t.id; commit();
+  var again = document.querySelector('[data-addto="' + t.list + '"] input'); if (again) again.focus();
+});
+document.addEventListener('click', function (e) {
+  if (!e.target.closest('[data-menu]')) closeMenu();
+  var el = e.target.closest('button,[data-edit],[data-card],[data-qopen],[data-bedit],[data-gedit],g[data-score]'); if (!el) return;
+  var d = el.dataset, T = function (id) { return S.tasks.find(function (x) { return x.id === id; }); }, B = function (id) { return S.brain.find(function (x) { return x.id === id; }); };
+  if (d.menu) { e.stopPropagation(); if (el.classList.contains('open')) return closeMenu(); return openMenu(el, d.menu); }
+  if (d.tab) { closeMenu(); return show(d.tab); }
+  if ('close' in d) return closeDlg();
+  if ('signin' in d) return SH && SH.click();
+
+  /* Today */
+  if (d.tick) { e.stopPropagation(); return tickTask(T(d.tick)); }
+  if (d.go) { e.stopPropagation(); var rg = resolve(T(d.go)); if (rg && rg.tag && rg.tag.go) rg.tag.go(); return; }
+  if (d.edit) return editTask(T(d.edit));
+  if (d.tsave) return saveTaskDlg(T(d.tsave));
+  if (d.tdel) { var td = T(d.tdel); S.tasks = S.tasks.filter(function (x) { return x !== td; }); shutDlg(); commit(); return toast(td.ref ? 'Removed from the list. It’s still in ' + (td.ref.app === 'pl' ? 'Pipelines.' : 'Project Phases.') : 'Task deleted', 'Undo', function () { S.tasks.unshift(td); commit(); }); }
+  if (d.dt) { U.open[d.dt] = !U.open[d.dt]; saveUi(); return render(); }
+  if ('newlist' in d) { var nl = prompt('Name of the new list'); if (nl && nl.trim()) { S.lists.push({ id: uid('l'), name: nl.trim() }); commit(); } return; }
+  if (d.lmenu) {
+    var l = S.lists.find(function (x) { return x.id === d.lmenu; }), n = S.tasks.filter(function (t) { return t.list === l.id; }).length;
+    openDlg('<h3>' + esc(l.name) + '</h3><div class="body"><label>Rename</label><input id="l-name" value="' + esc(l.name) + '"></div><div class="foot"><button class="b r" data-ldel="' + l.id + '">Delete list' + (n ? ' (' + n + ' tasks)' : '') + '</button><span class="sp"></span><button class="b ghost" data-close>Cancel</button><button class="b y" data-lsave="' + l.id + '">Save</button></div>');
+    return;
+  }
+  if (d.lsave) { var ln = $('l-name').value.trim(); if (ln) S.lists.find(function (x) { return x.id === d.lsave; }).name = ln; shutDlg(); return commit(); }
+  if (d.ldel) { if (S.lists.length < 2) return toast('Keep at least one list'); if (!confirm('Delete this list and its tasks? Linked tasks stay in their apps.')) return; S.lists = S.lists.filter(function (x) { return x.id !== d.ldel; }); S.tasks = S.tasks.filter(function (t) { return t.list !== d.ldel; }); shutDlg(); return commit(); }
+  if ('hidepull' in d) { U.showPull = false; saveUi(); return render(); }
+  if ('showpull' in d) { U.showPull = true; saveUi(); return render(); }
+  if (d.pull) {
+    var ref = JSON.parse(d.pull), title = d.title;
+    if (linkedTo(ref.t || ref.s)) return toast('Already in ' + listName(linkedTo(ref.t || ref.s).list));
+    if (S.lists.length === 1) return addLinked(ref, title, S.lists[0].id);
+    listPick('Add to which list?', '“' + esc(title) + '” stays linked: tick it in the list and it’s ticked at the source too.', 'data-dolink=\'' + esc(d.pull) + '\' data-title="' + esc(title) + '"');
+    return;
+  }
+  if (d.dolink) { var ref2 = JSON.parse(d.dolink); $('dlg').classList.remove('on'); dlgKind = null; addLinked(ref2, d.title, d.list); if (cardOpen) cardDlg(cardOpen.pl, cardOpen.c); return; }
+  if (d.t2prod) {
+    if (needs('pl')) return; var tp = T(d.t2prod), pp0 = projectsPipe(), st0 = stagesOf(pp0)[Math.min(1, stagesOf(pp0).length - 1)].id;
+    var nc = newPlCard(pp0, st0, tp.title, linesOf(tp.notes)); arr(pp0, 'cards').push(nc); savePL();
+    S.tasks = S.tasks.filter(function (x) { return x !== tp; }); shutDlg(); flashId = nc.id; U.prodView = pp0.id; saveUi(); commit();
+    return toast('Now a project in Pipelines · ' + stageObj(pp0, st0).name, 'View', function () { show('prod'); });
+  }
+  if (d.t2big) {
+    if (needs('pp')) return; var tb = T(d.t2big);
+    openDlg('<h3>→ Big Picture</h3><div class="body"><p class="lead">Add “' + esc(tb.title) + '” as a task in a quest’s current project (it stays in ' + esc(listName(tb.list)) + ', linked), or make it a new quest.</p><div class="pick">'
+      + quests().map(function (q) { var ph = phaseNow(q) || phasesOf(q)[phasesOf(q).length - 1]; return ph ? '<button class="b" data-t2q="' + tb.id + '" data-q="' + q.id + '">' + esc(q.name) + ' <span style="font-weight:500;color:var(--g6)">· ' + esc(ph.name) + '</span></button>' : ''; }).join('')
+      + '<button class="b r" data-tobig="task:' + tb.id + '" data-q="">+ New quest from this task</button></div></div><div class="foot"><span class="sp"></span><button class="b ghost" data-close>Cancel</button></div>');
+    return;
+  }
+  if (d.t2q) {
+    var tq = T(d.t2q), q = questById(d.q), ph = phaseNow(q) || phasesOf(q)[phasesOf(q).length - 1], st = newStep(tq.title);
+    arr(ph, 'steps').push(st); if (tq.due) S.due[st.id] = tq.due;
+    tq.ref = { app: 'pp', p: q.id, ph: ph.id, s: st.id }; tq.repeat = null; savePP(); shutDlg(); flashId = tq.id; commit();
+    return toast('Now a task in ' + q.name + ' · ' + ph.name, 'Open quest', function () { U.quest = q.id; show('big'); });
+  }
+
+  /* In Production */
+  if (d.pview) { U.prodView = d.pview; U.showArch = false; saveUi(); return render(); }
+  if (d.card) { var hc = cardHit(d.card); return hc && cardDlg(hc.pl.id, hc.c.id); }
+  if (d.qopen) { U.quest = d.qopen; return show('big'); }
+  if (d.padd) {
+    var plA = plById(U.prodView), isP = plA.id === 'projects';
+    var na = prompt(isP ? 'Project name' : 'Card title'); if (!na || !na.trim()) return;
+    var ca = newPlCard(plA, d.padd, na.trim(), listOf(plA.checklist).map(String)); arr(plA, 'cards').push(ca); savePL(); flashId = ca.id; render(); return cardDlg(plA.id, ca.id);
+  }
+  if (d.cstage) { var hs = findCard(cardOpen.pl, cardOpen.c); moveStage(hs.c, d.cstage); savePL(); return render(); }
+  if (d.ctick) { var hk = findCard(cardOpen.pl, cardOpen.c), tk = ctasks(hk.c).find(function (x) { return x.id === d.ctick; }); tk.done = !tk.done; tk.doneAt = tk.done ? today() : null; savePL(); return render(); }
+  if (d.ctdel) { var hd = findCard(cardOpen.pl, cardOpen.c); hd.c.tasks = ctasks(hd.c).filter(function (x) { return x.id !== d.ctdel; }); S.tasks = S.tasks.filter(function (t) { return !(t.ref && t.ref.t === d.ctdel); }); savePL(); return commit(); }
+  if (d.cmdel) { if (!confirm('Delete this comment?')) return; var hm = findCard(cardOpen.pl, cardOpen.c); hm.c.comments = listOf(hm.c.comments).filter(function (m) { return m && m.id !== d.cmdel; }); savePL(); return render(); }
+  if (d.cdel) { var hx = cardHit(d.cdel); if (!confirm('Delete “' + hx.c.title + '” for good? It’s deleted in Pipelines too.')) return; hx.pl.cards = cardsOf(hx.pl).filter(function (x) { return x !== hx.c; }); dropCardLinks(hx.c.id); savePL(); shutDlg(); return commit(); }
+  if (d.cpin) { var hp = cardHit(d.cpin); hp.c.pinned = !hp.c.pinned; savePL(); render(); return toast(hp.c.pinned ? 'Pinned: its next task shows in Pull in' : 'Unpinned'); }
+  if (d.cadd) { var hq2 = cardHit(d.cadd), va = prompt('New task for “' + hq2.c.title + '”'); if (va && va.trim()) { arr(hq2.c, 'tasks').push(newPlTask(va.trim())); savePL(); flashId = hq2.c.id; render(); } return; }
+  if (d.cmove) { var hv = cardHit(d.cmove); moveStage(hv.c, d.to); savePL(); flashId = hv.c.id; return render(); }
+  if (d.carch) { var ha = cardHit(d.carch); ha.c.archived = true; savePL(); shutDlg(); render(); return toast('Archived “' + ha.c.title + '”', 'Undo', function () { ha.c.archived = false; savePL(); render(); }); }
+  if (d.unarch) { var hu = cardHit(d.unarch); hu.c.archived = false; savePL(); flashId = hu.c.id; return render(); }
+  if ('togglearch' in d) { U.showArch = !U.showArch; saveUi(); return render(); }
+  if (d.cother) {
+    var ho = cardHit(d.cother); cardOpen = null;
+    openDlg('<h3>Move to another pipeline</h3><div class="body"><p class="lead">Pick the pipeline and the stage. Tasks, comments and matching fields come along.</p>'
+      + pls().filter(function (o) { return o !== ho.pl; }).map(function (o) { return '<label>' + esc(o.name) + '</label><div class="cw-stage">' + stagesOf(o).map(function (s) { return '<button data-domove="' + ho.c.id + '" data-pl="' + o.id + '" data-st="' + s.id + '">' + esc(s.name) + '</button>'; }).join('') + '</div>'; }).join('')
+      + '</div><div class="foot"><span class="sp"></span><button class="b ghost" data-close>Cancel</button></div>');
+    return;
+  }
+  if (d.domove) return moveCardTo(cardHit(d.domove), d.pl, d.st);
+  if (d.c2brain) {
+    var hb = cardHit(d.c2brain); shutDlg();
+    S.brain.unshift({ id: uid('b'), text: hb.c.title, note: ctasks(hb.c).filter(function (t) { return !t.done; }).map(function (t) { return '- ' + t.title; }).join('\n'), spark: false, at: today(), box: 'fresh', movedAt: null, why: '' });
+    hb.pl.cards = cardsOf(hb.pl).filter(function (x) { return x !== hb.c; }); dropCardLinks(hb.c.id); savePL(); commit();
+    return toast('Back in Brainstorm. Its open tasks are kept as notes.', 'View', function () { show('brain'); });
+  }
+  if (d.c2big) { var hbg = cardHit(d.c2big); cardOpen = null; return bigDlg('card', hbg.c.id); }
+  if (d.qstage) { S.stage[d.qstage] = d.to; flashId = d.qstage; return commit(); }
+
+  /* Big Picture */
+  if (d.quest) { U.quest = d.quest; saveUi(); if ('gotobig' in d) return show('big'); return render(); }
+  if ('goprod' in d) { U.prodView = (projectsPipe() || {}).id; return show('prod'); }
+  if (d.step) { var a3 = d.step.split(':'), fs3 = findStep(a3[0], a3[1], a3[2]); setStepDone(fs3.st, !stepDone(fs3.st)); savePP(); commit(); if (linkedTo(fs3.st.id)) toast('Also updated in your list'); return; }
+  if (d.addstep) { var a2 = d.addstep.split(':'), q2 = questById(a2[0]), ph2 = q2 && phasesOf(q2).find(function (x) { return x.id === a2[1]; }), nm = prompt('New task'); if (ph2 && nm && nm.trim()) { var st2 = newStep(nm.trim()); arr(ph2, 'steps').push(st2); savePP(); flashId = st2.id; commit(); } return; }
+  if (d.addphase) { var q3 = questById(d.addphase), np = prompt('Name of the new project in this quest', 'Phase ' + (phasesOf(q3).length + 1)); if (np && np.trim()) { var ph3 = newPhase(np.trim(), []); arr(q3, 'phases').push(ph3); savePP(); flashId = ph3.id; commit(); } return; }
+  if (d.qpin) { if (S.pins[d.qpin]) delete S.pins[d.qpin]; else S.pins[d.qpin] = true; commit(); return toast(S.pins[d.qpin] ? 'Pinned: this quest feeds Pull in' : 'Unpinned'); }
+  if (d.qgoal) {
+    var gs = S.goals.filter(function (g) { return g.year === new Date().getFullYear(); });
+    openDlg('<h3>Which goal does this quest serve?</h3><div class="body"><div class="pick">' + (gs.map(function (g) { var on = g.quests.indexOf(d.qgoal) > -1; return '<button class="b' + (on ? ' y' : '') + '" data-setgoal="' + d.qgoal + '" data-g="' + g.id + '">' + esc(g.title) + (on ? ' ✓' : '') + '</button>'; }).join('') || '<div class="empty">No goals this year yet. Add them in Goals.</div>') + '</div></div><div class="foot"><span class="sp"></span><button class="b ghost" data-close>Close</button></div>');
+    return;
+  }
+  if (d.setgoal) {
+    var gg = S.goals.find(function (g) { return g.id === d.g; }), on2 = gg.quests.indexOf(d.setgoal) > -1;
+    S.goals.forEach(function (g) { if (g.year === gg.year) g.quests = g.quests.filter(function (x) { return x !== d.setgoal; }); });   // one goal per quest per year
+    if (!on2) gg.quests.push(d.setgoal);
+    shutDlg(); flashId = gg.id; return commit();
+  }
+  if (d.tobig) { var tbk = d.tobig; return toBig(tbk, d.q); }
+
+  /* Goals */
+  if (d.gyear) { U.year = +d.gyear; U.review = false; saveUi(); return render(); }
+  if ('greview' in d) { U.review = !U.review; saveUi(); return render(); }
+  if ('qdone' in d) { S.checks[new Date().getFullYear() + '-Q' + quarter()] = true; commit(); return toast('Quarter check done. See you next quarter.'); }
+  if (d.gres) { var gr = S.goals.find(function (g) { return g.id === d.gres; }); gr.result = gr.result === d.r ? null : d.r; return commit(); }
+  if (d.gedit) {
+    var ge = S.goals.find(function (g) { return g.id === d.gedit; });
+    openDlg('<h3>Goal</h3><div class="body"><label>Goal</label><input id="g-t" value="' + esc(ge.title) + '"><label>How I’ll know I hit it</label><input id="g-m" value="' + esc(ge.measure) + '" placeholder="e.g. 40 weddings booked"></div><div class="foot"><button class="b r" data-gdel="' + ge.id + '">Delete</button><span class="sp"></span><button class="b ghost" data-close>Cancel</button><button class="b y" data-gsave="' + ge.id + '">Save</button></div>');
+    return;
+  }
+  if (d.gsave) { var gv = S.goals.find(function (g) { return g.id === d.gsave; }), gt = $('g-t').value.trim(); if (gt) gv.title = gt; gv.measure = $('g-m').value.trim(); shutDlg(); flashId = gv.id; return commit(); }
+  if (d.gdel) { if (!confirm('Delete this goal?')) return; S.goals = S.goals.filter(function (g) { return g.id !== d.gdel; }); shutDlg(); return commit(); }
+  if (d.glink) {
+    if (needs('pp')) return; var gl = S.goals.find(function (g) { return g.id === d.glink; });
+    openDlg('<h3>Link a quest</h3><div class="body"><p class="lead">Which quest moves “' + esc(gl.title) + '” forward?</p><div class="pick">' + (quests().map(function (p) { var on = gl.quests.indexOf(p.id) > -1, other = !on && S.goals.find(function (g) { return g.year === gl.year && g.quests.indexOf(p.id) > -1; }); return '<button class="b' + (on ? ' y' : '') + '" data-setgoal="' + p.id + '" data-g="' + gl.id + '">' + esc(p.name) + (other ? ' <span style="font-weight:500;color:var(--g6)">· now on “' + esc(other.title) + '”</span>' : '') + (on ? ' ✓' : '') + '</button>'; }).join('') || '<div class="empty">No quests yet.</div>') + '</div></div><div class="foot"><span class="sp"></span><button class="b ghost" data-close>Close</button></div>');
+    return;
+  }
+  if (d.gnewq) {
+    if (needs('pp')) return; var gq = S.goals.find(function (g) { return g.id === d.gnewq; }), qn = prompt('Name the quest for this goal', gq.title); if (!qn || !qn.trim()) return;
+    var nq = { id: ppid('p'), name: qn.trim(), shareId: null, createdAt: Date.now(), homework: [], agenda: [], notes: [], phases: [newPhase('Phase 1', [])] };
+    arr(PPD, 'projects').push(nq); savePP(); gq.quests.push(nq.id); commit();
+    return toast('Quest created in Project Phases. Add its first tasks.', 'Open quest', function () { U.quest = nq.id; show('big'); });
+  }
+
+  /* Brainstorm */
+  if (d.spark) { e.stopPropagation(); var bs = B(d.spark); bs.spark = !bs.spark; return commit(); }
+  if (d.score) { e.stopPropagation(); return scoreDlg(d.score, d.mode); }
+  if (d.smode) return scoreDlg(d.id, d.smode);
+  if (d.ssave) {
+    var bv = B(d.ssave), val = function (x) { return +$(x).value; };
+    if (d.mode === 'quick') { bv.score = val('s-q'); delete bv.impact; delete bv.time; delete bv.ease; }
+    else { bv.impact = val('s-i'); bv.time = val('s-t'); bv.ease = val('s-e'); bv.score = calcScore(bv.impact, bv.time, bv.ease); }
+    shutDlg(); flashId = bv.id; return commit();
+  }
+  if (d.sclear) { var bc = B(d.sclear); delete bc.score; delete bc.impact; delete bc.time; delete bc.ease; shutDlg(); return commit(); }
+  if (d.bf) { U.brainFilter = d.bf; saveUi(); return render(); }
+  if (d.bsort) { U.brainSort = d.bsort; saveUi(); return render(); }
+  if (d.bview) { U.brainView = d.bview; saveUi(); return render(); }
+  if (d.bbox) { U.brainBox = d.bbox; saveUi(); return render(); }
+  if ('bqclear' in d) { e.preventDefault(); U.brainQ = ''; saveUi(); renderBrain(); return $('b-q').focus(); }
+  if (d.bedit) {
+    var be = B(d.bedit);
+    openDlg('<h3>Raw idea</h3><div class="body"><label>Idea</label><input id="b-text" value="' + esc(be.text) + '"><label>Notes</label><textarea id="b-note" placeholder="Anything. Lines starting with “- ” become tasks if it moves on.">' + esc(be.note) + '</textarea></div><div class="foot"><button class="b r" data-bkill="' + be.id + '">Delete</button><span class="sp"></span><button class="b ghost" data-close>Cancel</button><button class="b y" data-bsave="' + be.id + '">Save</button></div>');
+    return;
+  }
+  if (d.bsave) { var bb = B(d.bsave), bt = $('b-text').value.trim(); if (bt) bb.text = bt; bb.note = $('b-note').value; shutDlg(); flashId = bb.id; return commit(); }
+  if (d.bkill) { if (!confirm('Delete this idea for good?')) return; S.brain = S.brain.filter(function (x) { return x.id !== d.bkill; }); shutDlg(); return commit(); }
+  if (d.bmove) {
+    var bm = B(d.bmove), from = bm.box, lbl = { fresh: 'Fresh', shelf: 'the shelf', archive: 'Archived' }[d.to];
+    if (d.to === 'archive') {
+      openDlg('<h3>Archive this idea?</h3><div class="body"><p class="lead">“' + esc(bm.text) + '”</p><label>Why it’s not relevant anymore (optional)</label><input id="b-why" placeholder="So future you remembers"></div><div class="foot"><span class="sp"></span><button class="b ghost" data-close>Cancel</button><button class="b y" data-barch="' + bm.id + '">Archive</button></div>');
+      setTimeout(function () { $('b-why').focus(); }, 30); return;
+    }
+    bm.box = d.to; bm.movedAt = today(); commit();
+    return toast('Moved to ' + lbl, 'Undo', function () { bm.box = from; commit(); });
+  }
+  if (d.barch) { var ba = B(d.barch), fr = ba.box; ba.box = 'archive'; ba.movedAt = today(); ba.why = $('b-why').value.trim(); shutDlg(); commit(); return toast('Archived', 'Undo', function () { ba.box = fr; commit(); }); }
+  if (d.b2today) {
+    var b2 = B(d.b2today);
+    if (S.lists.length === 1) return brainToList(b2, S.lists[0].id);
+    listPick('Add to which list?', '“' + esc(b2.text) + '” becomes a task.', 'data-blist="' + b2.id + '"');
+    return;
+  }
+  if (d.blist) return brainToList(B(d.blist), d.list);
+  if (d.b2prod) {
+    if (needs('pl')) return; var bp = B(d.b2prod), pp1 = projectsPipe(), st1 = stagesOf(pp1)[Math.min(1, stagesOf(pp1).length - 1)].id;
+    var nc1 = newPlCard(pp1, st1, bp.text, linesOf(bp.note)); arr(pp1, 'cards').push(nc1); savePL();
+    S.brain = S.brain.filter(function (x) { return x !== bp; }); U.prodView = pp1.id; saveUi(); flashId = nc1.id; commit();
+    return toast('Now a project in Pipelines · ' + stageObj(pp1, st1).name + '. Its “- ” lines became tasks.', 'View', function () { show('prod'); });
+  }
+  if (d.b2big) return bigDlg('brain', d.b2big);
+});
+function brainToList(b, listId) {
+  var t = { id: uid('t'), list: listId, title: b.text, notes: b.note, due: null, repeat: null, done: false, doneAt: null, ref: null, at: today() };
+  S.tasks.unshift(t); S.brain = S.brain.filter(function (x) { return x !== b; }); U.lastList = listId; saveUi(); shutDlg(); commit();
+  toast('Added to ' + listName(listId), 'View', function () { flashId = t.id; show('today'); });
+}
+
+/* drag a card to another stage (mouse; on phones use ⋯ → Move to stage) */
+var dragId = null;
+document.addEventListener('dragstart', function (e) { var c = e.target.closest && e.target.closest('[data-card]'); if (!c) return; dragId = c.getAttribute('data-card'); c.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', dragId); });
+document.addEventListener('dragend', function () { dragId = null; document.querySelectorAll('.dragging,.pcol.over').forEach(function (x) { x.classList.remove('dragging', 'over'); }); });
+document.addEventListener('dragover', function (e) { var col = e.target.closest && e.target.closest('[data-col]'); if (!col || !dragId) return; e.preventDefault(); document.querySelectorAll('.pcol.over').forEach(function (x) { if (x !== col) x.classList.remove('over'); }); col.classList.add('over'); });
+document.addEventListener('drop', function (e) {
+  var col = e.target.closest && e.target.closest('[data-col]'); if (!col || !dragId) return; e.preventDefault();
+  var h = cardHit(dragId), to = col.getAttribute('data-col');
+  if (h && stageOf(h.pl, h.c) !== to) { moveStage(h.c, to); savePL(); flashId = h.c.id; render(); }
+});
+
+addEventListener('pagehide', saveHubNow);
+document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'hidden') saveHubNow(); });
+setInterval(function () { if (!$('dlg').classList.contains('on') && !document.activeElement.matches('input,textarea')) render(); }, 30 * 60 * 1000);
+
+/* ============================================================ sync: three docs, one sign-in */
+var VIEWS = { hub: null, pl: null, pp: null };
+function paintAll() {
+  var h = VIEWS.hub || { label: 'Sign in to sync', status: 'signedout' }, btn = $('btn-sync');
+  btn.textContent = (h.initial ? h.initial + ' · ' : '') + h.label; btn.title = h.title || '';
+  btn.className = 'tbtn' + (h.status === 'synced' ? ' ok' : '') + (h.status === 'conflict' || h.status === 'error' ? ' bad' : '');
+  var dot = function (v, name) { var s = v ? v.status : 'signedout'; return '<span class="' + (s === 'synced' ? 'live' : s === 'error' || s === 'conflict' ? 'bad' : '') + '" title="' + name + ': ' + esc(v ? v.label : 'not connected') + '">' + name + '</span>'; };
+  $('conn').innerHTML = h.authed ? dot(VIEWS.pl, 'Pipelines') + dot(VIEWS.pp, 'Project Phases') : '';
+  var bars = '';
+  [['hub', 'Hub', SH], ['pl', 'Pipelines', SP], ['pp', 'Project Phases', SQ]].forEach(function (x) {
+    var v = VIEWS[x[0]]; if (!v || !v.barOn) return;
+    if (x[0] !== 'hub' && (v.status === 'pending' || v.status === 'private') && VIEWS.hub && VIEWS.hub.barOn) return;   // one access note is enough
+    bars += '<div class="sbar"><span class="sync-dot"></span><span class="what"><b>' + x[1] + '</b>' + esc(v.barText) + '</span>'
+      + (v.showKeep ? '<button data-keep="' + x[0] + '">' + esc(v.keepLabel || 'Keep this device') + '</button><button data-keepc="' + x[0] + '">' + esc(v.cloudLabel || 'Keep cloud copy') + '</button>' : '')
+      + (v.link ? '<a href="' + v.link.href + '">' + esc(v.link.text) + '</a>' : '') + '</div>';
+  });
+  $('bars').innerHTML = bars;
+}
+document.addEventListener('click', function (e) {
+  var k = e.target.closest('[data-keep],[data-keepc]'); if (!k) return;
+  var inst = { hub: SH, pl: SP, pp: SQ }[k.getAttribute('data-keep') || k.getAttribute('data-keepc')];
+  if (k.hasAttribute('data-keep')) inst.keepLocal(); else inst.keepCloud();
+});
+$('btn-sync').addEventListener('click', function () { if (SH) SH.click(); });
+
+function foreign(doc, key, noun, get, set, describe) {
+  return window.createCloudSync({
+    doc: doc, storageKey: key, noun: noun,
+    payload: function () { return get() || {}; },          // exactly what arrived, plus the hub's few edits
+    apply: function (d) { set(clone(d)); try { localStorage.setItem(key, JSON.stringify(get())); } catch (e) {} pruneLinks(); render(); return true; },
+    untouched: function () { return get() == null; },      // the hub never owns these docs: it only follows them
+    flush: function () {},
+    describe: describe,
+    paint: function (v) { VIEWS[doc === 'pipelines' ? 'pl' : 'pp'] = v; paintAll(); }
+  });
+}
+var SH = null, SP = null, SQ = null;
+render();
+if (window.createCloudSync) {
+  SH = window.createCloudSync({
+    doc: 'production-hub', storageKey: HUB_KEY, noun: 'hub',
+    payload: function () { return S; },
+    apply: function (d) { var n = normHub(d); if (!n) return false; S = n; try { localStorage.setItem(HUB_KEY, JSON.stringify(S)); } catch (e) {} render(); return true; },
+    untouched: function () { return JSON.stringify(S) === JSON.stringify(defaultHub()); },
+    flush: function () { saveHubNow(); },
+    describe: function (d) { var t = listOf(d && d.tasks).length, b = listOf(d && d.brain).length, g = listOf(d && d.goals).length; return t + ' task' + (t === 1 ? '' : 's') + ', ' + b + ' idea' + (b === 1 ? '' : 's') + ', ' + g + ' goal' + (g === 1 ? '' : 's'); },
+    paint: function (v) { VIEWS.hub = v; paintAll(); }
+  });
+  SP = foreign('pipelines', PL_KEY, 'pipelines', function () { return PLD; }, function (v) { PLD = v; },
+    function (d) { var p = listOf(d && d.pipelines), c = p.reduce(function (n, x) { return n + listOf(x && x.cards).length; }, 0); return p.length + ' pipelines, ' + c + ' cards'; });
+  SQ = foreign('project-phases', PP_KEY, 'projects', function () { return PPD; }, function (v) { PPD = v; },
+    function (d) { var p = listOf(d && d.projects); return p.length + ' project' + (p.length === 1 ? '' : 's') + ' in Project Phases'; });
+  SH.init(); SP.init(); SQ.init();
+}
+</script>
+</body>
+</html>

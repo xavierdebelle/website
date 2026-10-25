@@ -1,0 +1,35 @@
+{
+  "id": "production-hub",
+  "name": "Production Hub",
+  "short_name": "Hub",
+  "description": "Today, In Production, Big Picture, Goals and Brainstorm in one place.",
+  "start_url": "production-hub.html",
+  "scope": "production-hub",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "categories": [
+    "productivity",
+    "business"
+  ],
+  "icons": [
+    {
+      "src": "icons/production-hub-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/production-hub-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/production-hub-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
