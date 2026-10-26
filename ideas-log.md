@@ -102,7 +102,7 @@ its ID forever. Statuses: new, planned, in progress, done, dropped.
 - Builds on IDEA-005. Beyond outcome captions, show real results under each tool: an exported grid from Portfolio Grid, a finished schedule, a Feed Planner layout. Proof of real use convinces visitors to try the tool.
 
 ### IDEA-024 · One "Projects" hub for the synced tools
-- **Category:** Feature · **Effort:** M · **Impact:** ★★ · **Status:** new
+- **Category:** Feature · **Effort:** M · **Impact:** ★★ · **Status:** done (done in v124, 2026-10-25)
 - Project Phases, Idea Bank and Budget Tracker already share one sign-in (assets/account.js) but feel like separate files. A single dashboard that lists your projects, ideas and budgets with links into each makes them feel like one product, which is a prerequisite for selling them.
 
 ### IDEA-025 · Shot-list builder paired with the Wedding Schedule
@@ -568,3 +568,21 @@ its ID forever. Statuses: new, planned, in progress, done, dropped.
 ### IDEA-130 · "Put this tool on your site" embed for planners and venues
 - **Category:** SEO · **Effort:** M · **Impact:** ★★ · **Status:** new
 - The couple-facing tools (tools/wedding-schedule.html, and the golden-hour finder from IDEA-059 once built) are only reachable on Xavier's own site, and the site earns links from nobody. Calculator and planner sites grow by offering a free embed: add a "Put this on your website" button that gives a one-line iframe code with a small "by de Belle Photography" credit link at the foot, and offer it directly to Montreal planners, venues and officiants. Every venue that embeds it gives the site a permanent link from a wedding page that Google trusts, and every couple who uses it there sees Xavier's name; this is free and credited, unlike the paid white-label version in IDEA-033.
+
+## 2026-10-26 — Conversion and lead capture
+
+### IDEA-131 · Offer de Belle video and extras when a couple answers "NO" in the Wedding Day Schedule
+- **Category:** Conversion · **Effort:** S · **Impact:** ★★★ · **Status:** new
+- The first card of tools/wedding-schedule.html asks "Is de Belle Photography your videographer?" and the same for Photo Booth / Same Night Prints / Red Carpet / Slideshow (selects cine_yn and extras_yn), and when a booked couple picks NO the form just asks "If not us, who?". That is the one moment a couple tells the studio exactly what they haven't bought yet. When NO is picked, show a small card under the field ("No videographer yet? de Belle films too: 8-hour coverage from $3,200, and your photo and video team already know each other") with a button into tools/package-builder.html opened on the video section, tracked with `xdbTrack('schedule-crosssell')`. It is an upsell to people who have already booked and trust Xavier, aimed at the exact service they are missing.
+
+### IDEA-132 · Keep couples inside the Package Builder (logo and admin link)
+- **Category:** Fix · **Effort:** S · **Impact:** ★ · **Status:** new
+- In tools/package-builder.html the top logo (nav-logo, line ~190) opens debellephotography.com in a new tab, and the footer (line ~295) shows every couple a "Studio · prices" link to package-builder-admin.html. A couple halfway through pricing can tap away to another site, or land on a sign-in screen meant for Xavier, and neither brings them back to the total. Point the logo to the top of the builder (or to work.html#de-belle in the same tab), and hide the admin link unless Xavier is signed in (assets/account.js already knows). Every couple who stays to the end of the builder is one who can reach the send and book-a-call steps in IDEA-007 and IDEA-031.
+
+### IDEA-133 · Retargeting pixel with a consent banner on work.html and the Package Builder
+- **Category:** Conversion · **Effort:** M · **Impact:** ★★ · **Status:** new
+- No page on the site carries a Meta or Google ads tag (only Umami, which counts visits but can't follow anyone afterward), so the couple who priced a $7,000 wedding in tools/package-builder.html and left without writing is gone for good. Add the Meta Pixel (and the GoHighLevel tracking script if Xavier runs ads from there) to work.html and the Package Builder only, loaded after a small "Allow ads cookies?" banner, as Law 25 requires, and list it in privacy.html. Then build ad audiences such as "opened the Package Builder in the last 30 days, no enquiry" for de Belle and "visited the 333 Photo chapter" for commercial, and show them a testimonial or the engagement-session offer. Retargeting warm visitors usually costs a fraction of cold ads, and it turns the site's best traffic into a list Xavier can reach again.
+
+### IDEA-134 · "Book your next shoot" card in the client portal for 333 Photo clients
+- **Category:** Monetization · **Effort:** S · **Impact:** ★★ · **Status:** new
+- The client portal in tools/video-review.html (?p=, renderPortal) shows a client only "Your reviews" and, when empty, "Nothing here yet", even though it is the one page a commercial client opens again and again during a job. Add an optional per-portal card the host fills in when creating the portal (for example "Spring menu shoot? Book before March 1 at this year's rates") with a GoHighLevel calendar or estimate link, shown under the reviews once the latest review is approved. A repeat client is the cheapest sale 333 Photo can make, and the portal is already bookmarked on their phone, so the next job gets booked while the last one is still fresh. It is different from the balance payment (IDEA-109) and the review ask (IDEA-110), which close the current job; this opens the next one.
