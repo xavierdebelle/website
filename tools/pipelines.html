@@ -223,6 +223,11 @@ textarea[data-grow]{min-height:40px!important;height:40px;overflow:hidden;resize
   #dlg .box,#dlg .box.wide{max-width:none;max-height:100vh;height:100%;border-top-width:4px}
 }
 @media print{.top,#sync-bar,.amb,.padd{display:none!important}}
+
+/* iPhone zooms into any text box under 16px when you tap it; on touch screens every box is 16px so the page stays put */
+@media (pointer: coarse){
+  input:not([type=range]):not([type=checkbox]):not([type=radio]):not(.cw-title),textarea:not(.cw-title),select{font-size:16px!important}
+}
 </style>
 </head>
 <body>

@@ -409,6 +409,12 @@ textarea[data-grow]{min-height:40px!important;height:40px;overflow:hidden;resize
   #dlg{padding:0;place-items:stretch}
   #dlg .box,#dlg .box.wide{max-width:none;max-height:100vh;height:100%;border-top-width:4px}
 }
+
+/* iPhone zooms into any text box under 16px when you tap it; on touch screens every box is 16px so the page stays put */
+@media (pointer: coarse){
+  input:not([type=range]):not([type=checkbox]):not([type=radio]):not(.cw-title),textarea:not(.cw-title),select{font-size:16px!important}
+  .addtask .aa span{visibility:hidden}   /* no keyboard shortcuts on a phone: the Add button does it */
+}
 </style>
 </head>
 <body>

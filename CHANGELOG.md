@@ -5,6 +5,27 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v127 — 2026-10-26
+
+**What's new** · Fix · [tools/production-hub.html]
+### No more zooming in<br>when you add a task on a phone
+Tapping a text box on an iPhone used to zoom the whole page in. The
+Production Hub and Pipelines now stay put, in every tab.
+
+**Production Hub — `tools/production-hub.html`, source `production_hub_v4.html`; Pipelines — `tools/pipelines.html`, source `pipelines_v4.html`**
+- iOS Safari zooms into any focused field under 16px (the add-task box was
+  15px, Details 13px). On touch screens (`@media (pointer: coarse)`) every
+  input, textarea and select is now 16px; the big card title stays 22px.
+  Pinch-to-zoom is left alone (no `maximum-scale`). Desktop sizes unchanged.
+- Hub: the "Enter goes to details · ⌘ Enter adds" hint is hidden on phones,
+  where the Add button does it.
+
+**Verified** (375px touch emulation) — computed size 16px on the add box,
+Details, Brainstorm capture and search, goal input, task dialog fields,
+card checklist and comment boxes; card title still 22px.
+
+---
+
 ## v126 — 2026-10-26
 
 **What's new** · Update · [tools/production-hub.html]
