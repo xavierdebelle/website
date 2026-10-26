@@ -5,6 +5,47 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v128 — 2026-10-26
+
+**What's new** · Update · [tools/pipelines.html]
+### A timer on every card
+Press ▶ on a card in Pipelines or the Production Hub's In Production, and it
+times how long you spend on that project. A red bar at the top shows what's
+running and stops it from anywhere. Each card shows its total, the card
+window lists every session, and you can add time by hand. One timer runs at
+a time, and it's the same timer in both apps.
+
+**Pipelines — `tools/pipelines.html`, source `pipelines_v5.html`**
+- New card field `log: [{ id, start, end }]` (ms; `end: null` while running).
+  Card shows ⏱ total (live clock while running) and ▶/■; the summary strip
+  adds "⏱ Nh logged"; card window has Time: total, Start/Stop, sessions
+  (newest first, × to delete), + Add time (minutes + day). Starting a timer
+  stops any other; archiving a card stops its timer; under 1 s is discarded.
+- **Older pages can't erase time.** The payload now carries `timers: 1`. A
+  copy without it came from a page that predates card time: `apply` keeps
+  this device's logs for those cards and sends them back up. Local saves
+  write a `xdb.pipelines.v1.timers` mark; at boot a mismatch (an older page
+  wrote this browser's copy) resets the watermark so the full copy is pulled
+  (or the bar asks, if there were unsynced edits).
+
+**Production Hub — `tools/production-hub.html`, source `production_hub_v5.html`**
+- Same ▶/■, ⏱ badges, Time section and red running bar on In Production
+  cards, writing the same `log` into the Pipelines doc (and `timers: 1`).
+- A card sent to Big Picture takes its time with it: each session becomes a
+  Project Phases time-log entry on the new project's first task (note "From
+  <card>"). A card sent back to Brainstorm notes "Time logged so far".
+
+**Verified** (mock database, two devices + the v127 Pipelines page) — start /
+stop from a card and from the bar, manual 45 min, totals and sessions; the
+old v127 page saved a comment without logs and the new page restored the logs
+within a second, keeping the comment; a timer started in the hub showed live
+in the Pipelines app on the other device and stopping it there stopped it in
+the hub; a timed card moved to a quest became three Project Phases log
+entries on its first step; phone layout. No console errors. No Firebase
+rules change.
+
+---
+
 ## v127 — 2026-10-26
 
 **What's new** · Fix · [tools/production-hub.html]

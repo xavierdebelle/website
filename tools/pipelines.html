@@ -111,6 +111,29 @@ body.is-dragging,body.is-dragging *{cursor:grabbing!important;user-select:none!i
 .ggrid .drop-before{box-shadow:-5px 0 0 var(--yellow)!important}
 .ggrid .drop-after{box-shadow:5px 0 0 var(--yellow)!important}
 .drop-in{outline:2px dashed var(--yellow);outline-offset:-2px}
+.tm{font:var(--wide);font-size:10px;padding:3px 6px;background:var(--bg);color:var(--black);font-variant-numeric:tabular-nums;white-space:nowrap}
+.tm.run{background:var(--red);color:var(--white)}
+.play{border:1px solid #cfc7c7;background:var(--white);color:var(--black);padding:3px 7px;font-size:10px;line-height:1.2;flex:none}
+.play:hover{border-color:var(--black)}
+.play.on{background:var(--red);border-color:var(--red);color:var(--white)}
+#runbar{display:none;background:var(--red);color:var(--white);padding:10px var(--gut);align-items:center;gap:12px;flex-wrap:wrap}
+#runbar.on{display:flex}
+#runbar .rw{font-weight:800;cursor:pointer;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#runbar .rw small{font:var(--wide);font-size:10px;letter-spacing:.06em;text-transform:uppercase;opacity:.8;margin-left:8px}
+#runbar .rc{font:800 22px/1 "Inter Tight",sans-serif;font-variant-numeric:tabular-nums}
+#runbar button{border:2px solid var(--white);background:var(--white);color:var(--red);font:var(--wide);font-size:11px;letter-spacing:.08em;text-transform:uppercase;padding:7px 12px}
+.tbig{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px}
+.tbig .tt2{font:800 28px/1 "Inter Tight",sans-serif;font-variant-numeric:tabular-nums}
+.tbig .b.on{background:var(--red);border-color:var(--red);color:var(--white)}
+.sess{max-height:200px;overflow-y:auto;border:1px solid var(--line)}
+.sess div{display:flex;gap:10px;align-items:center;padding:7px 10px;border-bottom:1px solid var(--line);font-size:13px;font-variant-numeric:tabular-nums}
+.sess div:last-child{border-bottom:0}
+.sess div span:first-child{flex:1}
+.sess .run{color:var(--red);font-weight:700}
+.sess button{border:0;background:transparent;color:#bbb;font-size:15px;padding:0 2px}
+.sess button:hover{color:var(--red)}
+.tadd{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+#dlg .tadd input{width:auto;flex:1 1 110px}
 .amb{margin-left:auto;border:1px solid #cfc7c7;background:var(--white);color:var(--black);padding:3px 9px;font:800 14px/1 "Inter Tight",sans-serif;letter-spacing:.1em}
 .amb:hover,.amb.open{background:var(--black);color:var(--yellow);border-color:var(--black)}
 .due{display:inline-flex;align-items:center;gap:4px;border:1px solid #cfc7c7;padding:2px 8px;font-size:11px;font-weight:600;border-radius:999px;color:var(--g7);white-space:nowrap}
@@ -242,6 +265,7 @@ textarea[data-grow]{min-height:40px!important;height:40px;overflow:hidden;resize
   <nav class="pswitch" id="pswitch" aria-label="Pipelines"></nav>
 </header>
 
+<div id="runbar" role="status"><span>⏱</span><span class="rw" title="Open the card"></span><span class="rc">0:00:00</span><button type="button" data-stoptimer>Stop</button></div>
 <div id="sync-bar" role="status">
   <span class="sync-dot"></span>
   <span id="sync-what"></span>
@@ -308,6 +332,9 @@ function normCard(c, pl) {
     tasks: listOf(c.tasks).map(normTask),
     comments: listOf(c.comments).filter(function (m) { return m && m.text; }).map(function (m) { return { id: String(m.id || uid('m')), text: String(m.text), at: isDate(m.at) ? m.at : today() }; }),
     pinned: !!c.pinned,               // kept for the Production Hub's Pull in
+    log: listOf(c.log).filter(function (e) { return e && isFinite(+e.start) && +e.start > 0; }).map(function (e) {
+      var end = e.end == null ? null : +e.end; return { id: String(e.id || uid('e')), start: +e.start, end: end != null && end >= +e.start ? end : (end == null ? null : +e.start) };
+    }),
     archived: !!c.archived
   };
 }
@@ -334,15 +361,30 @@ function normalise(s) {
 }
 
 var state = defaultState(), ui = { view: 'projects', showArch: false };
+/* An older page (before card time) may have written this browser's copy since we last ran: if so,
+   don't trust the watermark — pull the full copy back (or ask, if there are unsynced edits). */
+(function () {
+  try {
+    var raw = localStorage.getItem(STORAGE_KEY), mark = localStorage.getItem(STORAGE_KEY + '.timers');
+    if (!raw || mark === String(raw.length)) return;
+    var m = JSON.parse(localStorage.getItem(STORAGE_KEY + '.meta') || '{}');
+    if (!m.lastSyncedAt) return;
+    if ((+m.updatedAt || 0) <= m.lastSyncedAt) { m.updatedAt = 0; m.lastSyncedAt = 0; } else m.lastSyncedAt = 0;
+    localStorage.setItem(STORAGE_KEY + '.meta', JSON.stringify(m));
+  } catch (e) {}
+})();
 try { var saved = normalise(JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null')); if (saved) state = saved; } catch (e) {}
 try { var su = JSON.parse(localStorage.getItem(UI_KEY) || 'null'); if (su) ui = Object.assign(ui, su); } catch (e) {}
 
 var saveTimer = null;
 function saveNow() {
   clearTimeout(saveTimer);
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
+  storeLocal();
   cloudTouch();
 }
+/* Writes this browser's copy plus a mark of exactly which copy this version wrote, so a copy later
+   overwritten by an older page (one that doesn't know about card time) is noticed on the next visit. */
+function storeLocal() { var json = JSON.stringify(state); try { localStorage.setItem(STORAGE_KEY, json); localStorage.setItem(STORAGE_KEY + '.timers', String(json.length)); } catch (e) {} }
 function save() { clearTimeout(saveTimer); saveTimer = setTimeout(saveNow, 350); }
 function saveUi() { try { localStorage.setItem(UI_KEY, JSON.stringify(ui)); } catch (e) {} }
 function commit() { save(); render(); }
@@ -438,6 +480,8 @@ function render() {
       + '<div class="pm">'
       + (c.tasks.length ? '<span class="cl' + (done === c.tasks.length ? ' full' : '') + '">☑ ' + done + '/' + c.tasks.length + '</span>' : '')
       + (c.comments.length ? '<span class="cm">💬 ' + c.comments.length + '</span>' : '')
+      + (function () { var run = c.log.some(function (e) { return !e.end; }), ms = cardMs(c); return (ms || run ? '<span class="tm' + (run ? ' run' : '') + '" data-tclock="' + c.id + '">⏱ ' + (run ? clockOf(ms) : dur(ms)) + '</span>' : '')
+        + (isDone ? '' : '<button class="play' + (run ? ' on' : '') + '" data-timer="' + c.id + '" title="' + (run ? 'Stop the timer' : 'Start the timer') + '">' + (run ? '■' : '▶') + '</button>'); })()
       + (!isDone ? '<span class="age' + (d > 14 ? ' stuck' : '') + '">' + (d > 0 ? d + 'd in stage' : 'new here') + '</span>' : '')
       + '<span class="grip" title="Drag to move or reorder" aria-hidden="true" style="margin-left:auto">⋮⋮</span><button class="amb" data-menu="' + c.id + '" title="Actions" aria-label="Actions" style="margin-left:0">⋯</button></div></div>';
   }
@@ -448,7 +492,8 @@ function render() {
     + '<button class="b" data-edit-pipe="' + pl.id + '">⚙ Edit pipeline</button></div>'
     + '<div class="psum">' + pl.stages.map(function (s) { var n = live.filter(function (c) { return c.stage === s.id; }).length; return n ? '<span>' + n + ' ' + esc(s.name) + '</span>' : ''; }).join('')
     + (lateN ? '<span class="late">' + lateN + ' late</span>' : '') + (stuckN ? '<span class="stuck">' + stuckN + ' stuck 14+ days</span>' : '')
-    + (sum ? '<span class="money-sum">' + money(sum) + ' ' + esc(moneyF.name.toLowerCase()) + ' open</span>' : '') + '</div>'
+    + (sum ? '<span class="money-sum">' + money(sum) + ' ' + esc(moneyF.name.toLowerCase()) + ' open</span>' : '')
+    + (function () { var ms = live.reduce(function (n, c) { return n + cardMs(c); }, 0); return ms ? '<span>⏱ ' + dur(ms) + ' logged</span>' : ''; })() + '</div>'
     + '<div class="pboard">' + pl.stages.map(function (s) {
       var cs = live.filter(function (c) { return c.stage === s.id; });
       return '<div class="pcol' + (s.done ? ' donecol' : '') + '" data-col="' + s.id + '"><div class="ch"><b>' + esc(s.name) + (s.done ? ' ✓' : '') + '</b><span>' + cs.length + '</span></div>'
@@ -489,6 +534,14 @@ function cardDlg(cid) {
         + '<button class="x" data-tdel="' + t.id + '" title="Remove">×</button></span></div>';
     }).join('')
     + '<form class="addrow" id="cw-add"><input id="cw-add-in" placeholder="Add an item" autocomplete="off"><button class="b">Add</button></form>'
+    + (function () {
+      var run = c.log.find(function (e) { return !e.end; }), ms = cardMs(c), ss = c.log.slice().sort(function (a, b) { return b.start - a.start; });
+      var t = function (x) { return new Date(x).toLocaleTimeString('en-CA', { hour: '2-digit', minute: '2-digit', hour12: false }); };
+      return '<div class="sec-h">Time</div><div class="tbig"><span class="tt2" data-tclock="' + c.id + '">' + (run ? '⏱ ' + clockOf(ms) : dur(ms)) + '</span>'
+        + '<button class="b' + (run ? ' on' : ' y') + '" data-timer="' + c.id + '">' + (run ? '■ Stop' : '▶ Start timer') + '</button></div>'
+        + (ss.length ? '<div class="sess">' + ss.map(function (e) { return '<div><span>' + niceDate(new Date(e.start).toISOString().slice(0, 10)) + ' · ' + t(e.start) + '–' + (e.end ? t(e.end) : 'now') + '</span><span class="' + (e.end ? '' : 'run') + '">' + (e.end ? dur(e.end - e.start) : 'running') + '</span>' + (e.end ? '<button data-edel="' + e.id + '" title="Delete this session">×</button>' : '') + '</div>'; }).join('') + '</div>' : '')
+        + '<form class="tadd" id="cw-time"><input type="number" min="1" step="1" inputmode="numeric" id="cw-time-min" placeholder="Minutes"><input type="date" id="cw-time-day" value="' + today() + '"><button class="b">+ Add time</button></form>';
+    })()
     + '<div class="sec-h">Comments' + (c.comments.length ? ' <span class="pill">' + c.comments.length + '</span>' : '') + '</div>'
     + '<div class="cm-new"><textarea id="cw-cm-in" data-grow rows="1" placeholder="Write a comment…"></textarea><div class="row"><span>Dated today · ⌘ Enter to post</span><button class="b y" id="cw-cm-post" type="button">Add comment</button></div></div>'
     + (comments.length ? '<div class="cm-list">' + comments.map(function (m) { return '<div class="cm-item"><div class="cd">' + niceDate(m.at, true) + '<button data-cdel="' + m.id + '" title="Delete comment">×</button></div><div class="ct">' + esc(m.text) + '</div></div>'; }).join('') + '</div>' : '')
@@ -513,6 +566,11 @@ function cardDlg(cid) {
   });
   box.querySelectorAll('[data-grow]').forEach(function (t) { var g = function () { t.style.height = 'auto'; t.style.height = (t.scrollHeight + 2) + 'px'; }; t.addEventListener('input', g); g(); });
   $('cw-add').onsubmit = function (e) { e.preventDefault(); var v = $('cw-add-in').value.trim(); if (!v) return; c.tasks.push(normTask({ title: v })); commit(); $('cw-add-in').focus(); };
+  $('cw-time').onsubmit = function (e) {
+    e.preventDefault(); var m = Math.round(+$('cw-time-min').value); if (!(m > 0)) return $('cw-time-min').focus();
+    var day = $('cw-time-day').value || today(), end = new Date(day + 'T12:00').getTime();
+    c.log.push({ id: uid('e'), start: end - m * 60000, end: end }); commit();
+  };
   var cm = $('cw-cm-in');
   var post = function () { var v = cm.value.trim(); if (!v) return; c.comments.push({ id: uid('m'), text: v, at: today() }); commit(); };
   cm.addEventListener('keydown', function (e) { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); post(); } });
@@ -611,10 +669,13 @@ function savePipe() {
 document.addEventListener('click', function (e) {
   if (!e.target.closest('[data-menu]')) closeMenu();
   if (e.target.closest('.grip')) return;
-  var el = e.target.closest('button,[data-card]'); if (!el) return;
+  var el = e.target.closest('button,[data-card],#runbar [data-open]'); if (!el) return;
   var d = el.dataset;
   if (d.menu) { e.stopPropagation(); if (el.classList.contains('open')) return closeMenu(); return openMenu(el, d.menu); }
   if ('close' in d) return closeDlg();
+  if (d.timer) { e.stopPropagation(); var ht = findCard(d.timer), was = ht.c.log.some(function (x) { return !x.end; }); if (was) stopTimer(); else startTimer(ht.c); commit(); tickTimers(); return; }
+  if ('stoptimer' in d) { stopTimer(); commit(); tickTimers(); return; }
+  if (d.edel) { if (!confirm('Delete this session?')) return; var he = findCard(openCard); he.c.log = he.c.log.filter(function (x) { return x.id !== d.edel; }); return commit(); }
   if (d.dclr) { var hc0 = findCard(openCard), t0 = hc0 && hc0.c.tasks.find(function (x) { return x.id === d.dclr; }); if (t0) { t0.due = null; commit(); } return; }
   if (d.view) { ui.view = d.view; ui.showArch = false; saveUi(); return render(); }
   if (d.card) return cardDlg(d.card);
@@ -636,7 +697,7 @@ document.addEventListener('click', function (e) {
   if (d.move) { var hv = findCard(d.move); hv.c.stage = d.to; hv.c.stageAt = today(); flashId = hv.c.id; return commit(); }
   if (d.other) { openCard = null; return otherDlg(d.other); }
   if (d.domove) return moveCard(d.domove, d.pl, d.st);
-  if (d.arch) { var ha = findCard(d.arch); ha.c.archived = true; if (openCard === ha.c.id) { openCard = null; dlgKind = null; $('dlg').classList.remove('on'); } commit(); return toast('Archived “' + ha.c.title + '”', 'Undo', function () { ha.c.archived = false; commit(); }); }
+  if (d.arch) { var ha = findCard(d.arch); if (ha.c.log.some(function (x) { return !x.end; })) stopTimer(); ha.c.archived = true; if (openCard === ha.c.id) { openCard = null; dlgKind = null; $('dlg').classList.remove('on'); } commit(); return toast('Archived “' + ha.c.title + '”', 'Undo', function () { ha.c.archived = false; commit(); }); }
   if (d.unarch) { var hu = findCard(d.unarch); hu.c.archived = false; flashId = hu.c.id; return commit(); }
   if (d.delcard) {
     var hd = findCard(d.delcard); if (!confirm('Delete “' + hd.c.title + '” for good?')) return;
@@ -726,14 +787,19 @@ var SYNC = {
   storageKey: STORAGE_KEY,
   noun: 'pipelines',
 
-  payload: function () { return { pipelines: state.pipelines }; },   // which board is open is not an edit
+  payload: function () { return { pipelines: state.pipelines, timers: 1 }; },   // which board is open is not an edit; timers = this version knows card time
 
   /* The database drops empty arrays and objects; normalise() rebuilds them. */
   apply: function (d, remote) {
     var next = normalise(d);
     if (!next) return false;
+    /* A copy from a page that predates card time has no logs — not because they were deleted, but
+       because it never knew them. Keep this device's, and send them back up. */
+    var restored = false;
+    if (!d.timers) next.pipelines.forEach(function (p) { p.cards.forEach(function (c) { var old = findCard(c.id); if (old && old.c.log.length && !c.log.length) { c.log = old.c.log; restored = true; } }); });
+    if (restored) setTimeout(function () { setMeta({ updatedAt: nextStamp() }); syncNow(); }, 0);
     state = next;
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
+    storeLocal();
     if (openCard && !findCard(openCard)) { openCard = null; dlgKind = null; $('dlg').classList.remove('on'); }
     render();
     return true;
@@ -1355,7 +1421,34 @@ function initCloud() {
   window.addEventListener('online', function () { if (cloud.uid) syncNow(); });
 }
 
+
+/* ---------- time per card: card.log = [{ id, start, end }] (ms; end null while running). One timer at a time. ---------- */
+function cardMs(c, now) { now = now || Date.now(); return listOf(c.log).reduce(function (n, e) { return n + Math.max(0, (e.end || now) - e.start); }, 0); }
+function dur(ms) { var m = Math.round(ms / 60000), h = Math.floor(m / 60); return h ? h + 'h' + String(m % 60).padStart(2, '0') : m + 'm'; }
+function clockOf(ms) { var s = Math.floor(ms / 1000), h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60); return h + ':' + String(m).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0'); }
+function runningTimer() {
+  for (var i = 0; i < state.pipelines.length; i++) for (var j = 0; j < state.pipelines[i].cards.length; j++) {
+    var c = state.pipelines[i].cards[j], e = c.log.find(function (x) { return !x.end; });
+    if (e) return { pl: state.pipelines[i], c: c, e: e };
+  }
+  return null;
+}
+function stopTimer() { var r = runningTimer(); if (!r) return; r.e.end = Date.now(); if (r.e.end - r.e.start < 1000) r.c.log = r.c.log.filter(function (x) { return x !== r.e; }); }
+function startTimer(c) { stopTimer(); c.log.push({ id: uid('e'), start: Date.now(), end: null }); }
+function tickTimers() {
+  var r = runningTimer(), bar = $('runbar');
+  if (!r) { bar.classList.remove('on'); return; }
+  var now = Date.now();
+  bar.classList.add('on');
+  bar.querySelector('.rw').innerHTML = esc(r.c.title) + '<small>' + esc(r.pl.name) + '</small>';
+  bar.querySelector('.rw').setAttribute('data-open', r.c.id);
+  bar.querySelector('.rc').textContent = clockOf(now - r.e.start);
+  document.querySelectorAll('[data-tclock="' + r.c.id + '"]').forEach(function (el) { el.textContent = '⏱ ' + clockOf(cardMs(r.c, now)); });
+}
+setInterval(tickTimers, 1000);
+
 render();
+tickTimers();
 initCloud();
 </script>
 </body>

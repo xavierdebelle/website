@@ -189,6 +189,29 @@ body.is-dragging,body.is-dragging *{cursor:grabbing!important;user-select:none!i
 .cm{font-size:11px;color:var(--g6);font-weight:700}
 .age{font-size:11px;color:var(--g6)}
 .age.stuck{color:var(--red-dark);font-weight:700}
+.tm{font:var(--wide);font-size:10px;padding:3px 6px;background:var(--bg);color:var(--black);font-variant-numeric:tabular-nums;white-space:nowrap}
+.tm.run{background:var(--red);color:var(--white)}
+.play{border:1px solid #cfc7c7;background:var(--white);color:var(--black);padding:3px 7px;font-size:10px;line-height:1.2;flex:none}
+.play:hover{border-color:var(--black)}
+.play.on{background:var(--red);border-color:var(--red);color:var(--white)}
+#runbar{display:none;background:var(--red);color:var(--white);padding:10px var(--gut);align-items:center;gap:12px;flex-wrap:wrap}
+#runbar.on{display:flex}
+#runbar .rw{font-weight:800;cursor:pointer;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#runbar .rw small{font:var(--wide);font-size:10px;letter-spacing:.06em;text-transform:uppercase;opacity:.8;margin-left:8px}
+#runbar .rc{font:800 22px/1 "Inter Tight",sans-serif;font-variant-numeric:tabular-nums}
+#runbar button{border:2px solid var(--white);background:var(--white);color:var(--red);font:var(--wide);font-size:11px;letter-spacing:.08em;text-transform:uppercase;padding:7px 12px}
+.tbig{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px}
+.tbig .tt2{font:800 28px/1 "Inter Tight",sans-serif;font-variant-numeric:tabular-nums}
+.tbig .b.on{background:var(--red);border-color:var(--red);color:var(--white)}
+.sess{max-height:200px;overflow-y:auto;border:1px solid var(--line)}
+.sess div{display:flex;gap:10px;align-items:center;padding:7px 10px;border-bottom:1px solid var(--line);font-size:13px;font-variant-numeric:tabular-nums}
+.sess div:last-child{border-bottom:0}
+.sess div span:first-child{flex:1}
+.sess .run{color:var(--red);font-weight:700}
+.sess button{border:0;background:transparent;color:#bbb;font-size:15px;padding:0 2px}
+.sess button:hover{color:var(--red)}
+.tadd{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+#dlg .tadd input{width:auto;flex:1 1 110px}
 .amb{margin-left:auto;border:1px solid #cfc7c7;background:var(--white);color:var(--black);padding:3px 9px;font:800 14px/1 "Inter Tight",sans-serif;letter-spacing:.1em}
 .amb:hover,.amb.open{background:var(--black);color:var(--yellow);border-color:var(--black)}
 
@@ -434,6 +457,7 @@ textarea[data-grow]{min-height:40px!important;height:40px;overflow:hidden;resize
     <button class="tab" role="tab" data-tab="brain"><span>Brainstorm</span><span class="lvl">raw ideas</span><span class="count" id="c-brain"></span></button>
   </nav>
 </header>
+<div id="runbar" role="status"><span>⏱</span><span class="rw" title="Open the card"></span><span class="rc">0:00:00</span><button type="button" data-stoptimer>Stop</button></div>
 <div id="bars"></div>
 
 <main>
@@ -1013,7 +1037,7 @@ function fieldText(f, v) {
 function newPlTask(title) { return { id: uid('t'), title: title, done: false, due: null, doneAt: null }; }
 function newPlCard(pl, stageId, title, taskTitles) {
   return { id: uid('c'), title: title, stage: stageId, stageAt: today(), createdAt: today(), fields: {},
-    tasks: taskTitles.map(newPlTask), comments: [], pinned: false, archived: false };
+    tasks: taskTitles.map(newPlTask), comments: [], pinned: false, archived: false, log: [] };
 }
 function projectsPipe() { return plById('projects') || pls()[0] || null; }
 
@@ -1260,6 +1284,8 @@ function renderProd() {
       + (next && !done(st) ? '<div class="nx">Next: <b>' + esc(next.title) + '</b>' + (next.due ? ' ' + dueChip(next.due) : '') + '</div>' : '')
       + '<div class="pm">' + (c.pinned ? '<span class="cl full">● Pinned</span>' : '') + (ts.length ? '<span class="cl' + (dn === ts.length ? ' full' : '') + '">☑ ' + dn + '/' + ts.length + '</span>' : '')
       + (listOf(c.comments).length ? '<span class="cm">💬 ' + listOf(c.comments).length + '</span>' : '')
+      + (function () { var run = cardRunning(c), ms = cardMs(c); return (ms || run ? '<span class="tm' + (run ? ' run' : '') + '" data-tclock="' + c.id + '">⏱ ' + (run ? clockOf(ms) : dur(ms)) + '</span>' : '')
+        + (done(st) ? '' : '<button class="play' + (run ? ' on' : '') + '" data-ctimer="' + c.id + '" title="' + (run ? 'Stop the timer' : 'Start the timer') + '">' + (run ? '■' : '▶') + '</button>'); })()
       + (!done(st) && c.stageAt ? '<span class="age' + (d > 14 ? ' stuck' : '') + '">' + (d > 0 ? d + 'd in stage' : 'new here') + '</span>' : '')
       + '<span class="grip" title="Drag to move or reorder" aria-hidden="true" style="margin-left:auto">⋮⋮</span><button class="amb" data-menu="c:' + c.id + '" title="Actions" style="margin-left:0">⋯</button></div></div>';
   }
@@ -1278,7 +1304,8 @@ function renderProd() {
     + '<div class="phead"><h2>' + esc(pl.name) + '</h2>' + (arch.length ? '<button class="b ghost" data-togglearch>' + (U.showArch ? 'Hide' : 'Show') + ' archived (' + arch.length + ')</button>' : '')
     + '<a class="b" href="pipelines.html" target="_blank" rel="noopener" title="Stages, fields and checklists are edited in Pipelines">⚙ Edit in Pipelines ↗</a></div>'
     + '<div class="psum">' + stagesOf(pl).map(function (s) { var n = live.filter(function (c) { return stageOf(pl, c) === s.id; }).length; return n ? '<span>' + n + ' ' + esc(s.name) + '</span>' : ''; }).join('')
-    + (lateN ? '<span class="late">' + lateN + ' late</span>' : '') + (stuckN ? '<span class="stuck">' + stuckN + ' stuck 14+ days</span>' : '') + (sum ? '<span class="money-sum">' + money(sum) + ' ' + esc(String(moneyF.name).toLowerCase()) + ' open</span>' : '') + '</div>'
+    + (lateN ? '<span class="late">' + lateN + ' late</span>' : '') + (stuckN ? '<span class="stuck">' + stuckN + ' stuck 14+ days</span>' : '') + (sum ? '<span class="money-sum">' + money(sum) + ' ' + esc(String(moneyF.name).toLowerCase()) + ' open</span>' : '')
+    + (function () { var ms = live.reduce(function (n, c) { return n + cardMs(c); }, 0); return ms ? '<span>⏱ ' + dur(ms) + ' logged</span>' : ''; })() + '</div>'
     + '<div class="pboard">' + stagesOf(pl).map(function (s) {
       var cs = live.filter(function (c) { return stageOf(pl, c) === s.id; }), qs = qcards(s.id);
       return '<div class="pcol' + (s.done ? ' donecol' : '') + '" data-col="' + s.id + '"><div class="ch"><b>' + esc(s.name) + (s.done ? ' ✓' : '') + '</b><span>' + (cs.length + (qs.match(/pcard quest/g) || []).length) + '</span></div>'
@@ -1307,6 +1334,15 @@ function cardDlg(plid, cid) {
         + '<button class="x" data-ctdel="' + t.id + '" title="Remove">×</button></span></div>';
     }).join('')
     + '<form class="addrow" id="cw-add"><input id="cw-add-in" placeholder="Add an item" autocomplete="off"><button class="b">Add</button></form>'
+    + (function () {
+      var lg = listOf(c.log).filter(Boolean), run = cardRunning(c), ms = cardMs(c), ss = lg.slice().sort(function (a, b) { return b.start - a.start; });
+      var t = function (x) { return new Date(x).toLocaleTimeString('en-CA', { hour: '2-digit', minute: '2-digit', hour12: false }); };
+      var day = function (x) { return niceDate(dateStr(new Date(x))); };
+      return '<div class="sec-h">Time</div><div class="tbig"><span class="tt2" data-tclock="' + c.id + '">' + (run ? '⏱ ' + clockOf(ms) : dur(ms)) + '</span>'
+        + '<button class="b' + (run ? ' on' : ' y') + '" data-ctimer="' + c.id + '">' + (run ? '■ Stop' : '▶ Start timer') + '</button></div>'
+        + (ss.length ? '<div class="sess">' + ss.map(function (e) { return '<div><span>' + day(e.start) + ' · ' + t(e.start) + '–' + (e.end ? t(e.end) : 'now') + '</span><span class="' + (e.end ? '' : 'run') + '">' + (e.end ? dur(e.end - e.start) : 'running') + '</span>' + (e.end ? '<button data-edel="' + e.id + '" title="Delete this session">×</button>' : '') + '</div>'; }).join('') + '</div>' : '')
+        + '<form class="tadd" id="cw-time"><input type="number" min="1" step="1" inputmode="numeric" id="cw-time-min" placeholder="Minutes"><input type="date" id="cw-time-day" value="' + today() + '"><button class="b">+ Add time</button></form>';
+    })()
     + '<div class="sec-h">Comments' + (comments.length ? ' <span class="pill">' + comments.length + '</span>' : '') + '</div>'
     + '<div class="cm-new"><textarea id="cw-cm-in" data-grow rows="1" placeholder="Write a comment…"></textarea><div class="row"><span>Dated today · ⌘ Enter to post</span><button class="b y" id="cw-cm-post" type="button">Add comment</button></div></div>'
     + (comments.length ? '<div class="cm-list">' + comments.map(function (m) { return '<div class="cm-item"><div class="cd">' + (isDate(m.at) ? niceDate(m.at, true) : '') + '<button data-cmdel="' + m.id + '" title="Delete comment">×</button></div><div class="ct">' + esc(m.text) + '</div></div>'; }).join('') + '</div>' : '')
@@ -1322,6 +1358,11 @@ function cardDlg(plid, cid) {
   });
   box.querySelectorAll('[data-ctd]').forEach(function (inp) { inp.addEventListener('change', function () { var t = ts.find(function (x) { return x.id === inp.getAttribute('data-ctd'); }); if (t) { t.due = inp.value || null; savePL(); render(); } }); });
   $('cw-add').onsubmit = function (e) { e.preventDefault(); var v = $('cw-add-in').value.trim(); if (!v) return; arr(c, 'tasks').push(newPlTask(v)); savePL(); render(); $('cw-add-in').focus(); };
+  $('cw-time').onsubmit = function (e) {
+    e.preventDefault(); var m = Math.round(+$('cw-time-min').value); if (!(m > 0)) return $('cw-time-min').focus();
+    var end = new Date(($('cw-time-day').value || today()) + 'T12:00').getTime();
+    arr(c, 'log').push({ id: uid('e'), start: end - m * 60000, end: end }); PLD.timers = 1; savePL(); render();
+  };
   var cm = $('cw-cm-in'), post = function () { var v = cm.value.trim(); if (!v) return; arr(c, 'comments').push({ id: uid('m'), text: v, at: today() }); savePL(); render(); };
   cm.addEventListener('keydown', function (e) { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); post(); } });
   $('cw-cm-post').onclick = post;
@@ -1387,9 +1428,13 @@ function toBig(src, qid) {
     steps = ctasks(h.c).map(function (t) { var st = newStep(t.title); if (t.done) setStepDone(st, true); if (isDate(t.due)) S.due[st.id] = t.due; remap[t.id] = st.id; return st; });
     h.pl.cards = cardsOf(h.pl).filter(function (x) { return x !== h.c; }); savePL();
   } else { var t = S.tasks.find(function (x) { return x.id === id; }); name = t.title; steps = (linesOf(t.notes).length ? linesOf(t.notes) : [t.title]).map(newStep); S.tasks = S.tasks.filter(function (x) { return x !== t; }); }
+  var cardLog = [];
+  if (k === 'card') { var rn = runningTimer(); if (rn && rn.c === h.c) stopTimer(); cardLog = listOf(h.c.log).filter(function (e) { return e && e.end; }); }
   var ph = newPhase(qid ? name : 'Phase 1', steps), p = qid && questById(qid);
   if (p) arr(p, 'phases').push(ph);
   else { p = { id: ppid('p'), name: name, shareId: null, createdAt: Date.now(), homework: [], agenda: [], notes: [], phases: [ph] }; arr(PPD, 'projects').push(p); }
+  // the card's logged time becomes Project Phases time on the project's first task
+  if (cardLog.length && steps.length) cardLog.forEach(function (e) { arr(PPD, 'log').push({ id: ppid('e'), projectId: p.id, phaseId: ph.id, stepId: steps[0].id, start: e.start, end: e.end, note: 'From ' + name, source: 'timer' }); });
   // tasks in your lists that pointed at the card follow it into Project Phases
   S.tasks.forEach(function (t) { if (t.ref && t.ref.app === 'pl' && remap[t.ref.t]) t.ref = { app: 'pp', p: p.id, ph: ph.id, s: remap[t.ref.t] }; });
   savePP(); shutDlg(); U.quest = p.id; flashId = ph.id; commit();
@@ -1564,12 +1609,16 @@ document.addEventListener('keydown', function (e) {
 document.addEventListener('click', function (e) {
   if (!e.target.closest('[data-menu]')) closeMenu();
   if (e.target.closest('.grip')) return;
-  var el = e.target.closest('button,[data-edit],[data-card],[data-qopen],[data-bedit],[data-gedit],g[data-score]'); if (!el) return;
+  var el = e.target.closest('button,[data-edit],[data-card],[data-qopen],[data-bedit],[data-gedit],g[data-score],#runbar [data-open]'); if (!el) return;
   var d = el.dataset, T = function (id) { return S.tasks.find(function (x) { return x.id === id; }); }, B = function (id) { return S.brain.find(function (x) { return x.id === id; }); };
   if (d.menu) { e.stopPropagation(); if (el.classList.contains('open')) return closeMenu(); return openMenu(el, d.menu); }
   if (d.tab) { closeMenu(); return show(d.tab); }
   if ('close' in d) return closeDlg();
   if ('signin' in d) return SH && SH.click();
+  if (d.ctimer) { e.stopPropagation(); var ht = cardHit(d.ctimer); if (!ht) return; if (cardRunning(ht.c)) stopTimer(); else startTimer(ht.c); savePL(); render(); tickTimers(); return; }
+  if ('stoptimer' in d) { stopTimer(); savePL(); render(); tickTimers(); return; }
+  if (d.open && el.closest('#runbar')) { var op = d.open.split(':'); return openCard(op[0], op[1]); }
+  if (d.edel) { if (!confirm('Delete this session?')) return; var he = findCard(cardOpen.pl, cardOpen.c); he.c.log = listOf(he.c.log).filter(function (x) { return x && x.id !== d.edel; }); savePL(); return render(); }
   if (d.dclr) {
     var dc = d.dclr.split(':');
     if (dc[0] === 'sdue') { delete S.due[dc[1]]; return commit(); }
@@ -1640,7 +1689,7 @@ document.addEventListener('click', function (e) {
   if (d.cpin) { var hp = cardHit(d.cpin); hp.c.pinned = !hp.c.pinned; savePL(); render(); return toast(hp.c.pinned ? 'Pinned: its next task shows in Pull in' : 'Unpinned'); }
   if (d.cadd) { var hq2 = cardHit(d.cadd), va = prompt('New task for “' + hq2.c.title + '”'); if (va && va.trim()) { arr(hq2.c, 'tasks').push(newPlTask(va.trim())); savePL(); flashId = hq2.c.id; render(); } return; }
   if (d.cmove) { var hv = cardHit(d.cmove); moveStage(hv.c, d.to); savePL(); flashId = hv.c.id; return render(); }
-  if (d.carch) { var ha = cardHit(d.carch); ha.c.archived = true; savePL(); shutDlg(); render(); return toast('Archived “' + ha.c.title + '”', 'Undo', function () { ha.c.archived = false; savePL(); render(); }); }
+  if (d.carch) { var ha = cardHit(d.carch); if (cardRunning(ha.c)) stopTimer(); ha.c.archived = true; savePL(); shutDlg(); render(); return toast('Archived “' + ha.c.title + '”', 'Undo', function () { ha.c.archived = false; savePL(); render(); }); }
   if (d.unarch) { var hu = cardHit(d.unarch); hu.c.archived = false; savePL(); flashId = hu.c.id; return render(); }
   if ('togglearch' in d) { U.showArch = !U.showArch; saveUi(); return render(); }
   if (d.cother) {
@@ -1652,8 +1701,8 @@ document.addEventListener('click', function (e) {
   }
   if (d.domove) return moveCardTo(cardHit(d.domove), d.pl, d.st);
   if (d.c2brain) {
-    var hb = cardHit(d.c2brain); shutDlg();
-    S.brain.unshift({ id: uid('b'), text: hb.c.title, note: ctasks(hb.c).filter(function (t) { return !t.done; }).map(function (t) { return '- ' + t.title; }).join('\n'), spark: false, at: today(), box: 'fresh', movedAt: null, why: '' });
+    var hb = cardHit(d.c2brain); shutDlg(); if (cardRunning(hb.c)) stopTimer(); var hms = cardMs(hb.c);
+    S.brain.unshift({ id: uid('b'), text: hb.c.title, note: ctasks(hb.c).filter(function (t) { return !t.done; }).map(function (t) { return '- ' + t.title; }).join('\n') + (hms ? (ctasks(hb.c).some(function (t) { return !t.done; }) ? '\n' : '') + 'Time logged so far: ' + dur(hms) : ''), spark: false, at: today(), box: 'fresh', movedAt: null, why: '' });
     hb.pl.cards = cardsOf(hb.pl).filter(function (x) { return x !== hb.c; }); dropCardLinks(hb.c.id); savePL(); commit();
     return toast('Back in Brainstorm. Its open tasks are kept as notes.', 'View', function () { show('brain'); });
   }
@@ -1830,6 +1879,31 @@ addEventListener('pagehide', saveHubNow);
 document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'hidden') saveHubNow(); });
 setInterval(function () { if (!$('dlg').classList.contains('on') && !document.activeElement.matches('input,textarea')) render(); }, 30 * 60 * 1000);
 
+
+/* ---------- time per card (stored in the Pipelines doc: card.log = [{ id, start, end }], end null while running) ---------- */
+function cardMs(c, now) { now = now || Date.now(); return listOf(c.log).filter(Boolean).reduce(function (n, e) { return n + Math.max(0, (e.end || now) - e.start); }, 0); }
+function dur(ms) { var m = Math.round(ms / 60000), h = Math.floor(m / 60); return h ? h + 'h' + String(m % 60).padStart(2, '0') : m + 'm'; }
+function clockOf(ms) { var s = Math.floor(ms / 1000), h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60); return h + ':' + String(m).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0'); }
+function runningTimer() {
+  var ps = pls();
+  for (var i = 0; i < ps.length; i++) { var cs = cardsOf(ps[i]); for (var j = 0; j < cs.length; j++) { var e = listOf(cs[j].log).find(function (x) { return x && !x.end; }); if (e) return { pl: ps[i], c: cs[j], e: e }; } }
+  return null;
+}
+function cardRunning(c) { return listOf(c.log).some(function (x) { return x && !x.end; }); }
+function stopTimer() { var r = runningTimer(); if (!r) return; r.e.end = Date.now(); if (r.e.end - r.e.start < 1000) r.c.log = listOf(r.c.log).filter(function (x) { return x !== r.e; }); PLD.timers = 1; }
+function startTimer(c) { stopTimer(); arr(c, 'log').push({ id: uid('e'), start: Date.now(), end: null }); PLD.timers = 1; }
+function tickTimers() {
+  var r = runningTimer(), bar = $('runbar');
+  if (!r) { bar.classList.remove('on'); return; }
+  var now = Date.now();
+  bar.classList.add('on');
+  bar.querySelector('.rw').innerHTML = esc(r.c.title) + '<small>' + esc(r.pl.name) + '</small>';
+  bar.querySelector('.rw').setAttribute('data-open', r.pl.id + ':' + r.c.id);
+  bar.querySelector('.rc').textContent = clockOf(now - r.e.start);
+  document.querySelectorAll('[data-tclock="' + r.c.id + '"]').forEach(function (el) { el.textContent = '⏱ ' + clockOf(cardMs(r.c, now)); });
+}
+setInterval(tickTimers, 1000);
+
 /* ============================================================ sync: three docs, one sign-in */
 var VIEWS = { hub: null, pl: null, pp: null };
 function paintAll() {
@@ -1883,6 +1957,7 @@ if (window.createCloudSync) {
   SQ = foreign('project-phases', PP_KEY, 'projects', function () { return PPD; }, function (v) { PPD = v; },
     function (d) { var p = listOf(d && d.projects); return p.length + ' project' + (p.length === 1 ? '' : 's') + ' in Project Phases'; });
   SH.init(); SP.init(); SQ.init();
+  tickTimers();
 }
 </script>
 </body>
