@@ -334,8 +334,16 @@ textarea[data-grow]{min-height:40px!important;height:40px;overflow:hidden;resize
 .cw-fields .full{grid-column:1/-1;white-space:pre-wrap}
 .sec-h{margin:16px 0 8px;padding-top:12px;border-top:2px solid var(--black);font:800 14px/1 "Inter Tight",sans-serif;text-transform:uppercase;display:flex;gap:10px;align-items:center}
 .sec-h .bar{flex:1;width:auto}
-.ctask{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line)}
-#dlg .ctask .tt{flex:1;border:0;padding:4px 2px;font-weight:600;min-width:0;background:transparent}
+.ctask{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.dpick{position:relative;display:inline-flex;align-items:center;font:var(--wide);font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:#999;padding:4px 7px;cursor:pointer;white-space:nowrap;border:1px dashed #cfc7c7;flex:none}
+.dpick:hover{color:var(--black);border-color:var(--black)}
+.dpick.set{border:0;padding:0}
+.dpick input{position:absolute!important;inset:0;opacity:0;width:100%!important;height:100%!important;max-width:none!important;padding:0!important;margin:0;border:0!important;cursor:pointer;min-width:0}
+.dclr{border:0;background:transparent;color:#bbb;font-size:15px;line-height:1;padding:0 2px;flex:none}
+.dclr:hover{color:var(--red)}
+.rm{display:flex;gap:8px;align-items:center;flex-wrap:wrap;flex:none}
+
+#dlg .ctask .tt{flex:1 1 160px;border:0;padding:4px 2px;font-weight:600;min-width:0;background:transparent}
 #dlg .ctask.done .tt{text-decoration:line-through;color:#999}
 #dlg .ctask .td{width:auto;flex:none;border:1px solid #cfc7c7;padding:3px 6px;font-size:12px;max-width:140px}
 #dlg .ctask .td.empty{opacity:.45}
@@ -377,6 +385,10 @@ textarea[data-grow]{min-height:40px!important;height:40px;overflow:hidden;resize
   .pcol{flex-basis:84vw}
   .cw-fields,#dlg .two{grid-template-columns:1fr}
   .conn{display:none}
+  .srow .rm,.ctask .rm{flex-basis:100%;padding-left:32px}
+  .ctask.done .rm{flex-basis:auto;padding-left:0}
+  .ctask.done .tt{flex-basis:0}
+  .srow .ttl{min-width:0}
   #dlg{padding:0;place-items:stretch}
   #dlg .box,#dlg .box.wide{max-width:none;max-height:100vh;height:100%;border-top-width:4px}
 }
@@ -892,6 +904,11 @@ function dueChip(due, repeat) {
   else txt = new Date(due + 'T12:00').toLocaleDateString('en-CA', { weekday: 'short', month: 'short', day: 'numeric' });
   return '<span class="due ' + cls + '">◷ ' + txt + (repeat ? ' ⟳' : '') + '</span>';
 }
+/* a date that looks like a chip (or “+ Date”), with the real picker on top of it */
+function dateCtl(v, attr, clr, done) {
+  return '<label class="dpick' + (v ? ' set' : '') + '">' + (v ? dueChip(v).replace(/ over/, done ? '' : ' over') : '+ Date') + '<input type="date" value="' + (v || '') + '" ' + attr + ' aria-label="Date"></label>'
+    + (v ? '<button class="dclr" data-dclr="' + clr + '" title="Remove the date">×</button>' : '');
+}
 function money(v) { var n = Number(v); return '$' + n.toLocaleString('en-CA', { minimumFractionDigits: n % 1 ? 2 : 0, maximumFractionDigits: 2 }); }
 function shortCard(t) { return /^\d{6}\S* · /.test(t) ? t.replace(/^\S+ · /, '') : t; }
 
@@ -1252,9 +1269,9 @@ function cardDlg(plid, cid) {
       var lk = linkedTo(t.id);
       return '<div class="ctask' + (t.done ? ' done' : '') + '"><button class="chk' + (t.done ? ' on' : '') + '" data-ctick="' + t.id + '" aria-label="Done">' + (t.done ? '✓' : '') + '</button>'
         + '<input class="tt" value="' + esc(t.title) + '" data-ctt="' + t.id + '" aria-label="Task">'
-        + (t.done && !t.due ? '' : '<input type="date" class="td' + (t.due ? (t.due < t0 && !t.done ? ' over' : '') : ' empty') + '" value="' + (t.due || '') + '" data-ctd="' + t.id + '" aria-label="Due date">')
+        + '<span class="rm">' + (t.done && !t.due ? '' : dateCtl(t.due, 'data-ctd="' + t.id + '"', 'ctd:' + t.id, t.done))
         + (t.done ? '' : lk ? '<span class="tag on">In ' + esc(listName(lk.list)) + '</span>' : '<button class="tod" data-pull=\'' + esc(JSON.stringify({ app: 'pl', pl: plid, c: cid, t: t.id })) + '\' data-title="' + esc(t.title) + '">→ Today</button>')
-        + '<button class="x" data-ctdel="' + t.id + '" title="Remove">×</button></div>';
+        + '<button class="x" data-ctdel="' + t.id + '" title="Remove">×</button></span></div>';
     }).join('')
     + '<form class="addrow" id="cw-add"><input id="cw-add-in" placeholder="Add an item" autocomplete="off"><button class="b">Add</button></form>'
     + '<div class="sec-h">Comments' + (comments.length ? ' <span class="pill">' + comments.length + '</span>' : '') + '</div>'
@@ -1299,7 +1316,7 @@ function renderBig() {
   var p = questById(U.quest) || qs[0]; U.quest = p.id;
   var cur = phaseNow(p), g = S.goals.find(function (x) { return x.year === new Date().getFullYear() && x.quests.indexOf(p.id) > -1; }), logged = questLogged(p), t0 = today();
   el.innerHTML = '<div class="qpick">' + qs.map(function (x) { return '<button class="b" aria-pressed="' + (x.id === p.id) + '" data-quest="' + x.id + '">' + (S.pins[x.id] ? '● ' : '') + esc(x.name) + '</button>'; }).join('') + '</div>'
-    + '<div class="qhead"><div style="flex:1;min-width:0"><div class="eyebrow">Quest · in Project Phases</div><h2>' + esc(p.name) + '</h2>'
+    + '<div class="qhead"><div style="flex:1 1 260px;min-width:0"><div class="eyebrow">Quest · in Project Phases</div><h2>' + esc(p.name) + '</h2>'
     + '<button class="qgoal' + (g ? '' : ' none') + '" data-qgoal="' + p.id + '">' + (g ? '◎ Goal: ' + esc(g.title) : '+ Link to a goal') + '</button></div>'
     + '<button class="b' + (S.pins[p.id] ? ' on' : '') + '" data-qpin="' + p.id + '">' + (S.pins[p.id] ? 'Pinned to Pull in' : 'Pin to Pull in') + '</button>'
     + (logged ? '<span class="pill">' + logged + ' logged</span>' : '') + '<a class="b" href="project-tracker.html" target="_blank" rel="noopener">Open ↗</a></div>'
@@ -1312,9 +1329,9 @@ function renderBig() {
         + (ss.map(function (st) {
           var d = S.due[st.id], lk = linkedTo(st.id), done = stepDone(st);
           return '<div class="srow' + (done ? ' done' : '') + (flashId === st.id ? ' flash' : '') + '"><button class="chk' + (done ? ' on' : '') + '" data-step="' + p.id + ':' + ph.id + ':' + st.id + '" aria-label="Done">' + (done ? '✓' : '') + '</button>'
-            + '<span class="ttl">' + esc(st.name) + '</span>' + (st.status === 'doing' ? '<span class="doing">Doing</span>' : '')
-            + (done ? '' : '<input type="date" class="dt' + (d ? (d < t0 ? ' over' : '') : ' empty') + '" value="' + (d || '') + '" data-sdue="' + st.id + '" aria-label="Date">')
-            + (done ? '' : lk ? '<span class="tag on">In ' + esc(listName(lk.list)) + '</span>' : '<button class="b y" data-pull=\'' + esc(JSON.stringify({ app: 'pp', p: p.id, ph: ph.id, s: st.id })) + '\' data-title="' + esc(st.name) + '">→ Today</button>')
+            + '<span class="ttl">' + esc(st.name) + '</span>'
+            + (done ? '' : '<span class="rm">' + (st.status === 'doing' ? '<span class="doing">Doing</span>' : '') + dateCtl(d, 'data-sdue="' + st.id + '"', 'sdue:' + st.id)
+              + (lk ? '<span class="tag on">In ' + esc(listName(lk.list)) + '</span>' : '<button class="b y" data-pull=\'' + esc(JSON.stringify({ app: 'pp', p: p.id, ph: ph.id, s: st.id })) + '\' data-title="' + esc(st.name) + '">→ Today</button>') + '</span>')
             + '</div>';
         }).join('') || '<div class="empty">No tasks yet.</div>') + '</div>';
     }).join('') + '<button class="addphase" data-addphase="' + p.id + '">+ Project</button>';
@@ -1504,6 +1521,13 @@ document.addEventListener('click', function (e) {
   if (d.tab) { closeMenu(); return show(d.tab); }
   if ('close' in d) return closeDlg();
   if ('signin' in d) return SH && SH.click();
+  if (d.dclr) {
+    var dc = d.dclr.split(':');
+    if (dc[0] === 'sdue') { delete S.due[dc[1]]; return commit(); }
+    var hcd = cardOpen && findCard(cardOpen.pl, cardOpen.c), tcd = hcd && ctasks(hcd.c).find(function (x) { return x.id === dc[1]; });
+    if (tcd) { tcd.due = null; savePL(); render(); }
+    return;
+  }
 
   /* Today */
   if (d.tick) { e.stopPropagation(); return tickTask(T(d.tick)); }

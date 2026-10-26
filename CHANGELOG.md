@@ -5,6 +5,32 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v125 — 2026-10-25
+
+**What's new** · Fix · [tools/production-hub.html]
+### Production Hub and Pipelines<br>read properly on a phone
+A quest's name no longer collapses into a narrow column on a phone, and the
+empty date boxes are gone: each task now shows a small “+ Date” (or its date)
+on the line under its name, next to → Today.
+
+**Production Hub — `tools/production-hub.html`, source `production_hub_v2.html`**
+- Quest header: the title block takes `flex: 1 1 260px`, so the buttons wrap
+  under it on narrow screens instead of squeezing it to one letter wide.
+- Dates on Big Picture steps and card checklist items: a chip-style control
+  (`dateCtl`: "+ Date" or the date chip, with the native picker laid
+  invisibly on top, plus × to clear) instead of a bare `<input type="date">`,
+  which iOS draws as an empty box. Under 760px the date, Doing tag and
+  → Today drop to a second line under the task; finished tasks stay on one line.
+
+**Pipelines — `tools/pipelines.html`, source `pipelines_v2.html`**
+- Same date control and phone layout in the card window's checklist.
+
+**Verified** (mock database, 375px wide and desktop) — quest header wraps;
+set and clear a date on a step and on a card task in the hub, and on a card
+task in Pipelines; no console errors.
+
+---
+
 ## v124 — 2026-10-25
 
 **What's new** · New tool · [tools.html#debelle]
