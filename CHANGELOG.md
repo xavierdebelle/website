@@ -5,6 +5,43 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v126 — 2026-10-26
+
+**What's new** · Update · [tools/production-hub.html]
+### Drag to reorder,<br>and details as you add
+Tasks in Today, projects and cards in In Production and Pipelines, and goals
+can now be dragged into any order by the ⋮⋮ grip, with a mouse or a finger.
+Cards can also be dragged into another stage that way. Adding a task in Today
+now opens a Details box under the title, so a task and its notes go in
+together.
+
+**Production Hub — `tools/production-hub.html`, source `production_hub_v3.html`**
+- `sortable()`: pointer-event drag on a ⋮⋮ grip (`touch-action: none`, so it
+  works on a phone without fighting the scroll); a ghost follows the finger,
+  a yellow line shows where it lands, and the page / board scrolls near the
+  edges. Taps on a grip never open the item.
+- Today: tasks reorder within a list or move to another list (order is the
+  `tasks` array order). In Production: cards reorder within a stage or move
+  to another one; the order is written into the Pipelines doc, so the app
+  shows it too. Goals: reorder within the year (grid). Replaces the
+  mouse-only HTML5 card drag.
+- Add a task: title + auto-growing Details; Enter in the title goes to
+  Details, ⌘/Ctrl Enter or Add saves, Escape clears; the box stays open for
+  the next task and folds when left empty. A half-typed task survives a
+  live-sync redraw.
+
+**Pipelines — `tools/pipelines.html`, source `pipelines_v3.html`**
+- Same grip drag for cards (within a stage and between stages), replacing
+  the mouse-only drag; a guard on the New card dialog's focus.
+
+**Verified** (mock database, desktop and 375px) — add with details, Enter →
+details, ⌘ Enter adds; drag a task to the bottom of its list; drag a card
+into another stage before a given card and swap two cards (order reaches the
+Pipelines doc); drag the last goal first; drag in the Pipelines app on a
+phone-width screen; grip taps open nothing. No console errors.
+
+---
+
 ## v125 — 2026-10-25
 
 **What's new** · Fix · [tools/production-hub.html]

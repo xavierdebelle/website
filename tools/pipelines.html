@@ -101,6 +101,16 @@ main{padding:18px var(--gut) 40px}
 .cm{font-size:11px;color:var(--g6);font-weight:700}
 .age{font-size:11px;color:var(--g6)}
 .age.stuck{color:var(--red-dark);font-weight:700}
+.grip{cursor:grab;touch-action:none;color:#b5adad;font:800 14px/1 "Inter Tight",sans-serif;letter-spacing:-2px;padding:4px 6px 4px 2px;user-select:none;-webkit-user-select:none;flex:none}
+.grip:hover{color:var(--black)}
+.dragging{opacity:.3}
+.drag-ghost{position:fixed!important;z-index:70;pointer-events:none;margin:0!important;box-shadow:0 12px 30px rgba(0,0,0,.25);transform:rotate(1.2deg);background:var(--white)}
+body.is-dragging,body.is-dragging *{cursor:grabbing!important;user-select:none!important;-webkit-user-select:none!important}
+.drop-before{box-shadow:0 -3px 0 var(--yellow)!important}
+.drop-after{box-shadow:0 3px 0 var(--yellow)!important}
+.ggrid .drop-before{box-shadow:-5px 0 0 var(--yellow)!important}
+.ggrid .drop-after{box-shadow:5px 0 0 var(--yellow)!important}
+.drop-in{outline:2px dashed var(--yellow);outline-offset:-2px}
 .amb{margin-left:auto;border:1px solid #cfc7c7;background:var(--white);color:var(--black);padding:3px 9px;font:800 14px/1 "Inter Tight",sans-serif;letter-spacing:.1em}
 .amb:hover,.amb.open{background:var(--black);color:var(--yellow);border-color:var(--black)}
 .due{display:inline-flex;align-items:center;gap:4px;border:1px solid #cfc7c7;padding:2px 8px;font-size:11px;font-weight:600;border-radius:999px;color:var(--g7);white-space:nowrap}
@@ -416,7 +426,7 @@ function render() {
     var done = c.tasks.filter(function (t) { return t.done; }).length, next = c.tasks.find(function (t) { return !t.done; });
     var isDone = stage(pl, c.stage).done, d = daysIn(c);
     var bits = [dateF && c.fields[dateF.id] ? fieldText(dateF, c.fields[dateF.id]) : ''].concat(otherF.map(function (f) { return fieldText(f, c.fields[f.id]); })).filter(Boolean);
-    return '<div class="pcard' + (cardLate(c) ? ' late' : '') + (flashId === c.id ? ' flash' : '') + '" draggable="true" data-card="' + c.id + '">'
+    return '<div class="pcard' + (cardLate(c) ? ' late' : '') + (flashId === c.id ? ' flash' : '') + '" data-card="' + c.id + '">'
       + '<div class="pt">' + esc(c.title) + '</div>'
       + (bits.length ? '<div class="pf">' + bits.map(esc).join(' · ') + '</div>' : '')
       + (next && !isDone ? '<div class="nx">Next: <b>' + esc(next.title) + '</b>' + (next.due ? ' ' + dueChip(next.due) : '') + '</div>' : '')
@@ -424,7 +434,7 @@ function render() {
       + (c.tasks.length ? '<span class="cl' + (done === c.tasks.length ? ' full' : '') + '">☑ ' + done + '/' + c.tasks.length + '</span>' : '')
       + (c.comments.length ? '<span class="cm">💬 ' + c.comments.length + '</span>' : '')
       + (!isDone ? '<span class="age' + (d > 14 ? ' stuck' : '') + '">' + (d > 0 ? d + 'd in stage' : 'new here') + '</span>' : '')
-      + '<button class="amb" data-menu="' + c.id + '" title="Actions" aria-label="Actions">⋯</button></div></div>';
+      + '<span class="grip" title="Drag to move or reorder" aria-hidden="true" style="margin-left:auto">⋮⋮</span><button class="amb" data-menu="' + c.id + '" title="Actions" aria-label="Actions" style="margin-left:0">⋯</button></div></div>';
   }
 
   $('main').innerHTML =
@@ -595,6 +605,7 @@ function savePipe() {
 /* ---------- clicks ---------- */
 document.addEventListener('click', function (e) {
   if (!e.target.closest('[data-menu]')) closeMenu();
+  if (e.target.closest('.grip')) return;
   var el = e.target.closest('button,[data-card]'); if (!el) return;
   var d = el.dataset;
   if (d.menu) { e.stopPropagation(); if (el.classList.contains('open')) return closeMenu(); return openMenu(el, d.menu); }
@@ -608,7 +619,7 @@ document.addEventListener('click', function (e) {
     openDlg('<h3>New card</h3><form class="body" id="nc"><label>Title</label><input id="nc-t" placeholder="' + (pl0.id === 'projects' ? 'Project name' : 'e.g. 270612SMJO · Sam & Jordan') + '" autocomplete="off"><p class="lead" style="margin-top:8px">Into “' + esc(stage(pl0, d.add).name) + '”' + (pl0.checklist.length ? ', with the ' + pl0.checklist.length + '-item checklist.' : '.') + '</p></form>'
       + '<div class="foot"><span class="sp"></span><button class="b ghost" data-close>Cancel</button><button class="b y" data-addgo="' + d.add + '">Add card</button></div>');
     $('nc').onsubmit = function (ev) { ev.preventDefault(); $('dlg-box').querySelector('[data-addgo]').click(); };
-    setTimeout(function () { $('nc-t').focus(); }, 30);
+    setTimeout(function () { var n = $('nc-t'); if (n) n.focus(); }, 30);
     return;
   }
   if (d.addgo) { var t = $('nc-t').value.trim(); if (!t) return $('nc-t').focus(); var pl1 = current(), c1 = newCard(pl1, d.addgo, t); dlgKind = null; flashId = c1.id; commit(); return cardDlg(c1.id); }
@@ -644,16 +655,61 @@ document.addEventListener('click', function (e) {
   }
 });
 
-/* ---------- drag a card to another stage (mouse; on phones use ⋯ → Move to stage) ---------- */
-var dragId = null;
-document.addEventListener('dragstart', function (e) { var c = e.target.closest && e.target.closest('[data-card]'); if (!c) return; dragId = c.getAttribute('data-card'); c.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', dragId); });
-document.addEventListener('dragend', function () { dragId = null; document.querySelectorAll('.dragging,.pcol.over').forEach(function (x) { x.classList.remove('dragging', 'over'); }); });
-document.addEventListener('dragover', function (e) { var col = e.target.closest && e.target.closest('[data-col]'); if (!col || !dragId) return; e.preventDefault(); document.querySelectorAll('.pcol.over').forEach(function (x) { if (x !== col) x.classList.remove('over'); }); col.classList.add('over'); });
-document.addEventListener('drop', function (e) {
-  var col = e.target.closest && e.target.closest('[data-col]'); if (!col || !dragId) return; e.preventDefault();
-  var hit = findCard(dragId), to = col.getAttribute('data-col');
-  if (hit && hit.c.stage !== to) { hit.c.stage = to; hit.c.stageAt = today(); flashId = hit.c.id; commit(); }
-});
+/* ---------- drag to reorder: a ⋮⋮ grip on each item, works with a mouse and a finger ----------
+   sortable({ handle, item, container, grid, onDrop(itemEl, containerEl, beforeEl or null) }) */
+function sortable(o) {
+  document.addEventListener('pointerdown', function (e) {
+    var h = e.target.closest && e.target.closest(o.handle); if (!h || e.button > 0) return;
+    var it = h.closest(o.item); if (!it) return;
+    e.preventDefault();
+    var r = it.getBoundingClientRect(), dx = e.clientX - r.left, dy = e.clientY - r.top, px = e.clientX, py = e.clientY;
+    var ghost = it.cloneNode(true); ghost.classList.add('drag-ghost'); ghost.classList.remove('flash');
+    ghost.style.width = r.width + 'px'; ghost.style.left = r.left + 'px'; ghost.style.top = r.top + 'px';
+    document.body.appendChild(ghost); it.classList.add('dragging'); document.body.classList.add('is-dragging');
+    var target = null, before = true, cont = null;
+    function clear() { document.querySelectorAll('.drop-before,.drop-after,.drop-in').forEach(function (x) { x.classList.remove('drop-before', 'drop-after', 'drop-in'); }); }
+    function place() {
+      ghost.style.left = (px - dx) + 'px'; ghost.style.top = (py - dy) + 'px';
+      var el = document.elementFromPoint(px, py), over = el && el.closest(o.item);
+      cont = el && el.closest(o.container); clear(); target = null;
+      if (!cont) return;
+      if (over && over !== it && cont.contains(over)) {
+        var b = over.getBoundingClientRect();
+        before = o.grid ? (px < b.left + b.width / 2) : (py < b.top + b.height / 2);
+        over.classList.add(before ? 'drop-before' : 'drop-after'); target = over;
+      } else cont.classList.add('drop-in');
+    }
+    var scroller = setInterval(function () {        // keep scrolling while held near an edge
+      if (py < 70) window.scrollBy(0, -14); else if (py > innerHeight - 70) window.scrollBy(0, 14);
+      var row = document.elementFromPoint(px, py); row = row && row.closest('.pboard,.lists');
+      if (row) { var rb = row.getBoundingClientRect(); if (px < rb.left + 50) row.scrollLeft -= 14; else if (px > rb.right - 50) row.scrollLeft += 14; }
+      place();
+    }, 30);
+    function move(ev) { px = ev.clientX; py = ev.clientY; place(); }
+    function end(ev) {
+      removeEventListener('pointermove', move); removeEventListener('pointerup', end); removeEventListener('pointercancel', end);
+      clearInterval(scroller); ghost.remove(); it.classList.remove('dragging'); document.body.classList.remove('is-dragging'); clear();
+      if (ev.type === 'pointercancel' || !cont || !document.contains(it)) return;
+      var beforeEl = target;
+      if (target && !before) { beforeEl = target.nextElementSibling; while (beforeEl && !beforeEl.matches(o.item)) beforeEl = beforeEl.nextElementSibling; }
+      if (beforeEl === it) return;
+      o.onDrop(it, cont, beforeEl || null);
+    }
+    addEventListener('pointermove', move); addEventListener('pointerup', end); addEventListener('pointercancel', end);
+  });
+}
+/* move x inside arr so it sits before `beforeX` (or right after the last item `sameGroup` accepts, or at the end) */
+function reorder(arr, x, beforeX, sameGroup) {
+  var a = arr.filter(function (y) { return y !== x; }), i = beforeX ? a.indexOf(beforeX) : -1;
+  if (i < 0) { i = a.length; for (var k = a.length - 1; k >= 0; k--) if (sameGroup(a[k])) { i = k + 1; break; } }
+  a.splice(i, 0, x); return a;
+}
+sortable({ handle: '.pcard .grip', item: '.pcard[data-card]', container: '[data-col]', onDrop: function (el, cont, bef) {
+  var hit = findCard(el.getAttribute('data-card')); if (!hit) return;
+  var sid = cont.getAttribute('data-col'), b = bef && hit.pl.cards.find(function (x) { return x.id === bef.getAttribute('data-card'); });
+  if (hit.c.stage !== sid) { hit.c.stage = sid; hit.c.stageAt = today(); }
+  hit.pl.cards = reorder(hit.pl.cards, hit.c, b, function (x) { return !x.archived && x.stage === sid; }); flashId = hit.c.id; commit();
+} });
 
 addEventListener('pagehide', saveNow);
 document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'hidden') saveNow(); });
