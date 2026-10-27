@@ -586,3 +586,25 @@ its ID forever. Statuses: new, planned, in progress, done, dropped.
 ### IDEA-134 · "Book your next shoot" card in the client portal for 333 Photo clients
 - **Category:** Monetization · **Effort:** S · **Impact:** ★★ · **Status:** new
 - The client portal in tools/video-review.html (?p=, renderPortal) shows a client only "Your reviews" and, when empty, "Nothing here yet", even though it is the one page a commercial client opens again and again during a job. Add an optional per-portal card the host fills in when creating the portal (for example "Spring menu shoot? Book before March 1 at this year's rates") with a GoHighLevel calendar or estimate link, shown under the reviews once the latest review is approved. A repeat client is the cheapest sale 333 Photo can make, and the portal is already bookmarked on their phone, so the next job gets booked while the last one is still fresh. It is different from the balance payment (IDEA-109) and the review ask (IDEA-110), which close the current job; this opens the next one.
+
+## 2026-10-27 — One tool in full: Pipelines
+
+### IDEA-135 · Stop paid jobs counting as open work in Pipelines
+- **Category:** Fix · **Effort:** S · **Impact:** ★★ · **Status:** new
+- In tools/pipelines.html only one stage per pipeline can be ticked "Done" (a radio button in pipeDlg()), and both templates put a stage after it: Wedding video ends Done → Accounting, Commercial shoot ends Delivered → Paid (TEMPLATES, line ~293). So a card moved to Paid counts as open in the tab badge, keeps its ▶ timer, turns "stuck 14+ days" two weeks later, and its price stays in the "$X budget open" total (render(), line ~470). Treat every stage from the Done stage rightwards as finished (or allow more than one Done tick), and let the money total read "to collect" for cards in Delivered/Accounting only, so the board shows what is really still owed.
+
+### IDEA-136 · Real hourly rate on every card and per pipeline
+- **Category:** Feature · **Effort:** S · **Impact:** ★★★ · **Status:** new
+- Pipelines already knows both halves: a Money field (Price, Budget) and the time logged by the card timer (cardMs()). Nothing divides one by the other. Show "$X/h" beside the ⏱ chip once a card has a price and time, and in the summary row an average for finished cards ("Wedding video: $68/h over 12 jobs"), with the lowest three listed. That tells Xavier which packages and clients actually pay, which is the number to feed into the Package Builder prices (package-builder-admin.html) and the decision on which work to stop taking.
+
+### IDEA-137 · A "Link" field type that opens with one tap
+- **Category:** Feature · **Effort:** S · **Impact:** ★★ · **Status:** new
+- FIELD_TYPES in tools/pipelines.html (line ~291) offers Text, Multi-line, Number, Money and Date, so a Video Review portal, a ShootProof gallery, a Drive folder or the client's GoHighLevel contact can only be pasted as dead text. Add a Link type that shows as a small "↗ Gallery" button on the card and in the card window, and add "Review link" and "GHL contact" fields to the Wedding video and Commercial templates. Every job then opens from one place instead of a search across four apps.
+
+### IDEA-138 · "Nudge the client" button when a card waits on them
+- **Category:** Conversion · **Effort:** S · **Impact:** ★★ · **Status:** new
+- Cards sitting in Client Review or Quote sent show "Nd in stage" and turn red after 14 days, but the board can only watch them wait. When a card has been 5+ days in a stage that waits on the client, show a "Nudge" item in the ⋯ menu that opens a ready-written text or email (sms:/mailto:, using a client email/phone field added to both templates) and logs a dated comment "Nudged". Approvals and quotes that move a week sooner mean final payments and bookings land a week sooner.
+
+### IDEA-139 · An "After delivery" stage that schedules the review ask, the album offer and the next shoot
+- **Category:** Monetization · **Effort:** S · **Impact:** ★★★ · **Status:** new
+- Builds on IDEA-053, IDEA-078 and IDEA-110: those offers exist only as ideas, with nothing in Xavier's own workflow to make them happen. In the Wedding video and Commercial shoot templates in tools/pipelines.html, add a stage after Done/Paid whose checklist items get due dates counted from the day the card arrives: day 3 ask for a Google review, day 30 offer the parents' album or prints, day 330 the anniversary session or (for 333 Photo) "book your next shoot". The existing due chips and late counts then turn every delivered job into three dated chances to sell again.
