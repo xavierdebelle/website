@@ -608,3 +608,21 @@ its ID forever. Statuses: new, planned, in progress, done, dropped.
 ### IDEA-139 · An "After delivery" stage that schedules the review ask, the album offer and the next shoot
 - **Category:** Monetization · **Effort:** S · **Impact:** ★★★ · **Status:** new
 - Builds on IDEA-053, IDEA-078 and IDEA-110: those offers exist only as ideas, with nothing in Xavier's own workflow to make them happen. In the Wedding video and Commercial shoot templates in tools/pipelines.html, add a stage after Done/Paid whose checklist items get due dates counted from the day the card arrives: day 3 ask for a Google review, day 30 offer the parents' album or prints, day 330 the anniversary session or (for 333 Photo) "book your next shoot". The existing due chips and late counts then turn every delivered job into three dated chances to sell again.
+
+## 2026-10-28 — Monetization and offers
+
+### IDEA-140 · Price travel beyond 100 km in the Package Builder
+- **Category:** Fix · **Effort:** S · **Impact:** ★★ · **Status:** new
+- tools/package-builder.html says "Travel included within 100 km of Montreal" under the total (line ~285) and in the exported summary (line ~780), but has no field or price for anything further, so a couple marrying in Mont-Tremblant, the Eastern Townships or Quebec City sees a total that is wrong and Xavier either eats the cost or has to raise the price after the quote. Add a "Where is the wedding?" choice (Within 100 km · 100–200 km · 200 km+ / overnight) with a travel line in the summary (for example $1/km past 100 km, or a flat fee plus a hotel night), editable in package-builder-admin.html like the other SETTINGS. It protects margin on the longest days and makes the quote the couple sees the one they actually pay.
+
+### IDEA-141 · "Your day runs past your coverage" check in the Wedding Day Schedule
+- **Category:** Feature · **Effort:** M · **Impact:** ★★★ · **Status:** new
+- tools/wedding-schedule.html collects an Arrival and Departure for every stage (groom prep through reception, STAGES), but they are free text and nothing compares the day's length with the hours the couple booked. Add an "Hours booked" field (or ?hours=8 in the link Xavier sends), read the earliest arrival and the reception departure on Generate Schedule, and when the day is longer show a card: "Your day runs 9h30 and your coverage is 8h. Add 1.5 hours now at $400/h (on the night it's $500/h)", with a button that replies by email or opens a GoHighLevel invoice. Overtime is the easiest upsell in weddings, the couple is looking at proof they need it, and selling it a month ahead at a lower rate beats an awkward conversation at 11 pm.
+
+### IDEA-142 · Rehearsal dinner and day-after session add-ons
+- **Category:** Monetization · **Effort:** S · **Impact:** ★★ · **Status:** new
+- OTHER_ADDONS in tools/package-builder.html (line ~336) offers an assistant, an engagement shoot, a slideshow and album extras, but nothing for the other events around a wedding. Add "Rehearsal dinner / welcome party, 2 hours" (about $700) and "Day-after session in your wedding outfits, 1.5 hours" (about $450) as add-ons, both editable in package-builder-admin.html. Couples who already chose de Belle for the big day are the easiest yes for a second, smaller event, and each one also raises the subtotal toward the next volume-discount tier.
+
+### IDEA-143 · Off-peak date savings shown in the Package Builder (downsell)
+- **Category:** Monetization · **Effort:** M · **Impact:** ★★ · **Status:** new
+- The Package Builder has no wedding date at all, and its only price lever is the volume discount (SETTINGS.discounts), so a couple whose budget falls short can only remove services. Add a date field at the top and, when the date is a Friday or Sunday or falls between November and April, show a line in the summary: "Off-peak date: 10% off photography and video". Set the days, months and percentage in package-builder-admin.html. It is a downsell that keeps the full package and protects Saturday prices, it fills dates that would otherwise stay empty, and the same date field is what IDEA-052 needs for its monthly figure.
