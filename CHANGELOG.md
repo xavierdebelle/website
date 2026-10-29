@@ -5,6 +5,17 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v133 — 2026-10-29
+
+**Wedding Hub — review tool links (source `wedding-hub-v3.html`)**
+- Photo Review and Film Review tabs: the button now opens the tool itself
+  (`photo-review.html` / `video-review.html`) until the couple saves their
+  private link; then it becomes "→ Open my review" on that link and the
+  tool link goes away. Clearing the box brings the tool link back.
+- Tested locally: both tabs, save, clear; no console errors.
+
+---
+
 ## v132 — 2026-10-29
 
 **Wedding Hub — Start over button (source `wedding-hub-v2.html`)**

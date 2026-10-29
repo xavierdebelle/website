@@ -646,17 +646,20 @@ VIEWS.delivery = () => {
 const reviewView = (kind, title, lede, what) => head(title, lede) + `
   <div class="card"><h3>Your private link</h3><p>${what} It arrives by email from ${STUDIO_EMAIL}. Paste it here once and it stays with your hub on this device.</p>
     <label for="lnk-${kind}">Review link</label><input id="lnk-${kind}" data-path="links.${kind}" value="${esc(S.links[kind])}" placeholder="https://xavierdebelle.com/tools/...">
-    <div class="row-actions"><a class="btn" id="open-${kind}" target="_blank" rel="noopener">→ Open my review</a></div></div>
+    <div class="row-actions"><a class="btn" id="open-${kind}" target="_blank" rel="noopener"></a></div></div>
   <div class="card"><h3>How it works</h3><p class="note">${kind === 'photo'
     ? 'Click any spot on a photograph to leave a note right there. Approve the ones you love as they are. When we send a retouched version, it appears on the same link.'
     : 'Pause the film wherever you like and write a note at that exact second. You can draw on the frame too. Each new cut appears on the same link, with your notes beside it.'}</p></div>`;
 VIEWS.photoreview = () => reviewView('photo', 'Photo review', 'Your retouching notes, pinned on the photographs themselves.', 'Once your gallery is ready we send a link to review your chosen photographs.');
 VIEWS.filmreview = () => reviewView('video', 'Film review', 'Your notes on the film, at the exact second they belong to.', 'When the first cut of your film is ready we send a link to watch it and leave notes.');
+const REVIEW_TOOLS = { photo:['photo-review.html', 'Photo Review'], video:['video-review.html', 'Film Review'] };
 function linkButtons() {
   ['photo', 'video'].forEach(k => {
     const b = document.getElementById('open-' + k); if (!b) return;
+    // their private link once saved; until then the tool itself
     const ok = /^https:\/\//.test(S.links[k] || '');
-    b.hidden = !ok; if (ok) b.href = S.links[k];
+    b.href = ok ? S.links[k] : REVIEW_TOOLS[k][0];
+    b.textContent = ok ? '→ Open my review' : '→ Open ' + REVIEW_TOOLS[k][1];
   });
 }
 AFTER.photoreview = AFTER.filmreview = linkButtons;
