@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wedding Hub — de Belle Photography</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="xdb-companion" content="wedding-schedule.html">
+<link rel="canonical" href="https://xavierdebelle.com/tools/wedding-hub.html">
+<meta name="description" content="Your wedding, before and after: checklist, budget, day schedule, family photos, and everything that comes once the day is done.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,300;0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  /* de Belle Photography design system: pure black and white, Georgia for
+     headings and accents, Lato for text, spaced caps for labels, square
+     edges, no shadows. Space does the separating. */
+  :root{
+    --noir:#0D0D0D; --charcoal:#1A1A1A; --graphite:#4A4A4A; --grey:#888888;
+    --silver:#C2C2C2; --mist:#F5F5F5; --white:#FFFFFF;
+    --serif:Georgia,"Times New Roman",serif;
+    --sans:"Lato","Helvetica Neue",Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0; background:var(--white); color:var(--graphite); font-family:var(--sans); font-size:15px; line-height:1.6; -webkit-font-smoothing:antialiased}
+  [hidden]{display:none !important}
+  a{color:var(--noir)}
+  .wrap{max-width:920px; margin:0 auto; padding:48px 24px 96px}
+  header.brand{text-align:center; margin-bottom:28px}
+  header.brand img{width:190px; height:auto; display:block; margin:0 auto}
+  .caps{font-size:11px; font-weight:300; letter-spacing:.32em; text-transform:uppercase; color:var(--grey)}
+  header.brand .caps{margin-top:20px}
+  .couple{font-family:var(--serif); font-style:italic; font-size:clamp(24px,4vw,32px); color:var(--noir); margin:18px 0 4px; font-weight:400}
+  .count{font-family:var(--serif); font-size:15px; color:var(--graphite)}
+  .count b{font-weight:400; color:var(--noir)}
+  .linkish{background:none; border:0; padding:0; font:inherit; font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--grey); cursor:pointer; text-decoration:underline; text-decoration-color:var(--silver); text-underline-offset:4px}
+  .linkish:hover{opacity:.6}
+  .next-pay{margin-top:8px; font-size:13px; color:var(--grey)}
+
+  /* phase switch */
+  .phases{display:grid; grid-template-columns:1fr 1fr; margin:40px 0 0; border-bottom:1px solid var(--silver)}
+  .phases button{background:none; border:0; padding:18px 8px 16px; font-family:var(--serif); font-size:clamp(17px,2.6vw,22px); color:var(--grey); cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-1px; transition:opacity .3s ease-in-out}
+  .phases button[aria-selected="true"]{color:var(--noir); border-bottom-color:var(--noir)}
+  .phases button:hover{opacity:.7}
+  nav.tabs{display:flex; gap:28px; overflow-x:auto; padding:18px 2px 4px; scrollbar-width:none; justify-content:center}
+  nav.tabs::-webkit-scrollbar{display:none}
+  nav.tabs button{flex:none; background:none; border:0; padding:6px 0; font-family:var(--sans); font-size:11px; letter-spacing:.2em; text-transform:uppercase; color:var(--grey); cursor:pointer; border-bottom:1px solid transparent}
+  nav.tabs button[aria-selected="true"]{color:var(--noir); border-bottom-color:var(--noir)}
+  @media(max-width:700px){nav.tabs{justify-content:flex-start; gap:22px}}
+
+  h2.section{font-family:var(--serif); font-weight:400; font-size:clamp(26px,3.4vw,34px); line-height:1.3; color:var(--noir); margin:56px 0 10px}
+  .lede{font-family:var(--serif); font-style:italic; font-size:17px; line-height:1.7; color:var(--graphite); margin:0 0 32px; max-width:640px}
+  h3.sub{font-family:var(--sans); font-size:11px; font-weight:400; letter-spacing:.28em; text-transform:uppercase; color:var(--noir); margin:44px 0 14px}
+  .card{background:var(--mist); padding:28px 30px; margin-bottom:16px}
+  .card h3{margin:0 0 6px; font-family:var(--serif); font-weight:400; font-size:21px; color:var(--noir)}
+  .card p{margin:0 0 18px}
+  .card p.note{font-family:var(--serif); font-style:italic; color:var(--graphite)}
+  .grid{display:grid; grid-template-columns:1fr 1fr; gap:16px 22px}
+  .full{grid-column:1 / -1}
+  @media(max-width:640px){.grid{grid-template-columns:1fr} .card{padding:22px 18px} .wrap{padding:36px 16px 80px}}
+
+  label,.label{display:block; font-size:10px; font-weight:400; letter-spacing:.16em; text-transform:uppercase; margin-bottom:7px; color:var(--grey)}
+  input,select,textarea{width:100%; padding:11px 12px; border:1px solid var(--silver); border-radius:0; font:inherit; font-size:16px; background:var(--white); color:var(--noir); -webkit-appearance:none; appearance:none; transition:border-color .3s ease-in-out}
+  input[type="date"]{min-height:46px}
+  select{background-image:linear-gradient(45deg,transparent 50%,var(--noir) 50%),linear-gradient(135deg,var(--noir) 50%,transparent 50%); background-position:calc(100% - 16px) 50%,calc(100% - 11px) 50%; background-size:5px 5px; background-repeat:no-repeat; padding-right:30px}
+  input::placeholder,textarea::placeholder{color:var(--silver)}
+  input:focus,select:focus,textarea:focus{outline:none; border-color:var(--noir)}
+  textarea{resize:vertical; min-height:72px}
+  button{font-family:var(--sans)}
+  .btn{display:inline-block; font-weight:400; letter-spacing:.14em; text-transform:uppercase; font-size:11px; padding:15px 28px; border-radius:0; border:0; cursor:pointer; transition:opacity .3s ease-in-out; text-decoration:none; background:var(--noir); color:var(--white)}
+  .btn:hover{opacity:.7}
+  .btn.ghost{background:transparent; color:var(--noir); border:1px solid var(--noir); padding:14px 27px}
+  .btn.small{padding:10px 18px; font-size:10px}
+  .btn.ghost.small{padding:9px 17px}
+  .row-actions{display:flex; gap:12px; flex-wrap:wrap; margin-top:22px}
+  .x{background:none; border:0; color:var(--grey); font-size:20px; line-height:1; cursor:pointer; padding:4px 8px}
+  .x:hover{color:var(--noir)}
+  .muted{color:var(--grey)}
+  .serif{font-family:var(--serif)}
+
+  /* gate + setup */
+  .gate{max-width:420px; margin:12vh auto 0; text-align:center; padding:0 16px}
+  .gate img{width:200px; display:block; margin:0 auto 22px}
+  .gate .couple{margin-bottom:28px}
+  .gate form{margin-top:28px; text-align:left}
+  .gate .err{color:var(--noir); font-family:var(--serif); font-style:italic; min-height:24px; margin-top:12px; text-align:center}
+  .gate .btn{width:100%; margin-top:16px}
+
+  /* progress */
+  .progress{display:flex; align-items:center; gap:16px; margin:0 0 8px}
+  .bar{flex:1; height:2px; background:var(--silver); position:relative}
+  .bar i{position:absolute; left:0; top:0; bottom:0; background:var(--noir); transition:width .4s ease-in-out}
+  .progress .caps{flex:none; letter-spacing:.2em}
+
+  /* checklist */
+  .group{margin-top:36px}
+  .item{border-top:1px solid var(--mist); }
+  .item:last-child{border-bottom:1px solid var(--mist)}
+  .item-head{display:flex; align-items:flex-start; gap:16px; padding:16px 0}
+  .tick{flex:none; width:22px; height:22px; border:1px solid var(--noir); background:var(--white); cursor:pointer; position:relative; margin-top:3px; padding:0}
+  .tick[aria-checked="true"]{background:var(--noir)}
+  .tick[aria-checked="true"]::after{content:""; position:absolute; left:7px; top:3px; width:6px; height:11px; border:solid var(--white); border-width:0 1.5px 1.5px 0; transform:rotate(45deg)}
+  .item-main{flex:1; min-width:0; cursor:pointer}
+  .item-title{font-family:var(--serif); font-size:19px; color:var(--noir); line-height:1.35}
+  .item.done .item-title{color:var(--grey); text-decoration:line-through; text-decoration-color:var(--silver)}
+  .item-meta{font-size:10px; letter-spacing:.16em; text-transform:uppercase; color:var(--grey); margin-top:4px}
+  .item-meta .noteline{text-transform:none; letter-spacing:0; font-family:var(--serif); font-style:italic; font-size:13px}
+  .item-body{padding:0 0 22px 38px}
+  .item-body p{margin:0 0 14px; font-family:var(--serif); font-style:italic}
+  .item-body .grid{grid-template-columns:2fr 1fr}
+  @media(max-width:640px){.item-body{padding-left:0} .item-body .grid{grid-template-columns:1fr}}
+  .add-line{display:flex; gap:10px; margin-top:22px}
+  .add-line input{flex:1}
+
+  /* budget */
+  .tiles{display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:var(--silver); border:1px solid var(--silver); margin-bottom:12px}
+  .tile{background:var(--white); padding:18px 16px}
+  .tile .label{margin-bottom:6px}
+  .tile .val{font-family:var(--serif); font-size:clamp(20px,3vw,26px); color:var(--noir)}
+  .tile input{font-family:var(--serif); font-size:20px; padding:4px 0; border:0; border-bottom:1px solid var(--silver)}
+  @media(max-width:640px){.tiles{grid-template-columns:1fr 1fr}}
+  .verdict{font-family:var(--serif); font-style:italic; margin:0 0 8px; min-height:26px}
+  .cat{margin-top:34px}
+  .cat-head{display:flex; align-items:baseline; gap:12px; border-bottom:1px solid var(--noir); padding-bottom:8px}
+  .cat-head input{flex:1; border:0; padding:0; font-family:var(--serif); font-size:21px; background:transparent}
+  .cat-head .sum{font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--grey); white-space:nowrap}
+  .lines-head,.bline{display:grid; grid-template-columns:minmax(0,2.2fr) 1fr 1fr 1.25fr 52px 30px; gap:10px; align-items:center}
+  .lines-head{padding:10px 0 4px}
+  .lines-head span{font-size:9px; letter-spacing:.16em; text-transform:uppercase; color:var(--grey)}
+  .bline{padding:6px 0; border-bottom:1px solid var(--mist)}
+  .bline input{padding:8px 8px; font-size:15px}
+  .bline input.money{text-align:right}
+  .paid{display:flex; align-items:center; justify-content:center; gap:6px}
+  .paid .tick{width:18px; height:18px; margin:0}
+  .paid .tick[aria-checked="true"]::after{left:5px; top:1px; width:5px; height:10px}
+  .bline .lab{display:none}
+  @media(max-width:700px){
+    .lines-head{display:none}
+    .bline{grid-template-columns:1fr 1fr 30px; grid-template-areas:"nm nm x" "pl ac ac" "due paid paid"; padding:14px 0; row-gap:12px}
+    .bline .nm{grid-area:nm} .bline .pl{grid-area:pl} .bline .ac{grid-area:ac} .bline .due{grid-area:due} .bline .x{grid-area:x}
+    .bline .paid{grid-area:paid; justify-content:flex-start; align-self:end; padding-bottom:12px}
+    .bline .lab{display:block; font-size:9px; letter-spacing:.14em; text-transform:uppercase; color:var(--grey); margin-bottom:4px}
+    .cat-head{flex-wrap:wrap} .cat-head input{flex:1 1 70%} .cat-head .sum{order:3; flex:1 1 100%}
+  }
+  .pay-list{margin:0; padding:0; list-style:none}
+  .pay-list li{display:flex; justify-content:space-between; gap:16px; padding:12px 0; border-bottom:1px solid var(--silver); font-size:14px}
+  .pay-list li:first-child{border-top:1px solid var(--silver)}
+  .pay-list .when{font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--grey); white-space:nowrap}
+  .pay-list .late{color:var(--noir); font-weight:700}
+
+  /* simple rows (family, vendors) */
+  .frow{display:grid; grid-template-columns:22px minmax(0,1fr) minmax(0,1.3fr) 30px; gap:14px; align-items:center; padding:12px 0; border-bottom:1px solid var(--mist)}
+  .frow .t{font-family:var(--serif); font-size:17px; color:var(--noir)}
+  .frow.off .t{color:var(--grey)}
+  .frow input.t{font-size:16px}
+  @media(max-width:640px){.frow{grid-template-columns:22px 1fr 30px} .frow .names{grid-column:2 / 4}}
+  .vendor{background:var(--mist); padding:22px 24px; margin-bottom:12px}
+  .vendor .top{display:flex; gap:12px; align-items:center; margin-bottom:14px}
+  .vendor .top input{flex:1; border:0; background:transparent; padding:0; font-family:var(--serif); font-size:20px}
+  .vendor .grid{grid-template-columns:1fr 1fr 1fr}
+  .vendor .quick{margin-top:10px; font-size:13px}
+  .vendor .quick a{margin-right:18px; text-decoration-color:var(--silver); text-underline-offset:3px}
+  @media(max-width:640px){.vendor .grid{grid-template-columns:1fr} .vendor{padding:18px 16px}}
+
+  /* delivery timeline */
+  .steps{margin:8px 0 0; padding:0; list-style:none}
+  .steps li{display:grid; grid-template-columns:22px 1fr; gap:18px; padding:0 0 30px; position:relative}
+  .steps li::before{content:""; position:absolute; left:10px; top:24px; bottom:0; width:1px; background:var(--silver)}
+  .steps li:last-child::before{display:none}
+  .dot{width:21px; height:21px; border:1px solid var(--noir); background:var(--white); margin-top:3px}
+  .steps li.reached .dot{background:var(--noir)}
+  .steps .t{font-family:var(--serif); font-size:20px; color:var(--noir)}
+  .steps .d{font-size:10px; letter-spacing:.16em; text-transform:uppercase; color:var(--grey); margin:2px 0 6px}
+  .steps p{margin:0; font-size:14px}
+
+  /* keepsakes */
+  .shop{display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:16px}
+  .prod{background:var(--mist); padding:24px 22px; display:flex; flex-direction:column}
+  .prod h4{margin:0 0 4px; font-family:var(--serif); font-weight:400; font-size:19px; color:var(--noir)}
+  .prod .price{font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--noir); margin-bottom:10px}
+  .prod p{margin:0 0 16px; font-size:14px; flex:1}
+  .prod .qty{display:flex; gap:10px; align-items:center; margin-bottom:14px}
+  .prod .qty input{width:96px}
+  .prod .qty span{font-size:12px; color:var(--grey)}
+  .prod.on{background:var(--noir); color:var(--silver)}
+  .prod.on h4,.prod.on .price{color:var(--white)}
+  .prod.on .btn{background:var(--white); color:var(--noir)}
+  .prod.on .qty span{color:var(--silver)}
+  .prod.on .qty input{background:var(--charcoal); color:var(--white); border-color:var(--graphite)}
+  .order{margin-top:40px; border-top:1px solid var(--noir); padding-top:24px}
+  .order-line{display:flex; justify-content:space-between; gap:16px; padding:8px 0; border-bottom:1px solid var(--mist); font-size:14px}
+  .order-total{display:flex; justify-content:space-between; padding:16px 0 4px; font-family:var(--serif); font-size:22px; color:var(--noir)}
+
+  .studio{margin-top:96px; text-align:center; font-size:10px; font-weight:300; letter-spacing:.24em; text-transform:uppercase; color:var(--grey); line-height:2.2}
+  .studio a{color:var(--grey); text-decoration:none}
+  .studio a:hover,.studio button:hover{opacity:.6}
+  .studio button{background:none; border:0; padding:0 6px; font:inherit; letter-spacing:inherit; text-transform:inherit; color:var(--grey); cursor:pointer}
+  .toast{position:fixed; left:50%; bottom:28px; transform:translateX(-50%); background:var(--noir); color:var(--white); font-size:11px; letter-spacing:.16em; text-transform:uppercase; padding:14px 22px; opacity:0; transition:opacity .4s ease-in-out; pointer-events:none; z-index:20}
+  .toast.show{opacity:1}
+
+  @media print{
+    .phases,nav.tabs,.studio,.row-actions,.add-line,.x,.linkish,.btn{display:none !important}
+    .wrap{padding:0; max-width:100%}
+    .card,.vendor,.prod{background:#fff; border:1px solid var(--silver)}
+  }
+</style>
+<script defer src="../assets/stats.js"></script>
+</head>
+<body>
+
+<!-- ============ GATE ============ -->
+<div id="gate" class="gate" hidden>
+  <img class="logo" alt="de Belle Photography">
+  <div class="caps">Wedding Hub</div>
+  <form id="gateForm" autocomplete="off">
+    <label for="pw">Password</label>
+    <input id="pw" type="password" autocomplete="current-password" required>
+    <button class="btn" type="submit">→ Enter</button>
+    <div class="err" id="gateErr"></div>
+  </form>
+</div>
+
+<!-- ============ SETUP ============ -->
+<div id="setup" class="gate" hidden>
+  <img class="logo" alt="de Belle Photography">
+  <div class="caps">Wedding Hub</div>
+  <p class="couple">Welcome. Tell us who you are.</p>
+  <form id="setupForm">
+    <div class="grid">
+      <div><label for="n1">Your name</label><input id="n1" required placeholder="First name"></div>
+      <div><label for="n2">Your partner's name</label><input id="n2" required placeholder="First name"></div>
+      <div class="full"><label for="wd">Wedding date <span class="muted" style="text-transform:none;letter-spacing:0">(leave empty if not chosen yet)</span></label><input id="wd" type="date"></div>
+    </div>
+    <button class="btn" type="submit">→ Open our hub</button>
+  </form>
+</div>
+
+<!-- ============ HUB ============ -->
+<div id="hub" class="wrap" hidden>
+  <header class="brand">
+    <img class="logo" alt="de Belle Photography">
+    <div class="caps">Wedding Hub</div>
+    <h1 class="couple" id="coupleName"></h1>
+    <div class="count" id="countLine"></div>
+    <div class="next-pay" id="nextPay"></div>
+    <div style="margin-top:12px"><button class="linkish" id="editDetails">Edit our details</button></div>
+  </header>
+
+  <div class="phases" role="tablist">
+    <button role="tab" data-phase="before">Before the Wedding</button>
+    <button role="tab" data-phase="after">After the Wedding</button>
+  </div>
+  <nav class="tabs" id="tabs" role="tablist"></nav>
+
+  <main id="view"></main>
+
+  <footer class="studio">
+    M O N T R É A L · E S T. 1 9 9 3<br>
+    <a href="mailto:yourwedding@debellephotography.com">yourwedding@debellephotography.com</a> · <a href="tel:5148874686">514-887-4686</a><br>
+    <a href="https://debellephotography.com" target="_blank" rel="noopener">debellephotography.com</a><br>
+    <span style="display:inline-block;margin-top:18px">
+      <button id="saveCopy">Save a copy</button> · <button id="loadCopy">Load a copy</button> · <button id="lockHub">Lock</button>
+    </span>
+    <input type="file" id="loadFile" accept="application/json,.json" hidden>
+  </footer>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ------------------------------------------------------------------
+   de Belle Photography Wedding Hub
+   Test build: everything is kept in this browser only (localStorage).
+   The password is a soft gate for testers, not real protection: the
+   page itself is public, so never put anything private in it.
+------------------------------------------------------------------- */
+const KEY = 'debelle.weddinghub.v1';
+const UNLOCK = 'debelle.weddinghub.unlocked';
+const PASS_HASH = '7f2a0a0e';                 // FNV-1a of the hub password
+const STUDIO_EMAIL = 'yourwedding@debellephotography.com';
+const REVIEW_URL = 'https://www.google.com/search?q=de+Belle+Photography+Montreal+reviews';
+const CATALOG_URL = 'https://xdb-tools-default-rtdb.firebaseio.com/catalog/package-builder.json';
+const CATALOG_CACHE = 'debelle.pkg.catalog';   // shared with the Package Builder
+// Usual delivery times after the wedding, in days. Change them here.
+const DELIVERY = [
+  { id:'day',     t:'Your wedding day',     days:0,   p:'The day itself. We are there from the first button to the last dance.' },
+  { id:'peek',    t:'A first look',         days:7,   p:'A handful of favourites, so you have something to share while we work on the rest.' },
+  { id:'gallery', t:'Your photographs',     days:56,  p:'Your full gallery, each image chosen and finished by hand. It arrives by email with a private link.' },
+  { id:'film',    t:'Your film',            days:112, p:'Your film, cut to music. You can leave notes on it at the exact second, right from your review link.' },
+  { id:'album',   t:'Your album',           days:null,p:'Once you have chosen your photographs, we design the album and send you the layout to review.' },
+];
+
+const LOGO = 'data:image/png;base64,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';
+document.querySelectorAll('img.logo').forEach(i => i.src = LOGO);
+
+/* ---------- helpers ---------- */
+const $ = s => document.querySelector(s);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid = () => Math.random().toString(36).slice(2, 9);
+const num = v => { v = parseFloat(String(v).replace(/[^0-9.\-]/g, '')); return isFinite(v) ? v : 0; };
+const money = n => '$' + Math.round(n).toLocaleString('en-CA');
+const fnv = s => { let x = 2166136261; for (const c of s) { x ^= c.charCodeAt(0); x = Math.imul(x, 16777619) >>> 0; } return x.toString(16); };
+const parseDate = s => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || ''); return m ? new Date(+m[1], m[2] - 1, +m[3]) : null; };
+const today = () => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; };
+const fmtDate = d => d.toLocaleDateString('en-GB', { day:'numeric', month:'long', year:'numeric' });
+const fmtShort = d => d.toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
+const fmtMonth = d => d.toLocaleDateString('en-GB', { month:'long', year:'numeric' });
+const days = (a, b) => Math.round((b - a) / 86400000);
+const noDash = s => String(s || '').replace(/\s*—\s*/g, '. ');
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toast.h); toast.h = setTimeout(() => t.classList.remove('show'), 2200); }
+function mail(subject, body) { location.href = 'mailto:' + STUDIO_EMAIL + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body); }
+
+/* ---------- default content ---------- */
+const CHECKLIST = [
+  { t:'Choose a date', m:14, hint:'Have two or three dates in mind before you visit venues. Popular Saturdays go first.' },
+  { t:'Set a budget', m:13, hint:'Agree on a total before anything is booked, then split it in the budget.', go:'budget' },
+  { t:'Make a guest list', m:12, hint:'The guest count shapes the venue, the catering and most of the budget.' },
+  { t:'Book a venue', m:12, hint:'Ask what is included: tables, chairs, linens, bar, and the hour the music must stop.' },
+  { t:'Book a photographer', m:12, hint:'Choose the coverage and the film that fit your day.', go:'photo', done:true, note:'de Belle Photography' },
+  { t:'Book entertainment', m:10, hint:'DJ or band for the evening, musicians for the ceremony and cocktail.' },
+  { t:'Wedding dress and suit', m:9, hint:'Leave time for two or three fittings and alterations.' },
+  { t:'Decor for the venue', m:6, hint:'Flowers, candles, centrepieces, linens, signage and anything the venue does not provide.' },
+  { t:'Makeup and hair', m:6, hint:'Book a trial a few weeks before. It doubles as a lovely day for photos.' },
+  { t:'Extras', m:3, hint:'Transport, gifts for your wedding party and parents, bonbonnières for your guests.' },
+  { t:'Plan the day with us', m:2, hint:'Your schedule hour by hour, so you, your planner and our team read from one page.', go:'schedule' },
+  { t:'Share your family photo list', m:1, hint:'Who stands with whom, and the moments you do not want missed.', go:'family' },
+];
+const BUDGET = [
+  ['Venue and catering', [['Venue rental', 6000], ['Catering', 15000], ['Bar and drinks', 4500], ['Wedding cake', 900]]],
+  ['Photography and film', [['Photography', 4000], ['Film', 3200], ['Album', 1500]]],
+  ['Attire and beauty', [['Wedding dress', 2500], ['Alterations', 400], ['Suit', 900], ['Hair and makeup', 900], ['Rings', 3000]]],
+  ['Flowers and decor', [['Flowers', 3000], ['Candles and decor', 1200], ['Rentals', 1500]]],
+  ['Music and entertainment', [['DJ or band', 2200], ['Ceremony musicians', 800]]],
+  ['Ceremony', [['Officiant', 500], ['Marriage licence and fees', 150]]],
+  ['Stationery', [['Invitations', 600], ['Thank you cards', 300]]],
+  ['Extras', [['Transport', 900], ['Bonbonnières', 750], ['Gifts for the wedding party', 600], ['Wedding night', 450]]],
+  ['A little extra', [['Contingency', 2000]]],
+];
+const FAMILY = [
+  'The two of you with {A}\'s parents', 'The two of you with {A}\'s parents and siblings', 'The two of you with {A}\'s grandparents', 'The two of you with {A}\'s whole family',
+  'The two of you with {B}\'s parents', 'The two of you with {B}\'s parents and siblings', 'The two of you with {B}\'s grandparents', 'The two of you with {B}\'s whole family',
+  'Both families together', 'The wedding party',
+];
+const VENDORS = ['Planner', 'Venue coordinator', 'Officiant', 'DJ or band', 'Florist', 'Hair and makeup', 'Caterer', 'Transport'];
+
+function fresh() {
+  return {
+    v:1, names:['', ''], date:'', phase:null, tab:{ before:'checklist', after:'delivery' },
+    checklist: CHECKLIST.map(c => ({ id:uid(), t:c.t, m:c.m, hint:c.hint, go:c.go || '', done:!!c.done, note:c.note || '' })),
+    budget: { total: 0, cats: BUDGET.map(([n, ls]) => ({ id:uid(), name:n, lines: ls.map(([ln, p]) => ({ id:uid(), name:ln, plan:p, act:0, due:'', paid:false })) })) },
+    family: { groups: FAMILY.map(t => ({ id:uid(), t, names:'', on:true })), moments:'', notes:'' },
+    vendors: VENDORS.map(r => ({ id:uid(), role:r, name:'', phone:'', email:'', note:'' })),
+    links: { photo:'', video:'' },
+    keep: { sel:{}, msg:'' },
+  };
+}
+let S;
+function load() {
+  try { S = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { S = null; }
+  if (!S || S.v !== 1) S = fresh();
+  const f = fresh();
+  for (const k in f) if (S[k] == null) S[k] = f[k];
+}
+function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
+load();
+
+/* ---------- gate + setup ---------- */
+function unlocked() { try { return localStorage.getItem(UNLOCK) === PASS_HASH; } catch (e) { return false; } }
+function boot() {
+  $('#gate').hidden = $('#setup').hidden = $('#hub').hidden = true;
+  if (!unlocked()) { $('#gate').hidden = false; setTimeout(() => $('#pw').focus(), 50); return; }
+  if (!S.names[0]) { openSetup(); return; }
+  $('#hub').hidden = false;
+  renderAll();
+}
+$('#gateForm').addEventListener('submit', e => {
+  e.preventDefault();
+  if (fnv($('#pw').value.trim().toLowerCase()) === PASS_HASH) {
+    try { localStorage.setItem(UNLOCK, PASS_HASH); } catch (err) {}
+    $('#pw').value = ''; $('#gateErr').textContent = ''; boot();
+  } else { $('#gateErr').textContent = 'That is not the password. Try again.'; }
+});
+function openSetup() {
+  $('#gate').hidden = $('#hub').hidden = true; $('#setup').hidden = false;
+  $('#n1').value = S.names[0]; $('#n2').value = S.names[1]; $('#wd').value = S.date;
+  setTimeout(() => $('#n1').focus(), 50);
+}
+$('#setupForm').addEventListener('submit', e => {
+  e.preventDefault();
+  S.names = [$('#n1').value.trim(), $('#n2').value.trim()];
+  S.date = $('#wd').value;
+  S.phase = null; save(); boot();
+});
+$('#editDetails').onclick = openSetup;
+$('#lockHub').onclick = () => { try { localStorage.removeItem(UNLOCK); } catch (e) {} boot(); };
+$('#saveCopy').onclick = () => {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(S, null, 2)], { type:'application/json' }));
+  a.download = 'wedding-hub-' + (S.names.join('-').toLowerCase().replace(/[^a-z0-9-]+/g, '') || 'copy') + '.json';
+  a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+};
+$('#loadCopy').onclick = () => $('#loadFile').click();
+$('#loadFile').onchange = async e => {
+  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  try {
+    const d = JSON.parse(await f.text());
+    if (!d || d.v !== 1 || !Array.isArray(d.checklist)) throw 0;
+    if (!confirm('Replace everything in this hub with the copy you picked?')) return;
+    S = Object.assign(fresh(), d); save(); boot(); toast('Copy loaded');
+  } catch (err) { alert('That file is not a Wedding Hub copy.'); }
+};
+
+/* ---------- tabs ---------- */
+const TABS = {
+  before: [['checklist', 'Checklist'], ['budget', 'Budget'], ['photo', 'Photography & Film'], ['schedule', 'Day Schedule'], ['family', 'Family Photos'], ['vendors', 'Vendors']],
+  after:  [['delivery', 'Delivery'], ['photoreview', 'Photo Review'], ['filmreview', 'Film Review'], ['keepsakes', 'Keepsakes'], ['share', 'Share the Love']],
+};
+function married() { const d = parseDate(S.date); return d && d <= today(); }
+function phase() { return S.phase || (married() ? 'after' : 'before'); }
+function go(tab) {
+  const ph = TABS.before.some(t => t[0] === tab) ? 'before' : 'after';
+  S.phase = ph; S.tab[ph] = tab; save(); renderAll(); window.scrollTo({ top: $('.phases').offsetTop - 10, behavior:'smooth' });
+}
+document.querySelectorAll('.phases button').forEach(b => b.onclick = () => { S.phase = b.dataset.phase; save(); renderAll(); });
+
+function renderAll() {
+  const [a, b] = S.names;
+  $('#coupleName').textContent = b ? a + ' & ' + b : a;
+  const d = parseDate(S.date), t = today();
+  let line = 'Your date is still to be chosen.';
+  if (d) {
+    const n = days(t, d);
+    line = n > 1 ? '<b>' + n + ' days</b> until ' + fmtDate(d)
+      : n === 1 ? '<b>Tomorrow.</b> ' + fmtDate(d)
+      : n === 0 ? '<b>Today is the day.</b>'
+      : 'Married on ' + fmtDate(d);
+  }
+  $('#countLine').innerHTML = line;
+  const np = nextPayment();
+  $('#nextPay').textContent = np && phase() === 'before' ? 'Next payment: ' + np.name + ', ' + money(np.left) + ' on ' + fmtShort(np.d) : '';
+  const ph = phase();
+  document.querySelectorAll('.phases button').forEach(b => b.setAttribute('aria-selected', b.dataset.phase === ph));
+  const cur = S.tab[ph];
+  $('#tabs').innerHTML = TABS[ph].map(([id, label]) => `<button role="tab" data-tab="${id}" aria-selected="${id === cur}">${label}</button>`).join('');
+  $('#tabs').querySelectorAll('button').forEach(b => b.onclick = () => { S.tab[ph] = b.dataset.tab; save(); renderAll(); });
+  const act = $('#tabs').querySelector('[aria-selected="true"]'); if (act) act.scrollIntoView({ block:'nearest', inline:'center' });
+  $('#view').innerHTML = (VIEWS[cur] || VIEWS.checklist)();
+  (AFTER[cur] || (() => {}))();
+}
+
+/* ---------- generic binding: data-path="a.b.0.c" data-kind="num|str" ---------- */
+function setPath(path, val) {
+  const ks = path.split('.'); let o = S;
+  for (let i = 0; i < ks.length - 1; i++) o = o[ks[i]];
+  o[ks[ks.length - 1]] = val;
+}
+document.addEventListener('input', e => {
+  const el = e.target.closest('[data-path]'); if (!el) return;
+  setPath(el.dataset.path, el.dataset.kind === 'num' ? num(el.value) : el.value);
+  save();
+  if (el.dataset.path.startsWith('budget')) budgetSums();
+  if (el.dataset.path.startsWith('keep')) keepSums();
+  if (el.dataset.path.startsWith('links')) linkButtons();
+});
+
+/* ---------- views ---------- */
+const VIEWS = {}, AFTER = {};
+const head = (title, lede) => `<h2 class="section">${title}</h2>${lede ? `<p class="lede">${lede}</p>` : ''}`;
+const tick = (on, act, id, label) => `<button class="tick" role="checkbox" aria-checked="${!!on}" aria-label="${esc(label)}" data-act="${act}" data-id="${id}"></button>`;
+
+/* Checklist */
+const open = new Set();
+const BUCKETS = [[12, 'A year or more before'], [9, 'Nine to twelve months before'], [6, 'Six to nine months before'], [3, 'Three to six months before'], [0, 'The final months']];
+function dueBy(m) { const d = parseDate(S.date); if (!d) return null; const x = new Date(d); x.setMonth(x.getMonth() - m); return x; }
+VIEWS.checklist = () => {
+  const L = S.checklist, done = L.filter(i => i.done).length;
+  let h = head('Your checklist', 'Everything that needs a yes before the day, in the order it usually happens. Tick it off as you go, and tap any line to keep a note.');
+  h += `<div class="progress"><div class="bar"><i style="width:${L.length ? done / L.length * 100 : 0}%"></i></div><span class="caps">${done} of ${L.length} done</span></div>`;
+  BUCKETS.forEach(([min, label], bi) => {
+    const max = bi ? BUCKETS[bi - 1][0] : Infinity;
+    const items = L.map((it, i) => [it, i]).filter(([it]) => it.m >= min && it.m < max);
+    if (!items.length) return;
+    h += `<div class="group"><h3 class="sub">${label}</h3>`;
+    items.forEach(([it, i]) => {
+      const by = dueBy(it.m), isOpen = open.has(it.id);
+      const meta = [by ? 'By ' + fmtMonth(by) : '', it.note && !isOpen ? `<span class="noteline">${esc(it.note)}</span>` : ''].filter(Boolean).join(' · ');
+      h += `<div class="item${it.done ? ' done' : ''}">
+        <div class="item-head">${tick(it.done, 'tick', it.id, it.t)}
+          <div class="item-main" data-act="open" data-id="${it.id}"><div class="item-title">${esc(it.t)}</div>${meta ? `<div class="item-meta">${meta}</div>` : ''}</div>
+        </div>`;
+      if (isOpen) {
+        h += `<div class="item-body">${it.hint ? `<p>${esc(it.hint)}</p>` : ''}
+          <div class="grid">
+            <div><label>Note</label><textarea data-path="checklist.${i}.note" placeholder="Who, how much, what was decided">${esc(it.note)}</textarea></div>
+            <div><label>When</label><select data-act="when" data-id="${it.id}">${[14, 13, 12, 10, 9, 8, 6, 4, 3, 2, 1, 0].map(m => `<option value="${m}"${m === it.m ? ' selected' : ''}>${m ? m + (m === 1 ? ' month' : ' months') + ' before' : 'The last weeks'}</option>`).join('')}</select></div>
+          </div>
+          <div class="row-actions">${it.go ? `<button class="btn small" data-act="go" data-id="${it.go}">→ ${esc(TABS.before.find(t => t[0] === it.go)[1])}</button>` : ''}<button class="btn ghost small" data-act="delItem" data-id="${it.id}">Remove</button></div>
+        </div>`;
+      }
+      h += '</div>';
+    });
+    h += '</div>';
+  });
+  h += `<form class="add-line" data-form="addItem"><input name="t" placeholder="Add something of your own" required><button class="btn small">Add</button></form>`;
+  return h;
+};
+
+/* Budget */
+function nextPayment() {
+  const t = today(); let best = null;
+  S.budget.cats.forEach(c => c.lines.forEach(l => {
+    const d = parseDate(l.due); if (!d || l.paid) return;
+    const left = Math.max(0, (l.plan || 0) - (l.act || 0)) || l.plan || 0;
+    if (!best || d < best.d) best = { name:l.name, d, left, late: d < t };
+  }));
+  return best;
+}
+VIEWS.budget = () => {
+  const B = S.budget;
+  let h = head('Your budget', 'Write what you plan to spend, then what you actually spent as the bills come in. We started you with the usual costs of a Montréal wedding; change any line to fit yours.');
+  h += `<div class="tiles">
+    <div class="tile"><label for="btotal">Our budget</label><input id="btotal" inputmode="decimal" data-path="budget.total" data-kind="num" value="${B.total || ''}" placeholder="$0"></div>
+    <div class="tile"><div class="label">Planned</div><div class="val" id="sPlan"></div></div>
+    <div class="tile"><div class="label">Spent</div><div class="val" id="sAct"></div></div>
+    <div class="tile"><div class="label">Still to pay</div><div class="val" id="sLeft"></div></div>
+  </div><p class="verdict" id="verdict"></p>`;
+  h += `<h3 class="sub">Coming up</h3><ul class="pay-list" id="payList"></ul>`;
+  B.cats.forEach((c, ci) => {
+    h += `<div class="cat"><div class="cat-head"><input aria-label="Category name" data-path="budget.cats.${ci}.name" value="${esc(c.name)}"><span class="sum" id="cs-${c.id}"></span><button class="x" title="Remove category" data-act="delCat" data-id="${c.id}">×</button></div>
+      <div class="lines-head"><span>Item</span><span style="text-align:right">Planned</span><span style="text-align:right">Spent</span><span>Payment due</span><span style="text-align:center">Paid</span><span></span></div>`;
+    c.lines.forEach((l, li) => {
+      const p = `budget.cats.${ci}.lines.${li}`;
+      h += `<div class="bline">
+        <div class="nm"><input aria-label="Item" data-path="${p}.name" value="${esc(l.name)}"></div>
+        <div class="pl"><span class="lab">Planned</span><input class="money" inputmode="decimal" data-path="${p}.plan" data-kind="num" value="${l.plan || ''}" placeholder="0"></div>
+        <div class="ac"><span class="lab">Spent</span><input class="money" inputmode="decimal" data-path="${p}.act" data-kind="num" value="${l.act || ''}" placeholder="0"></div>
+        <div class="due"><span class="lab">Payment due</span><input type="date" data-path="${p}.due" value="${esc(l.due)}"></div>
+        <div class="paid"><span class="lab">Paid</span>${tick(l.paid, 'paid', l.id, 'Paid')}</div>
+        <button class="x" title="Remove line" data-act="delLine" data-id="${l.id}">×</button>
+      </div>`;
+    });
+    h += `<button class="linkish" style="margin-top:12px" data-act="addLine" data-id="${c.id}">+ Add a line</button></div>`;
+  });
+  h += `<form class="add-line" data-form="addCat" style="margin-top:40px"><input name="t" placeholder="Add a category" required><button class="btn small">Add</button></form>`;
+  return h;
+};
+function budgetSums() {
+  if (!$('#sPlan')) return;
+  let P = 0, A = 0;
+  S.budget.cats.forEach(c => {
+    let p = 0, a = 0; c.lines.forEach(l => { p += l.plan || 0; a += l.act || 0; });
+    P += p; A += a;
+    const el = document.getElementById('cs-' + c.id); if (el) el.textContent = money(p) + ' planned · ' + money(a) + ' spent';
+  });
+  const T = S.budget.total || 0;
+  $('#sPlan').textContent = money(P); $('#sAct').textContent = money(A); $('#sLeft').textContent = money(Math.max(0, P - A));
+  $('#verdict').textContent = !T ? 'Write your total budget above and we will tell you how your plan compares.'
+    : P > T ? 'Your plan is ' + money(P - T) + ' over your budget. Something will need to give.'
+    : 'Your plan fits, with ' + money(T - P) + ' to spare.';
+  const t = today(), up = [];
+  S.budget.cats.forEach(c => c.lines.forEach(l => { const d = parseDate(l.due); if (d && !l.paid) up.push({ l, d }); }));
+  up.sort((x, y) => x.d - y.d);
+  $('#payList').innerHTML = up.length ? up.slice(0, 6).map(({ l, d }) => {
+    const left = Math.max(0, (l.plan || 0) - (l.act || 0)) || l.plan || 0;
+    return `<li><span>${esc(l.name)} <span class="muted">${money(left)}</span></span><span class="when${d < t ? ' late' : ''}">${d < t ? 'Overdue · ' : ''}${fmtShort(d)}</span></li>`;
+  }).join('') : '<li class="muted serif" style="font-style:italic">Add a payment date to any line and it will appear here.</li>';
+  const np = nextPayment();
+  $('#nextPay').textContent = np ? 'Next payment: ' + np.name + ', ' + money(np.left) + ' on ' + fmtShort(np.d) : '';
+}
+AFTER.budget = budgetSums;
+
+/* Photography & Film */
+VIEWS.photo = () => head('Photography & Film', 'The way your day is remembered. Choose the hours, the film and the keepsakes that fit, see the price as you go, and send your choice straight to us.') + `
+  <div class="card"><h3>Design your coverage</h3><p>Photography, film, the Glam Studio and albums, each one chosen on its own or together. Nothing is booked until we have spoken.</p>
+    <a class="btn" href="package-builder.html" target="_blank" rel="noopener">→ Design your coverage</a></div>
+  <div class="card"><h3>Speak with us</h3><p class="note">Every wedding is its own story. If you would rather talk it through, we are a call or an email away.</p>
+    <div class="row-actions" style="margin-top:0"><a class="btn ghost" href="mailto:${STUDIO_EMAIL}">→ Write to us</a><a class="btn ghost" href="tel:5148874686">→ 514-887-4686</a></div></div>`;
+
+/* Day schedule */
+VIEWS.schedule = () => head('Your day, hour by hour', 'From getting ready to the last dance. Fill in the moments that apply to you and we build a schedule that you, your planner and our team all read from.') + `
+  <div class="card"><h3>Wedding Day Schedule</h3><p>Takes about twenty minutes. Times read best as 10:30 am, and anything left empty stays off the page. When it is ready, send it to us or print it.</p>
+    <a class="btn" href="wedding-schedule.html" target="_blank" rel="noopener">→ Build our schedule</a></div>
+  <div class="card"><h3>Before you start</h3><p class="note">Have your ceremony and reception times, the addresses where each of you gets ready, and your vendors' names close by. The vendors tab here keeps them in one place.</p>
+    <button class="btn ghost" data-act="go" data-id="vendors">→ Vendors</button></div>`;
+
+/* Family photos */
+const fill = t => t.replace(/\{A\}/g, S.names[0] || 'Partner one').replace(/\{B\}/g, S.names[1] || 'Partner two');
+VIEWS.family = () => {
+  let h = head('Family photos', 'The groupings move quickly when we know them ahead. Keep the ones you want, write the names so we can call people over, and tell us the moments you do not want missed.');
+  h += `<h3 class="sub">Groupings</h3>`;
+  S.family.groups.forEach((g, i) => {
+    h += `<div class="frow${g.on ? '' : ' off'}">${tick(g.on, 'grp', g.id, fill(g.t))}
+      <div class="t">${esc(fill(g.t))}</div>
+      <div class="names"><input data-path="family.groups.${i}.names" value="${esc(g.names)}" placeholder="Names"${g.on ? '' : ' disabled'}></div>
+      <button class="x" title="Remove" data-act="delGrp" data-id="${g.id}">×</button></div>`;
+  });
+  h += `<form class="add-line" data-form="addGrp"><input name="t" placeholder="Add a grouping, e.g. the two of you with the cousins" required><button class="btn small">Add</button></form>`;
+  h += `<h3 class="sub">Moments not to miss</h3><textarea data-path="family.moments" placeholder="The first look with Dad, Grandma's ring, the surprise dance">${esc(S.family.moments)}</textarea>`;
+  h += `<h3 class="sub">Good to know</h3><textarea data-path="family.notes" placeholder="Parents who prefer not to stand together, someone who needs a chair, a guest who is shy of the camera">${esc(S.family.notes)}</textarea>`;
+  h += `<div class="row-actions"><button class="btn" data-act="sendFamily">→ Send to de Belle Photography</button><button class="btn ghost" onclick="print()">Print</button></div>`;
+  return h;
+};
+
+/* Vendors */
+VIEWS.vendors = () => {
+  let h = head('Your vendors', 'Everyone who makes the day happen, in one place. Tap a number to call. Send the list to us and our team knows who to find on the day.');
+  S.vendors.forEach((v, i) => {
+    const p = 'vendors.' + i;
+    h += `<div class="vendor"><div class="top"><input aria-label="Role" data-path="${p}.role" value="${esc(v.role)}"><button class="x" title="Remove" data-act="delVendor" data-id="${v.id}">×</button></div>
+      <div class="grid">
+        <div><label>Name</label><input data-path="${p}.name" value="${esc(v.name)}" placeholder="Name or company"></div>
+        <div><label>Phone</label><input type="tel" data-path="${p}.phone" value="${esc(v.phone)}" placeholder="514-000-0000"></div>
+        <div><label>Email</label><input type="email" data-path="${p}.email" value="${esc(v.email)}" placeholder="name@email.com"></div>
+        <div class="full"><label>Note</label><input data-path="${p}.note" value="${esc(v.note)}" placeholder="Arrival time, deposit, anything to remember"></div>
+      </div>
+      <div class="quick">${v.phone ? `<a href="tel:${esc(v.phone.replace(/[^0-9+]/g, ''))}">Call</a>` : ''}${v.email ? `<a href="mailto:${esc(v.email)}">Email</a>` : ''}</div></div>`;
+  });
+  h += `<form class="add-line" data-form="addVendor"><input name="t" placeholder="Add a vendor, e.g. Photo booth" required><button class="btn small">Add</button></form>`;
+  h += `<div class="row-actions"><button class="btn" data-act="sendVendors">→ Send to de Belle Photography</button><button class="btn ghost" onclick="print()">Print</button></div>`;
+  return h;
+};
+
+/* Delivery */
+VIEWS.delivery = () => {
+  const d = parseDate(S.date), t = today();
+  let h = head('What happens next', 'Our usual timings after the wedding. We email you the moment each one is ready, and the dates below move with your wedding date.');
+  h += '<ol class="steps">';
+  DELIVERY.forEach(s => {
+    let when = 'When you are ready', reached = false;
+    if (s.days != null && d) { const x = new Date(d); x.setDate(x.getDate() + s.days); reached = x <= t; when = (s.days ? (reached ? 'Expected by ' : 'Expected around ') : '') + fmtDate(x); }
+    else if (s.days != null) when = s.days ? 'About ' + Math.round(s.days / 7) + ' weeks after' : 'Your date';
+    h += `<li class="${reached ? 'reached' : ''}"><div class="dot"></div><div><div class="t">${esc(s.t)}</div><div class="d">${esc(when)}</div><p>${esc(s.p)}</p></div></li>`;
+  });
+  h += '</ol>';
+  const gal = DELIVERY.find(s => s.id === 'gallery');
+  if (d && days(d, t) >= gal.days) h += `<div class="card" style="margin-top:20px"><h3>Have your photographs arrived?</h3><p class="note">If they have, we would love to hear what you think.</p><button class="btn" data-act="go" data-id="share">→ Share the love</button></div>`;
+  return h;
+};
+
+/* Reviews */
+const reviewView = (kind, title, lede, what) => head(title, lede) + `
+  <div class="card"><h3>Your private link</h3><p>${what} It arrives by email from ${STUDIO_EMAIL}. Paste it here once and it stays with your hub on this device.</p>
+    <label for="lnk-${kind}">Review link</label><input id="lnk-${kind}" data-path="links.${kind}" value="${esc(S.links[kind])}" placeholder="https://xavierdebelle.com/tools/...">
+    <div class="row-actions"><a class="btn" id="open-${kind}" target="_blank" rel="noopener">→ Open my review</a></div></div>
+  <div class="card"><h3>How it works</h3><p class="note">${kind === 'photo'
+    ? 'Click any spot on a photograph to leave a note right there. Approve the ones you love as they are. When we send a retouched version, it appears on the same link.'
+    : 'Pause the film wherever you like and write a note at that exact second. You can draw on the frame too. Each new cut appears on the same link, with your notes beside it.'}</p></div>`;
+VIEWS.photoreview = () => reviewView('photo', 'Photo review', 'Your retouching notes, pinned on the photographs themselves.', 'Once your gallery is ready we send a link to review your chosen photographs.');
+VIEWS.filmreview = () => reviewView('video', 'Film review', 'Your notes on the film, at the exact second they belong to.', 'When the first cut of your film is ready we send a link to watch it and leave notes.');
+function linkButtons() {
+  ['photo', 'video'].forEach(k => {
+    const b = document.getElementById('open-' + k); if (!b) return;
+    const ok = /^https:\/\//.test(S.links[k] || '');
+    b.hidden = !ok; if (ok) b.href = S.links[k];
+  });
+}
+AFTER.photoreview = AFTER.filmreview = linkButtons;
+
+/* Keepsakes */
+let SHOP = null;
+function buildShop(c) {
+  const d = (c && c.data) || {};
+  const list = v => Array.isArray(v) ? v : v && typeof v === 'object' ? Object.values(v) : [];
+  const albums = list(d.albums).length ? list(d.albums) : [
+    { id:'graphi', name:'Graphi Album', pricePerPage:65, min:24, format:'min. 24 pages · 9x13 or 12x12' },
+    { id:'matted', name:'Matted Album', pricePerPage:75, min:24, format:'min. 24 pages · 9x13 or 12x12' },
+    { id:'layflat', name:'Layflat Album', pricePerPage:30, min:24, format:'custom size' }];
+  const films = list(d.videoAddons).length ? list(d.videoAddons) : [
+    { id:'va_highlight_35', name:'3–5 Minute Highlight Film', price:600, desc:'Edited highlight with music.' },
+    { id:'va_highlight_510', name:'8–10 Minute Highlight Film', price:800, desc:'Extended highlight with music.' },
+    { id:'va_feature_20', name:'20-Minute Feature Film', price:1200, desc:'Full edited feature film with music.' },
+    { id:'va_supplements', name:'Video Supplements', price:300, desc:'Approx. 10 minutes of speeches, first dance and more.' },
+    { id:'va_reel', name:'Social Media Reel', price:150, desc:'IG / FB / TikTok reel.' }];
+  const extras = list(d.addons).length ? list(d.addons) : [
+    { id:'oa_slideshow', name:'Photo Slideshow', price:200, desc:'4–5 min slideshow, 80–100 images.' },
+    { id:'oa_parent_albums', name:'Parent Album Duplicates', price:500, desc:'One set of parent albums (4x5, 6x8, 8x10 for Graphi or Young Book).' },
+    { id:'oa_sleeve', name:'Graphi Sleeve for Album', price:150, desc:'Protective sleeve for Graphi or Young Book albums.' },
+    { id:'oa_layflat_addon', name:'24-Page Layflat Album (Add-on)', price:700, desc:'Compact layflat album, 24 pages.' }];
+  const fixed = x => ({ id:String(x.id), name:String(x.name), desc:noDash(x.desc), kind:'fixed', price:num(x.price) });
+  return [
+    { title:'Thank you cards', lede:'Your favourite photograph on the front, your words inside, printed on heavy cotton paper.', items:[
+      { id:'ty_cards', name:'Thank you cards', desc:'Designed with you from your gallery. Envelopes included.', kind:'qty', unit:'cards', min:25, price:null }] },
+    { title:'Albums', lede:'The story of the day, bound to be held. Priced by the page.', items:
+      albums.filter(x => x && x.id && x.name).map(x => ({ id:'al_' + x.id, name:String(x.name), desc:noDash(x.format), kind:'pages', ppp:num(x.pricePerPage), min:Math.max(1, Math.round(num(x.min) || 24)) }))
+      .concat(extras.filter(x => x && x.id && /album|sleeve/i.test(x.id + x.name)).map(fixed)) },
+    { title:'Film edits', lede:'More of the day in motion, cut from your footage.', items:
+      films.filter(x => x && x.id && x.name && !/asst|assistant/i.test(x.id + x.name)).map(fixed) },
+    { title:'And more', lede:'', items:
+      extras.filter(x => x && x.id && x.name && !/album|sleeve|asst|assistant|engagement/i.test(x.id + x.name)).map(fixed)
+      .concat([{ id:'prints', name:'Fine art prints', desc:'Your photographs on archival paper, framed or unframed, in any size.', kind:'request', price:null }]) },
+  ].filter(s => s.items.length);
+}
+function shop() {
+  if (!SHOP) {
+    let c = null; try { c = JSON.parse(localStorage.getItem(CATALOG_CACHE) || 'null'); } catch (e) {}
+    SHOP = buildShop(c);
+    fetch(CATALOG_URL, { cache:'no-store' }).then(r => r.ok ? r.json() : null).then(c => {
+      if (!c || !c.data) return;
+      try { localStorage.setItem(CATALOG_CACHE, JSON.stringify(c)); } catch (e) {}
+      SHOP = buildShop(c);
+      if (S.tab.after === 'keepsakes' && phase() === 'after') renderAll();
+    }).catch(() => {});
+  }
+  return SHOP;
+}
+const allItems = () => shop().flatMap(s => s.items);
+function priceOf(it, q) { return it.kind === 'pages' ? it.ppp * q : it.kind === 'fixed' ? it.price : it.price == null ? null : it.price * q; }
+function priceLabel(it) {
+  if (it.kind === 'pages') return money(it.ppp) + ' per page · from ' + money(it.ppp * it.min);
+  if (it.price == null) return 'Price on request';
+  return money(it.price);
+}
+VIEWS.keepsakes = () => {
+  const sel = S.keep.sel;
+  let h = head('Keepsakes', 'The day lives on in the things you can hold and the films you watch again. Choose what you would like, and we will be in touch to finish the details.');
+  shop().forEach(s => {
+    h += `<h3 class="sub">${esc(s.title)}</h3>${s.lede ? `<p class="serif" style="font-style:italic;margin:-4px 0 18px">${esc(s.lede)}</p>` : ''}<div class="shop">`;
+    s.items.forEach(it => {
+      const on = sel[it.id] != null;
+      const q = on ? sel[it.id] : (it.min || 1);
+      h += `<div class="prod${on ? ' on' : ''}"><h4>${esc(it.name)}</h4><div class="price">${priceLabel(it)}</div><p>${esc(it.desc)}</p>
+        ${it.kind === 'pages' || it.kind === 'qty' ? `<div class="qty"><input type="number" inputmode="numeric" min="${it.min}" step="${it.kind === 'pages' ? 2 : 5}" value="${q}" data-act="qty" data-id="${it.id}" aria-label="${it.kind === 'pages' ? 'Pages' : 'Quantity'}"><span>${it.kind === 'pages' ? 'pages' : it.unit}</span></div>` : ''}
+        <div><button class="btn small${on ? '' : ' ghost'}" data-act="pick" data-id="${it.id}">${on ? 'Added' : '→ Add'}</button></div></div>`;
+    });
+    h += '</div>';
+  });
+  h += `<div class="order"><h3 class="sub" style="margin-top:0">Your request</h3><div id="orderLines"></div>
+    <label for="kmsg" style="margin-top:22px">A note for us</label><textarea id="kmsg" data-path="keep.msg" placeholder="Sizes, the photographs you love, a date you would like it by">${esc(S.keep.msg)}</textarea>
+    <div class="row-actions"><button class="btn" data-act="sendKeep">→ Send our request</button></div>
+    <p class="muted" style="font-size:13px;margin-top:14px">Prices are an estimate before taxes. Nothing is charged until we confirm with you.</p></div>`;
+  return h;
+};
+function keepSums() {
+  const box = $('#orderLines'); if (!box) return;
+  const items = allItems().filter(it => S.keep.sel[it.id] != null);
+  if (!items.length) { box.innerHTML = '<p class="serif muted" style="font-style:italic">Nothing chosen yet.</p>'; return; }
+  let tot = 0, req = false;
+  box.innerHTML = items.map(it => {
+    const q = S.keep.sel[it.id], p = priceOf(it, q);
+    if (p == null) req = true; else tot += p;
+    const what = it.kind === 'pages' ? ', ' + q + ' pages' : it.kind === 'qty' ? ', ' + q + ' ' + it.unit : '';
+    return `<div class="order-line"><span>${esc(it.name + what)}</span><span>${p == null ? 'On request' : money(p)}</span></div>`;
+  }).join('') + `<div class="order-total"><span>Estimate</span><span>${money(tot)}${req ? ' +' : ''}</span></div>`;
+}
+AFTER.keepsakes = keepSums;
+
+/* Share */
+VIEWS.share = () => head('Share the love', 'If your photographs and film moved you, a few words from you mean more to the next couple than anything we could say.') + `
+  <div class="card"><h3>Leave us a review</h3><p>Two minutes on Google helps other couples find us, and we read every one.</p>
+    <a class="btn" href="${REVIEW_URL}" target="_blank" rel="noopener">→ Write a review</a></div>
+  <div class="card"><h3>Know a couple getting married?</h3><p>Send them our way. We would be honoured to tell their story too.</p>
+    <button class="btn ghost" data-act="refer">→ Tell a friend</button></div>
+  <div class="card"><h3>Tag us</h3><p class="note">When you share your photographs, tag @debellephotography so we can see them out in the world.</p>
+    <a class="btn ghost" href="https://www.instagram.com/debellephotography/" target="_blank" rel="noopener">→ Instagram</a></div>`;
+
+/* ---------- actions ---------- */
+const findIn = (arr, id) => arr.findIndex(x => x.id === id);
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-act]'); if (!el || el.tagName === 'SELECT' || (el.tagName === 'INPUT')) return;
+  const id = el.dataset.id, a = el.dataset.act;
+  const C = S.checklist;
+  switch (a) {
+    case 'tick': { const it = C[findIn(C, id)]; it.done = !it.done; break; }
+    case 'open': open.has(id) ? open.delete(id) : open.add(id); renderAll(); return;
+    case 'go': go(id); return;
+    case 'delItem': if (!confirm('Remove this from your checklist?')) return; C.splice(findIn(C, id), 1); break;
+    case 'paid': S.budget.cats.forEach(c => c.lines.forEach(l => { if (l.id === id) l.paid = !l.paid; })); break;
+    case 'delLine': S.budget.cats.forEach(c => { const i = findIn(c.lines, id); if (i > -1) c.lines.splice(i, 1); }); break;
+    case 'addLine': { const c = S.budget.cats[findIn(S.budget.cats, id)]; const l = { id:uid(), name:'', plan:0, act:0, due:'', paid:false }; c.lines.push(l); save(); renderAll(); document.querySelector(`[data-path="budget.cats.${S.budget.cats.indexOf(c)}.lines.${c.lines.length - 1}.name"]`).focus(); return; }
+    case 'delCat': { const i = findIn(S.budget.cats, id); if (!confirm('Remove "' + S.budget.cats[i].name + '" and all its lines?')) return; S.budget.cats.splice(i, 1); break; }
+    case 'grp': { const g = S.family.groups[findIn(S.family.groups, id)]; g.on = !g.on; break; }
+    case 'delGrp': S.family.groups.splice(findIn(S.family.groups, id), 1); break;
+    case 'delVendor': if (!confirm('Remove this vendor?')) return; S.vendors.splice(findIn(S.vendors, id), 1); break;
+    case 'pick': { const it = allItems().find(x => x.id === id); if (S.keep.sel[id] != null) delete S.keep.sel[id]; else { const q = el.closest('.prod').querySelector('input'); S.keep.sel[id] = q ? Math.max(it.min, num(q.value)) : 1; } break; }
+    case 'sendFamily': return sendFamily();
+    case 'sendVendors': return sendVendors();
+    case 'sendKeep': return sendKeep();
+    case 'refer': return refer();
+    default: return;
+  }
+  save(); renderAll();
+});
+document.addEventListener('change', e => {
+  const el = e.target;
+  if (el.dataset.act === 'when') { const it = S.checklist[findIn(S.checklist, el.dataset.id)]; it.m = +el.value; save(); renderAll(); }
+  if (el.dataset.act === 'qty') { const it = allItems().find(x => x.id === el.dataset.id); const q = Math.max(it.min || 1, Math.round(num(el.value))); el.value = q; if (S.keep.sel[it.id] != null) { S.keep.sel[it.id] = q; save(); } keepSums(); }
+});
+document.addEventListener('submit', e => {
+  const f = e.target.closest('[data-form]'); if (!f) return;
+  e.preventDefault();
+  const t = f.t.value.trim(); if (!t) return;
+  switch (f.dataset.form) {
+    case 'addItem': S.checklist.push({ id:uid(), t, m:1, hint:'', go:'', done:false, note:'' }); break;
+    case 'addCat': S.budget.cats.push({ id:uid(), name:t, lines:[{ id:uid(), name:'', plan:0, act:0, due:'', paid:false }] }); break;
+    case 'addGrp': S.family.groups.push({ id:uid(), t, names:'', on:true }); break;
+    case 'addVendor': S.vendors.push({ id:uid(), role:t, name:'', phone:'', email:'', note:'' }); break;
+  }
+  save(); renderAll();
+});
+
+/* ---------- emails ---------- */
+const who = () => S.names.filter(Boolean).join(' & ');
+const dateLine = () => { const d = parseDate(S.date); return d ? 'Wedding date: ' + fmtDate(d) : 'Wedding date: to be confirmed'; };
+function sendFamily() {
+  const g = S.family.groups.filter(x => x.on);
+  mail('Family photos for ' + who(), [who(), dateLine(), '', 'GROUPINGS', ...g.map((x, i) => (i + 1) + '. ' + fill(x.t) + (x.names ? ': ' + x.names : '')), '',
+    'MOMENTS NOT TO MISS', S.family.moments || '(none yet)', '', 'GOOD TO KNOW', S.family.notes || '(nothing)'].join('\n'));
+}
+function sendVendors() {
+  const v = S.vendors.filter(x => x.name || x.phone || x.email);
+  if (!v.length) { toast('Add at least one vendor first'); return; }
+  mail('Our vendors, ' + who(), [who(), dateLine(), '', ...v.map(x => [x.role.toUpperCase(), x.name, x.phone, x.email, x.note].filter(Boolean).join('\n') + '\n')].join('\n'));
+}
+function sendKeep() {
+  const items = allItems().filter(it => S.keep.sel[it.id] != null);
+  if (!items.length) { toast('Choose something first'); return; }
+  let tot = 0;
+  const lines = items.map(it => { const q = S.keep.sel[it.id], p = priceOf(it, q); if (p != null) tot += p;
+    return it.name + (it.kind === 'pages' ? ', ' + q + ' pages' : it.kind === 'qty' ? ', ' + q + ' ' + it.unit : '') + ': ' + (p == null ? 'price on request' : money(p)); });
+  mail('Keepsakes for ' + who(), [who(), dateLine(), '', 'WE WOULD LIKE', ...lines, '', 'Estimate before taxes: ' + money(tot), '', S.keep.msg ? 'NOTE\n' + S.keep.msg : ''].join('\n'));
+  if (window.xdbTrack) xdbTrack('keepsake-request', { items: items.length });
+}
+function refer() {
+  const text = 'We loved working with de Belle Photography on our wedding. If you are planning yours, have a look: https://debellephotography.com';
+  if (navigator.share) navigator.share({ text }).catch(() => {});
+  else location.href = 'mailto:?subject=' + encodeURIComponent('Our wedding photographers') + '&body=' + encodeURIComponent(text);
+}
+
+boot();
+</script>
+</body>
+</html>

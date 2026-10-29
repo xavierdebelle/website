@@ -5,6 +5,33 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v129 — 2026-10-29
+
+**Wedding Hub — `tools/wedding-hub.html`, source `Tools files/de Belle Photography apps/wedding-hub-v1.html` (new, unlisted, test build)**
+- A hub for de Belle couples in the de Belle Photography design system, behind
+  a soft password gate (FNV hash in the page, unlock kept in
+  `debelle.weddinghub.unlocked`). Not real protection: the page is public.
+- Before the wedding: Checklist (Xavier's 10 items + plan the day + family
+  photo list, dates from the wedding date), Budget (Planned/Spent, Montréal
+  presets, payment due dates, Paid, "Coming up", next payment in the header),
+  Photography & Film (→ Package Builder), Day Schedule (→ Wedding Day
+  Schedule), Family Photos (groupings with the couple's names, mailto the
+  studio), Vendors (call/email links, mailto the studio).
+- After the wedding: Delivery timeline (constants `DELIVERY`: 7 / 56 / 112
+  days), Photo and Film Review (couple pastes the private link), Keepsakes
+  (live prices from `catalog/package-builder`, read-only, cached under the
+  Package Builder's key; estimate + mailto request), Share the Love.
+- Data: this browser only (`debelle.weddinghub.v1`), Save/Load a copy as .json.
+- No card: companion of `wedding-schedule.html` (`xdb-companion`), noindex.
+  No visitor-facing What's New entry.
+- Scan: hosts xavierdebelle.com, debellephotography.com, Google, Instagram,
+  the public catalog read; studio email/phone already public.
+- Tested locally in the browser pane: gate (wrong/right password), setup,
+  checklist tick + note, budget totals / verdict / payments, family, keepsakes
+  estimate with live catalog, review links; phone layout at 375 px. No console errors.
+
+---
+
 ## v128 — 2026-10-26
 
 **What's new** · Update · [tools/pipelines.html]
