@@ -5,6 +5,15 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v130 — 2026-10-29
+
+**Tools page — Wedding Hub card in The Biz**
+- `tools/wedding-hub.html` now has its own card (before the Wedding Day
+  Schedule) and is no longer a companion page. Still `noindex, nofollow`,
+  so search engines leave it out; still behind the test password.
+
+---
+
 ## v129 — 2026-10-29
 
 **Wedding Hub — `tools/wedding-hub.html`, source `Tools files/de Belle Photography apps/wedding-hub-v1.html` (new, unlisted, test build)**
