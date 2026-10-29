@@ -27,6 +27,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#E8232D">
 <script src="pwa.js" data-app="project-tracker"></script>
+<script src="drive-files.js"></script>   <!-- attach files from Google Drive: project files, meeting notes -->
 <style>
 @import url("https://use.typekit.net/zxm4vjv.css");
 @import url("https://fonts.googleapis.com/css2?family=Inter+Tight:wght@300;400;500;600;700;800&display=swap");
@@ -408,6 +409,36 @@ body.view .client-grid{grid-template-columns:1fr}
 .rich-box[data-for="nt-body"]{min-height:260px;line-height:1.5}
 .rich-box[data-for="nt-title"]{width:100%}
 
+/* ---------- files (Google Drive) ---------- */
+#panel-files.on{background:var(--card);padding:32px;color:var(--ink)}
+.tab-count.dark{background:var(--ttt-white);color:var(--ttt-black)}
+.flist{list-style:none;margin:0;padding:0;border-top:1px solid var(--line)}
+.frow{display:flex;align-items:center;gap:10px;padding:9px 2px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.fname{display:flex;align-items:center;gap:8px;flex:1 1 220px;min-width:0;color:var(--ink);text-decoration:none;font-weight:600}
+.fname span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fname:hover{color:var(--ttt-red)}
+.fname svg{flex:none;color:var(--muted)}
+.fmeta{font-size:12px;color:var(--muted);white-space:nowrap}
+.fshare{border:1px solid #cfc7c7;background:var(--card);color:var(--ttt-gray-700);padding:5px 8px;font:700 10px/1 var(--ttt-font-wide);letter-spacing:.05em;text-transform:uppercase;min-width:74px}
+.fshare:hover{border-color:var(--ttt-black);color:var(--ttt-black)}
+.fshare.on{background:var(--ttt-yellow);border-color:var(--ttt-yellow);color:var(--ttt-black)}
+.fstatus{display:none;margin:0 0 10px;padding:9px 12px;background:var(--bg);font-size:13px;line-height:1.45}
+.fstatus.on{display:block}
+.fstatus .btn{margin-left:8px;padding:5px 10px}
+.pf-note{margin-top:16px}
+.pf-note .note-head{margin-bottom:8px}
+.pf-note-title{font-weight:700}
+.nfiles{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:8px}
+.nfiles a{display:inline-flex;align-items:center;gap:5px;font-size:13px;color:var(--ink);text-decoration:none;font-weight:600}
+.nfiles a:hover{color:var(--ttt-red)}
+.nt-files{margin-top:14px}
+.nt-files-head{display:flex;align-items:center;gap:12px;margin-bottom:6px}
+.nt-files-head .lbl{font:700 10px/1.2 var(--ttt-font-wide);letter-spacing:.07em;text-transform:uppercase;color:var(--ttt-black)}
+.nt-files-head .btn{padding-left:0;display:inline-flex;align-items:center;gap:6px}
+.nt-files .flist:empty{border-top:0}
+body.view #tab-files,body.view #panel-files{display:none!important}
+@media (max-width:760px){#panel-files.on{padding:22px 16px}}
+
 /* ---------- search, across every project ---------- */
 .search{position:relative}
 .topbar .search input{background:var(--ttt-ink);color:var(--ttt-white);border:1px solid var(--ttt-gray-700);width:200px;font:inherit;padding:8px 10px}
@@ -482,6 +513,7 @@ body.view .client-grid{grid-template-columns:1fr}
     <button class="tab on" id="tab-board">Board</button>
     <button class="tab" id="tab-report">Report</button>
     <button class="tab" id="tab-client"><span id="tab-client-label">Client</span><span class="tab-count" id="tab-client-count" hidden></span></button>
+    <button class="tab" id="tab-files">Files<span class="tab-count dark" id="tab-files-count" hidden></span></button>
   </div>
 
   <section class="panel on" id="panel-board">
@@ -585,6 +617,19 @@ body.view .client-grid{grid-template-columns:1fr}
       <div id="nt-list"></div>
     </div>
   </section>
+
+  <!-- Files: documents for the whole project, plus what's attached to
+       meeting notes. They live in your Google Drive (drive-files.js). -->
+  <section class="panel" id="panel-files">
+    <div class="cblock-head">
+      <h3 class="section-title">Project files</h3>
+      <button class="btn primary" type="button" id="pf-up">+ Upload files</button>
+    </div>
+    <p class="cblock-sub" id="pf-where">Saved in your Google Drive. Only you can open them, unless you share one.</p>
+    <div class="fstatus" id="pf-status" aria-live="polite"></div>
+    <ul class="flist" id="pf-list"></ul>
+    <div id="pf-notes"></div>
+  </section>
 </div>
 
 <div id="modal-overlay" class="">
@@ -687,6 +732,7 @@ function normalise(s) {
       homework: normaliseHomework(p.homework),
       agenda: normaliseAgenda(p.agenda),
       notes: normaliseNotes(p.notes),
+      files: driveList(p.files),
       phases: (p.phases || []).map(function (ph) {
         return {
           id: ph.id || uid('ph'),
@@ -752,11 +798,16 @@ function normaliseAgenda(v) {
              done: !!a.done, at: Number(a.at) || 0 };
   });
 }
+// attached Drive files — the record only (see drive-files.js)
+function driveList(v) {
+  if (window.xdbDrive) return xdbDrive.list(v);
+  return Array.isArray(v) ? v.filter(function (f) { return f && f.id; }) : [];
+}
 function normaliseNotes(v) {
   return clientList(v).filter(function (n) { return n && (String(n.title || '').trim() || String(n.body || '').trim()); }).map(function (n) {
     return { id: n.id || uid('nt'), date: dayKeyOk(n.date) || dateKey(Number(n.at) || Date.now()),
              title: String(n.title || '').trim(), body: String(n.body || ''), at: Number(n.at) || 0,
-             updatedAt: Number(n.updatedAt) || 0 };
+             updatedAt: Number(n.updatedAt) || 0, files: driveList(n.files) };
   });
 }
 
@@ -915,6 +966,7 @@ var ICO = {
   up: svgIcon('M8 12.8V3.6M4.4 7.2L8 3.6l3.6 3.6'),
   down: svgIcon('M8 3.2v9.2M4.4 8.8L8 12.4l3.6-3.6'),
   chev: svgIcon('M6.2 3.4L10.8 8l-4.6 4.6'),
+  clip: svgIcon('M10.6 5.2L6 9.8a1.3 1.3 0 0 0 1.9 1.9l5-5a2.7 2.7 0 0 0-3.8-3.8l-5.1 5.1a4 4 0 0 0 5.7 5.7l4.2-4.2'),
   note: svgIcon('M3.5 2.5h9v11h-9zM5.6 5.6h4.8M5.6 8h4.8M5.6 10.4h3'),
   split: svgIcon('M4.4 5.6a1.7 1.7 0 1 1 0-3.4 1.7 1.7 0 0 1 0 3.4zM4.4 13.8a1.7 1.7 0 1 1 0-3.4 1.7 1.7 0 0 1 0 3.4zM5.9 4.9l7.6 6.6M5.9 11.1l7.6-6.6'),
   grip: '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false">' +
@@ -1186,7 +1238,11 @@ function openModal(title, bodyHTML, onSave, focusId) {
   var f = focusId && $(focusId);
   if (f) { f.focus(); if (f.select) f.select(); }
 }
+var modalSaved = false, modalOnClose = null;   // modalOnClose(saved) — e.g. a new note's files
 function closeModal() {
+  var after = modalOnClose, saved = modalSaved;
+  modalOnClose = null; modalSaved = false;
+  if (after) after(saved);
   split = null;
   $('modal').classList.remove('wide');
   pendingImport = null;
@@ -1201,7 +1257,7 @@ function modalError(msg) {
 }
 $('modal').addEventListener('submit', function (ev) {
   ev.preventDefault();
-  if (modalSave && modalSave() !== false) { closeModal(); render(); }
+  if (modalSave && modalSave() !== false) { modalSaved = true; closeModal(); render(); }
 });
 $('modal-cancel').addEventListener('click', closeModal);
 $('modal-overlay').addEventListener('mousedown', function (ev) {
@@ -1273,6 +1329,7 @@ function render() {
   renderLog();
   renderReport();
   renderClient();
+  renderFiles();
   paintShare();
 }
 
@@ -2533,6 +2590,8 @@ function renderClient() {
       '<div class="note-head"><span class="note-date">' + esc(fmtDate(keyToMs(n.date))) + '</span>' +
       '<span class="note-title">' + fmt(n.title || 'Meeting') + '</span>' + itemActs('nt') + '</div>' +
       (n.body.trim() ? '<div class="note-body">' + fmt(n.body) + '</div><button type="button" class="note-more" data-act="nt-more" hidden>Show all</button>' : '') +
+      (n.files.length ? '<div class="nfiles">' + n.files.map(function (fl) {
+        return '<a href="' + esc(fl.link) + '" target="_blank" rel="noopener" title="Open in Google Drive">' + ICO.clip + esc(fl.name) + '</a>'; }).join('') + '</div>' : '') +
       '</article>';
   }).join('') : '<div class="cempty">No notes yet. Start one before or during your next meeting.</div>';
   Array.prototype.forEach.call(document.querySelectorAll('#nt-list .note'), function (el) {
@@ -2695,6 +2754,126 @@ function wireNoteToStep(p) {
     if (ev.key === 'Enter') { ev.preventDefault(); add(); }      // not the note's Save
   });
 }
+/* ============================================================
+   Files — records of documents in Google Drive (drive-files.js)
+   ============================================================ */
+var noteDraft = null;          // a new note's files while its dialog is open
+function filesHTML(files, scope) {
+  return files.map(function (fl) {
+    return '<li class="frow" data-fid="' + esc(fl.id) + '" data-scope="' + esc(scope) + '">' +
+      '<a class="fname" href="' + esc(fl.link) + '" target="_blank" rel="noopener" title="Open in Google Drive">' + ICO.clip + '<span>' + esc(fl.name) + '</span></a>' +
+      '<span class="fmeta">' + esc([window.xdbDrive ? xdbDrive.size(fl.size) : '', fl.at ? fmtDate(fl.at) : ''].filter(Boolean).join(' · ')) + '</span>' +
+      '<button type="button" class="fshare' + (fl.shared ? ' on' : '') + '" data-fact="share" title="' +
+        (fl.shared ? 'Anyone with the link can view it. Click to make it private.' : 'Only you can open it. Click to let anyone with the link view it.') + '">' +
+        (fl.shared ? 'Shared' : 'Only me') + '</button>' +
+      '<button type="button" class="icon del" data-fact="unlink" title="Remove from this list (the file stays in your Drive)">' + ICO.trash + '</button>' +
+      '</li>';
+  }).join('');
+}
+function filesOf(scope) {
+  var p = currentProject();
+  if (!p) return null;
+  if (scope === 'p') return p.files;
+  if (scope === 'draft') return noteDraft;
+  var n = (p.notes || []).filter(function (x) { return 'n:' + x.id === scope; })[0];
+  return n ? n.files : null;
+}
+function drivePath(p) { return [{ name: 'Project Phases', key: 'pp' }, { name: plain(p.name), key: 'pp.' + p.id }]; }
+// choose files, upload them one by one into `target`; refresh() after each
+function attachFiles(target, status, refresh) {
+  var p = currentProject();
+  if (!p || VIEW) return;
+  if (!window.xdbDrive) { status.textContent = 'Couldn’t load the Google Drive part of this page — check the connection and reload.'; return; }
+  xdbDrive.choose().then(function (files) { if (files.length) uploadQueue(files, target, status, refresh, drivePath(p)); });
+}
+function uploadQueue(files, target, status, refresh, path) {
+  var i = 0;
+  status.className = 'fstatus on';
+  (function next() {
+    if (i >= files.length) { status.textContent = files.length === 1 ? 'Uploaded.' : 'Uploaded ' + files.length + ' files.'; setTimeout(function () { status.className = 'fstatus'; }, 2500); return; }
+    var file = files[i], of = files.length > 1 ? ' (' + (i + 1) + ' of ' + files.length + ')' : '';
+    xdbDrive.upload(file, path, function (frac, msg) { status.textContent = msg + of; }).then(function (rec) {
+      target.push(rec);
+      save();
+      refresh();
+      i++;
+      next();
+    }, function (err) {
+      if (err && err.needsClick) {
+        // Google's window needs a click of its own to open
+        status.innerHTML = 'Google Drive needs one click to connect. <button type="button" class="btn">Connect Google Drive</button>';
+        status.querySelector('button').addEventListener('click', function () {
+          xdbDrive.token().then(function () { next(); }, function (e) { status.textContent = 'Not uploaded: ' + e.message; });
+        });
+        return;
+      }
+      status.textContent = 'Not uploaded: ' + (err && err.message || 'something went wrong') + '.';
+    });
+  })();
+}
+// Share / Only me, and remove — anywhere a file row is shown
+document.addEventListener('click', function (ev) {
+  var b = ev.target.closest && ev.target.closest('[data-fact]');
+  if (!b || VIEW) return;
+  var row = b.closest('.frow'), list = filesOf(row.getAttribute('data-scope'));
+  var fl = list && list.filter(function (x) { return x.id === row.getAttribute('data-fid'); })[0];
+  if (!fl) return;
+  var redraw = function () {
+    var inModal = !!b.closest('#modal');
+    if (inModal && $('nt-flist')) $('nt-flist').innerHTML = filesHTML(list, row.getAttribute('data-scope'));
+    if (!inModal || row.getAttribute('data-scope') !== 'draft') render();
+  };
+  if (b.getAttribute('data-fact') === 'unlink') {
+    list.splice(list.indexOf(fl), 1);
+    save(); redraw();
+    flashFiles(b, '“' + fl.name + '” removed from the list — it’s still in your Google Drive.');
+    return;
+  }
+  b.disabled = true;
+  b.textContent = '…';
+  xdbDrive.share(fl.id, !fl.shared).then(function () {
+    fl.shared = !fl.shared;
+    save(); redraw();
+    if (fl.shared && navigator.clipboard) navigator.clipboard.writeText(fl.link).then(function () { flashFiles(b, 'Link copied — anyone with it can view “' + fl.name + '”.'); }, function () {});
+  }, function (err) {
+    b.disabled = false; b.textContent = fl.shared ? 'Shared' : 'Only me';
+    flashFiles(b, 'Couldn’t change sharing: ' + err.message);
+  });
+});
+function flashFiles(near, msg) {
+  var st = near.closest('#modal') ? $('nt-fstatus') : $('pf-status');
+  if (!st) return;
+  st.textContent = msg;
+  st.className = 'fstatus on';
+  clearTimeout(flashFiles.t);
+  flashFiles.t = setTimeout(function () { st.className = 'fstatus'; }, 4000);
+}
+function renderFiles() {
+  var p = currentProject();
+  var noteFiles = p ? (p.notes || []).reduce(function (n, x) { return n + x.files.length; }, 0) : 0;
+  var total = p ? p.files.length + noteFiles : 0;
+  $('tab-files').hidden = !!VIEW;
+  $('tab-files-count').hidden = !total;
+  $('tab-files-count').textContent = total;
+  if (!p || VIEW) return;
+  $('pf-where').textContent = 'Saved in your Google Drive, in Project Phases / ' + plain(p.name) + '. Only you can open them, unless you share one.';
+  $('pf-list').innerHTML = p.files.length ? filesHTML(p.files, 'p')
+    : '<li class="cempty">No files yet. Contracts, briefs, mood boards — anything for this project.</li>';
+  var withFiles = (p.notes || []).filter(function (x) { return x.files.length; })
+    .sort(function (a, b) { return a.date === b.date ? b.at - a.at : (a.date < b.date ? 1 : -1); });
+  $('pf-notes').innerHTML = withFiles.length ? '<h3 class="section-title" style="margin-top:30px">From meeting notes</h3>' +
+    withFiles.map(function (x) {
+      return '<div class="pf-note"><div class="note-head"><span class="note-date">' + esc(fmtDate(keyToMs(x.date))) + '</span>' +
+        '<span class="pf-note-title">' + fmt(x.title || 'Meeting') + '</span></div>' +
+        '<ul class="flist">' + filesHTML(x.files, 'n:' + x.id) + '</ul></div>';
+    }).join('') : '';
+}
+$('pf-up').addEventListener('click', function () {
+  var p = currentProject();
+  if (p) attachFiles(p.files, $('pf-status'), render);
+});
+$('tab-files').addEventListener('mouseenter', function () { if (window.xdbDrive) xdbDrive.preload(); });
+
 function openNote(n) {
   var p = clientProject();
   if (!p) return;
@@ -2708,6 +2887,9 @@ function openNote(n) {
       '<div style="display:flex;gap:4px 16px;flex-wrap:wrap">' +
       (points.length ? '<button type="button" class="btn ghost" id="nt-insert" style="padding-left:0">Insert the ' + points.length + ' point' + (points.length === 1 ? '' : 's') + ' to discuss</button>' : '') +
       '<button type="button" class="btn ghost" id="nt-step-open" style="padding-left:0" title="Select text in the note first, or put the cursor on its line">+ Make a step</button></div>' +
+      '<div class="nt-files"><div class="nt-files-head"><span class="lbl">Files</span>' +
+        '<button type="button" class="btn ghost" id="nt-attach">' + ICO.clip + ' Attach a file</button></div>' +
+        '<div class="fstatus" id="nt-fstatus" aria-live="polite"></div><ul class="flist" id="nt-flist"></ul></div>' +
       '<div class="nt-step" id="nt-step">' +
         '<div class="nt-step-row">' +
           '<input type="text" class="rich" id="nt-step-name" placeholder="Step name" aria-label="New step name">' +
@@ -2722,12 +2904,27 @@ function openNote(n) {
       if (!title && !body.trim()) { modalError('Write something first.'); return false; }
       var date = dayKeyOk($('nt-date').value) || todayKey();
       if (n) { n.title = title; n.body = body; n.date = date; n.updatedAt = Date.now(); }
-      else p.notes.push({ id: uid('nt'), date: date, title: title, body: body, at: Date.now(), updatedAt: Date.now() });
+      else p.notes.push({ id: uid('nt'), date: date, title: title, body: body, at: Date.now(), updatedAt: Date.now(), files: draft });
       save();
       return true;
     }, n ? 'nt-body' : 'nt-title');
   $('modal').classList.add('wide');
   wireNoteToStep(p);
+  /* Files: an existing note gets them straight away; a new one holds them
+     until Save — and if it's never saved, they go to the project's files
+     rather than being lost (they're already in Drive). */
+  var draft = [], target = n ? (n.files = n.files || []) : draft;
+  var paint = function () { $('nt-flist').innerHTML = filesHTML(target, n ? 'n:' + n.id : 'draft'); };
+  noteDraft = draft;
+  paint();
+  if (!n) modalOnClose = function (saved) {
+    noteDraft = null;
+    if (!saved && draft.length) { p.files = p.files || []; Array.prototype.push.apply(p.files, draft); save(); render(); }
+  };
+  $('nt-attach').addEventListener('click', function () {
+    attachFiles(target, $('nt-fstatus'), function () { if (n) save(); if ($('nt-flist')) paint(); });
+  });
+  if (window.xdbDrive) xdbDrive.preload();
   var ins = $('nt-insert');
   if (ins) ins.addEventListener('click', function () {
     var ta = $('nt-body');
@@ -2862,8 +3059,14 @@ function searchAll(q) {
     (p.agenda || []).forEach(function (a) {
       if (hit(a.text, a.body)) out.push({ p: p, kind: 'To discuss', text: a.text, snip: a.body, tab: 'client', point: a.id, sel: '#ag-list [data-id="' + a.id + '"]' });
     });
+    (p.files || []).forEach(function (fl) {
+      if (hit(fl.name)) out.push({ p: p, kind: 'File', text: fl.name, tab: 'files', sel: '#pf-list [data-fid="' + fl.id + '"]' });
+    });
     (p.notes || []).forEach(function (n) {
       if (hit(n.title, n.body)) out.push({ p: p, kind: 'Meeting note · ' + fmtDate(keyToMs(n.date)), text: n.title || 'Meeting', snip: n.body, tab: 'client', note: true, sel: '#nt-list [data-id="' + n.id + '"]' });
+      (n.files || []).forEach(function (fl) {
+        if (hit(fl.name)) out.push({ p: p, kind: 'File · ' + (n.title || 'Meeting note'), text: fl.name, tab: 'files', sel: '#pf-notes [data-fid="' + fl.id + '"]' });
+      });
     });
   });
   state.log.forEach(function (e) {
@@ -2962,12 +3165,12 @@ document.addEventListener('keydown', function (ev) {
 function showTab(name) {
   if (name === 'log') name = 'report';      // the time log lives in the Report since v16
   activeTab = name;
-  ['board', 'report', 'client'].forEach(function (x) {
+  ['board', 'report', 'client', 'files'].forEach(function (x) {
     $('tab-' + x).classList.toggle('on', x === name);
     $('panel-' + x).classList.toggle('on', x === name);
   });
 }
-['board', 'report', 'client'].forEach(function (x) {
+['board', 'report', 'client', 'files'].forEach(function (x) {
   $('tab-' + x).addEventListener('click', function () { showTab(x); render(); });
 });
 
@@ -3198,7 +3401,7 @@ var SYNC = {
 
   /* Projects and the time log travel. Which project is open does not:
      switching projects on the phone is not an edit. */
-  payload: function () { return { projects: state.projects, log: state.log, client: 1 }; },
+  payload: function () { return { projects: state.projects, log: state.log, client: 1, files: 1 }; },
 
   /* The Realtime Database drops empty arrays and objects, so a phase with
      no steps comes back without a steps key. normalise() rebuilds them. */
@@ -3218,6 +3421,18 @@ var SYNC = {
         if (!old) return;
         ['homework', 'agenda', 'notes'].forEach(function (k) {
           if (!np[k].length && old[k].length) { np[k] = old[k]; restored = true; }
+        });
+      });
+    }
+    /* Same for attached files: a page from before them (v138) drops them. */
+    if (!d.files) {
+      next.projects.forEach(function (np) {
+        var old = state.projects.filter(function (op) { return op.id === np.id; })[0];
+        if (!old) return;
+        if (!np.files.length && (old.files || []).length) { np.files = old.files; restored = true; }
+        np.notes.forEach(function (nn) {
+          var on = (old.notes || []).filter(function (x) { return x.id === nn.id; })[0];
+          if (on && !nn.files.length && (on.files || []).length) { nn.files = on.files; restored = true; }
         });
       });
     }

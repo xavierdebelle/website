@@ -5,6 +5,51 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v138 — 2026-10-29
+
+**What's new** · Project Phases + Pipelines · [tools/project-tracker.html]
+### Attach files,<br>kept in your Google Drive
+Project Phases has a Files tab for each project, and meeting notes can
+carry attachments. Every Pipelines card can too. Files upload straight into
+your own Google Drive, in a folder per tool and project. They're private;
+one click shares a file with anyone who has the link, and copies it.
+
+**Project Phases v19 + Pipelines v7 — `tools/project-tracker.html`, `tools/pipelines.html`, new `tools/drive-files.js`**
+- `drive-files.js` (shared, `window.xdbDrive`): Google Identity token
+  (same OAuth client and `drive.file` scope as Video Review — no console
+  change), folders `Project Phases / <project>` and `Pipelines /
+  <pipeline>` created as needed (ids remembered per device by project /
+  pipeline id, so a rename keeps its folder), resumable upload in 8 MB
+  pieces with retry, share on / off (`anyone` reader permission /
+  delete `anyoneWithLink`), file chooser, record normaliser. Empty files
+  are refused.
+- Stored per file: `{ id, name, mime, size, at, link, shared }`. Project
+  Phases: `projects[].files`, `notes[].files`; Pipelines: `cards[].files`.
+  Removing one removes the record only; the file stays in Drive.
+- Project Phases: **Files** tab (count badge; hidden on client links):
+  project files + "From meeting notes". Meeting note dialog: Attach a file;
+  a new note holds its files until Save, and if it's cancelled they move
+  to the project's files instead of being lost. Notes list shows file
+  links. Search finds files by name. Not in the client link.
+- Pipelines: Files section on each card (above Comments): Attach a file,
+  Only me / Shared, ×.
+- Google's permission window needs a click; a blocked one shows "Connect
+  Google Drive" which retries from a real click. Token lasts an hour.
+- Older-page guards: payloads carry `files: 1`; a copy without it keeps
+  this device's file records (both tools). Production Hub keeps the
+  Pipelines doc as it arrives, so it never drops `files`.
+- `pwa-sw.js` v89: `drive-files.js` added to both apps' offline lists.
+
+**Verified locally (Drive faked — Google only accepts xavierdebelle.com)**
+- Upload two files to a project, share one, remove one; new note attach →
+  Cancel → lands in project files; attach + Save → on the note, in the
+  notes list and the Files tab; blocked popup → Connect button; Pipelines
+  card attach / share / remove, saved. Both apps reopen offline with the
+  helper loaded (Playwright). The real Drive calls are Video Review's
+  tested ones; first live use is the real test.
+
+---
+
 ## v137 — 2026-10-29
 
 **Package Builder — edit the à la carte prices on the page too**

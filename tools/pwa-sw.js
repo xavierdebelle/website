@@ -28,7 +28,7 @@
    ============================================================ */
 'use strict';
 
-var VERSION = 'v88';
+var VERSION = 'v89';
 var NET_WAIT = 3500; // ms before a slow network gives way to the kept copy
 
 var APPS = {
@@ -48,7 +48,7 @@ var APPS = {
     'icons/budget-tracker-512.png', 'icons/budget-tracker-maskable-512.png'
   ],
   'project-tracker': [
-    'project-tracker.html', 'project-tracker.webmanifest', 'pwa.js', '../assets/account.js',
+    'project-tracker.html', 'project-tracker.webmanifest', 'pwa.js', '../assets/account.js', 'drive-files.js',
     'icons/project-tracker-180.png', 'icons/project-tracker-192.png',
     'icons/project-tracker-512.png', 'icons/project-tracker-maskable-512.png'
   ],
@@ -67,7 +67,7 @@ var APPS = {
     'icons/production-hub-512.png', 'icons/production-hub-maskable-512.png'
   ],
   'pipelines': [
-    'pipelines.html', 'pipelines.webmanifest', 'pwa.js', '../assets/account.js', '../assets/logo.svg',
+    'pipelines.html', 'pipelines.webmanifest', 'pwa.js', '../assets/account.js', '../assets/logo.svg', 'drive-files.js',
     'icons/pipelines-180.png', 'icons/pipelines-192.png',
     'icons/pipelines-512.png', 'icons/pipelines-maskable-512.png'
   ],

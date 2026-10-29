@@ -16,6 +16,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#000000">
 <script src="pwa.js" data-app="pipelines"></script>
+<script src="drive-files.js"></script>   <!-- attach files to cards, from Google Drive -->
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&display=swap">
 <style>
 :root{
@@ -204,6 +205,23 @@ textarea[data-grow]{min-height:40px!important;height:40px;overflow:hidden;resize
 .task .x:hover{color:var(--red)}
 .addrow{display:flex;gap:6px;margin-top:8px}
 .addrow input{flex:1}
+.sec-h .sp{flex:1}
+.sec-h .b{font-size:9px;padding:5px 8px}
+.flist{border-top:1px solid var(--line)}
+.frow{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.fname{display:flex;align-items:center;gap:6px;flex:1 1 180px;min-width:0;color:var(--black);text-decoration:none;font-weight:600}
+.fname span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fname:hover{color:var(--red)}
+.fmeta{font-size:11px;color:var(--g6);white-space:nowrap}
+.fshare{border:1px solid #cfc7c7;background:var(--white);color:var(--g7);padding:4px 7px;font:var(--wide);font-size:9px;letter-spacing:.05em;text-transform:uppercase;min-width:66px}
+.fshare:hover{border-color:var(--black);color:var(--black)}
+.fshare.on{background:var(--yellow);border-color:var(--yellow);color:var(--black)}
+.frow .x{border:0;background:transparent;color:#bbb;font-size:17px;padding:0 4px}
+.frow .x:hover{color:var(--red)}
+.fnone{font-size:12px;color:var(--g6);margin:0}
+.fst{display:none;margin:0 0 8px;padding:8px 10px;background:var(--bg);font-size:12px;line-height:1.45}
+.fst.on{display:block}
+.fst .b{margin-left:6px}
 .cm-new textarea{margin-bottom:6px}
 .cm-new .row{display:flex;gap:8px;align-items:center}
 .cm-new .row span{font-size:11px;color:var(--g6);flex:1}
@@ -331,6 +349,7 @@ function normCard(c, pl) {
     tasks: listOf(c.tasks).map(normTask),
     comments: listOf(c.comments).filter(function (m) { return m && m.text; }).map(function (m) { return { id: String(m.id || uid('m')), text: String(m.text), at: isDate(m.at) ? m.at : today() }; }),
     pinned: !!c.pinned,               // kept for the Production Hub's Pull in
+    files: window.xdbDrive ? xdbDrive.list(c.files) : listOf(c.files).filter(function (x) { return x && x.id; }),   // records of Google Drive files
     log: listOf(c.log).filter(function (e) { return e && isFinite(+e.start) && +e.start > 0; }).map(function (e) {
       var end = e.end == null ? null : +e.end; return { id: String(e.id || uid('e')), start: +e.start, end: end != null && end >= +e.start ? end : (end == null ? null : +e.start) };
     }),
@@ -541,6 +560,14 @@ function cardDlg(cid) {
         + (ss.length ? '<div class="sess">' + ss.map(function (e) { return '<div><span>' + niceDate(new Date(e.start).toISOString().slice(0, 10)) + ' · ' + t(e.start) + '–' + (e.end ? t(e.end) : 'now') + '</span><span class="' + (e.end ? '' : 'run') + '">' + (e.end ? dur(e.end - e.start) : 'running') + '</span>' + (e.end ? '<button data-edel="' + e.id + '" title="Delete this session">×</button>' : '') + '</div>'; }).join('') + '</div>' : '')
         + '<form class="tadd" id="cw-time"><input type="number" min="1" step="1" inputmode="numeric" id="cw-time-min" placeholder="Minutes"><input type="date" id="cw-time-day" value="' + today() + '"><button class="b">+ Add time</button></form>';
     })()
+    + '<div class="sec-h">Files' + (c.files.length ? ' <span class="pill">' + c.files.length + '</span>' : '') + '<span class="sp"></span><button class="b" data-fattach="' + c.id + '">+ Attach a file</button></div>'
+    + '<div class="fst' + (fileMsg[c.id] ? ' on' : '') + '" id="cw-fst" aria-live="polite">' + (fileMsg[c.id] || '') + '</div>'
+    + (c.files.length ? '<div class="flist">' + c.files.map(function (fl) {
+      return '<div class="frow"><a class="fname" href="' + esc(fl.link) + '" target="_blank" rel="noopener" title="Open in Google Drive">📎 <span>' + esc(fl.name) + '</span></a>'
+        + '<span class="fmeta">' + esc([window.xdbDrive ? xdbDrive.size(fl.size) : '', fl.at ? niceDate(new Date(fl.at).toISOString().slice(0, 10)) : ''].filter(Boolean).join(' · ')) + '</span>'
+        + '<button class="fshare' + (fl.shared ? ' on' : '') + '" data-fshare="' + esc(fl.id) + '" title="' + (fl.shared ? 'Anyone with the link can view it. Click to make it private.' : 'Only you can open it. Click to let anyone with the link view it.') + '">' + (fl.shared ? 'Shared' : 'Only me') + '</button>'
+        + '<button class="x" data-funlink="' + esc(fl.id) + '" title="Remove from this card (the file stays in your Drive)">×</button></div>';
+    }).join('') + '</div>' : '<p class="fnone">Nothing attached. Files go to your Google Drive, in Pipelines / ' + esc(pl.name) + ' — private unless you share one.</p>')
     + '<div class="sec-h">Comments' + (c.comments.length ? ' <span class="pill">' + c.comments.length + '</span>' : '') + '</div>'
     + '<div class="cm-new"><textarea id="cw-cm-in" data-grow rows="1" placeholder="Write a comment…"></textarea><div class="row"><span>Dated today · ⌘ Enter to post</span><button class="b y" id="cw-cm-post" type="button">Add comment</button></div></div>'
     + (comments.length ? '<div class="cm-list">' + comments.map(function (m) { return '<div class="cm-item"><div class="cd">' + niceDate(m.at, true) + '<button data-cdel="' + m.id + '" title="Delete comment">×</button></div><div class="ct">' + esc(m.text) + '</div></div>'; }).join('') + '</div>' : '')
@@ -574,6 +601,55 @@ function cardDlg(cid) {
   var post = function () { var v = cm.value.trim(); if (!v) return; c.comments.push({ id: uid('m'), text: v, at: today() }); commit(); };
   cm.addEventListener('keydown', function (e) { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); post(); } });
   $('cw-cm-post').onclick = post;
+}
+
+/* ---------- files: records of documents in Google Drive (drive-files.js) ---------- */
+var fileMsg = {}, pendingUp = null;      // per card: the last upload message; an upload waiting for a click
+function fileSay(cid, html, keepMs) {
+  if (!cid) return;
+  fileMsg[cid] = html;
+  var el = $('cw-fst');
+  if (el && openCard === cid) { el.innerHTML = html; el.className = 'fst' + (html ? ' on' : ''); }
+  if (keepMs) setTimeout(function () { if (fileMsg[cid] === html) fileSay(cid, ''); }, keepMs);
+}
+function attachToCard(cid) {
+  var hit = findCard(cid);
+  if (!hit) return;
+  if (!window.xdbDrive) return fileSay(cid, 'Couldn’t load the Google Drive part of this page — check the connection and reload.');
+  xdbDrive.choose().then(function (files) {
+    if (!files.length) return;
+    var i = 0, path = [{ name: 'Pipelines', key: 'pl' }, { name: hit.pl.name, key: 'pl.' + hit.pl.id }];
+    (function next() {
+      pendingUp = null;
+      if (i >= files.length) return fileSay(cid, files.length === 1 ? 'Uploaded.' : 'Uploaded ' + files.length + ' files.', 2500);
+      var file = files[i], of = files.length > 1 ? ' (' + (i + 1) + ' of ' + files.length + ')' : '';
+      xdbDrive.upload(file, path, function (frac, msg) { fileSay(cid, esc(msg + of)); }).then(function (rec) {
+        var h = findCard(cid); if (!h) return;
+        h.c.files.push(rec); i++;
+        save(); if (openCard === cid) cardDlg(cid);
+        next();
+      }, function (err) {
+        if (err && err.needsClick) { pendingUp = next; return fileSay(cid, 'Google Drive needs one click to connect. <button class="b y" data-fconnect>Connect Google Drive</button>'); }
+        fileSay(cid, 'Not uploaded: ' + esc(err && err.message || 'something went wrong') + '.');
+      });
+    })();
+  });
+}
+function fileAction(fid, unlink) {
+  var hit = findCard(openCard); if (!hit) return;
+  var fl = hit.c.files.find(function (x) { return x.id === fid; }); if (!fl) return;
+  if (unlink) {
+    hit.c.files = hit.c.files.filter(function (x) { return x !== fl; });
+    fileSay(hit.c.id, '“' + esc(fl.name) + '” removed from this card — it’s still in your Google Drive.', 4000);
+    return commit();
+  }
+  fileSay(hit.c.id, fl.shared ? 'Making it private…' : 'Sharing…');
+  xdbDrive.share(fl.id, !fl.shared).then(function () {
+    fl.shared = !fl.shared;
+    save(); if (openCard === hit.c.id) cardDlg(hit.c.id);
+    if (fl.shared && navigator.clipboard) navigator.clipboard.writeText(fl.link).then(function () { fileSay(hit.c.id, 'Link copied — anyone with it can view “' + esc(fl.name) + '”.', 4000); }, function () { fileSay(hit.c.id, ''); });
+    else fileSay(hit.c.id, '');
+  }, function (err) { fileSay(hit.c.id, 'Couldn’t change sharing: ' + esc(err.message)); });
 }
 
 /* ---------- ⋯ menu ---------- */
@@ -675,6 +751,9 @@ document.addEventListener('click', function (e) {
   if ('stoptimer' in d) { stopTimer(); commit(); tickTimers(); return; }
   if (d.edel) { if (!confirm('Delete this session?')) return; var he = findCard(openCard); he.c.log = he.c.log.filter(function (x) { return x.id !== d.edel; }); return commit(); }
   if (d.dclr) { var hc0 = findCard(openCard), t0 = hc0 && hc0.c.tasks.find(function (x) { return x.id === d.dclr; }); if (t0) { t0.due = null; commit(); } return; }
+  if (d.fattach) return attachToCard(d.fattach);
+  if (d.fshare || d.funlink) return fileAction(d.fshare || d.funlink, !!d.funlink);
+  if ('fconnect' in d) { var hk = findCard(openCard); return xdbDrive.token().then(function () { if (pendingUp) pendingUp(); }, function (er) { fileSay(hk && hk.c.id, 'Not uploaded: ' + esc(er.message)); }); }
   if (d.view) { ui.view = d.view; ui.showArch = false; saveUi(); return render(); }
   if (d.card) return cardDlg(d.card);
   if (d.open) return cardDlg(d.open);
@@ -807,7 +886,7 @@ var SYNC = {
   storageKey: STORAGE_KEY,
   noun: 'pipelines',
 
-  payload: function () { return { pipelines: state.pipelines, timers: 1 }; },   // which board is open is not an edit; timers = this version knows card time
+  payload: function () { return { pipelines: state.pipelines, timers: 1, files: 1 }; },   // which board is open is not an edit; timers = this version knows card time
 
   /* The database drops empty arrays and objects; normalise() rebuilds them. */
   apply: function (d, remote) {
@@ -817,6 +896,8 @@ var SYNC = {
        because it never knew them. Keep this device's, and send them back up. */
     var restored = false;
     if (!d.timers) next.pipelines.forEach(function (p) { p.cards.forEach(function (c) { var old = findCard(c.id); if (old && old.c.log.length && !c.log.length) { c.log = old.c.log; restored = true; } }); });
+    /* …and the same for attached files (a page from before v138 drops them) */
+    if (!d.files) next.pipelines.forEach(function (p) { p.cards.forEach(function (c) { var old = findCard(c.id); if (old && (old.c.files || []).length && !c.files.length) { c.files = old.c.files; restored = true; } }); });
     if (restored) setTimeout(function () { setMeta({ updatedAt: nextStamp() }); syncNow(); }, 0);
     state = next;
     storeLocal();
