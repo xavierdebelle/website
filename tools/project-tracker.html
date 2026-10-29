@@ -395,6 +395,19 @@ body.view .quick,body.view #ag-block,body.view #nt-block,body.view .citem .cacts
 body.view .client-grid{grid-template-columns:1fr}
 @media (max-width:760px){.client-grid{grid-template-columns:1fr}#panel-client.on{padding:22px 16px}}
 
+/* ---------- text boxes that show bold (see "Text" in the script) ---------- */
+.rich-box{display:block;background:var(--card);border:1px solid #cfc7c7;border-radius:0;padding:8px 10px;color:var(--ink);font:inherit;line-height:1.45;white-space:pre-wrap;overflow-wrap:anywhere;min-width:0;text-align:left;cursor:text;outline:none}
+.rich-box:focus{outline:2px solid var(--ttt-red);outline-offset:-1px;border-color:var(--ttt-red)}
+.rich-box.single{min-height:calc(1.45em + 18px)}
+.rich-box.empty::before{content:attr(data-placeholder);color:#9a9a9a;pointer-events:none;position:absolute}
+.rich-box b,.rich-box strong{font-weight:700}
+.modal .rich-box,#modal .rich-box{width:100%}
+.quick .rich-box{flex:1 1 200px}
+.nt-step-row .rich-box{flex:1 1 220px}
+.step .rich-box{flex:1;min-width:120px;padding:4px 8px;min-height:0}
+.rich-box[data-for="nt-body"]{min-height:260px;line-height:1.5}
+.rich-box[data-for="nt-title"]{width:100%}
+
 /* ---------- search, across every project ---------- */
 .search{position:relative}
 .topbar .search input{background:var(--ttt-ink);color:var(--ttt-white);border:1px solid var(--ttt-gray-700);width:200px;font:inherit;padding:8px 10px}
@@ -544,7 +557,7 @@ body.view .client-grid{grid-template-columns:1fr}
         <h3 class="section-title" id="hw-title">Client homework</h3>
         <p class="cblock-sub" id="hw-sub">What the client needs to do or send you.</p>
         <form class="quick" id="hw-form" autocomplete="off">
-          <input type="text" id="hw-text" maxlength="300" placeholder="e.g. Send the logo files" aria-label="New homework item">
+          <input type="text" class="rich" id="hw-text" maxlength="300" placeholder="e.g. Send the logo files" aria-label="New homework item">
           <input type="date" id="hw-due" title="Due date (optional)" aria-label="Due date">
           <button class="btn primary" type="submit">Add</button>
         </form>
@@ -917,13 +930,18 @@ function esc(s) {
 function $(id) { return document.getElementById(id); }
 
 /* ============================================================
-   Text — the same two habits in every box of the app
-   - ⌘B / Ctrl+B wraps the selection in **…**, shown in bold
+   Text — the same habits in every box of the app
+   - ⌘B / Ctrl+B makes the selection bold, and it looks bold
+     while you type
    - a dash and a space starts a bullet; Enter keeps the list
      going (Enter on an empty bullet ends it); Tab / Shift+Tab
-     indent and outdent a list line (same as the Notes tool)
-   Everything stays plain text, so sync, export and client links
-   carry it unchanged.
+     indent and outdent a list line
+   The boxes are editable <div>s standing in for the original
+   input or textarea, which stays in the page (hidden) with the
+   same id: reading or setting its .value goes through the box,
+   and its listeners still hear the box's typing. What is stored
+   is still plain text with **bold** markers, so sync, export,
+   search and client links are unchanged.
    ============================================================ */
 // escaped text with **bold** shown as bold
 function fmt(s) {
@@ -931,91 +949,222 @@ function fmt(s) {
 }
 // the same text without the markers — titles, CSV, search, the tab title
 function plain(s) { return String(s == null ? '' : s).replace(/\*\*([^*\n]+?)\*\*/g, '$1'); }
-
-var BULLET = '• ', listBusy = false;
 function lineStart(v, i) { return v.lastIndexOf('\n', i - 1) + 1; }
-// through execCommand so Undo still works; setRangeText where it doesn't
-function replaceRange(el, from, to, text) {
-  var before = el.value;
-  el.setSelectionRange(from, to);
-  var ok = false;
-  try { ok = document.execCommand('insertText', false, text); } catch (e) {}
-  if (!ok || el.value === before && (to > from || text)) {
-    el.value = before;
-    el.setRangeText(text, from, to, 'end');
-  }
-  el.setSelectionRange(from + text.length, from + text.length);
-}
-function listTyping(ta, ev) {
-  if (listBusy) return;
-  var v = ta.value, c = ta.selectionStart;
-  if (c !== ta.selectionEnd) return;
-  var type = ev.inputType || '', ls = lineStart(v, c), before = v.slice(ls, c);
-  listBusy = true;
-  if (type === 'insertText' && /^\s*- $/.test(before)) {
-    replaceRange(ta, ls, c, before.match(/^\s*/)[0] + BULLET);
-  } else if ((type === 'insertLineBreak' || type === 'insertParagraph' || (type === 'insertText' && ev.data == null)) && v.charAt(c - 1) === '\n') {
-    var pls = lineStart(v, c - 1), prev = v.slice(pls, c - 1);
-    var m = prev.match(/^(\s*)(• |(\d+)([.)]) )(.*)$/);
-    if (m) {
-      if (!m[5].trim()) replaceRange(ta, pls, c, '');                       // empty item: end the list
-      else replaceRange(ta, c, c, m[1] + (m[3] ? (parseInt(m[3], 10) + 1) + m[4] + ' ' : BULLET));
+
+try { document.execCommand('styleWithCSS', false, false); } catch (e) {}
+
+/* What a box holds, in order: text pieces (bold or not) and line breaks.
+   A <br> that is the very last thing is only there to hold an empty last
+   line open, so it doesn't count. Browsers sometimes wrap lines in <div>s;
+   those count as a line break before them. */
+function richItems(box) {
+  var items = [];
+  (function walk(n) {
+    for (var c = n.firstChild; c; c = c.nextSibling) {
+      if (c.nodeType === 3) { if (c.data) items.push({ node: c, text: c.data }); }
+      else if (c.nodeName === 'BR') items.push({ node: c, br: true });
+      else if (c.nodeType === 1) {
+        if (/^(DIV|P|LI)$/.test(c.nodeName) && items.length && !items[items.length - 1].br) items.push({ block: c, br: true });
+        walk(c);
+      }
     }
-  } else if (type === 'deleteContentBackward' && /^\s*•$/.test(before)) {
-    replaceRange(ta, c - 1, c, '');
+  })(box);
+  if (items.length && items[items.length - 1].node && items[items.length - 1].br) items.pop();
+  return items;
+}
+function isBoldNode(t) { var w = getComputedStyle(t.parentNode).fontWeight; return w === 'bold' || +w >= 600; }
+function richVisible(box) { return richItems(box).map(function (it) { return it.br ? '\n' : it.text; }).join(''); }
+// the stored form: **bold** around bold runs, spaces kept outside the markers
+function richValue(box) {
+  var lines = [[]];
+  richItems(box).forEach(function (it) {
+    if (it.br) { lines.push([]); return; }
+    var b = isBoldNode(it.node);
+    it.text.split('\n').forEach(function (piece, i) {        // some browsers type line breaks as text
+      if (i) lines.push([]);
+      var line = lines[lines.length - 1], last = line[line.length - 1];
+      if (!piece) return;
+      if (last && last.b === b) last.t += piece; else line.push({ t: piece, b: b });
+    });
+  });
+  return lines.map(function (line) {
+    return line.map(function (r) {
+      if (!r.b) return r.t;
+      var m = r.t.match(/^(\s*)([\s\S]*?)(\s*)$/);
+      return m[1] + (m[2] ? '**' + m[2] + '**' : '') + m[3];
+    }).join('');
+  }).join('\n');
+}
+function richSet(box, v) {
+  v = String(v == null ? '' : v);
+  box.innerHTML = fmt(v).replace(/\n/g, '<br>') + (/\n$/.test(v) ? '<br>' : '');
+  richEmpty(box);
+}
+function richEmpty(box) { box.classList.toggle('empty', !richVisible(box)); }
+
+// where the caret is, counted in visible characters
+function richCaret(box, end) {
+  var sel = getSelection();
+  if (!sel.rangeCount || !box.contains(sel.anchorNode)) {
+    // focus moved on (a button was pressed): the last place the caret was in this box
+    return box.richLast ? box.richLast[end ? 1 : 0] : richVisible(box).length;
   }
-  listBusy = false;
-}
-function listTab(ta, ev) {
-  var v = ta.value, c = ta.selectionStart, ls = lineStart(v, c);
-  var le = v.indexOf('\n', c); if (le < 0) le = v.length;
-  var line = v.slice(ls, le);
-  if (!/^\s*(• |\d+[.)] )/.test(line)) return false;          // Tab means Tab only inside a list
-  ev.preventDefault();
-  var keep = ta.selectionEnd - c;
-  listBusy = true;
-  if (ev.shiftKey) {
-    var cut = Math.min(2, line.match(/^ */)[0].length);
-    if (cut) { replaceRange(ta, ls, ls + cut, ''); ta.setSelectionRange(c - cut, c - cut + keep); }
-  } else {
-    replaceRange(ta, ls, ls, '  '); ta.setSelectionRange(c + 2, c + 2 + keep);
+  var r = sel.getRangeAt(0), probe = document.createRange();
+  probe.setStart(end ? r.endContainer : r.startContainer, end ? r.endOffset : r.startOffset);
+  var n = 0, items = richItems(box);
+  for (var i = 0; i < items.length; i++) {
+    var it = items[i];
+    if (it.node === probe.startContainer) return n + probe.startOffset;
+    var after = it.br ? (it.block ? [it.block, 0] : [it.node.parentNode, Array.prototype.indexOf.call(it.node.parentNode.childNodes, it.node) + 1])
+                      : [it.node, it.text.length];
+    if (probe.comparePoint(after[0], after[1]) > 0) return n;    // this piece ends past the caret
+    n += it.br ? 1 : it.text.length;
   }
-  listBusy = false;
-  return true;
+  return n;
 }
-function toggleBold(el) {
-  var v = el.value, a = el.selectionStart, b = el.selectionEnd;
-  while (a < b && /\s/.test(v.charAt(a))) a++;
-  while (b > a && /\s/.test(v.charAt(b - 1))) b--;
-  listBusy = true;
-  if (v.slice(a - 2, a) === '**' && v.slice(b, b + 2) === '**') {            // already bold: unwrap
-    replaceRange(el, b, b + 2, ''); replaceRange(el, a - 2, a, '');
-    el.setSelectionRange(a - 2, b - 2);
-  } else if (b - a >= 4 && v.slice(a, a + 2) === '**' && v.slice(b - 2, b) === '**') {
-    replaceRange(el, a, b, v.slice(a + 2, b - 2));
-    el.setSelectionRange(a, b - 4);
-  } else {
-    replaceRange(el, a, b, '**' + v.slice(a, b) + '**');
-    el.setSelectionRange(a + 2, b + 2);                // nothing selected: type straight into the bold
+// a visible-character position → a spot in the DOM
+function richPoint(box, pos) {
+  var n = 0, items = richItems(box), prev = null;
+  for (var i = 0; i < items.length; i++) {
+    var it = items[i];
+    if (!it.br && pos <= n + it.text.length) return [it.node, pos - n];
+    if (it.br && pos === n) {
+      if (prev && !prev.br) return [prev.node, prev.text.length];
+      if (it.node) return [it.node.parentNode, Array.prototype.indexOf.call(it.node.parentNode.childNodes, it.node)];
+      return [it.block, 0];
+    }
+    n += it.br ? 1 : it.text.length;
+    prev = it;
   }
-  listBusy = false;
+  return [box, box.childNodes.length - (box.lastChild && box.lastChild.nodeName === 'BR' && items.length ? 1 : 0)];
 }
-function isTextBox(el) {
-  return el && (el.tagName === 'TEXTAREA' || (el.tagName === 'INPUT' && el.type === 'text')) && !el.readOnly && !el.disabled;
+function richSelect(box, a, b) {
+  var len = richVisible(box).length;
+  a = Math.max(0, Math.min(a, len)); b = Math.max(0, Math.min(b == null ? a : b, len));
+  var r = document.createRange(), p = richPoint(box, a), q = richPoint(box, b);
+  r.setStart(p[0], p[1]); r.setEnd(q[0], q[1]);
+  var sel = getSelection(); sel.removeAllRanges(); sel.addRange(r);
 }
-document.addEventListener('input', function (ev) {
-  if (ev.target.tagName === 'TEXTAREA' && !listBusy) listTyping(ev.target, ev);
-});
-document.addEventListener('keydown', function (ev) {
-  var el = ev.target;
-  if (!isTextBox(el) || VIEW) return;
-  if ((ev.metaKey || ev.ctrlKey) && !ev.altKey && !ev.shiftKey && (ev.key === 'b' || ev.key === 'B')) {
-    ev.preventDefault();
-    toggleBold(el);
+function richInsert(text) { document.execCommand('insertText', false, text); }
+
+/* Lists, as in the Notes tool. Each change goes through execCommand so
+   ⌘Z undoes it. Returns true when it handled the key. */
+function richListKey(box, ev) {
+  var v = richVisible(box), c = richCaret(box), ce = richCaret(box, true);
+  var ls = lineStart(v, c), le = v.indexOf('\n', c); if (le < 0) le = v.length;
+  var before = v.slice(ls, c), line = v.slice(ls, le);
+  var m = line.match(/^(\s*)(• |(\d+)([.)]) )(.*)$/);
+  if (ev.key === 'Enter') {
+    if (m && c === ce && !m[5].trim()) { richSelect(box, ls, le); document.execCommand('delete'); return true; }  // empty item ends the list
+    document.execCommand('insertLineBreak');
+    if (m && c >= ls + m[1].length + m[2].length) richInsert(m[1] + (m[3] ? (parseInt(m[3], 10) + 1) + m[4] + ' ' : '• '));
+    return true;
+  }
+  if (ev.key === 'Tab' && m) {
+    var keep = ce - c;
+    if (ev.shiftKey) {
+      var cut = Math.min(2, m[1].length);
+      if (cut) { richSelect(box, ls, ls + cut); document.execCommand('delete'); richSelect(box, c - cut, c - cut + keep); }
+    } else {
+      richSelect(box, ls); richInsert('  '); richSelect(box, c + 2, c + 2 + keep);
+    }
+    return true;
+  }
+  if (ev.key === 'Backspace' && c === ce && /^\s*• $/.test(before)) {
+    richSelect(box, c - 2, c); document.execCommand('delete'); return true;
+  }
+  return false;
+}
+function richAfterInput(box, ev) {
+  if (ev.inputType !== 'insertText' || ev.data !== ' ' || box.classList.contains('single')) return;
+  var v = richVisible(box), c = richCaret(box), ls = lineStart(v, c);
+  if (/^\s*- $/.test(v.slice(ls, c))) { richSelect(box, c - 2, c); richInsert('• '); }
+}
+
+var NATIVE = {
+  TEXTAREA: Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value'),
+  INPUT: Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')
+};
+function richify(el) {
+  if (el.richBox || VIEW) return;
+  var multi = el.tagName === 'TEXTAREA', init = NATIVE[el.tagName].get.call(el);
+  var box = document.createElement('div');
+  box.className = 'rich-box ' + (multi ? 'multi' : 'single') + (el.className ? ' ' + el.className : '');
+  box.contentEditable = 'true';
+  box.setAttribute('role', 'textbox');
+  if (multi) box.setAttribute('aria-multiline', 'true');
+  box.setAttribute('aria-label', el.getAttribute('aria-label') || (el.labels && el.labels[0] ? el.labels[0].textContent : '') || el.placeholder || '');
+  box.setAttribute('data-placeholder', el.placeholder || '');
+  box.setAttribute('data-for', el.id || '');
+  if (el.getAttribute('style')) box.setAttribute('style', el.getAttribute('style'));
+  if (multi && el.rows) box.style.minHeight = (el.rows * 1.45 + 1.1) + 'em';
+  box.spellcheck = true;
+  el.parentNode.insertBefore(box, el.nextSibling);
+  el.hidden = true;
+  el.style.display = 'none';
+  el.richBox = box;
+  richSet(box, init);
+
+  Object.defineProperty(el, 'value', { configurable: true,
+    get: function () { return richValue(box); },
+    set: function (v) { richSet(box, v); } });
+  Object.defineProperty(el, 'selectionStart', { configurable: true, get: function () { return richCaret(box); } });
+  Object.defineProperty(el, 'selectionEnd', { configurable: true, get: function () { return richCaret(box, true); } });
+  el.focus = function () { box.focus(); };
+  el.select = function () { box.focus(); richSelect(box, 0, richVisible(box).length); };
+  el.setSelectionRange = function (a, b) { box.focus(); richSelect(box, a, b); };
+  el.richSelection = function () { return { text: richVisible(box), start: richCaret(box), end: richCaret(box, true) }; };
+
+  box.addEventListener('input', function (ev) {
+    richAfterInput(box, ev);
+    richEmpty(box);
     el.dispatchEvent(new Event('input', { bubbles: true }));
-  } else if (ev.key === 'Tab' && !ev.altKey && !ev.metaKey && !ev.ctrlKey && el.tagName === 'TEXTAREA') {
-    if (listTab(el, ev)) el.dispatchEvent(new Event('input', { bubbles: true }));
-  }
+  });
+  box.addEventListener('keydown', function (ev) {
+    // the original's own key handlers (Enter to rename, ⌘Enter to add…) go first
+    var fwd = new KeyboardEvent('keydown', { key: ev.key, code: ev.code, metaKey: ev.metaKey, ctrlKey: ev.ctrlKey,
+                                             shiftKey: ev.shiftKey, altKey: ev.altKey, bubbles: false, cancelable: true });
+    el.dispatchEvent(fwd);
+    if (fwd.defaultPrevented) { ev.preventDefault(); return; }
+    if ((ev.metaKey || ev.ctrlKey) && !ev.altKey && !ev.shiftKey && /^[bB]$/.test(ev.key)) {
+      ev.preventDefault(); document.execCommand('bold'); return;
+    }
+    if ((ev.metaKey || ev.ctrlKey) && /^[iIuU]$/.test(ev.key)) { ev.preventDefault(); return; }   // bold is the only style
+    if (ev.key === 'Enter' && !ev.metaKey && !ev.ctrlKey) {
+      ev.preventDefault();
+      if (!multi) { if (el.form) el.form.requestSubmit(); return; }       // as a plain input would
+      richListKey(box, ev);
+      return;
+    }
+    if (multi && (ev.key === 'Tab' || ev.key === 'Backspace') && !ev.metaKey && !ev.ctrlKey && !ev.altKey) {
+      if (richListKey(box, ev)) ev.preventDefault();
+    }
+  });
+  box.addEventListener('blur', function () { el.dispatchEvent(new Event('blur')); });
+  // pasted text arrives plain (line breaks kept in a multi-line box)
+  box.addEventListener('paste', function (ev) {
+    ev.preventDefault();
+    var t = (ev.clipboardData && ev.clipboardData.getData('text/plain') || '').replace(/\r/g, '');
+    if (!multi) { richInsert(t.replace(/\n+/g, ' ')); return; }
+    t.split('\n').forEach(function (l, i) { if (i) document.execCommand('insertLineBreak'); if (l) richInsert(l); });
+  });
+  box.addEventListener('drop', function (ev) { ev.preventDefault(); });
+  return box;
+}
+function richifyIn(root) {
+  if (VIEW) return;
+  Array.prototype.forEach.call((root || document).querySelectorAll('textarea, input.rich'), richify);
+}
+document.addEventListener('selectionchange', function () {
+  var sel = getSelection(), n = sel.anchorNode;
+  var box = n && (n.nodeType === 1 ? n : n.parentNode).closest && (n.nodeType === 1 ? n : n.parentNode).closest('.rich-box');
+  if (box) { box.richLast = null; box.richLast = [richCaret(box), richCaret(box, true)]; }
+});
+// a <label for=…> still puts you in the box
+document.addEventListener('click', function (ev) {
+  var lab = ev.target.closest && ev.target.closest('label[for]');
+  var el = lab && document.getElementById(lab.getAttribute('for'));
+  if (el && el.richBox) el.richBox.focus();
 });
 
 /* ============================================================
@@ -1033,6 +1182,7 @@ function openModal(title, bodyHTML, onSave, focusId) {
   $('modal-error').textContent = '';
   modalSave = onSave;
   $('modal-overlay').classList.add('open');
+  richifyIn($('modal-body'));
   var f = focusId && $(focusId);
   if (f) { f.focus(); if (f.select) f.select(); }
 }
@@ -1757,7 +1907,7 @@ function editPhase(phaseId) {
   var ph = phaseId ? findPhase(phaseId) : null;
   openModal(ph ? 'Rename phase' : 'New phase',
     '<div class="row"><label for="ph-name">Phase name</label>' +
-    '<input type="text" id="ph-name" value="' + esc(ph ? ph.name : '') + '" placeholder="Discovery"></div>',
+    '<input type="text" class="rich" id="ph-name" value="' + esc(ph ? ph.name : '') + '" placeholder="Discovery"></div>',
     function () {
       var name = $('ph-name').value.trim();
       if (!name) { modalError('Give the phase a name.'); return false; }
@@ -1775,10 +1925,11 @@ function renameInline(span, stepId) {
   if (!st || VIEW || span.tagName !== 'SPAN') return;
   var input = document.createElement('input');
   input.type = 'text';
-  input.className = 'step-rename';
+  input.className = 'step-rename rich';
   input.value = st.name;
   input.setAttribute('aria-label', 'Step name');
   span.replaceWith(input);
+  richify(input);
   input.focus();
   input.select();
   var done = false;
@@ -1803,7 +1954,7 @@ function editStep(stepId, phaseId, focusId) {
   var phases = currentProject().phases;
   openModal(st ? 'Edit step' : 'New step in ' + plain(ph.name),
     '<div class="row"><label for="st-name">Step name</label>' +
-      '<input type="text" id="st-name" value="' + esc(st ? st.name : '') + '" placeholder="Wireframes"></div>' +
+      '<input type="text" class="rich" id="st-name" value="' + esc(st ? st.name : '') + '" placeholder="Wireframes"></div>' +
     '<div class="row"><label for="st-phase">Phase</label><select id="st-phase">' +
       phases.map(function (x) {
         return '<option value="' + esc(x.id) + '"' + (x.id === ph.id ? ' selected' : '') + '>' + esc(plain(x.name)) + '</option>';
@@ -2496,7 +2647,7 @@ function openHomeworkItem(h) {
 function openAgendaItem(a) {
   if (!a) return;
   openModal('Point to discuss',
-    '<div class="row"><label for="ag-e-text">Point</label><input type="text" id="ag-e-text" maxlength="300" style="width:100%" value="' + esc(a.text) + '"></div>' +
+    '<div class="row"><label for="ag-e-text">Point</label><input type="text" class="rich" id="ag-e-text" maxlength="300" style="width:100%" value="' + esc(a.text) + '"></div>' +
     '<div class="row"><label for="ag-e-body">Note</label><textarea id="ag-e-body" rows="7" style="width:100%;line-height:1.5" placeholder="Optional — background, numbers, what you want out of it">' + esc(a.body) + '</textarea>' +
       '<div class="hint">Only the point shows in the list. The note opens when you click it.</div></div>',
     function () {
@@ -2515,7 +2666,8 @@ function wireNoteToStep(p) {
   var box = $('nt-step'), msg = $('nt-step-msg');
   if (!p.phases.length) $('nt-step-phase').outerHTML = '';
   $('nt-step-open').addEventListener('click', function () {
-    var ta = $('nt-body'), v = ta.value, a = ta.selectionStart, b = ta.selectionEnd;
+    var ta = $('nt-body'), rs = ta.richSelection ? ta.richSelection() : null;
+    var v = rs ? rs.text : ta.value, a = rs ? rs.start : ta.selectionStart, b = rs ? rs.end : ta.selectionEnd;
     var text = a !== b ? v.slice(a, b) : v.slice(lineStart(v, a), (v.indexOf('\n', a) + 1 || v.length + 1) - 1);
     text = text.split('\n').filter(function (l) { return l.trim(); })[0] || '';
     $('nt-step-name').value = text.replace(/^\s*(• |- |\d+[.)] )/, '').trim();
@@ -2550,7 +2702,7 @@ function openNote(n) {
   openModal(n ? 'Meeting note' : 'New meeting note',
     '<div class="row" style="display:grid;grid-template-columns:auto 1fr;gap:10px">' +
       '<div><label for="nt-date">Date</label><input type="date" id="nt-date" value="' + esc(n ? n.date : todayKey()) + '"></div>' +
-      '<div><label for="nt-title">Title</label><input type="text" id="nt-title" maxlength="140" style="width:100%" placeholder="Meeting with the client" value="' + esc(n ? n.title : '') + '"></div>' +
+      '<div><label for="nt-title">Title</label><input type="text" class="rich" id="nt-title" maxlength="140" style="width:100%" placeholder="Meeting with the client" value="' + esc(n ? n.title : '') + '"></div>' +
     '</div>' +
     '<div class="row"><label for="nt-body">Notes</label><textarea id="nt-body">' + esc(n ? n.body : '') + '</textarea>' +
       '<div style="display:flex;gap:4px 16px;flex-wrap:wrap">' +
@@ -2558,7 +2710,7 @@ function openNote(n) {
       '<button type="button" class="btn ghost" id="nt-step-open" style="padding-left:0" title="Select text in the note first, or put the cursor on its line">+ Make a step</button></div>' +
       '<div class="nt-step" id="nt-step">' +
         '<div class="nt-step-row">' +
-          '<input type="text" id="nt-step-name" placeholder="Step name" aria-label="New step name">' +
+          '<input type="text" class="rich" id="nt-step-name" placeholder="Step name" aria-label="New step name">' +
           '<select id="nt-step-phase" aria-label="Phase">' + p.phases.map(function (ph) {
             return '<option value="' + esc(ph.id) + '">' + esc(plain(ph.name)) + '</option>'; }).join('') + '</select>' +
           '<button type="button" class="btn" id="nt-step-add">Add step</button>' +
@@ -2836,7 +2988,7 @@ $('btn-add-project').addEventListener('click', function () {
   resetSaveBtn();
   openModal('New project',
     '<div class="row"><label for="pr-name">Project name</label>' +
-      '<input type="text" id="pr-name" placeholder="Client website"></div>' +
+      '<input type="text" class="rich" id="pr-name" placeholder="Client website"></div>' +
     '<div class="row"><label><input type="checkbox" id="pr-template" checked style="width:auto;margin-right:6px">' +
       'Start with the four standard phases</label></div>',
     function () {
@@ -2858,7 +3010,7 @@ $('btn-rename-project').addEventListener('click', function () {
   resetSaveBtn();
   openModal('Rename project',
     '<div class="row"><label for="pr-rename">Project name</label>' +
-      '<input type="text" id="pr-rename" value="' + esc(p.name) + '"></div>',
+      '<input type="text" class="rich" id="pr-rename" value="' + esc(p.name) + '"></div>',
     function () {
       var name = $('pr-rename').value.trim();
       if (!name) { modalError('Give the project a name.'); return false; }
@@ -3977,6 +4129,7 @@ function bootView() {
    Boot
    ============================================================ */
 $('btn-rename-project').innerHTML = ICO.pencil;
+richifyIn(document.getElementById('app'));
 $('btn-delete-project').innerHTML = ICO.trash;
 
 /* ---- upgrading from a version without the Client tab ----

@@ -5,6 +5,41 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v136 — 2026-10-29
+
+**What's new** · Project Phases · [tools/project-tracker.html]
+### Bold that looks bold
+⌘B in Project Phases now shows bold as you type, instead of little stars
+on either side. Lists still start with a dash and a space.
+
+**Project Phases v18 — `tools/project-tracker.html`, source `Tools files/Tools/project_tracker_v18.html`**
+- Every textarea, plus the name fields (homework, step / phase / project
+  names, point, note title, Make a step, rename in place), is replaced by
+  an editable box (`richify`): bold shows as bold while typing (⌘B /
+  Ctrl+B via execCommand, so ⌘Z works); ⌘I / ⌘U do nothing.
+- Storage unchanged: the box reads back as plain text with `**bold**`
+  markers (spaces kept outside the markers, bold split at line breaks),
+  so sync, export, search, CSV and client links are as before.
+- The original input / textarea stays in the page, hidden, with its id:
+  its `.value`, `focus`, `select`, `setSelectionRange`, `selectionStart/End`
+  go through the box, and its key / input / blur listeners still fire, so
+  the rest of the code is untouched. One-line boxes submit on Enter like an
+  input; paste is plain text.
+- Lists rewritten for the box: "- " → "• ", Enter continues, Enter on an
+  empty bullet ends the list, Tab / Shift+Tab indent, Backspace on a bare
+  bullet removes it.
+- Make a step reads the selection in visible text (no markers), and
+  remembers it after the button takes focus.
+
+**Verified locally**
+- Typed key by key: bold on / off mid-line, bold across a line break,
+  bullets, Tab sub-bullet, ending a list; saved and reopened a meeting
+  note (bold kept); step renamed to bold with ⌘A ⌘B Enter; homework added
+  with Enter, bold word kept; point + note added with ⌘Enter; Make a step
+  from a selection; step notes and Log time dialogs open in the new box.
+
+---
+
 ## v135 — 2026-10-29
 
 **What's new** · Update · [tools/production-hub.html]
