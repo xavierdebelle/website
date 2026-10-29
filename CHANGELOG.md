@@ -5,6 +5,38 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v134 — 2026-10-29
+
+**Package Builder — edit the collections on the page itself**
+- "Studio · collections" in the footer (or `?edit`) opens editing mode: a
+  yellow bar across the top, dashed outlines on everything that can change,
+  "Editing the collections" over the cards. Google sign-in, same accounts as
+  the prices panel (Xavier, or `catalogEditors`); others are told they can't.
+- In place: collection name, line, price, badge, highlight (one at a time),
+  order, delete, add a collection. Lines: rename (one name per service, used
+  by every collection), switch Included ⇄ Complimentary, remove, add any
+  service, album (pages editable) or a gift not sold à la carte with its value
+  (the wedding magazine is one). Photography-or-film style choices: add,
+  rename, remove.
+- Publish writes `collections`, `extras`, `collLabels` into
+  `catalog/package-builder` (read fresh first, prices untouched) plus a copy
+  in `catalogHistory`. Discard and Exit go back to the last published version;
+  leaving with unpublished changes asks first. Clients still never load
+  Firebase. No rules change: the existing catalog rules cover it.
+- Prices panel: saving now carries over the collections as published at that
+  moment, so the two pages can't undo each other.
+- Password gate: its own unlock now (a Wedding Hub unlock no longer opens it),
+  and a "Lock" link in the footer. Before, a device that had unlocked the Hub
+  went straight in, which looked like no password at all.
+- Tested on the mock: non-editor refused; owner edits (price, name, tag,
+  added line, gift value) published and seen by a second device; prices panel
+  save keeps collections, including when the builder published while the panel
+  had unsaved changes (warning shown); discard; choices added; empty choice
+  and empty new collection survive the round trip; new gift; highlight moved;
+  phone layout (bar sized to fit). Gate: Hub unlock refused, password accepted.
+
+---
+
 ## v133 — 2026-10-29
 
 **Wedding Hub — review tool links (source `wedding-hub-v3.html`)**

@@ -264,6 +264,47 @@
   #gate .header-eyebrow { margin-bottom: 34px; }
   #gate .err { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 15px; color: var(--light); min-height: 22px; margin-top: 14px; }
 
+  /* EDITING MODE: yellow bar, dashed outlines on everything that can change */
+  #edit-bar { position: fixed; top: 0; left: 0; right: 0; z-index: 400; background: #ffe800; color: #000; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; padding: 12px 24px; font-family: 'Montserrat', sans-serif; font-size: 11px; letter-spacing: 0.02em; line-height: 1.5; }
+  #edit-bar[hidden] { display: none; }
+  #edit-bar .eb-mode { font-weight: 500; font-size: 9px; letter-spacing: 0.3em; text-transform: uppercase; border: 1.5px solid #000; padding: 5px 10px; }
+  #edit-bar #eb-state { flex: 1; min-width: 200px; }
+  #edit-bar .eb-who { opacity: 0.55; margin-left: 6px; }
+  #edit-bar .eb-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  #edit-bar button { font-family: 'Montserrat', sans-serif; font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; padding: 9px 14px; border: 1.5px solid #000; background: transparent; color: #000; cursor: pointer; }
+  #edit-bar button#eb-publish, #edit-bar button#eb-in { background: #000; color: #ffe800; }
+  #edit-bar button:disabled { opacity: 0.35; cursor: default; }
+  #edit-bar button[hidden] { display: none; }
+  body.edit-on { padding-top: var(--ebh, 58px); }
+  body.edit-on nav { top: var(--ebh, 58px); }
+  @media(max-width:700px) { #edit-bar { padding: 10px 14px; gap: 8px; font-size: 10px; } #edit-bar .eb-who { display: none; } #edit-bar button { padding: 7px 10px; } }
+  body.editing .collections { outline: 2px dashed #ffe800; outline-offset: 14px; }
+  body.editing .collections-head::after { content: 'Editing the collections'; display: inline-block; margin-top: 18px; background: #ffe800; color: #000; font-size: 8px; letter-spacing: 0.3em; text-transform: uppercase; padding: 5px 10px; }
+  body.editing [contenteditable] { outline: 1px dashed rgba(255,232,0,0.7); outline-offset: 3px; cursor: text; min-width: 1.5em; display: inline-block; }
+  body.editing .collection.featured [contenteditable] { outline-color: #b8a400; }
+  body.editing [contenteditable]:hover { background: rgba(255,232,0,0.12); }
+  body.editing [contenteditable]:focus { outline: 2px solid #ffe800; background: rgba(255,232,0,0.12); }
+  body.editing [contenteditable]:empty::before { content: attr(data-ph); opacity: 0.45; font-style: italic; }
+  body.editing .coll-name, body.editing .coll-tagline { display: block; }
+  body.editing .coll-badge.ed-empty { background: transparent; color: var(--subtle); border: 1px dashed var(--mid); }
+  body.editing .collection { padding-top: 84px; }
+  .ed-tools { position: absolute; top: 40px; left: 0; right: 0; display: flex; justify-content: center; gap: 4px; }
+  .ed-tools button, .ed-link, .ed-x { font-family: 'Montserrat', sans-serif; font-size: 8px; letter-spacing: 0.14em; text-transform: uppercase; background: #ffe800; color: #000; border: none; padding: 5px 8px; cursor: pointer; }
+  .ed-tools button:disabled { opacity: 0.3; cursor: default; }
+  .ed-link { display: block; margin-top: 10px; background: transparent; color: #ffe800; padding: 4px 0; text-align: left; }
+  .collection.featured .ed-link { color: #8a7a00; }
+  .ed-x { padding: 2px 7px; font-size: 12px; letter-spacing: 0; margin-left: 8px; }
+  .ed-tag { background: none; border: 1px dashed currentColor; padding: 3px 6px; cursor: pointer; font-family: 'Montserrat', sans-serif; }
+  .ed-name { flex: 1; }
+  .ed-num { font-variant-numeric: tabular-nums; }
+  .ed-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: -8px 0 16px; font-size: 10px; color: var(--muted); }
+  .ed-row .ed-link { margin: 0; display: inline; }
+  .ed-add { width: 100%; margin-top: 12px; background: var(--black); color: #ffe800; border: 1px dashed #ffe800; padding: 9px 10px; font-family: 'Montserrat', sans-serif; font-size: 11px; border-radius: 0; }
+  .collection.featured .ed-add { background: #fff; color: #000; border-color: #b8a400; }
+  .collection.ed-new { border: 2px dashed #ffe800; color: #ffe800; background: transparent; font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 26px; cursor: pointer; align-items: center; justify-content: center; min-height: 240px; }
+  body.editing .collections-grid { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+  body.editing .coll-btn { display: none; }
+
   /* RESPONSIVE */
   @media(max-width:960px) { .collections{padding:50px 24px 20px} .collections-grid{grid-template-columns:1fr} .collection.featured{margin:0} .coll-tagline{min-height:0} .carte-divider{padding:0 24px} .builder-layout{grid-template-columns:1fr} .sidebar{position:relative;height:auto} .builder-main{padding:50px 24px 80px;border-right:none} }
   @media(max-width:580px) { .carte-divider span{font-size:18px;white-space:normal;text-align:center} .field-row{grid-template-columns:1fr} .modal-card{padding:32px 22px 26px} header{padding:120px 20px 60px} .options-grid{grid-template-columns:1fr} .album-builder{grid-template-columns:1fr 1fr} }
@@ -283,10 +324,10 @@
 </div>
 <script>
 // A soft gate for clients, not real protection: this page and its prices are
-// public on GitHub. Same password as the Wedding Hub, and either page's
-// unlock opens both, so couples coming from the Hub aren't asked twice.
+// public on GitHub. Same password as the Wedding Hub, but its own unlock, kept
+// on the device; "Lock" in the footer forgets it.
 const GATE_HASH = '7f2a0a0e';                       // FNV-1a of the password
-const GATE_KEYS = ['debelle.pkg.unlocked', 'debelle.weddinghub.unlocked'];
+const GATE_KEYS = ['debelle.pkg.unlocked'];
 const fnv = s => { let x = 2166136261; for (const c of s) { x ^= c.charCodeAt(0); x = Math.imul(x, 16777619) >>> 0; } return x.toString(16); };
 function gateOpen() { try { return GATE_KEYS.some(k => localStorage.getItem(k) === GATE_HASH); } catch (e) { return false; } }
 function tryUnlock(e) {
@@ -295,6 +336,7 @@ function tryUnlock(e) {
     try { localStorage.setItem(GATE_KEYS[0], GATE_HASH); } catch (err) {}
     document.body.classList.remove('locked');
     window.scrollTo(0, 0);
+    if (/[?&]edit\b/.test(location.search) && window.openEditor) openEditor();
   } else {
     document.getElementById('gate-err').textContent = 'That is not the password. Try again.';
   }
@@ -303,6 +345,17 @@ function tryUnlock(e) {
 if (gateOpen()) document.body.classList.remove('locked');
 else setTimeout(() => document.getElementById('gate-pw').focus(), 50);
 </script>
+
+<div id="edit-bar" hidden role="status">
+  <span class="eb-mode">Editing mode</span>
+  <span id="eb-state"></span>
+  <span class="eb-actions">
+    <button id="eb-in" onclick="editSignIn()" hidden>Sign in with Google</button>
+    <button id="eb-publish" onclick="publishEdits()" hidden>Publish</button>
+    <button id="eb-discard" onclick="discardEdits()" hidden>Discard changes</button>
+    <button id="eb-exit" onclick="exitEditor()">Exit</button>
+  </span>
+</div>
 
 <nav>
   <a class="nav-logo" href="https://debellephotography.com" target="_blank">
@@ -423,7 +476,7 @@ else setTimeout(() => document.getElementById('gate-pw').focus(), 50);
 </div>
 
 <div class="footer-band">
-  <p><a href="mailto:yourwedding@debellephotography.com">yourwedding@debellephotography.com</a> &nbsp;·&nbsp; 514.887.4686 &nbsp;·&nbsp; <a href="https://debellephotography.com" target="_blank">debellephotography.com</a> &nbsp;·&nbsp; <a href="package-builder-admin.html" rel="nofollow" style="opacity:.55">Studio · prices</a></p>
+  <p><a href="mailto:yourwedding@debellephotography.com">yourwedding@debellephotography.com</a> &nbsp;·&nbsp; 514.887.4686 &nbsp;·&nbsp; <a href="https://debellephotography.com" target="_blank">debellephotography.com</a> &nbsp;·&nbsp; <a href="package-builder-admin.html" rel="nofollow" style="opacity:.55">Studio · prices</a> &nbsp;·&nbsp; <a href="#" onclick="openEditor();return false" rel="nofollow" style="opacity:.55">Studio · collections</a> &nbsp;·&nbsp; <a href="#" onclick="try{localStorage.removeItem('debelle.pkg.unlocked')}catch(e){};location.reload();return false" style="opacity:.55">Lock</a></p>
 </div>
 
 <div class="modal" id="client-modal" hidden onclick="if(event.target===this)closeClient()">
@@ -609,6 +662,7 @@ function restoreCollection() { const r = activeColl(); if (r) { applyCollection(
 function leaveCollection() { state.collection = null; renderAll(); }
 
 function renderCollections() {
+  if (editing) return renderCollectionsEdit();
   const held = intactColl();
   document.getElementById('collections-grid').innerHTML = COLLECTIONS.map((c, n) => {
     const r = resolveCollection(c.id);
@@ -620,7 +674,7 @@ function renderCollections() {
       ${c.badge ? `<div class="coll-badge">${esc(c.badge)}</div>` : ''}
       <div class="coll-num">${['I','II','III','IV','V'][n] || n+1}.</div>
       <div class="coll-name">${esc(c.name)}</div>
-      <p class="coll-tagline">${esc(c.tagline)}</p>
+      ${c.tagline ? `<p class="coll-tagline">${esc(c.tagline)}</p>` : ''}
       ${variants}
       <div class="coll-items">${r.items.map(i =>
         `<div class="coll-item"><span>${esc(i.name)}</span><span class="coll-tag${i.gift?' gift':''}">${i.gift?'Complimentary':'Included'}</span></div>`).join('')}</div>
@@ -633,6 +687,315 @@ function renderCollections() {
     </div>`;
   }).join('');
 }
+
+// ── EDITING THE COLLECTIONS ───────────────────────────────────────────────────
+// Xavier (or an editor from the prices panel) edits the collections right on
+// this page. "Studio · collections" in the footer, or ?edit, loads Firebase,
+// asks for Google sign-in, and turns the collection cards editable under a
+// yellow bar. Publish writes collections, gifts and names into the same
+// catalog/package-builder the prices panel saves (read fresh first, so the
+// prices are never touched), plus a copy in catalogHistory. Clients never
+// load Firebase; they read the catalog as before.
+
+const FB_SDK = 'https://www.gstatic.com/firebasejs/10.12.2/';
+const FB_CONFIG = {
+  apiKey: 'AIzaSyCu0CA6eLWIkhhl-Z7jr_dDisuXDt1dKco', authDomain: 'xdb-tools.firebaseapp.com',
+  databaseURL: 'https://xdb-tools-default-rtdb.firebaseio.com', projectId: 'xdb-tools', appId: '1:6009567091:web:f7ee8c43ebe1bd25fcb706'
+};
+const FB_OWNER = 'jGJdt3h4EeaOL3mYWUHA4yMZsRx2';
+const CATALOG_DOC = 'package-builder';
+
+let fb = null, editor = null, editing = false, editSaved = '', editBusy = false;
+const clone = o => JSON.parse(JSON.stringify(o));
+const emailKey = e => String(e || '').trim().toLowerCase().replace(/\./g, ',');
+
+async function fbLoad() {
+  if (fb) return fb;
+  const [app, a, f] = await Promise.all([import(FB_SDK + 'firebase-app.js'), import(FB_SDK + 'firebase-auth.js'), import(FB_SDK + 'firebase-database.js')]);
+  const inst = app.initializeApp(FB_CONFIG);
+  fb = { a, f, auth: a.getAuth(inst), db: f.getDatabase(inst) };
+  return fb;
+}
+
+// what Publish writes, and what Discard goes back to
+const collSnapshot = () => JSON.stringify({ collections: COLLECTIONS, extras: EXTRAS, collLabels: COLL_LABELS });
+function collRestore(json) {
+  const s = JSON.parse(json);
+  COLLECTIONS.splice(0, COLLECTIONS.length, ...s.collections);
+  Object.keys(EXTRAS).forEach(k => delete EXTRAS[k]); Object.assign(EXTRAS, s.extras);
+  Object.keys(COLL_LABELS).forEach(k => delete COLL_LABELS[k]); Object.assign(COLL_LABELS, s.collLabels);
+}
+const editDirty = () => editing && collSnapshot() !== editSaved;
+
+function editBar(state, text) {
+  const bar = document.getElementById('edit-bar');
+  bar.hidden = false; document.body.classList.add('edit-on');
+  document.getElementById('eb-state').innerHTML = text;
+  document.getElementById('eb-in').hidden = state !== 'signin';
+  ['eb-publish', 'eb-discard'].forEach(id => { document.getElementById(id).hidden = state !== 'editing'; });
+  document.getElementById('eb-publish').disabled = editBusy || !editDirty();
+  document.getElementById('eb-discard').disabled = editBusy || !editDirty();
+  document.documentElement.style.setProperty('--ebh', bar.offsetHeight + 'px');   // room for the bar, however it wraps
+}
+function paintEditBar() {
+  if (!editing) return;
+  editBar('editing', editBusy ? '<b>Publishing…</b>'
+    : editDirty() ? '<b>Unpublished changes.</b> Clients still see the last published version.'
+    : `Click any name, line or price in the collections to change it. Clients see changes once you publish. <span class="eb-who">${esc(editor.email || '')}</span>`);
+}
+
+// Footer link and ?edit: load sign-in, then edit if this account may
+async function openEditor() {
+  editBar('wait', 'Connecting…');
+  try { await fbLoad(); } catch (e) { editBar('wait', 'The sign-in service couldn’t be reached. Check the connection and try again.'); return; }
+  const u = await new Promise(r => { const off = fb.a.onAuthStateChanged(fb.auth, x => { off(); r(x); }); });
+  if (u) return checkEditor(u);
+  editBar('signin', 'Sign in with the Google account that edits the prices.');
+}
+async function editSignIn() {
+  const p = new fb.a.GoogleAuthProvider(); p.setCustomParameters({ prompt: 'select_account' });
+  let res = null;
+  try { res = await fb.a.signInWithPopup(fb.auth, p); }
+  catch (e) {
+    if (/popup-blocked|operation-not-supported/i.test((e && e.code) || '')) { try { sessionStorage.setItem('debelle.pkg.edit', '1'); } catch (err) {} return fb.a.signInWithRedirect(fb.auth, p); }
+    if (!/popup-closed|cancelled-popup/i.test((e && e.code) || '')) editBar('signin', 'Sign-in didn’t work: ' + esc((e && e.code) || e));
+    return;
+  }
+  if (res && res.user) checkEditor(res.user);
+}
+async function checkEditor(u) {
+  let ok = u.uid === FB_OWNER;
+  if (!ok) { try { ok = (await fb.f.get(fb.f.ref(fb.db, 'catalogEditors/' + emailKey(u.email)))).exists(); } catch (e) { ok = false; } }
+  if (!ok) { editBar('signin', `${esc(u.email)} can’t edit the collections. Ask Xavier to add it in the prices panel, or sign in with another account.`); return; }
+  editor = u; editing = true; editSaved = collSnapshot();
+  document.body.classList.add('editing');
+  renderCollections(); paintEditBar();
+  document.getElementById('collections').scrollIntoView({ behavior: 'smooth' });
+}
+function exitEditor() {
+  if (editDirty() && !confirm('Leave editing mode? Your unpublished changes will be lost.')) return;
+  if (editing) collRestore(editSaved);
+  editing = false; editor = null;
+  document.body.classList.remove('editing', 'edit-on');
+  document.getElementById('edit-bar').hidden = true;
+  renderAll();
+}
+function discardEdits() {
+  if (!confirm('Discard your unpublished changes?')) return;
+  collRestore(editSaved); renderAll(); paintEditBar();
+}
+
+// the services and prices on this page, in the catalog's shape (used only if nothing was ever saved)
+function catalogFromPage() {
+  const timed = o => Object.assign({ id:o.id, name:o.name, price:o.price, desc:o.desc }, o.qty ? { hourly:true, minQty:o.minQty || 1 } : {}, o.fullDay ? { fullDay:true } : {});
+  return {
+    photo: PHOTO_OPTIONS.map(timed), video: VIDEO_OPTIONS.map(timed),
+    videoAddons: VIDEO_ADDONS.map(o => ({ id:o.id, name:o.name, price:o.price, desc:o.desc })),
+    glam: GLAM_OPTIONS.map(o => ({ id:o.id, name:o.name, price:o.price, desc:o.desc, reqFullDay:!!o.reqFullDay })),
+    albums: ALBUM_TYPES.map(o => ({ id:o.id, name:o.name, pricePerPage:o.pricePerPage, min:o.min, format:o.format })),
+    addons: OTHER_ADDONS.map(o => ({ id:o.id, name:o.name, price:o.price, desc:o.desc })),
+    settings: clone(SETTINGS),
+  };
+}
+
+async function publishEdits() {
+  if (!editDirty() || editBusy) return;
+  const bad = COLLECTIONS.filter(c => !String(c.name).trim()).length;
+  if (bad) { alert('Every collection needs a name.'); return; }
+  editBusy = true; paintEditBar();
+  try {
+    // keep only the gifts still in use
+    const used = new Set();
+    COLLECTIONS.forEach(c => (c.variants || [c]).forEach(v => (v.gifts || []).forEach(g => used.add(g))));
+    Object.keys(EXTRAS).forEach(k => { if (!used.has(k)) delete EXTRAS[k]; });
+    const cur = (await fb.f.get(fb.f.ref(fb.db, 'catalog/' + CATALOG_DOC))).val();
+    const data = Object.assign({}, cur && cur.data ? cur.data : catalogFromPage(),
+      clone({ collections: COLLECTIONS, extras: EXTRAS, collLabels: COLL_LABELS }));
+    const now = Date.now(), doc = { data, updatedAt: now, by: editor.email || '' };
+    await fb.f.update(fb.f.ref(fb.db), { ['catalog/' + CATALOG_DOC]: doc, ['catalogHistory/' + CATALOG_DOC + '/' + now]: doc });
+    try { localStorage.setItem(CATALOG_CACHE, JSON.stringify(doc)); } catch (e) {}
+    editSaved = collSnapshot();
+    editBusy = false; paintEditBar();
+    document.getElementById('eb-state').innerHTML = '<b>Published.</b> Clients see these collections now.';
+  } catch (e) {
+    editBusy = false; paintEditBar();
+    alert(/permission/i.test(String(e && (e.code || e.message))) ? 'Not allowed to publish. Check this account is on the editors list.' : 'Couldn’t publish: ' + ((e && e.code) || e));
+  }
+}
+
+/* ---- the editable cards ---- */
+
+// the list an edit applies to: the choice on show, or the collection itself
+const collTarget = c => c.variants ? (c.variants.find(v => v.id === collVariant[c.id]) || c.variants[0]) : c;
+const defaultName = f => f.kind === 'photo' ? `${f.o.name} Photography` : f.kind === 'video' ? `${f.o.name} Cinematography` : f.o.name;
+const newId = p => p + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
+
+function addItemOptions(t) {
+  const has = new Set([...(t.include || []), ...(t.gifts || [])]);
+  const group = (label, list, fn) => `<optgroup label="${label}">${list.filter(o => !has.has(o.id)).map(o => `<option value="svc:${o.id}">${esc(fn ? fn(o) : o.name)}</option>`).join('')}</optgroup>`;
+  return `<option value="">+ Add a line…</option>` +
+    group('Photography', PHOTO_OPTIONS, o => o.name + ' Photography') +
+    group('Cinematography', VIDEO_OPTIONS, o => o.name + ' Cinematography') +
+    group('Video editing', VIDEO_ADDONS) + group('Additional services', OTHER_ADDONS) +
+    `<optgroup label="Album">${ALBUM_TYPES.map(a => `<option value="album:${a.id}">${esc(a.name)}</option>`).join('')}</optgroup>` +
+    `<optgroup label="Gift not sold à la carte">${Object.keys(EXTRAS).filter(k => !has.has(k)).map(k => `<option value="extra:${k}">${esc(EXTRAS[k].name)}</option>`).join('')}<option value="gift:new">New gift…</option></optgroup>`;
+}
+
+function renderCollectionsEdit() {
+  const ed = (field, text, cls = '', attrs = '') => `<span class="${cls}" contenteditable="plaintext-only" spellcheck="false" data-field="${field}" ${attrs}>${esc(text)}</span>`;
+  document.getElementById('collections-grid').innerHTML = COLLECTIONS.map((c, n) => {
+    const r = resolveCollection(c.id), t = collTarget(c);
+    const variants = c.variants ? `<div class="coll-variants">${c.variants.map(v =>
+      `<button type="button" class="${r.variant===v.id?'on':''}" data-act="variant" data-v="${v.id}">${esc(v.label)}</button>`).join('')}</div>
+      <div class="ed-row"><span class="ed-label">This choice is called</span>${ed('vlabel', t.label, 'ed-inline')}
+        <button class="ed-link" data-act="rmchoice">Remove this choice</button></div>` : '';
+    const items = r.items.map(i => {
+      const name = i.kind === 'album'
+        ? `${esc(ALBUM_TYPES.find(a => a.id === i.id).name)}, ${ed('pages', r.album.pages, 'ed-num')} pages`
+        : ed('item', i.name, '', `data-i="${i.id}"`);
+      const tag = i.kind === 'extra'
+        ? `<span class="coll-tag gift">Complimentary, ${ed('xvalue', i.price, 'ed-num', `data-i="${i.id}"`)} value</span>`
+        : i.kind === 'album' ? `<span class="coll-tag">Included</span>`
+        : `<button class="coll-tag ed-tag${i.gift ? ' gift' : ''}" data-act="tag" data-i="${i.id}" title="Switch between Included and Complimentary">${i.gift ? 'Complimentary' : 'Included'} ⇄</button>`;
+      return `<div class="coll-item"><span class="ed-name">${name}</span>${tag}<button class="ed-x" data-act="rm" data-i="${i.id}" title="Remove this line">×</button></div>`;
+    }).join('');
+    return `<div class="collection${c.featured ? ' featured' : ''}" data-c="${n}">
+      <div class="coll-badge${c.badge ? '' : ' ed-empty'}">${ed('badge', c.badge || '', '', 'data-ph="Badge, e.g. Most popular"')}</div>
+      <div class="ed-tools">
+        <button data-act="left" ${n === 0 ? 'disabled' : ''} title="Move left">←</button>
+        <button data-act="right" ${n === COLLECTIONS.length - 1 ? 'disabled' : ''} title="Move right">→</button>
+        <button data-act="feature" title="Highlight this collection">${c.featured ? '★ Highlighted' : '☆ Highlight'}</button>
+        <button data-act="delete" title="Delete this collection" ${COLLECTIONS.length < 2 ? 'disabled' : ''}>Delete</button>
+      </div>
+      <div class="coll-num">${['I','II','III','IV','V','VI'][n] || n + 1}.</div>
+      ${ed('name', c.name, 'coll-name')}
+      ${ed('tagline', c.tagline || '', 'coll-tagline', 'data-ph="A line about this collection"')}
+      ${variants}
+      <div class="coll-items">${items}
+        <select class="ed-add" data-act="add">${addItemOptions(t)}</select>
+        ${c.variants ? '' : '<button class="ed-link" data-act="addchoice">Offer two choices (like Photography or Film)</button>'}
+        ${c.variants && c.variants.length < 4 ? '<button class="ed-link" data-act="addchoice">Add another choice</button>' : ''}
+      </div>
+      <div>
+        <div class="coll-was">${fmt(r.value)} à la carte</div>
+        <div class="coll-price">$${ed('price', c.price, 'ed-num')}</div>
+        <div class="coll-save">${r.value > r.price ? 'You save ' + fmt(r.value - r.price) : 'No saving against à la carte'}</div>
+      </div>
+    </div>`;
+  }).join('') + `<button class="collection ed-new" data-act="new">+ Add a collection</button>`;
+}
+
+// typing: keep the model current without redrawing (the caret stays put)
+function editField(el) {
+  const card = el.closest('[data-c]'); if (!card) return;
+  const c = COLLECTIONS[+card.dataset.c], t = collTarget(c), txt = el.textContent.replace(/\s+/g, ' ').trim();
+  const n = () => Math.max(0, parseInt(txt.replace(/[^0-9]/g, ''), 10) || 0);
+  switch (el.dataset.field) {
+    case 'name': c.name = txt; break;
+    case 'tagline': c.tagline = txt; break;
+    case 'badge': if (txt) c.badge = txt; else delete c.badge; break;
+    case 'price': c.price = n(); break;
+    case 'vlabel': t.label = txt || 'Choice'; break;
+    case 'pages': if (t.album) t.album.pages = Math.max((ALBUM_TYPES.find(a => a.id === t.album.id) || {}).min || 1, n()); break;
+    case 'xvalue': if (EXTRAS[el.dataset.i]) EXTRAS[el.dataset.i].value = n(); break;
+    case 'item': {
+      const id = el.dataset.i;
+      if (EXTRAS[id]) { EXTRAS[id].name = txt || EXTRAS[id].name; break; }
+      const f = findItem(id);
+      if (!txt || (f && txt === defaultName(f))) delete COLL_LABELS[id]; else COLL_LABELS[id] = txt;
+    }
+  }
+  paintEditBar();
+}
+
+function editAction(btn) {
+  const card = btn.closest('[data-c]'), act = btn.dataset.act;
+  if (act === 'new') {
+    COLLECTIONS.push({ id: newId('c'), name: 'New Collection', price: 0, tagline: '', include: [], gifts: [] });
+    return redrawEdit();
+  }
+  if (!card) return;
+  const n = +card.dataset.c, c = COLLECTIONS[n], t = collTarget(c), id = btn.dataset.i;
+  const drop = list => (list || []).filter(x => x !== id);
+  switch (act) {
+    case 'variant': collVariant[c.id] = btn.dataset.v; break;
+    case 'left': case 'right': {
+      const m = act === 'left' ? n - 1 : n + 1;
+      [COLLECTIONS[n], COLLECTIONS[m]] = [COLLECTIONS[m], COLLECTIONS[n]]; break;
+    }
+    case 'feature': { const on = !c.featured; COLLECTIONS.forEach(x => delete x.featured); if (on) c.featured = true; break; }
+    case 'delete':
+      if (!confirm(`Delete ${c.name}?`)) return;
+      COLLECTIONS.splice(n, 1); break;
+    case 'tag':
+      if ((t.gifts || []).includes(id)) { t.gifts = drop(t.gifts); t.include = [...(t.include || []), id]; }
+      else { t.include = drop(t.include); t.gifts = [...(t.gifts || []), id]; }
+      break;
+    case 'rm':
+      if (t.album && t.album.id === id) delete t.album;
+      else { t.include = drop(t.include); t.gifts = drop(t.gifts); }
+      break;
+    case 'addchoice': {
+      if (!c.variants) {
+        c.variants = [{ id: newId('v'), label: 'Photography', include: c.include || [], gifts: c.gifts || [] },
+                      { id: newId('v'), label: 'Film', include: [], gifts: [] }];
+        if (c.album) c.variants[0].album = c.album;
+        delete c.include; delete c.gifts; delete c.album;
+      } else c.variants.push({ id: newId('v'), label: 'Another choice', include: [], gifts: [] });
+      collVariant[c.id] = c.variants[c.variants.length - 1].id;
+      break;
+    }
+    case 'rmchoice': {
+      if (!confirm(`Remove the “${t.label}” choice and its lines?`)) return;
+      c.variants = c.variants.filter(v => v !== t);
+      if (c.variants.length === 1) {
+        const v = c.variants[0];
+        c.include = v.include || []; c.gifts = v.gifts || []; if (v.album) c.album = v.album;
+        delete c.variants;
+      }
+      delete collVariant[c.id];
+      break;
+    }
+    default: return;
+  }
+  redrawEdit();
+}
+
+function editAdd(sel) {
+  const card = sel.closest('[data-c]'), v = sel.value; if (!card || !v) return;
+  const t = collTarget(COLLECTIONS[+card.dataset.c]);
+  const [kind, id] = v.split(':');
+  if (kind === 'svc') t.include = [...(t.include || []), id];
+  else if (kind === 'album') { const a = ALBUM_TYPES.find(x => x.id === id); t.album = { id, pages: a ? a.min : 24 }; }
+  else if (kind === 'extra') t.gifts = [...(t.gifts || []), id];
+  else if (kind === 'gift') {
+    const name = (prompt('Name of the gift (shown as Complimentary):') || '').trim(); if (!name) { sel.value = ''; return; }
+    const value = parseInt(String(prompt('What is it worth, in dollars? (used for "You save")', '0')).replace(/[^0-9]/g, ''), 10) || 0;
+    const gid = newId('gift_'); EXTRAS[gid] = { name, value };
+    t.gifts = [...(t.gifts || []), gid];
+  }
+  redrawEdit();
+}
+
+function redrawEdit() { renderCollections(); paintEditBar(); }
+
+(function wireEditor() {
+  const grid = document.getElementById('collections-grid');
+  grid.addEventListener('input', e => { if (editing && e.target.dataset && e.target.dataset.field) editField(e.target); });
+  // leaving a field redraws the cards (totals, tabs); while a click is in progress, after it
+  let pressing = false, pending = false;
+  const settle = () => { if (pending && !pressing) { pending = false; if (!(document.activeElement && document.activeElement.dataset && document.activeElement.dataset.field)) redrawEdit(); } };
+  grid.addEventListener('pointerdown', () => { pressing = true; });
+  document.addEventListener('pointerup', () => { pressing = false; setTimeout(settle, 0); });
+  grid.addEventListener('focusout', e => { if (editing && e.target.dataset && e.target.dataset.field) { pending = true; setTimeout(settle, 0); } });
+  grid.addEventListener('keydown', e => { if (editing && e.key === 'Enter' && e.target.dataset && e.target.dataset.field) { e.preventDefault(); e.target.blur(); } });
+  grid.addEventListener('click', e => { const b = editing && e.target.closest('[data-act]'); if (b && b.tagName !== 'SELECT') { e.preventDefault(); editAction(b); } });
+  grid.addEventListener('change', e => { if (editing && e.target.matches('select[data-act="add"]')) editAdd(e.target); });
+  window.addEventListener('resize', () => { const b = document.getElementById('edit-bar'); if (!b.hidden) document.documentElement.style.setProperty('--ebh', b.offsetHeight + 'px'); });
+  window.addEventListener('beforeunload', ev => { if (editDirty()) { ev.preventDefault(); ev.returnValue = ''; } });
+  let again = false; try { again = sessionStorage.getItem('debelle.pkg.edit') === '1'; sessionStorage.removeItem('debelle.pkg.edit'); } catch (e) {}
+  if (/[?&]edit\b/.test(location.search) || again) document.addEventListener('DOMContentLoaded', () => { if (!document.body.classList.contains('locked')) openEditor(); });
+})();
 
 // ── SETTINGS ──────────────────────────────────────────────────────────────────
 // The rates that aren't a service of their own. Overwritten by the live price
@@ -686,6 +1049,22 @@ function applyCatalog(c) {
   put(ALBUM_TYPES,   listOf(d.albums).filter(item).map(x => ({ id: String(x.id), name: String(x.name), pricePerPage: num(x.pricePerPage, 0),
                                                                 min: Math.max(1, Math.round(num(x.min, 24))), format: String(x.format || '') })));
   put(OTHER_ADDONS,  listOf(d.addons).filter(item).map(base));
+  // collections edited on this page (see EDITING THE COLLECTIONS); the built-in ones until saved once
+  const strs = v => listOf(v).map(String);
+  const part = x => Object.assign({ include: strs(x.include), gifts: strs(x.gifts) },
+    x.album && x.album.id ? { album: { id: String(x.album.id), pages: Math.max(1, Math.round(num(x.album.pages, 24))) } } : {});
+  const colls = listOf(d.collections).filter(x => x && x.id && x.name).map(x => Object.assign(
+    { id: String(x.id), name: String(x.name), price: num(x.price, 0), tagline: String(x.tagline || '') },
+    x.badge ? { badge: String(x.badge) } : {}, x.featured ? { featured: true } : {},
+    listOf(x.variants).length ? { variants: listOf(x.variants).filter(v => v && v.id).map(v => Object.assign({ id: String(v.id), label: String(v.label || '') }, part(v))) } : part(x)));
+  if (colls.length) {
+    put(COLLECTIONS, colls);
+    if (d.extras && typeof d.extras === 'object') { Object.keys(EXTRAS).forEach(k => delete EXTRAS[k]);
+      Object.entries(d.extras).forEach(([k, x]) => { if (x && x.name) EXTRAS[k] = { name: String(x.name), value: num(x.value, 0) }; }); }
+    Object.keys(COLL_LABELS).forEach(k => delete COLL_LABELS[k]);
+    if (d.collLabels && typeof d.collLabels === 'object') Object.entries(d.collLabels).forEach(([k, v]) => { COLL_LABELS[k] = String(v); });
+  }
+  if (state.collection && !COLLECTIONS.some(c => c.id === state.collection.id)) state.collection = null;
   const st = d.settings || {};
   ['glamExtraHour','snpPerGuest','snpMin','snpBigGroup','snpAssistant','discountTop'].forEach(k => { if (st[k] != null) SETTINGS[k] = num(st[k], SETTINGS[k]); });
   const tiers = listOf(st.discounts).map(t => ({ upTo: num(t && t.upTo, NaN), pct: num(t && t.pct, 0) })).filter(t => isFinite(t.upTo));

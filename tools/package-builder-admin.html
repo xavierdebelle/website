@@ -330,7 +330,7 @@ function start() {
     const first = base === undefined || draft === null;
     if (!first && dirty && remote && base && remote.updatedAt !== base.updatedAt) {
       $('warn').hidden = false;
-      $('warn').textContent = `${remote.by || 'Someone'} saved new prices at ${when(remote.updatedAt)} while you were editing. Saving now replaces their version with yours; Discard loads theirs.`;
+      $('warn').textContent = `${remote.by || 'Someone'} saved changes at ${when(remote.updatedAt)} while you were editing. Saving now replaces their version with yours; Discard loads theirs.`;
       base = remote;
       return;
     }
@@ -485,8 +485,13 @@ function cleaned() {
   }); });
   d.settings.discounts = d.settings.discounts.map(t => ({ upTo: +t.upTo, pct: +t.pct })).sort((a, b) => a.upTo - b.upTo);
   ['glamExtraHour','snpPerGuest','snpMin','snpBigGroup','snpAssistant','discountTop'].forEach(k => { d.settings[k] = +d.settings[k]; });
+  // The collections are edited on the Package Builder itself: carry over what is
+  // published now (base follows the database live), never this page's older copy.
+  const live = (base && base.data) || {};
+  COLLECTION_KEYS.forEach(k => { if (live[k] !== undefined) d[k] = clone(live[k]); else delete d[k]; });
   return d;
 }
+const COLLECTION_KEYS = ['collections', 'extras', 'collLabels'];
 $('btn-save').addEventListener('click', async () => {
   const bad = problems();
   if (bad.length) { toast('Fix first: ' + bad.slice(0, 3).join(', ') + (bad.length > 3 ? '…' : '')); return; }
