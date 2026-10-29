@@ -110,7 +110,7 @@ its ID forever. Statuses: new, planned, in progress, done, dropped.
 - Couples tick off family groupings and must-have shots, linked to the times in tools/wedding-schedule.html. It saves hours of back-and-forth before each wedding, and the result goes straight to the photographer on the day.
 
 ### IDEA-026 · Client portal for de Belle couples
-- **Category:** Feature · **Effort:** L · **Impact:** ★★★ · **Status:** new
+- **Category:** Feature · **Effort:** L · **Impact:** ★★★ · **Status:** done (done in v129, 2026-10-29)
 - Schedule, video corrections, package, payments and gallery link already exist as separate tools (wedding-schedule, video-corrections, package-builder). One private link per couple that gathers them is a premium client experience and the core of the white-label product in IDEA-033.
 
 ### IDEA-027 · 333 Photo rate calculator / quote builder
@@ -212,7 +212,7 @@ its ID forever. Statuses: new, planned, in progress, done, dropped.
 ## 2026-10-07 — Monetization and offers
 
 ### IDEA-050 · Three ready-made wedding bundles on top of the Package Builder
-- **Category:** Monetization · **Effort:** M · **Impact:** ★★★ · **Status:** new
+- **Category:** Monetization · **Effort:** M · **Impact:** ★★★ · **Status:** done (done in v131, 2026-10-29)
 - tools/package-builder.html is 100% à la carte: PHOTO_OPTIONS, VIDEO_OPTIONS, VIDEO_ADDONS, GLAM_OPTIONS and OTHER_ADDONS (about 25 line items) with no anchor, so a couple faces a blank page and the total only goes up as fast as they dare to click. Add a row at the top with three one-click bundles (for example Essential, Signature, Full Story) that pre-fill the cart, show the price next to "if bought separately", and mark the middle one "Most booked". Bundles raise the average sale and make the decision a pick between three, not a build from scratch.
 
 ### IDEA-051 · Engagement session as a $350 front-end offer that credits toward the wedding
@@ -608,3 +608,21 @@ its ID forever. Statuses: new, planned, in progress, done, dropped.
 ### IDEA-139 · An "After delivery" stage that schedules the review ask, the album offer and the next shoot
 - **Category:** Monetization · **Effort:** S · **Impact:** ★★★ · **Status:** new
 - Builds on IDEA-053, IDEA-078 and IDEA-110: those offers exist only as ideas, with nothing in Xavier's own workflow to make them happen. In the Wedding video and Commercial shoot templates in tools/pipelines.html, add a stage after Done/Paid whose checklist items get due dates counted from the day the card arrives: day 3 ask for a Google review, day 30 offer the parents' album or prints, day 330 the anniversary session or (for 333 Photo) "book your next shoot". The existing due chips and late counts then turn every delivered job into three dated chances to sell again.
+
+## 2026-10-29 — SEO, performance, accessibility, mobile
+
+### IDEA-140 · Stop iPhones from wiping a couple's Wedding Hub
+- **Category:** Fix · **Effort:** S · **Impact:** ★★★ · **Status:** new
+- tools/wedding-hub.html keeps the whole checklist, budget, vendors and family list in localStorage only (`debelle.weddinghub.v1`), never calls `navigator.storage.persist()`, and has no web manifest, so it can't be added to the home screen as an app. Safari on iPhone deletes a site's stored data after 7 days without a visit unless the page is installed, and couples open a wedding planner in bursts weeks apart, so the hub can come back empty with no warning. Ask for persistent storage on setup, add a manifest and an "Add to Home Screen" tip in the welcome screen (installed web apps are exempt from the 7-day rule), and show a "Last saved copy: never / 3 weeks ago" line next to Save a copy. The hub is the studio's first private product for booked couples, and one lost budget is enough to make a couple stop trusting it.
+
+### IDEA-141 · One Wedding Hub for both partners, with a couple code
+- **Category:** Feature · **Effort:** M · **Impact:** ★★★ · **Status:** new
+- Builds on IDEA-026 (done as the v129 Wedding Hub). The hub lives in one browser, so when one partner ticks "Book a venue" or adds a payment on their phone, the other partner, a parent paying for part of it and the studio see nothing; the only way across is exporting a .json file. Give each couple a short private code (set up by Xavier with the booking) that syncs the hub through Firebase without a Google sign-in, so both phones open the same checklist and budget, and Xavier can glance at the family photo list and vendors before the day. Two people plan a wedding, and a shared hub makes it the place where the planning actually happens, which is what keeps de Belle in the couple's week for a whole year. It also fixes IDEA-140 for good, because the data no longer lives on a single phone.
+
+### IDEA-142 · Give the 16 dead-end tool pages a way back into the site
+- **Category:** SEO · **Effort:** S · **Impact:** ★★ · **Status:** new
+- 16 pages in tools/ (among them feed-planner, carousel-planner, portfolio-grid, portfolio-masonry, wedding-schedule, video-corrections and wedding-hub) contain no link to tools.html or the home page, and tools.html opens all 34 cards with `target="_blank"`, so on a phone each tool lands in a new tab with no back button and no route to anything else. A creator who finds the Feed Planner on Google never learns the rest of the site exists, and search engines see those pages as islands with no internal links. Add one tiny shared footer line through a script every tool already can load (for example "A free tool by Xavier de Belle · More tools · Work", with the de Belle version on the wedding tools), tracked with `xdbTrack('tool-footer')`, and open the cards in the same tab on touch screens. It costs a few lines and turns each tool into a door to the portfolio.
+
+### IDEA-143 · Keep the private workspace apps out of Google
+- **Category:** SEO · **Effort:** S · **Impact:** ★ · **Status:** new
+- tools/production-hub.html, pipelines.html, project-tracker.html and idea-bank.html are Xavier's own business workspace (sign-in only, "The Biz" and Archived Tools on tools.html), yet none carries `noindex`, while package-builder-admin.html, wedding-hub.html and the gated Package Builder already do. Someone searching Xavier's name can land on an empty sign-in screen for his task list instead of on work.html. Add `<meta name="robots" content="noindex">` to the owner-only apps (and leave them out of the sitemap in IDEA-008), so the pages Google shows for his name are the ones that sell.
