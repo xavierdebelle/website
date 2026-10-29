@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>de Belle Photography — Package Builder</title>
+<meta name="robots" content="noindex, nofollow">
 <!-- social preview: link cards on Instagram, iMessage, WhatsApp, Facebook, X -->
 <meta name="description" content="Every way to remember your day, priced live. Build your own de Belle Photography wedding package and see it add up as you go.">
 <link rel="canonical" href="https://xavierdebelle.com/tools/package-builder.html">
@@ -18,7 +19,7 @@
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Package Builder — de Belle Photography">
 <meta name="twitter:card" content="summary_large_image">
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&family=Montserrat:wght@200;300;400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&family=Montserrat:wght@200;300;400;500&family=Lato:ital,wght@0,300;0,400;0,700;1,400&display=swap" rel="stylesheet">
 <style>
   :root {
     --black: #000000;
@@ -178,13 +179,130 @@
   .footer-band p { font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--subtle); }
   .footer-band a { color: var(--gold); text-decoration: none; }
 
+  /* COLLECTIONS */
+  .collections { max-width: 1380px; margin: 0 auto; padding: 80px 65px 30px; }
+  .collections-head { text-align: center; margin-bottom: 46px; }
+  .collections-head .header-eyebrow { margin-bottom: 16px; }
+  .collections-head h2 { font-family: 'Cormorant Garamond', serif; font-size: clamp(32px, 4vw, 46px); font-weight: 300; font-style: italic; line-height: 1.1; margin-bottom: 14px; }
+  .collections-head p { font-size: 10.5px; color: var(--muted); letter-spacing: 0.06em; line-height: 2; max-width: 460px; margin: 0 auto; }
+  .collections-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--line); border: 1px solid var(--line); margin-top: 18px; }
+  .collection { background: var(--black2); padding: 42px 32px 32px; display: flex; flex-direction: column; position: relative; transition: background 0.25s; }
+  .collection.active { background: var(--black4); outline: 1px solid var(--line2); outline-offset: -1px; }
+  .collection.featured { background: var(--white); color: var(--black); margin: -18px 0; padding-top: 60px; padding-bottom: 50px; z-index: 1; outline: none; }
+  .coll-badge { position: absolute; top: 0; left: 0; right: 0; text-align: center; font-size: 8px; letter-spacing: 0.4em; text-transform: uppercase; color: var(--white); background: var(--black); padding: 9px; font-weight: 500; border: 1px solid var(--white); border-bottom: none; }
+  .collection.featured .coll-num { opacity: 0.5; }
+  .collection.featured .coll-tagline { color: #4a4a4a; }
+  .collection.featured .coll-item { color: var(--black); border-bottom-color: rgba(0,0,0,0.1); }
+  .collection.featured .coll-tag { color: #666; }
+  .collection.featured .coll-tag.gift, .collection.featured .coll-save { color: #3d7550; }
+  .collection.featured .coll-was { color: #888; }
+  .collection.featured .coll-btn { background: var(--black); color: var(--white); border-color: var(--black); }
+  .collection.featured .coll-btn:hover { opacity: 0.8; }
+  .collection.featured.active .coll-btn { background: var(--black); color: var(--white); border-color: var(--black); }
+  .collection.featured .coll-variants button { background: #eee; color: #666; }
+  .coll-num { font-family: 'Cormorant Garamond', serif; font-size: 13px; font-style: italic; opacity: 0.55; margin-bottom: 10px; }
+  .coll-name { font-family: 'Cormorant Garamond', serif; font-size: 29px; font-weight: 400; line-height: 1.15; margin-bottom: 12px; }
+  .coll-tagline { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 15px; color: var(--light); line-height: 1.55; margin-bottom: 22px; min-height: 70px; }
+  .coll-variants { display: flex; gap: 1px; background: var(--line); border: 1px solid var(--line); margin-bottom: 18px; }
+  .coll-variants button { flex: 1; padding: 9px 6px; background: var(--black); color: var(--subtle); border: none; font-family: 'Montserrat', sans-serif; font-size: 8px; letter-spacing: 0.22em; text-transform: uppercase; cursor: pointer; transition: all 0.2s; }
+  .coll-variants button.on { background: var(--white); color: var(--black); }
+  .coll-items { flex: 1; margin-bottom: 26px; }
+  .coll-item { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 9px 0; border-bottom: 1px solid rgba(255,255,255,0.06); font-size: 11px; color: var(--white); letter-spacing: 0.02em; line-height: 1.5; }
+  .coll-tag { font-size: 7.5px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); flex-shrink: 0; }
+  .coll-tag.gift { color: var(--green); }
+  .coll-was { font-family: 'Cormorant Garamond', serif; font-size: 17px; color: var(--subtle); text-decoration: line-through; }
+  .coll-price { font-family: 'Cormorant Garamond', serif; font-size: 50px; font-weight: 300; line-height: 1; margin: 4px 0 6px; }
+  .coll-save { font-size: 8.5px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--green); }
+  .coll-btn { display: block; width: 100%; margin-top: 22px; padding: 14px; background: transparent; color: var(--white); border: 1px solid var(--gold2); font-family: 'Montserrat', sans-serif; font-size: 8.5px; letter-spacing: 0.28em; text-transform: uppercase; cursor: pointer; transition: all 0.25s; }
+  .coll-btn:hover, .collection.active .coll-btn { background: var(--white); color: var(--black); border-color: var(--white); }
+  .collections-foot { text-align: center; margin-top: 26px; }
+  .text-link { background: none; border: none; color: var(--light); font-family: 'Montserrat', sans-serif; font-size: 9px; letter-spacing: 0.24em; text-transform: uppercase; cursor: pointer; padding: 6px; transition: opacity 0.2s; }
+  .text-link:hover { opacity: 0.6; }
+  .carte-divider { max-width: 1380px; margin: 50px auto 0; padding: 0 65px; display: flex; align-items: center; gap: 22px; }
+  .carte-divider::before, .carte-divider::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+  .carte-divider span { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 22px; color: var(--light); white-space: nowrap; }
+  .builder-layout { border-top: 1px solid var(--line); margin-top: 50px; }
+  .incl-price { font-size: 9px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--green); line-height: 28px; }
+  .addon-price .incl-price { line-height: 1; }
+
+  /* SIDEBAR: COLLECTION */
+  .coll-summary { border: 1px solid var(--line2); padding: 18px; margin-bottom: 24px; }
+  .coll-summary-label { font-size: 7px; letter-spacing: 0.35em; text-transform: uppercase; color: var(--subtle); margin-bottom: 8px; }
+  .coll-summary-name { font-family: 'Cormorant Garamond', serif; font-size: 22px; line-height: 1.2; }
+  .coll-summary-price { font-family: 'Cormorant Garamond', serif; font-size: 18px; color: var(--light); margin-top: 4px; }
+  .summary-tag { font-size: 7.5px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); flex-shrink: 0; padding-top: 3px; }
+  .summary-tag.gift { color: var(--green); }
+  .coll-notice { border: 1px solid var(--line2); padding: 14px 16px; margin-bottom: 22px; font-size: 10px; color: var(--light); line-height: 1.8; }
+  .coll-notice .text-link { padding: 8px 0 0; display: block; font-size: 8px; color: var(--white); }
+  .coll-notice .text-link + .text-link { padding-top: 4px; color: var(--subtle); }
+  .pricelist-btn { display: block; width: 100%; margin-top: 9px; padding: 13px; background: transparent; color: var(--light); border: 1px solid var(--line2); font-family: 'Montserrat', sans-serif; font-size: 8px; letter-spacing: 0.24em; text-transform: uppercase; cursor: pointer; transition: all 0.2s; }
+  .pricelist-btn:hover { color: var(--white); border-color: var(--light); }
+
+  /* CLIENT DETAILS */
+  .modal { position: fixed; inset: 0; z-index: 200; background: rgba(0,0,0,0.82); display: flex; align-items: center; justify-content: center; padding: 20px; }
+  .modal[hidden] { display: none; }
+  .modal-card { width: 100%; max-width: 440px; background: var(--black2); border: 1px solid var(--line2); padding: 40px 36px 32px; max-height: 100%; overflow-y: auto; }
+  .modal-card .header-eyebrow { margin-bottom: 14px; }
+  .modal-card h3 { font-family: 'Cormorant Garamond', serif; font-style: italic; font-weight: 300; font-size: 34px; line-height: 1.1; margin-bottom: 10px; }
+  .modal-card p { font-size: 10.5px; color: var(--muted); line-height: 1.9; margin-bottom: 24px; }
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .field { display: block; margin-bottom: 14px; }
+  .field span { display: block; font-size: 8px; letter-spacing: 0.25em; text-transform: uppercase; color: var(--subtle); margin-bottom: 7px; }
+  .field input { width: 100%; background: var(--black); border: 1px solid var(--mid); color: var(--white); padding: 11px 12px; font-family: 'Montserrat', sans-serif; font-size: 16px; font-weight: 300; outline: none; color-scheme: dark; border-radius: 0; -webkit-appearance: none; }
+  .field input:focus { border-color: var(--light); }
+  .modal-card .cta-btn { margin-top: 10px; }
+  .modal-card [hidden] { display: none; }
+  .modal-card .cta-btn:disabled { opacity: 0.5; cursor: wait; }
+  .modal-privacy { font-size: 9px !important; color: var(--subtle) !important; margin: 14px 0 0 !important; text-align: center; }
+
+  /* PASSWORD GATE: a soft gate, not real protection (the page is public) */
+  body.locked > :not(#gate):not(script) { display: none !important; }
+  #gate { display: none; min-height: 100vh; align-items: center; justify-content: center; padding: 24px; }
+  body.locked #gate { display: flex; }
+  #gate form { width: 100%; max-width: 360px; text-align: center; }
+  #gate img { height: 70px; width: auto; margin-bottom: 10px; }
+  #gate .header-eyebrow { margin-bottom: 34px; }
+  #gate .err { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 15px; color: var(--light); min-height: 22px; margin-top: 14px; }
+
   /* RESPONSIVE */
-  @media(max-width:960px) { .builder-layout{grid-template-columns:1fr} .sidebar{position:relative;height:auto} .builder-main{padding:50px 24px 80px;border-right:none} }
-  @media(max-width:580px) { header{padding:120px 20px 60px} .options-grid{grid-template-columns:1fr} .album-builder{grid-template-columns:1fr 1fr} }
+  @media(max-width:960px) { .collections{padding:50px 24px 20px} .collections-grid{grid-template-columns:1fr} .collection.featured{margin:0} .coll-tagline{min-height:0} .carte-divider{padding:0 24px} .builder-layout{grid-template-columns:1fr} .sidebar{position:relative;height:auto} .builder-main{padding:50px 24px 80px;border-right:none} }
+  @media(max-width:580px) { .carte-divider span{font-size:18px;white-space:normal;text-align:center} .field-row{grid-template-columns:1fr} .modal-card{padding:32px 22px 26px} header{padding:120px 20px 60px} .options-grid{grid-template-columns:1fr} .album-builder{grid-template-columns:1fr 1fr} }
 </style>
 <script defer src="../assets/stats.js"></script>
 </head>
-<body>
+<body class="locked">
+
+<div id="gate">
+  <form onsubmit="return tryUnlock(event)">
+    <img src="https://assets.cdn.filesafe.space/jkQ5EV9KVntkUlZAm9MS/media/698f33297d6877ee9ebde8b1.png" alt="de Belle Photography">
+    <div class="header-eyebrow">Package Builder</div>
+    <label class="field"><span>Password</span><input id="gate-pw" type="password" autocomplete="current-password" required></label>
+    <button class="cta-btn">→ Enter</button>
+    <div class="err" id="gate-err"></div>
+  </form>
+</div>
+<script>
+// A soft gate for clients, not real protection: this page and its prices are
+// public on GitHub. Same password as the Wedding Hub, and either page's
+// unlock opens both, so couples coming from the Hub aren't asked twice.
+const GATE_HASH = '7f2a0a0e';                       // FNV-1a of the password
+const GATE_KEYS = ['debelle.pkg.unlocked', 'debelle.weddinghub.unlocked'];
+const fnv = s => { let x = 2166136261; for (const c of s) { x ^= c.charCodeAt(0); x = Math.imul(x, 16777619) >>> 0; } return x.toString(16); };
+function gateOpen() { try { return GATE_KEYS.some(k => localStorage.getItem(k) === GATE_HASH); } catch (e) { return false; } }
+function tryUnlock(e) {
+  e.preventDefault();
+  if (fnv(document.getElementById('gate-pw').value.trim().toLowerCase()) === GATE_HASH) {
+    try { localStorage.setItem(GATE_KEYS[0], GATE_HASH); } catch (err) {}
+    document.body.classList.remove('locked');
+    window.scrollTo(0, 0);
+  } else {
+    document.getElementById('gate-err').textContent = 'That is not the password. Try again.';
+  }
+  return false;
+}
+if (gateOpen()) document.body.classList.remove('locked');
+else setTimeout(() => document.getElementById('gate-pw').focus(), 50);
+</script>
 
 <nav>
   <a class="nav-logo" href="https://debellephotography.com" target="_blank">
@@ -196,11 +314,23 @@
 <header>
   <div class="header-eyebrow">Build Your Wedding Package</div>
   <h1>Every Way to<br><em>Remember Your Day.</em></h1>
-  <p>Select exactly what you need, service by service.<br>Your discount is applied automatically.</p>
+  <p>Begin with one of our collections,<br>or build your own, service by service.</p>
   <div class="header-rule"></div>
 </header>
 
-<div class="builder-layout">
+<section class="collections" id="collections">
+  <div class="collections-head">
+    <div class="header-eyebrow">Our Collections</div>
+    <h2>Begin with a collection.</h2>
+    <p>Each collection comes with complimentary gifts. Choose one, then add anything you like below.</p>
+  </div>
+  <div class="collections-grid" id="collections-grid"></div>
+  <div class="collections-foot"><button class="text-link" onclick="downloadPriceList(this)">→ Download our full price list (PDF)</button></div>
+</section>
+
+<div class="carte-divider"><span>Or build your own, à la carte</span></div>
+
+<div class="builder-layout" id="builder">
   <div class="builder-main">
 
     <!-- I. PHOTOGRAPHY -->
@@ -271,10 +401,10 @@
 
     <!-- DISCOUNT BLOCK -->
     <div class="discount-block" id="discount-block">
-      <div class="discount-label">Volume Discount Applied</div>
+      <div class="discount-label" id="discount-label">Volume Discount Applied</div>
       <div class="discount-saving-amount" id="discount-saving-display">$0</div>
       <div class="discount-pct-badge" id="discount-pct-display"></div>
-      <div class="discount-note">saved · rounded to nearest $50</div>
+      <div class="discount-note" id="discount-note">saved · rounded to nearest $50</div>
     </div>
 
     <!-- TOTALS -->
@@ -286,13 +416,32 @@
       <div class="total-with-tax" id="total-tax-display">$0 <span>incl. tax</span></div>
     </div>
 
-    <button class="cta-btn" onclick="exportSummary()">Export Package Summary</button>
+    <button class="cta-btn" onclick="exportSummary(this)">Download Your Summary (PDF)</button>
+    <button class="pricelist-btn" onclick="downloadPriceList(this)">Full Price List (PDF)</button>
     <button class="reset-btn" onclick="resetAll()">Clear All Selections</button>
   </div>
 </div>
 
 <div class="footer-band">
   <p><a href="mailto:yourwedding@debellephotography.com">yourwedding@debellephotography.com</a> &nbsp;·&nbsp; 514.887.4686 &nbsp;·&nbsp; <a href="https://debellephotography.com" target="_blank">debellephotography.com</a> &nbsp;·&nbsp; <a href="package-builder-admin.html" rel="nofollow" style="opacity:.55">Studio · prices</a></p>
+</div>
+
+<div class="modal" id="client-modal" hidden onclick="if(event.target===this)closeClient()">
+  <form class="modal-card" onsubmit="submitClient(event)">
+    <div class="header-eyebrow" id="client-eyebrow">Your Summary</div>
+    <h3>Tell us about your day.</h3>
+    <p>We will put your names and wedding date on your PDF.</p>
+    <div class="field-row">
+      <label class="field"><span>Bride</span><input id="c-name1" autocomplete="given-name" required></label>
+      <label class="field"><span>Groom</span><input id="c-name2" required></label>
+    </div>
+    <label class="field"><span>Email</span><input id="c-email" type="email" autocomplete="email" required></label>
+    <label class="field"><span>Wedding date</span><input id="c-date" type="date" required></label>
+    <button class="cta-btn" id="client-go">Download PDF</button>
+    <a class="cta-btn" id="client-ready" hidden target="_blank" rel="noopener" style="text-align:center;text-decoration:none">→ Open your PDF</a>
+    <button type="button" class="reset-btn" onclick="closeClient()">Cancel</button>
+    <p class="modal-privacy">Your details stay with de Belle Photography.</p>
+  </form>
 </div>
 
 <script>
@@ -340,6 +489,150 @@ const OTHER_ADDONS = [
   { id:'oa_sleeve',       name:'Graphi Sleeve for Album',         price:150,  desc:'Protective sleeve for Graphi or Young Book albums.' },
   { id:'oa_layflat_addon',name:'24-Page Layflat Album (Add-on)',   price:700,  desc:'Compact layflat album, 24 pages.' },
 ];
+
+// ── COLLECTIONS ───────────────────────────────────────────────────────────────
+// Premade collections at a set price. `include` are builder services that come
+// with it, `gifts` are complimentary and shown with their value (EXTRAS are
+// gifts that aren't sold à la carte). Services added on top are priced à la
+// carte, without the volume discount. Removing or changing an included service
+// leaves the collection, and everything is priced à la carte again.
+
+const EXTRAS = {
+  magazine: { name:'Wedding Magazine', value:400 },   // value is a placeholder until Xavier sets it
+};
+
+// Names the collections use for services, where the catalog name reads too plainly.
+const COLL_LABELS = {
+  va_highlight_35: '5 Minute Highlight Film',
+  va_reel:         'Instagram Highlight Reel',
+  oa_engagement:   'Engagement Session',
+  oa_asst_photo:   'Third Shooter',
+};
+
+const COLLECTIONS = [
+  { id:'essential', name:'The Essential', price:3900,
+    tagline:'A full day, ten hours and more, told in photographs or in film.',
+    variants: [
+      { id:'photo', label:'Photography', include:['full_day'],       gifts:['magazine'] },
+      { id:'video', label:'Film',        include:['video_full_day'], gifts:['va_highlight_35'] },
+    ] },
+  { id:'complete', name:'The Complete', price:8000, featured:true, badge:'Most popular',
+    tagline:'Photography and film side by side, with an engagement session to begin the story.',
+    include:['full_day','video_full_day'], gifts:['magazine','va_highlight_35','oa_engagement'] },
+  { id:'signature', name:'The Signature', price:10000,
+    tagline:'Everything we do, together. A third shooter on the day, an heirloom album and a film for Instagram.',
+    include:['full_day','video_full_day','oa_asst_photo','va_reel'], album:{ id:'graphi', pages:24 },
+    gifts:['magazine','va_highlight_35','oa_engagement'] },
+];
+
+const collVariant = {};   // the variant picked on each card, e.g. { essential:'video' }
+
+function findItem(id) {
+  const lists = [['photo',PHOTO_OPTIONS],['video',VIDEO_OPTIONS],['videoAddon',VIDEO_ADDONS],['otherAddon',OTHER_ADDONS]];
+  for (const [kind, list] of lists) { const o = list.find(x => x.id===id); if (o) return { kind, o }; }
+  return null;
+}
+
+/* A collection read against the live price list: the services that still
+   exist, its album, the gifts, and what the same day would cost à la carte
+   (with the volume discount, plus the value of gifts that aren't sold). */
+function resolveCollection(id, variantId) {
+  const c = COLLECTIONS.find(x => x.id===id); if (!c) return null;
+  const v = c.variants ? (c.variants.find(x => x.id===(variantId || collVariant[id])) || c.variants[0]) : c;
+  const items = [];
+  [...(v.include||[]).map(i => [i,false]), ...(v.gifts||[]).map(i => [i,true])].forEach(([iid, gift]) => {
+    if (EXTRAS[iid]) { items.push({ id:iid, kind:'extra', name:EXTRAS[iid].name, price:EXTRAS[iid].value, gift:true }); return; }
+    const f = findItem(iid); if (!f) return;
+    const name = COLL_LABELS[iid] || (f.kind==='photo' ? `${f.o.name} Photography` : f.kind==='video' ? `${f.o.name} Cinematography` : f.o.name);
+    items.push({ id:iid, kind:f.kind, name, price:f.o.price, gift });
+  });
+  let album = null;
+  const alb = v.album || c.album;
+  const at = alb && ALBUM_TYPES.find(x => x.id===alb.id);
+  if (at) {
+    album = { id:at.id, pages:Math.max(at.min, alb.pages) };
+    items.splice(items.findIndex(i => i.gift) < 0 ? items.length : items.findIndex(i => i.gift), 0,
+      { id:at.id, kind:'album', name:`${at.name}, ${album.pages} pages`, price:at.pricePerPage*album.pages, gift:false });
+  }
+  const sold = items.filter(i => i.kind!=='extra').reduce((s,i) => s+i.price, 0);
+  const pct = getDiscount(sold);
+  const value = sold - (pct ? roundTo50(sold*pct/100) : 0) + items.filter(i => i.kind==='extra').reduce((s,i) => s+i.price, 0);
+  return { c, variant: c.variants ? v.id : null, name:c.name, price:c.price, items, album, value };
+}
+
+function isSelected(i, r) {
+  if (i.kind==='photo') return state.photo===i.id;
+  if (i.kind==='video') return state.video===i.id;
+  if (i.kind==='videoAddon') return state.videoAddons.has(i.id);
+  if (i.kind==='otherAddon') return state.otherAddons.has(i.id);
+  if (i.kind==='album') return state.album===i.id && state.albumPages >= r.album.pages;
+  return true;
+}
+
+function activeColl() { return state.collection ? resolveCollection(state.collection.id, state.collection.variant) : null; }
+function intactColl() { const r = activeColl(); return r && r.items.every(i => isSelected(i, r)) ? r : null; }
+
+// 'Included', 'Complimentary' or '' for a builder service, while a collection holds
+function inclTag(id) {
+  const r = intactColl(); if (!r) return '';
+  const i = r.items.find(x => x.id===id);
+  return i ? (i.gift ? 'Complimentary' : 'Included') : '';
+}
+
+function applyCollection(r, keepOthers) {
+  if (!keepOthers) resetState();
+  r.items.forEach(i => {
+    if (i.kind==='photo') state.photo = i.id;
+    else if (i.kind==='video') state.video = i.id;
+    else if (i.kind==='videoAddon') state.videoAddons.add(i.id);
+    else if (i.kind==='otherAddon') state.otherAddons.add(i.id);
+  });
+  if (r.album) { state.album = r.album.id; state.albumPages = keepOthers ? Math.max(state.albumPages, r.album.pages) : r.album.pages; }
+  state.collection = { id:r.c.id, variant:r.variant };
+}
+
+function chooseCollection(id) {
+  const r = resolveCollection(id); if (!r) return;
+  applyCollection(r, false);
+  renderAll();
+  if (window.xdbTrack) xdbTrack('package-collection', { collection: id, variant: r.variant || '' });
+  setTimeout(() => document.getElementById('builder').scrollIntoView({ behavior:'smooth' }), 120);
+}
+
+function setVariant(id, v) {
+  collVariant[id] = v;
+  if (state.collection && state.collection.id===id) applyCollection(resolveCollection(id, v), false);
+  renderAll();
+}
+
+function restoreCollection() { const r = activeColl(); if (r) { applyCollection(r, true); renderAll(); } }
+function leaveCollection() { state.collection = null; renderAll(); }
+
+function renderCollections() {
+  const held = intactColl();
+  document.getElementById('collections-grid').innerHTML = COLLECTIONS.map((c, n) => {
+    const r = resolveCollection(c.id);
+    const on = held && held.c.id===c.id && held.variant===r.variant;
+    const save = r.value - r.price;
+    const variants = c.variants ? `<div class="coll-variants">${c.variants.map(v =>
+      `<button type="button" class="${r.variant===v.id?'on':''}" onclick="setVariant('${c.id}','${v.id}')">${esc(v.label)}</button>`).join('')}</div>` : '';
+    return `<div class="collection${c.featured?' featured':''}${on?' active':''}">
+      ${c.badge ? `<div class="coll-badge">${esc(c.badge)}</div>` : ''}
+      <div class="coll-num">${['I','II','III','IV','V'][n] || n+1}.</div>
+      <div class="coll-name">${esc(c.name)}</div>
+      <p class="coll-tagline">${esc(c.tagline)}</p>
+      ${variants}
+      <div class="coll-items">${r.items.map(i =>
+        `<div class="coll-item"><span>${esc(i.name)}</span><span class="coll-tag${i.gift?' gift':''}">${i.gift?'Complimentary':'Included'}</span></div>`).join('')}</div>
+      <div>
+        ${save > 0 ? `<div class="coll-was">${fmt(r.value)} à la carte</div>` : ''}
+        <div class="coll-price">${fmt(r.price)}</div>
+        ${save > 0 ? `<div class="coll-save">You save ${fmt(save)}</div>` : ''}
+        <button class="coll-btn" onclick="chooseCollection('${c.id}')">${on ? 'Selected ✓' : '→ Choose &amp; customize'}</button>
+      </div>
+    </div>`;
+  }).join('');
+}
 
 // ── SETTINGS ──────────────────────────────────────────────────────────────────
 // The rates that aren't a service of their own. Overwritten by the live price
@@ -444,7 +737,7 @@ function roundTo50(n) {
 
 // ── STATE ─────────────────────────────────────────────────────────────────────
 
-let state = {
+const freshState = () => ({
   photo: null, photoQty: 2,
   video: null, videoQty: 2,
   videoAddons: new Set(),
@@ -452,7 +745,14 @@ let state = {
   snpGuests: 0,
   album: null, albumPages: 30,
   otherAddons: new Set(),
-};
+  collection: null,            // { id, variant } once a collection is chosen
+});
+let state = freshState();
+
+function resetState() {
+  state = freshState();
+  document.getElementById('snp-guests').value = 0;
+}
 
 // ── HELPERS ───────────────────────────────────────────────────────────────────
 
@@ -465,8 +765,8 @@ function makeCard(id, title, price, desc, selected, extraHTML='', unitNote='') {
     <div class="card-title">${esc(title)}</div>
     <div class="card-desc">${esc(desc)}</div>
     ${extraHTML}
-    <div class="card-price">${fmt(price)}</div>
-    ${unitNote ? `<div class="card-price-note">${unitNote}</div>` : ''}
+    ${inclTag(id) ? `<div class="incl-price">${inclTag(id)}</div>` : `<div class="card-price">${fmt(price)}</div>
+    ${unitNote ? `<div class="card-price-note">${unitNote}</div>` : ''}`}
   </div>`;
 }
 
@@ -474,7 +774,7 @@ function makeAddon(id, name, price, desc, selected) {
   return `<div class="addon-row ${selected?'selected':''}" onclick="toggleAddon('${id}')">
     <div class="addon-check"></div>
     <div class="addon-info"><div class="addon-name">${esc(name)}</div><div class="addon-detail">${esc(desc)}</div></div>
-    <div class="addon-price">${fmt(price)}</div>
+    <div class="addon-price">${inclTag(id) ? `<span class="incl-price">${inclTag(id)}</span>` : fmt(price)}</div>
   </div>`;
 }
 
@@ -560,8 +860,19 @@ function renderAlbums() {
         <input type="number" class="pages-input" id="pages-input" value="${pages}" min="${min}" step="2" oninput="setPagesFromInput(this.value)">
         <button class="qty-btn" onclick="changePages(2)">+</button>
       </div>
-      <div class="pages-subtotal">${fmt(sub)}</div>
+      <div class="pages-subtotal">${albumSubtotal()}</div>
     </div>` : '');
+}
+
+// the album's price, or what's added on top of a collection's album
+function albumSubtotal() {
+  const a = ALBUM_TYPES.find(x => x.id===state.album); if (!a) return '';
+  const r = intactColl();
+  if (r && r.album && r.album.id===a.id) {
+    const more = state.albumPages - r.album.pages;
+    return more > 0 ? '+' + fmt(more * a.pricePerPage) : 'Included';
+  }
+  return fmt(a.pricePerPage * state.albumPages);
 }
 
 function renderOtherAddons() {
@@ -585,75 +896,116 @@ function calcRaw() {
 
   if (state.photo) {
     const o = PHOTO_OPTIONS.find(x => x.id===state.photo);
-    if (o) { const p = o.qty ? o.price*state.photoQty : o.price; total+=p; lines.push({section:'Photography', name: o.qty?`Photography (${state.photoQty}h)`:o.name, price:p}); }
+    if (o) { const p = o.qty ? o.price*state.photoQty : o.price; total+=p; lines.push({id:o.id, section:'Photography', name: o.qty?`Photography (${state.photoQty}h)`:o.name, price:p}); }
   }
   if (state.video) {
     const o = VIDEO_OPTIONS.find(x => x.id===state.video);
-    if (o) { const p = o.qty ? o.price*state.videoQty : o.price; total+=p; lines.push({section:'Cinematography', name: o.qty?`Cinematography (${state.videoQty}h)`:o.name, price:p}); }
+    if (o) { const p = o.qty ? o.price*state.videoQty : o.price; total+=p; lines.push({id:o.id, section:'Cinematography', name: o.qty?`Cinematography (${state.videoQty}h)`:o.name, price:p}); }
   }
   state.videoAddons.forEach(id => {
     const a = VIDEO_ADDONS.find(x => x.id===id);
-    if (a) { total+=a.price; lines.push({section:'Video Editing', name:a.name, price:a.price}); }
+    if (a) { total+=a.price; lines.push({id:a.id, section:'Video Editing', name:a.name, price:a.price}); }
   });
   if (state.glam) {
     const g = GLAM_OPTIONS.find(x => x.id===state.glam);
-    if (g) { total+=g.price; lines.push({section:'Glam Studio', name:g.name, price:g.price}); }
-    if (state.glamExtraHours > 0) { const ep=state.glamExtraHours*SETTINGS.glamExtraHour; total+=ep; lines.push({section:'Glam Studio', name:`Extra hours (${state.glamExtraHours}h)`, price:ep}); }
+    if (g) { total+=g.price; lines.push({id:g.id, section:'Glam Studio', name:g.name, price:g.price}); }
+    if (state.glamExtraHours > 0) { const ep=state.glamExtraHours*SETTINGS.glamExtraHour; total+=ep; lines.push({id:'glam_hours', section:'Glam Studio', name:`Extra hours (${state.glamExtraHours}h)`, price:ep}); }
   }
   if (state.snpGuests > 0) {
     const p = calcSNP(state.snpGuests); total+=p;
-    lines.push({section:'Same Night Prints', name:`Same Night Prints (${state.snpGuests} guests)`, price:p});
+    lines.push({id:'snp', section:'Same Night Prints', name:`Same Night Prints (${state.snpGuests} guests)`, price:p});
   }
   if (state.album) {
     const a = ALBUM_TYPES.find(x => x.id===state.album);
-    if (a) { const p=a.pricePerPage*state.albumPages; total+=p; lines.push({section:'Album', name:`${a.name} (${state.albumPages} pages)`, price:p}); }
+    if (a) { const p=a.pricePerPage*state.albumPages; total+=p; lines.push({id:a.id, section:'Album', name:`${a.name} (${state.albumPages} pages)`, price:p}); }
   }
   state.otherAddons.forEach(id => {
     const a = OTHER_ADDONS.find(x => x.id===id);
-    if (a) { total+=a.price; lines.push({section:'Additional', name:a.name, price:a.price}); }
+    if (a) { total+=a.price; lines.push({id:a.id, section:'Additional', name:a.name, price:a.price}); }
   });
 
   return { raw: total, lines };
 }
 
+/* What the client pays. With a collection held: its set price plus anything
+   added on top at à la carte prices (no volume discount). Otherwise every
+   service à la carte with the volume discount. */
+function calcQuote() {
+  const { raw, lines } = calcRaw();
+  const r = intactColl();
+  if (r) {
+    const inc = new Set(r.items.map(i => i.id));
+    const extras = [];
+    lines.forEach(l => {
+      if (r.album && l.id===r.album.id) {
+        const a = ALBUM_TYPES.find(x => x.id===l.id), more = state.albumPages - r.album.pages;
+        if (more > 0) extras.push({ id:l.id, section:'Album', name:`${a.name}, ${more} extra pages`, price: more*a.pricePerPage });
+      } else if (!inc.has(l.id)) extras.push(l);
+    });
+    const added = extras.reduce((s,l) => s+l.price, 0);
+    return { coll:r, extras, added, raw, lines, discPct:0, saving:0, total: r.price + added, before: r.value + added };
+  }
+  const discPct = getDiscount(raw);
+  const saving = discPct > 0 ? roundTo50(raw * discPct / 100) : 0;
+  return { coll:null, changed: activeColl(), raw, lines, discPct, saving, total: raw - saving, before: raw };
+}
+
+const groupBy = lines => { const g = {}; lines.forEach(l => { (g[l.section] = g[l.section] || []).push(l); }); return g; };
+const lineHTML = l => `<div class="summary-line"><span class="summary-line-name">${esc(l.name)}</span><span class="summary-line-price">${fmt(l.price)}</span></div>`;
+
 // ── RENDER SUMMARY ────────────────────────────────────────────────────────────
 
 function renderSummary() {
-  const { raw, lines } = calcRaw();
-  const discPct = getDiscount(raw);
-  const saving = discPct > 0 ? roundTo50(raw * discPct / 100) : 0;
-  const finalTotal = raw - saving;
+  const q = calcQuote();
+  const { raw, lines, discPct, saving } = q;
+  const finalTotal = q.total;
   const withTax = Math.round(finalTotal * 1.14975);
+  renderCollections();
+  // a collection held or let go changes the Included labels in every section
+  const held = q.coll ? q.coll.c.id + ':' + q.coll.variant : '';
+  if (held !== renderSummary.held) {
+    renderSummary.held = held;
+    renderPhoto(); renderVideo(); renderVideoAddons(); renderGlam(); renderAlbums(); renderOtherAddons();
+  }
 
   // Summary lines
   const el = document.getElementById('summary-content');
-  if (!lines.length) {
-    el.innerHTML = '<div class="summary-empty">Your selections will appear here as you build your package.</div>';
+  if (q.coll) {
+    el.innerHTML =
+      `<div class="coll-summary"><div class="coll-summary-label">Your Collection</div>` +
+      `<div class="coll-summary-name">${esc(q.coll.name)}</div><div class="coll-summary-price">${fmt(q.coll.price)}</div></div>` +
+      `<div class="sidebar-section"><div class="sidebar-section-title">Included</div>` +
+      q.coll.items.map(i => `<div class="summary-line"><span class="summary-line-name">${esc(i.name)}</span><span class="summary-tag${i.gift?' gift':''}">${i.gift?'Complimentary':'Included'}</span></div>`).join('') +
+      `</div>` +
+      (q.extras.length ? `<div class="sidebar-section"><div class="sidebar-section-title">Added à la carte</div>${q.extras.map(lineHTML).join('')}</div>` : '');
   } else {
-    const secs = {};
-    lines.forEach(l => { if (!secs[l.section]) secs[l.section]=[]; secs[l.section].push(l); });
-    el.innerHTML = Object.entries(secs).map(([s, items]) =>
-      `<div class="sidebar-section"><div class="sidebar-section-title">${s}</div>` +
-      items.map(i => `<div class="summary-line"><span class="summary-line-name">${esc(i.name)}</span><span class="summary-line-price">${fmt(i.price)}</span></div>`).join('') +
-      `</div>`
-    ).join('');
+    const notice = q.changed ? `<div class="coll-notice">You changed ${esc(q.changed.name)}, so everything is now priced à la carte.
+      <button class="text-link" onclick="restoreCollection()">→ Return to ${esc(q.changed.name)}</button>
+      <button class="text-link" onclick="leaveCollection()">Keep building à la carte</button></div>` : '';
+    el.innerHTML = notice + (!lines.length
+      ? '<div class="summary-empty">Your selections will appear here as you build your package.</div>'
+      : Object.entries(groupBy(lines)).map(([s, items]) =>
+          `<div class="sidebar-section"><div class="sidebar-section-title">${s}</div>${items.map(lineHTML).join('')}</div>`).join(''));
   }
 
-  // Discount block
+  // Discount block: the volume discount, or what the collection saves
   const db = document.getElementById('discount-block');
-  if (discPct > 0 && raw > 0) {
+  const saved = q.coll ? q.before - q.total : saving;
+  if (saved > 0 && raw > 0) {
     db.classList.add('visible');
-    document.getElementById('discount-saving-display').textContent = fmt(saving);
-    document.getElementById('discount-pct-display').textContent = discPct + '% off';
+    document.getElementById('discount-label').textContent = q.coll ? 'Collection Savings' : 'Volume Discount Applied';
+    document.getElementById('discount-saving-display').textContent = fmt(saved);
+    document.getElementById('discount-pct-display').textContent = q.coll ? 'vs. à la carte' : discPct + '% off';
+    document.getElementById('discount-note').textContent = q.coll ? 'saved, gifts included' : 'saved · rounded to nearest $50';
   } else {
     db.classList.remove('visible');
   }
 
   // Totals
   const beforeEl = document.getElementById('total-before-display');
-  if (discPct > 0 && raw > 0) {
+  if (saved > 0 && raw > 0) {
     beforeEl.classList.add('visible');
-    beforeEl.textContent = fmt(raw);
+    beforeEl.textContent = fmt(q.before);
   } else {
     beforeEl.classList.remove('visible');
   }
@@ -735,7 +1087,8 @@ function setPagesFromInput(val) {
   const a = ALBUM_TYPES.find(x => x.id===state.album); if (!a) return;
   state.albumPages = Math.max(a.min, n);
   renderSummary();
-  const d = document.querySelector('.pages-subtotal'); if (d) d.textContent = fmt(a.pricePerPage*state.albumPages);
+  const d = document.querySelector('.pages-subtotal'); if (d) d.textContent = albumSubtotal();
+  renderCollections();
 }
 
 document.getElementById('snp-guests').addEventListener('input', function() {
@@ -748,43 +1101,310 @@ function renderAll() {
 }
 
 function resetAll() {
-  state = {photo:null,photoQty:2,video:null,videoQty:2,videoAddons:new Set(),glam:null,glamExtraHours:0,snpGuests:0,album:null,albumPages:30,otherAddons:new Set()};
-  document.getElementById('snp-guests').value = 0;
+  resetState();
   renderAll();
 }
 
-function exportSummary() {
-  const { raw, lines } = calcRaw();
-  if (!lines.length) { alert('Please make at least one selection before exporting.'); return; }
-  const discPct = getDiscount(raw);
-  const saving = discPct > 0 ? roundTo50(raw * discPct / 100) : 0;
-  const finalTotal = raw - saving;
-  const withTax = Math.round(finalTotal * 1.14975);
-  if (window.xdbTrack) xdbTrack('package-export', { total: finalTotal, items: lines.length });
-  const secs = {};
-  lines.forEach(l => { if (!secs[l.section]) secs[l.section]=[]; secs[l.section].push(l); });
+// ── CLIENT DETAILS ────────────────────────────────────────────────────────────
+// Both PDFs ask for the couple's names, email and wedding date first, and are
+// printed with their names and date. The details are remembered on this
+// device so the form comes back filled in. (They stay in the browser; nothing is sent
+// to the studio yet.)
 
-  let out = `DE BELLE PHOTOGRAPHY\nCustom Package Summary\n${'─'.repeat(46)}\n\n`;
-  Object.entries(secs).forEach(([s, items]) => {
-    out += `${s.toUpperCase()}\n`;
-    items.forEach(i => { out += `  ${i.name.padEnd(38)} ${fmt(i.price)}\n`; });
-    out += '\n';
-  });
-  out += `${'─'.repeat(46)}\n`;
-  out += `SUBTOTAL (before discount)               ${fmt(raw)}\n`;
-  if (discPct > 0) {
-    out += `VOLUME DISCOUNT (${discPct}%)                    -${fmt(saving)}\n`;
-    out += `DISCOUNTED TOTAL                         ${fmt(finalTotal)}\n`;
+const CLIENT_KEY = 'debelle.pkg.client';
+let client = null;
+try { client = JSON.parse(localStorage.getItem(CLIENT_KEY) || 'null'); } catch (e) {}
+let pending = null;
+
+function askClient(what, run) {
+  pending = run;
+  document.getElementById('client-eyebrow').textContent = what;
+  const c = client || {};
+  [['c-name1','name1'],['c-name2','name2'],['c-email','email'],['c-date','date']].forEach(([el, k]) => { document.getElementById(el).value = c[k] || ''; });
+  const go = document.getElementById('client-go');
+  go.disabled = false; go.textContent = 'Download PDF'; go.hidden = false;
+  document.getElementById('client-ready').hidden = true;
+  document.querySelector('#client-modal .reset-btn').textContent = 'Cancel';
+  document.getElementById('client-modal').hidden = false;
+  setTimeout(() => document.getElementById(c.name1 ? 'client-go' : 'c-name1').focus(), 30);
+}
+
+function closeClient() { document.getElementById('client-modal').hidden = true; pending = null; }
+
+async function submitClient(e) {
+  e.preventDefault();
+  const v = id => document.getElementById(id).value.trim();
+  client = { name1: v('c-name1'), name2: v('c-name2'), email: v('c-email'), date: v('c-date'), at: Date.now() };
+  try { localStorage.setItem(CLIENT_KEY, JSON.stringify(client)); } catch (err) {}
+  const go = document.getElementById('client-go');
+  go.disabled = true; go.textContent = 'Preparing your PDF…';
+  try {
+    const pdf = await pending();
+    // the download has started; the link opens the same PDF where downloads are ignored
+    const ready = document.getElementById('client-ready');
+    ready.href = pdf.url; ready.hidden = false;
+    go.hidden = true;
+    document.querySelector('#client-modal .reset-btn').textContent = 'Done';
   }
-  out += `TOTAL WITH TAX (GST+QST 14.975%)         ${fmt(withTax)}\n\n`;
-  out += `All prices in CAD. Travel included within 100 km of Montreal.\n`;
-  out += `yourwedding@debellephotography.com  ·  514.887.4686\n`;
+  catch (err) { console.error(err); go.disabled = false; go.textContent = 'Something went wrong. Try again'; }
+}
 
-  const blob = new Blob([out], {type:'text/plain'});
-  const url = URL.createObjectURL(blob);
+const coupleNames = () => client ? `${client.name1} & ${client.name2}` : '';
+function longDate(iso) {
+  const [y, m, d] = String(iso || '').split('-').map(Number);
+  return y ? new Date(y, m - 1, d).toLocaleDateString('en-CA', { weekday:'long', year:'numeric', month:'long', day:'numeric' }) : '';
+}
+const slug = s => String(s).replace(/&/g, 'and').replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '');
+
+// ── PDF ───────────────────────────────────────────────────────────────────────
+// Real PDFs drawn with jsPDF: sharp, selectable text and exact pages. They
+// follow the de Belle design system: white paper, the black wordmark, a serif
+// for headings and prices (Gelasio, a free Georgia stand-in, since Georgia
+// can't be embedded), Lato for text, spaced caps for labels, hairline rules.
+// The library and fonts load only when someone downloads.
+
+const PDF_LIB = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+const PDF_FONTS_SRC = 'package-builder/pdf-fonts.js';  // sets window.PDF_FONTS = { 'Lato-Regular': base64 TTF, ... }
+const PDF_LOGO = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAWkAAACRCAYAAAABzUmOAAAACXBIWXMAAAsTAAALEwEAmpwYAAAl0ElEQVR4nO2dB7gV1bXH17kXuDRp0oyIEsGCggUjSmwhtigqdmPFEjWxkUQTk/hii73EaHwYaxJj7Iq9YEPsaMAQFRFFERTpTdqFe963Xv6TbDd772l75sy5Z/2+bz7lnntn5szsvfbaq5bK5TIJgiAIxaSu0jcgCIIg2BEhLQiCUGBESAuCIBQYEdKCIAgFRoS0IAhCgREhLQiCUGBESAuCIBQYEdKCIAgFRoS0IAhCgREhLQiCUGBESAuCIBQYEdKCIAgFRoS0IAhCgREhLQiCUGBESAuCIBQYEdKCIAgFRoS0IAhCgREhLQiCUGBESAuCIBQYEdKCIAgFRoS0IAhCgREhLQiCUGBahP1CqVTK504EITs6E1E3IuqC/28gotY4mohoMX5vARHNJaJ5RDQbn2VJOyLajYgGE9EgHHsT0cSMrysUmHK5HE9IC0KVUE9EmxPRdkS0GRH1J6K+RLQBEbVPcL5GIppORB8T0XtENIGI3iGiD3gepbjPTYhoOITxTtjNTiaiSUT0B1xTEP5DSZfaOqJJfwN+GFs5Pv+UiBbmeD+1DGvDO0IT3ZWItieitvhsGgTrh0T0GQTfLGjK84loNRF9DUG8DgQ8a7WdoG33IqINiagf3veWuB5B0x5LRE8R0SP4dxgdiOhoIjoeiwjfz8NE9DQRvUJESzN8Ts2Fs/EeTKwhop97mHsDiehnjs8fI6IHKWPWksn8A9chfINToEWZjpmY5EJ2dCSiY4jofiJague+FMLuXCIait/xDe84dyaii6HxBu+chcMYIjqMiFoa/m4jIroB98gLwl1EtAsWeyE6uzrmHR9XebgGL9TjHdfgRX5dyoG1ZLAI6cj0xEpte4m8hRWyEZAHENEDRLQCz5o10euI6PtE1KoC98Ta8C1EtEqbxCOJqA2E85+hsfPv3AizixCf1tgR2ebdZPxOWn4ashDkNr9FSCfnHscLZM1O8EsPIroAOxR+xouIaBQRDSmQJtoX2rE6FmYrwvsJmEyE5FzsmHe8k9nBwzU2xG7Hdh1+x7khQjoZ+zhe4Dxo2YI/wXerojX/E7bcwN5cRIbB1q2OC7aLd630jVU5W8BMlKWZg+BfqLiZI0CEdHzawiFoe4kjKn2DzYRvKyYCfq4vwZxRdFpC4zcJk0+w6Ajx4aiX13Iwc/ywKGaOABHS8bna8QKfLdDWu1phZ+s1iongNURsVAObIiwvGA9ziGiZNkZmiKBOxGk5mDnWhXmqEGaOABHS8dha0ez0g0O4+lT6BqsYXtyOg2ArI1TukCpa9A5VIkwCYbw5voM+VqbDxi5EoxcSjMqWgxd1H9xRJDNHgAjpeCE5bzleInvyhWTw4vYiniObCS4puM1ZhReRK7Sx8BkiOgJuNYyXVzCmhHAeccy7jzyNlaEhZo4DqUKIkI7OmY4X+KZMuMScqnjSJ2K3Ui1wQsu92lj4wmDOWNcSrslhXoKbgx3zrgnx6mlpDWFfyGgtEdLpt1urHJlPgp3OyNYKnuO1ShZfNcCZiS9oY4EF8YAYoWNL8BwEu3/iS4fwvM7TdS5zXGMO6rxUDBHS0RjteInsyRfip9tOUwQbh6xVEx2xe1LHAZtp9nD8zQbQ/PTx85sc77va+FMOZo6BIWF97GuoKCKkwxnueIETLem/gp2D4GTl5/d+FUY6tDcIaD5OjvC3pjTjKTncczWycw5mjvoQP1MhktJESIcXwplheYGNVWY/LQI/VbTJF6uwtgmnnD9nGAs3R/z7ay1jiUP3hP/SoFQXzNLMcVaRzRwBIqTdXC9mDm9crjy7hypUYyNtMoVqQw+O8TFs6adaxtKxGd97tXFhDmaO3iGp3xU3cwSIkLazPYLkxcyRPkTtf7WEgGqMhLnSMA4WxYyNP8wyni7N8L6rDa77vTJjMwehjkqhzRwBIqTtldZYEIuZIz3XKc/uvioV0CdZxsLhMc9zpOU8t2d031SFu5VXczBzHF4NZo4AEdJmzhEzhxcu0lLmq83EQWgkoJYgDQ7OTovLidWguVWQH+dg5uiM7MHCmzkCREivzUaGegti5ojPCcpzm5RR8f2s6aGURtXTutmpHJdfWcYVJ8TUOuuHpH77qt9yW7WYOQJESEcvUyhmjujspmif81HRrtqoR+U901j4XsJz3mI5X9TokObMow7hyU0SfLB7SInhQtZTESH9TY4QM4cXjegr5blxg9Vq5HzLOOBGA0mxCf3/odrGZqsvI+kpSeNgnfZKApXpOIoKigjp/9LJYasSM0d07XOc8tw4Lrga2dkS2TMzoZkjcEYHSTz6sR/VLt2Uyoc+dy0uB7Z+ZN5MNg0ipMNTUMXMEZ3zlOf2QZXV4gjoAJuz70pogx3jizuS1yp35xDNMcSSkl/IaA4dEdL/5rti5kjNAKUGQhOeaTVyu2UcPOwxmUc9OIOxVjkgh2iO1ujaUjXRHDoipP8dFvae5QW+LWaOyPGtal0KbntVjexrGQeLYWtPk9DzcbUKiQzNi6bIGd9JK5dUWzSHjgjpb27R1YOznqQEafz4X061/RZVH10cQuMnKc+9l0Nb5AWuFrk1BzPH1o5OSoU3cwTUupDup3Sh1g8pIRnda65Gc/C2vhq5y7GbSitIx1jOzZp7LfL9HMwcLYhoQjWbOQJqWUjzFvR5ywt8Ay9ZCOdc5bktJ6KuOV67HUqEds6wHC07/LLQotlhVou0c4TC+TRz/KbazRwBtSykj7W8QNasN6v0zVUJrPHMrWBSRjdcN42TsqOj+8ftHpxW7xvOOxmdXWqR63Iwc2zm2CFXjZmj1oV0V024qAfX7RCS1VqoRKgi2xx/mOLv1Qp96rGAiLqnvLc/GM47s4a7yu/oCIWb4snMUUdErzkWAt41VRW1KqT/bHmB0sE5Hu9pCT+VgLXgX2YQP3taBpXWuIHEFlSbNDhC4ThxaAdP1xnpENDsd6g6alFI25wWy+BIFKLX21afHxcPqgSTEmY2tsTfmsbCxJSL9VBD5bx30eewVnGFwl3l6Rp9HIX8Z6Fre9VRa0K6NbZVppfIK7AQnd9rz69SGuLbqGzmqyIdH7umuJ9hhiqKbNtuQ7WLKxRuMualj0CAMc3JzFGrQvpiywt8qYbjVZOieui/qOB9vJQgeWZjRKL4LBtaQqTLas28UathduqOZWIOZo4fNTczRy0K6f6W4u1La9iRk5S+ngSbrzZI3DMxDk87TF7c+y4u/TQtbimq6PlwhFU7v83BzNHbUYu6as0ctSakS3AKZuEgqkX0DiOsQVZSk46zSBzisU4LZ1Zeo/TkmwXhnDZuu7mwpaNfoS8zR1i/wqo1c9SakD7Z8gKfhwAX4nGj9hzZDlspXolh7uBEis8tY+GziHbjBpQW/Rt2ZiyEHkEGWzW2B8uKFvAXZG3mGOEQ0HdSM6AWhHQPxLzqL3Bxwq2tQPSy9izZlFQpuCTq9RF/9yrHhOZO3gGt0UZtADLgjiOi32FRXwThcwOquNVqUkqajD+O9PDB+kS00HKNmSjiVPXoMrhoqdAboRXTdrCDtobd8FM0Nn0S2kxYQoHpZf0cdYPzoDM0B47L3URp07MIYWAPos5AtbCh9u/ZVDnWx4QMo78jgmcsOpkH8Lt60fK7KzEON4OzuQe0ec4sLCq8W9wcmZnboJ1Za2i0M9Co4T4oLj7YArZoW2w9Nyj2wc2O3pknQ4DnQSs8V57fA4moFxymK1H9kMvRPoZSvukpgCbdE8kJHyir4qcQZLzFfEGxc02DNmNjb8sq+3QOZg4ePCdhsjfh+7Dt9AFLLOdfq2i7HNSNDo5K0RHX5/ZLLkoQxKaxsBoas14Rbzjs17ydPpuI/ogdhK1J8TQIn/WoOGyLGPIvcN/PYZypZWWDYzZ6AKalHrVvbM+aFS4fHOPQ1PMolcvfc08i+gsRLUEG82MwsZjK0v4LimZVmzv64uEGIUyrsVJy0oROJy1rkMNvdNpaCrksTFkbOAyepFdDEK9Gx5fNDA6nTwz3xk6ootPScN+VYidcf6sUE5qFbxxaYfG/y7BYlbGzuzZFm6208IK0DxG9ivuZCmVBt7efabj3ZR4inc7JwczRE41jK2HmaAV5MxXXG4fnrYbwtsBiaHKWtqpGId0dwf5qfOmjEVadekU7asQ2Q+VKy0tkzSgLOsDmGWj5r4ckeJxkuLelVaBNdyyQkD4d775lyP2qpVTVY27KSAw2x412aNaDKF/YnPGOMifOc7QwY2H+oeG+L82osNG/PLZTG+1YCLKKSy+hWe10Zey4asZ0s/TJZIFeNUK6DgV6Fmha7oiEnTTYjBCwlSXD6XHKhqO1SmrsZAqz7+9gGWS6vbeI6PdcKefZvSimEycSRT1O8XQfp1km5DKkiGdND2yz1QWCbaRJhN39GZg5GmF68cFRjvd5i6dr6AzQGiy/FNGsNdNHAbdKCekNtC9dhs2WnWpxaKsI41X4Nwv/twwPZx62Sb6r6T2kTcqDI/7tMMtAy7Mec1J0j3rc9+aDOpSd5CxSG9tahGcZjlqfWaamnVEZzuEsS9/uB3tycL2xMZI39CgdPu5IeB8/zaFPaHeHmWN6BiamOghVNdb7phgt9Uwx4uzQLLyQPswQEvdUigesxr2yd/UMy0vkFdgnQzXteVHMusaXGe6RNZFq4J/afe9bQXv0Do4J9qZlLDR5KOZv4u+W63HInu/IqQYIjLK2m4xqUmhjcWAflDDj0uZQneixT+j9joWAnXg+6Qmnv3oNW8SKie8Y7nF1krDfPIV0PRxq+o3fm9IOq9YFOM2SHsrJBj45UzOnLIo56dtYkipi26sK0moqaanQNNwE56stSucUx4RmZ24WfMuRYTfCswB5XTv/XTEr9+lZo0Glvri7izrDrlg1c/iqMX5ojmaOQYb5GTer9mbDfXJfRyqqkO6ImGb9pv/qoX6zWm6yMeNojnoMCPX8XyfQys433CfbTquFs7R7Z0dvnnTAwnih5XM2Gc23TOjZCLHLCtU2rDvOfLCVwdb5aMx51Alheeo5FiVMShqZg5mjG0xb5RzMHIcZim/F0aAJ/gDdJzYlqe8mDyG9nqVu732eCuzbMo6Cg22FPmBt/2GDprBngnrWa1JqQQGVSj7aVLv/xTlHpZyNKIIgKUjndsd4yCq6J+Bgx7XTapVDIEzVc74SswxqHRzo6jmWJSzP+u2czByuaI7dyR8/M8xNziyNQ2clPC84piLBJQktshbSfQw3HNigW3nyuroE9HOekla6GiaHLT7bxWDDeS5P4cBiYfRrqgyTKmSq6QhteFSIrdp0jMshiamH4/q8uKTxgegCcWrMCm/1hq5E0yNGguiUDCaXsuLE5+JKPjjI8TxvpGy7xT8eU3nqaPCDvOZQJqIEF4zPUkj3Rcqp/sUneQzZ+qXjBfoqQdrKkkEU1645HJlJwd/PCcmWjKKRL0+axeSBkRXqwHw1nmNPy87iX5bx0OhRcCTd3SUt+PNdg4BeZsiUdNHesBN8OEVT1tNyMHOs6+i0Mt2jHDnPcP6pjpRzW8z8u8rfs0Z+RQpltAO+45lZCelelmy/rzzHAdsmpK9OK7yKPmM49zsxyiw2QFvWbfFpmpy2x8LBtu1K0V5r5rs6h7rcQzD4z06Q7eZLcETBlE1aRhZgEhu0aRd3XMxzqDufL1NGO/VxJK34NHOMySGa41jDuZfHNE3tr82Fd1N2sA8aJP+DZVAWQrqbpeHkmpRtiXR2c7zA1zzFwF5jOPfCGMJoR211fd3DywvMHBM8ToaknJFjzYSuEH7jLO92AzhxTePh3Zyfla0TycQE/hw1zDNuNENrLOQrFeFzeUpHWykkaWXrDIVnOeb3D2MXSxw9R75EoTtqd6iL32kefEXDsAj+/07Jt5Bu5Siu77swvK27xgpPyQO2zKbjI/xtbwisJiVO1lfx8cPxHfPauoftNFS7ZBNswr5pCy30S0ecqb6Vz6KoT1RMfphyzEp5DZY472nYxYQJ0kOV+1iOGiU+ij+dksNupYsjlHG6p2iODS1mKW4gEEYbOBmDfI/ZkG9h7yVqGCebQn8R/MC3kNadEllVndvFMVC4jm1atrIMkmdDvkdvTIYVyvf2GWTfFwOLa1YUhQ21LLBpnkPcOqLy4deWYluu7E2fRX3iMN2xw4vKrZZzuMZTHaJLJuB35+D7pzGt6WbMlTmYOf7heJ97ejh/gyEhqwyz0vohwvkM5f1+iLnoq8lwCyTQPKs6LH0KaT12NjgWeK46V8JgN11rgoetRmuLucbW/64OA+dBaG2z4NziMDWftIcN/h4qHoM1p+g4T/39+sFU4UoWao+uKjbN1VdRnzjY7LWcK5AmosGWst0dmtdUpbbEcR7bUwWYyi34NnP8MgczxzWW859q+f1N8TdzsUg9gEqIviOFgrKy31hUfQnpbRwrrO90bFuNhDVIxUzLdZbzcxq3qbD5J8qLG5ZR7HIJ5/+gwJ1AhmjV5l5PUSulBTSUJUgCcEUx/N7yvlZnlPodRheHkLk+4nbXVJ9iOT4LaAMT2n0IeZsGc0NWzltX0goXFPNBf0etlc89mTl2dSzoLTQfyIlY8MpYoH6SYVPbI/Ee1zIX+hDS7S0lD4Ptvk+6OQqsRG2h5GKwYkfWdwMbo0bFVRAcSxF2dnQOjUcvRQZdpcLt4pg+1HoHc+AAiurEbQ2b//t4D7eETMztHZOaw6oqwbYOYRbFn3Gf5W+vgh/iFBT1WobndBnGbZbx35taqkr6LEG6jqOkrK/6MA2OzMUj4Og/G4K5EX6Qc3IoILYTdl/GxDsfQtqmyazIQKg8aLnWDA+rbB1a+5jOvwrCYCI07X1y3EafjAGTR8lLn3V3VefZR9DydoEmUoLWsi4E7Ukw4yxUnDdhWnBLi12xDOe1j2zWJBznEDTcwsrF9xx/uxJmn8fR+o1NQXmwjkOw+XLK1sHvYFKQfEYN3R7yfGeg+9MJHu34URbAeZArlIWQNuWo+94CRQnJSVK5iyJ0qihDYz4w43oPrvjL1TmkMmcBT7y9EBNuqqurHmvgT7ggRmTOryznml/hBsPXWu6L49rDnpepfEIZO7ZBFVh4WjmyCn12ErrcsSOa7cnEsLNjEbikQrvU9WEufcj1btMI6ZKjFORczy1s+lkC+gOtKy1tHc4ebmRbCYbiniqV9u2bXvhOh2PROQ421UEJvOP9HO+rEmVTVd623Bd3CnJxiENbrUQjiHrUzFhlua9pnpzDpmp86uHqfhKV7o4s0GkVqoHTDYvyuLDxn0ZID8+oRoFOGy0hRN+ipF0BS5bi54GGVwmtbEfYHNmUJKwtPIL+fWHO3bzpZNEImyJE+wRhc/rBNSUq8Yzv0iJ2sgiF2wumvK8zVsDedmjqHFKXNx2RtTwpij8rqZAuOQYVbzfbefxCttjrYJuSlt86tIXnKX+GYtcwKodiQNXILyzv6hnDlnFjOHZHQqnwofklaXj7eIStuG2Mc6hXJQT0YsfulU1YadkG15jkMDP29rQbWGK5RmMFzJjd0K19UtS6KUmF9D6OQeVTm3HVYpjuYdId49g2u+ImsyKodCYC2sxAS6jnFE0j6WPJSJ2RcVjeY5ZxxDsjF39yKDwtc7ZBPwDhfLflnuZ4aPHWF7bmZy014MvIu0hDCY7CRRgfeUSfRTVxTIlT2CqpkFb7+unbuqR1U01OM9sWJQiZScMPIKDvcVzDd0/EMJvkSmQsioBem7YIOTMJMtXZuKklGmEpok6yEnrfsggcbqnloqWjQUGWtVB02qGE8BzE++uF74ODdyZpCIqvvYyuTKZrvOmh9s5VmE/HO+Y3xz3nRR+EKkfWoNMI6e6O1Y9jZH2wAzRKmzd2fEpBFpR+HOmwR/NAyouzsCBV2qZaZEztiJZrwf91DjNc1AbBSbkgQZoxQbO3CZEfUz50h912BhKH9N6JwcFhcmnohoSsNx05CWsS1rdW+R+YMPd3RG2VPVwnTuz8LHzvOOVPEwvpox1fmgPt0zIAmsVkR+80tuElJSi8fxm0GFtniTzSr+vhHFyDbstFpwFxzbvk3NV8hGUy64J3uKfqc0kchmqpyuDgLLIwfuaYTxz5kjX9EQY2GdpeN4sWvTphey19qz8JY+e2jAr5n4uxEUSF2LT1ZTlFdewHm/gTSQswJRHStsIvZQ+RFkGjgBnoNWa6xqMeBDTXaiXUG8iyUJOLzrDJLfMU5501P9bCmFYjrCxr08wgg99gjaXcwB2Wd2nrheiLC2PU2YjaE7GcQ8LU/hAgYxWb/q8t92JNtogpoLsh7tm0EMxP6cg71zA2TA07yijilCUlxPI3wceUOMY9iZC2ZeWxOu9DQM+FNj3a8xYlENB/VQTLvo4JErWmbBK2RhbezArVl/ChyfrcPdlY39JV3da2zJZ44atMbNSY7XExOnIEtSH0g1Oks6Ie5pkm2L3VezXZ/RemSCjpBVvsBMUWe6rlO3MmZVIugYlDj6telTDiJm2W5n1YMHinlIokQtpWSIkHZhqhNQur+mA0uGzyGDf5fcRi3qStaIc7hE9W2u2pmNRjc3ZMJqUUkjHI8Z5Z0NEQH9+IzNO4xfZ9FN4yUW/waUyKqQ3a7vnTjO65J0JLVxls3ptY7oU1wiRsAt/OK5ot9ilLtFarhO/gBuxI2bSgj13buA1z6KbZ+X2E6BVO86dKCGnbl+aVI6kAXYSHPDSkXGFYKJOJgzEgTWFtLk06ij0xDt0Q3hSk01a6q0pUbBM3OHhhzSKSQy3UVMb4CMsmfN5yj77KaOpcYRDQcXsG2hzXvIPwzXBo6NMtc+kEixbdIaHznyNFHtFCZesscctJkkpaY04tcDSbsCmVXAfIJ/UIGV6JUsrcKYgqJaRXePzSJ0KALtIesqm7C2tVcTkHGvmFjoFkEz6ptynaQjEHtWJ9NgHIgx1DhDR/J5+0RRSBeo2ZjoL/erVA0z3uQdknroxLaBIIFm79WOWxVkcnpc3T3Y6SDdcb7oNro8flSNicbzF8h76GayxOkPOwHtp4fRbSpci2C2QZ49Pk9Qr8NOf7dkgmEdKmgvhxu040KCFVcwx22aUpG8s2YICsDklIWccRi+0jq6oPHJ1leJmzqkWbJf1ChHRab7y+FX/LMK6imoU2t5jJOCTLJ0dp4+aWFF2hTaF7wZG2RVoJ5qGv4OsJq+1+d8pdSD2KJa122JcHe4gHHwz/FQvpHiG/a2okXYZiWO+hZMVFUFw/gNLnnSRC+o+WL70iYjr41koq6BRDREid5fxRk2Q2xESfB1NKGLrWFhyzU0y8Tnh5y2GT4wzNaqUO2rLpGb3hsZDWIK3t1Bo4g+KahUwRHh95Mi+VoCmppgCXjTwK33EI6aS2YILAeFURgl0TlAKeFyN6pxe0yQUhZilT6zvelUShhLpAjVCionSeOd3xfJOW/y0hmW4a5N55WUbiJBHS2zi+9H+aJxrohCygIBHmOYdmudggMKNwFCbOeDgfo3CA4/sYi3A76IAwoHnYDZyfQ72IPNB9BKOx8PjoyF6P86u2wykpuqp3sNSZThtSuZGWav6kx+JbtoJRXyQYP9shcqGM5AkWilHRFTBOcIkisEZAOL8VoTOMaWcWpXnxt+GnWB5zXnZ0ZHSylh2HOpQtDhKmHsijxGkSIU0ojG360o1wADRoW9DLlQfViFjM+hgr+vIQgbApBuYa2CXjak2jHVuiKAH8A2DPW4KV9bqckz2ypgFRHMFzGe/JXrozzhWcdwkWuaQ7GL2Ijfou1ySsxdIdtdGDpKf3UFLAJ1s5fD13RtBm20CzC3p/vg9hEjeG/aCYWbfbYifaiJ1j1Pemh1WyomSjPYqgLcPObQvy24iBMxKjjIGzlEYWYzKMGPImpNs7akmXEe72gaEdztiQfnUBAwyZgKaaAdsgc6kRAzRpDHV73JvpuyzAlikQuvVwWgzD4hPY6GfC9plXR4e8WU8Libs/YQZVHYTck8q5lqJYPl/D58LyO0PSxCMQLi7aQWDdqfz9W3AA+9g9mNjPkf06BjuLFsr9DUSM+r2KD+dp7HCSJhi1MIQ96loun3s3KFJNcJjyvcTtNlTWxpJ+zz0hnL/EHDwrpWLwa4e8GgVlrKTs+ofAtPI8FviVMBvllUqeWkgTtmGjHPU11OOlBCUXd9VW3EaUULwMnupP8PM3MHnSZr61xJbYVhw80PTUf8/Hi9vPg/ZXDbRHxbYmZWE6O8K2vwuEx/WI/1VtxedlvOvohVA53a4+FePoCiy2o7B9/VBxCn6KxSOrED6d/obQQ32nqi8672D34asPX28tdvtrOPmvwIIwCz8fB0UlKRdqsuNl7IJvwi6oCWbOSzz6Pfa2JOsExwot+aURC+SpCUIrvaHL4JImiNeiVCqZbEWHInB7fUzk+ZgEryO6gQVqEtpCAO+BAdwZL286BP+jCUPzKCTiYx/Y8raE3bw9XuBsfK+3MZAm4kXWGv0RonioEkM7Xdk9tcQzWxc1nQMPfBnP7AVUUowTEZSWEjTonWBe2AjaWlsI5UV4v5PRXHUsFpFKsCUEyhAsMp2VanlfwPE+HrtZXih90wJVGfeFeaEztPXP4Bx8BO86LZvBnj0EO9B6vIMJ8Fk9CaHpexzsAqfh9rhuF8iVeRjHE/B834LSVlF0mZxESAu1SysIvkHY8naG1tMKQm8pQr8m43gXgkYQhIiIkBYEQSgwukzOyikiCIIgeECEtCAIQoERIS0IglBgREgLgiAUGBHSgiAIBUaEtCAIQoERIS0IglBgREgLgiAUGBHSgiAIBUaEtCAIQoERIS0IglBgREgLgiAUGBHSgiAIBUaEtCAIQoERIS0IglBgREgLgiAUGBHSgiAIBUaEtCAIQoERIS0IglBguEtwFPbGobMcHcIfR/fdrBhARCcS0d/R0VeHuwAfSUS3obNy1gvb4UR0GLoft0THbO5mfisRTcv4+tdF+B1+L7/K+D52J6JjiWhrdFyfi7FwB7ov50UfIjqTiHZGU9yv0Pn5j+j0njW2ubES3bZHo+N3nnP6CnTivhgdsfPANC7L6MZ9DxF9mfH1f4v/XmT5/DJ0WudxkQU/IKK90PX8ccc9dsG98DiN3vTQdYAL8MCXouX5QnSHLuN4GsIqK4bjOtwO3sQIfM6/lyVtiWgMrsXf/wksHBPxs2VEdEjG97BQO/i6a7SfsXDIihIWozIE0fNE9DciehX30ZTDAhEwHAsSX/dlIrqfiN7GPfC7GJbDPZjmBh8rlJ/zgpYXw5R5+ZMcr8vXa9SewSr8fAkR7ZLx9T/FYWMhFKms6I4FcS4Esc4ReBb3hp1oLRkcU0jvpp2vKxE9hM+Op+YvpP+C67BQ6qh9ticENwuu/pQfC7FI5MXZeAavEFEv7bOtiOhjfH5gxvexJQQhT8yB2mfbENEsPBvWrrPENjd4MdufiFbnsLtTeZCI5mMs8s4mL8rYNei7zgMhvN9v5kKaIAP5OdxE32QdaPELiKgn5SykA1MEf3YLNW8hHXzP17GVJMdqeRc1TyHNg20xtq6dLb8zEJpt1oLpYWjMLJBNHId3cVLG9+GaG8w4fB7VtJiGrtBeRxHR7bhuP6qckA54Fp/z+GnOQrqEnSWPy+2Un1+F7/+jKCfRZbBPxyFrDM0ZtkMzV0MImbiPiD7HlrM5OmV/gIn2J2gFJv5JRM9A090oQ7MTP+OxDvv3vRDgT1JlaQmTRx7z40hc704iuhs/O5qKQ5Z+qyLAgvgU7KZvhAxgv9VImOPYTBibtKv7hjCCEyZmHoOQHVU6eZgXAo3ttZBB+AYRHUpEPXJwluTNIPw3bBv9OgT6piHaTVK2xNg1OZEDVuRsBtJhM8tRRDSYiG7I6Zq8o/wEz58FxGwiOkbR9vOmFRzsQzFvvs74el0cjvU2lA9T4by8FMEOh0EunJz0HcQV0o8rGkFLaDQE59kjlD07IZLDNBiyJrBBh3ll2WHFNFDzo1PEZ8COoiwnxrr47xzt5zfDN6DyBsxQWfOiw9zBdvysGQhF4iLFmcw7u9OJaAgcu1mzL8wKAR1gApiXkxOzvcMkmoeMIGW3/UMsziwHzieiD5OeLK6QfkDTjFitf5OIXqB84Bf9Z8PPRyD0K0sC4dtOEUImAlstO26aG7xtJ2VxdtlGKcPwr68VIaDyghbuNjKKo8YTN2ohfx2hRe0MjYrtxFkSOO5LiqBi+zRBm85DSH+McDsVDsF7FFEPWTPdYWJTF4+sYUfpqXjmU4jo8lRn8+A4zIMiOA5viPAM6qHd8WBpjo7DYMt2RgStssnhXExLb9wHRxbZqMNimrWzyDU3umPCZq3EtMS4K1uO+Tns7FyOwzz4tACOQ33XmeiZZOk4bO4EAeq8Qto4BFokx+s2R56C8P2RI8JlCyLaFUH9NudiWngR/AjJA90cpjHe/laS2QgFNMXN+jYzdIVpo6Qdl2Ox3CfjexAyQoR0dMbAtHM4Mtx0NieiP0AwXUnNk88RKz4ADhrdXNYNkQWsQZyX8b1cCbPLHQbzywaIQCmKiYhNZFkyAr4iU6IE+4sI2aFCFZJH7GZzoQnRJc9CGJ+A7RNPwk2IaD9MlANipXxWHyMRe3s6wuCewfftje/OduLTQiIvfHAbstiOgS34CWz5N0YSyft4V5V24C7GotZKsRH7pDs06Sctdl+OV38PmnQXmD6EaiKiTfoI2FY49KkSDMb1OZTHxFB8zr+XNR3hQf8Ak24NNMxR0ODyhhNnfp/zNVvCLj1eSX+ehdhcU4hkVpSwsxkL4bMQcdoXQ7vmbLffZXwPYXPjXHxuqu/hg91x/j0cv3MsfifL1OzROZYDMHEzDtc8yXosqLRL+kx0GVxSBLEgCIJQMMQmLQiCUGBESAuCIBQYEdKCIAgFRoS0IAhCgREhLQiCUGBESAuCIBQYEdKCIAhUXP4PfK5GksxICgAAAAAASUVORK5CYII=';
+const LOGO_RATIO = 145 / 361;
+
+const PW = 612, PH = 792, MX = 66;           // US letter in points, side margin
+const INK = '#0D0D0D', GRAPHITE = '#4A4A4A', GREY = '#888888', RULE = '#E4E4E4';
+const SERIF = 'Gelasio', SANS = 'Lato';
+
+function loadScript(src, ready) {
+  if (ready()) return Promise.resolve();
+  return new Promise((ok, fail) => {
+    const s = document.createElement('script');
+    s.src = src; s.onload = ok; s.onerror = () => fail(new Error(src + ' did not load'));
+    document.head.appendChild(s);
+  });
+}
+
+/* A letter-size document with the fonts in, and a pen that keeps a running
+   y position, starts a new page when the next block won't fit, and puts the
+   contact footer on every page at the end. */
+async function newPdf() {
+  await loadScript(PDF_LIB, () => window.jspdf);
+  await loadScript(PDF_FONTS_SRC, () => window.PDF_FONTS);
+  const doc = new jspdf.jsPDF({ unit: 'pt', format: 'letter' });
+  Object.entries(window.PDF_FONTS).forEach(([name, b64]) => {
+    const [family, style] = name.split('-');
+    doc.addFileToVFS(name + '.ttf', b64);
+    doc.addFont(name + '.ttf', family, style.toLowerCase());
+  });
+
+  const p = { doc, y: 64, bottom: PH - 72 };
+  const set = o => { doc.setFont(o.font || SANS, o.style || 'regular'); doc.setFontSize(o.size || 9.5); doc.setTextColor(o.color || INK); };
+  p.width = (str, o = {}) => { set(o); return doc.getTextWidth(String(str)) + (o.space || 0) * Math.max(0, String(str).length - 1); };
+  // text at x (or centred / right-aligned on x), letter spacing handled here so alignment stays true
+  p.text = (str, x, y, o = {}) => {
+    str = String(str); set(o);
+    const w = p.width(str, o);
+    const left = o.align === 'center' ? x - w / 2 : o.align === 'right' ? x - w : x;
+    doc.text(str, left, y, o.space ? { charSpace: o.space } : undefined);
+    return w;
+  };
+  p.caps = (str, x, y, o = {}) => p.text(String(str).toUpperCase(), x, y, Object.assign({ size: 6.5, color: GREY, space: 1.5 }, o));
+  p.wrap = (str, w, o = {}) => { set(o); return doc.splitTextToSize(String(str), w); };
+  p.lines = (lines, x, y, lead, o = {}) => { lines.forEach((l, i) => p.text(l, x, y + i * lead, o)); return lines.length * lead; };
+  p.rule = (y, x0 = MX, x1 = PW - MX, color = RULE, w = 0.5) => { doc.setDrawColor(color); doc.setLineWidth(w); doc.line(x0, y, x1, y); };
+  p.page = () => { doc.addPage(); p.y = 64; };
+  p.need = h => { if (p.y + h > p.bottom) p.page(); };
+  p.logo = (w, y) => { doc.addImage(PDF_LOGO, 'PNG', (PW - w) / 2, y, w, w * LOGO_RATIO); return w * LOGO_RATIO; };
+
+  /* One line of a list: name (wrapping), an optional description under it,
+     and on the right a price, a price with a unit, or a caps tag. */
+  p.row = (name, right = {}, desc = '', compact = false) => {
+    const pad = compact ? 5 : 7;
+    const rw = right.price != null ? 110 : 90;
+    const nl = p.wrap(name, PW - 2 * MX - rw, { size: 9.5 });
+    const dl = desc ? p.wrap(desc, PW - 2 * MX - rw, { size: 7.5, style: 'light' }) : [];
+    const h = pad + 1 + nl.length * 12.5 + (dl.length ? 2 + dl.length * 10 : 0) + pad;
+    p.need(h);
+    const base = p.y + pad + 1 + 9;
+    p.lines(nl, MX, base, 12.5, { size: 9.5 });
+    if (dl.length) p.lines(dl, MX, base + nl.length * 12.5 - 1, 10, { size: 7.5, style: 'light', color: GREY });
+    if (right.price != null) {
+      let x = PW - MX;
+      if (right.unit) x -= p.caps(right.unit, x, base, { align: 'right', size: 6 }) + 5;
+      p.text(right.price, x, base, { font: SERIF, size: 11, align: 'right' });
+    } else if (right.tag) {
+      p.caps(right.tag, PW - MX, base, { align: 'right', size: 6, color: right.gift ? '#3D7550' : GREY });
+    }
+    p.y += h;
+    p.rule(p.y);
+  };
+  p.label = (str, gap = 26) => { p.need(gap + 40); p.y += gap; p.caps(str, MX, p.y); p.y += 2; };
+
+  p.finish = note => {
+    const n = doc.getNumberOfPages();
+    for (let i = 1; i <= n; i++) {
+      doc.setPage(i);
+      if (note && i === n) p.text(note, PW / 2, PH - 50, { align: 'center', size: 7, color: GREY });
+      p.text('yourwedding@debellephotography.com   ·   514-887-4686   ·   debellephotography.com', PW / 2, PH - 36, { align: 'center', size: 7, color: GREY });
+    }
+  };
+  return p;
+}
+
+function savePdf(p, filename) {
+  const url = URL.createObjectURL(p.doc.output('blob'));
   const a = document.createElement('a');
-  a.href = url; a.download = 'debelle-package-summary.txt'; a.click();
-  URL.revokeObjectURL(url);
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  return { url, filename };
+}
+
+// Logo, the Montréal line, and "Prepared for" the couple, centred
+function pdfMasthead(p, logoW, gapToNames) {
+  p.y = 46;
+  p.y += p.logo(logoW, p.y) + 18;
+  p.caps('Montréal  ·  Est. 1993', PW / 2, p.y, { align: 'center', size: 6, space: 2.6 });
+  p.y += gapToNames;
+  p.caps('Prepared for', PW / 2, p.y, { align: 'center' });
+  p.y += 32;
+  p.text(coupleNames(), PW / 2, p.y, { font: SERIF, size: 28, align: 'center' });
+  p.y += 20;
+  p.text(longDate(client.date), PW / 2, p.y, { font: SERIF, style: 'italic', size: 11.5, align: 'center', color: GRAPHITE });
+}
+
+// ── YOUR SUMMARY (PDF) ────────────────────────────────────────────────────────
+
+function exportSummary() {
+  const q = calcQuote();
+  if (!q.lines.length) { alert('Please make at least one selection before downloading your summary.'); return; }
+  askClient('Your Summary', async () => {
+    const q = calcQuote();
+    const tax = Math.round(q.total * 1.14975) - q.total;
+    if (window.xdbTrack) xdbTrack('package-export', { total: q.total, items: q.lines.length, collection: q.coll ? q.coll.c.id : '' });
+    const p = await newPdf();
+    pdfMasthead(p, 104, 40);
+
+    if (q.coll) {
+      p.label('Your collection', 34);
+      p.y += 22;
+      p.text(q.coll.name, MX, p.y, { font: SERIF, size: 19 });
+      p.text(fmt(q.coll.price), PW - MX, p.y, { font: SERIF, size: 19, align: 'right' });
+      p.y += 14;
+      p.y += p.lines(p.wrap(q.coll.c.tagline, PW - 2 * MX, { font: SERIF, style: 'italic', size: 9.5 }), MX, p.y, 13, { font: SERIF, style: 'italic', size: 9.5, color: GRAPHITE }) - 2;
+      q.coll.items.forEach(i => p.row(i.name, { tag: i.gift ? 'Complimentary' : 'Included', gift: i.gift }));
+      if (q.extras.length) {
+        p.label('Added to your collection');
+        q.extras.forEach(l => p.row(l.name, { price: fmt(l.price) }));
+      }
+    } else {
+      p.y += 8;
+      Object.entries(groupBy(q.lines)).forEach(([s, items]) => {
+        p.label(s);
+        items.forEach(l => p.row(l.name, { price: fmt(l.price) }));
+      });
+    }
+
+    // totals, in a column on the right
+    const totals = [];
+    if (q.coll) { totals.push([q.coll.name, fmt(q.coll.price)]); if (q.added) totals.push(['Additions', fmt(q.added)]); }
+    else { totals.push(['Subtotal', fmt(q.raw)]); if (q.saving) totals.push([`Volume discount (${q.discPct}%)`, '-' + fmt(q.saving)]); }
+    totals.push(['Total before tax', fmt(q.total)], ['GST + QST (14.975%)', fmt(tax)]);
+    const save = q.coll && q.before > q.total ? q.before - q.total : 0;
+    p.need(28 + totals.length * 17 + 46 + (save ? 16 : 0));
+    const x0 = PW - MX - 230;
+    p.y += 28;
+    totals.forEach(([k, v]) => {
+      p.text(k, x0, p.y, { size: 9, color: GRAPHITE });
+      p.text(v, PW - MX, p.y, { font: SERIF, size: 10.5, align: 'right' });
+      p.y += 17;
+    });
+    p.rule(p.y - 6, x0, PW - MX, INK, 0.8);
+    p.y += 20;
+    p.text('Total', x0, p.y, { size: 10 });
+    p.text(fmt(q.total + tax), PW - MX, p.y, { font: SERIF, size: 22, align: 'right' });
+    if (save) { p.y += 18; p.text(`You save ${fmt(save)} compared to à la carte.`, PW - MX, p.y, { font: SERIF, style: 'italic', size: 9.5, align: 'right', color: GRAPHITE }); }
+
+    const close = p.wrap('Thank you for thinking of us for your day. Reply to us with any questions, and we would love to hold your date.', 360, { font: SERIF, style: 'italic', size: 11 });
+    p.need(40 + close.length * 16);
+    p.y += 40;
+    close.forEach((l, i) => p.text(l, PW / 2, p.y + i * 16, { font: SERIF, style: 'italic', size: 11, align: 'center', color: GRAPHITE }));
+
+    const issued = new Date().toLocaleDateString('en-CA', { year: 'numeric', month: 'long', day: 'numeric' });
+    p.finish(`Issued ${issued}.  Prices in CAD.  Travel included within 100 km of Montreal.`);
+    return savePdf(p, `de-Belle-Photography-${slug(coupleNames())}.pdf`);
+  });
+}
+
+// ── FULL PRICE LIST (PDF) ─────────────────────────────────────────────────────
+// Built from the live prices, so it is never out of date.
+
+function downloadPriceList() {
+  askClient('Our Price List', async () => {
+    if (window.xdbTrack) xdbTrack('package-pricelist', {});
+    const p = await newPdf();
+
+    // cover
+    p.y = 60;
+    p.y += p.logo(150, p.y) + 20;
+    p.caps('Montréal  ·  Est. 1993', PW / 2, p.y, { align: 'center', size: 6.5, space: 2.8 });
+    p.caps('Collections & Pricing', PW / 2, 318, { align: 'center' });
+    p.text('Every Way to', PW / 2, 360, { font: SERIF, size: 36, align: 'center' });
+    p.text('Remember Your Day.', PW / 2, 402, { font: SERIF, size: 36, align: 'center' });
+    p.caps('Prepared for', PW / 2, 482, { align: 'center' });
+    p.text(coupleNames(), PW / 2, 510, { font: SERIF, size: 20, align: 'center' });
+    p.text(longDate(client.date), PW / 2, 528, { font: SERIF, style: 'italic', size: 11, align: 'center', color: GRAPHITE });
+
+    const chapter = (num, title, intro) => {
+      p.page();
+      p.caps(num, MX, p.y);
+      p.y += 30;
+      p.text(title, MX, p.y, { font: SERIF, size: 28 });
+      p.y += 18;
+      p.y += p.lines(p.wrap(intro, PW - 2 * MX, { font: SERIF, style: 'italic', size: 10 }), MX, p.y, 14, { font: SERIF, style: 'italic', size: 10, color: GRAPHITE });
+    };
+    const heading = (title, note) => {
+      p.need(30 + (note ? 12 : 0) + 40);
+      p.y += 30;
+      p.text(title, MX, p.y, { font: SERIF, size: 15 });
+      if (note) { p.y += 13; p.text(note, MX, p.y, { size: 7.5, style: 'light', color: GREY }); }
+      p.y += 2;
+    };
+    const priced = o => p.row(o.name, { price: fmt(o.price), unit: o.qty ? 'per hour' : '' }, o.desc);
+
+    chapter('I.', 'Our Collections', 'Each collection comes with complimentary gifts, and anything from the pages that follow can be added to it.');
+    COLLECTIONS.forEach(c => {
+      const variants = c.variants ? c.variants.map(v => resolveCollection(c.id, v.id)) : [resolveCollection(c.id)];
+      const rows = variants.reduce((n, r) => n + r.items.length, 0);
+      p.need(56 + rows * 23 + (c.variants ? c.variants.length * 18 : 0));
+      p.y += 30;
+      p.text(c.name, MX, p.y, { font: SERIF, size: 19 });
+      if (c.badge) p.caps(c.badge, MX + p.width(c.name, { font: SERIF, size: 19 }) + 12, p.y - 3, { size: 6, color: INK });
+      p.text(fmt(c.price), PW - MX, p.y, { font: SERIF, size: 19, align: 'right' });
+      p.y += 15;
+      p.text(c.tagline, MX, p.y, { font: SERIF, style: 'italic', size: 9.5, color: GRAPHITE });
+      p.y += 4;
+      variants.forEach(r => {
+        if (c.variants) { p.y += 14; p.caps(c.variants.find(v => v.id === r.variant).label, MX, p.y); p.y += 1; }
+        r.items.forEach(i => p.row(i.name, { tag: i.gift ? 'Complimentary' : 'Included', gift: i.gift }, '', true));
+      });
+    });
+
+    chapter('II.', 'À la carte', `Build your own day, service by service. A volume discount of up to ${SETTINGS.discountTop}% applies automatically as your selection grows.`);
+    heading('Photography');          PHOTO_OPTIONS.forEach(priced);
+    heading('Cinematography');       VIDEO_OPTIONS.forEach(priced);
+    heading('Video Editing', 'Available with any cinematography coverage.'); VIDEO_ADDONS.forEach(priced);
+    heading('Glam Studio', `Extra hours ${fmt(SETTINGS.glamExtraHour)} each beyond the five hour coverage.`); GLAM_OPTIONS.forEach(priced);
+    heading('Same Night Prints');
+    p.row('Same Night Prints', { price: rate(SETTINGS.snpPerGuest), unit: 'per guest' },
+      `Minimum ${fmt(SETTINGS.snpMin)}. Groups over ${SETTINGS.snpBigGroup} guests add an assistant (${fmt(SETTINGS.snpAssistant)}).`);
+    heading('Albums');               ALBUM_TYPES.forEach(a => p.row(a.name, { price: rate(a.pricePerPage), unit: 'per page' }, a.format));
+    heading('Additional Services');  OTHER_ADDONS.forEach(priced);
+
+    const close = p.wrap('Every day we photograph is different, and so is every collection. Write to us and we will shape yours together.', 380, { font: SERIF, style: 'italic', size: 12 });
+    p.need(50 + close.length * 18);
+    p.y += 50;
+    close.forEach((l, i) => p.text(l, PW / 2, p.y + i * 18, { font: SERIF, style: 'italic', size: 12, align: 'center', color: GRAPHITE }));
+
+    p.finish('All prices in CAD, before GST + QST (14.975%).  Travel included within 100 km of Montreal.');
+    return savePdf(p, 'de-Belle-Photography-Price-List.pdf');
+  });
 }
 
 loadCatalog();

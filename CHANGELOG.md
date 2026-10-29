@@ -5,6 +5,36 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v131 — 2026-10-29
+
+**Package Builder — `tools/package-builder.html` (same URL), from the local mockup v3 (`versions/package-builder-mockup/`)**
+- Collections above the builder: The Essential $3,900 (full day photo or film,
+  with a free wedding magazine or 5 minute edit), The Complete $8,000 (featured,
+  "Most popular": photo + film, magazine, 5 minute edit, engagement session),
+  The Signature $10,000 (adds a 24 page Graphi album, Instagram reel, third
+  shooter). Defined in `COLLECTIONS` in the page; magazine valued at $400
+  (`EXTRAS`, a placeholder). Prices of the services come from the live catalog.
+- Choose & customize fills the builder; extras go on top at à la carte prices
+  without the volume discount; changing an included service falls back to à la
+  carte with a "Return to" link.
+- Before either download: bride, groom, email, wedding date (kept on the device
+  only, `debelle.pkg.client`; nothing is sent to the studio yet).
+- The .txt export is gone. Your Summary and the full Price List are real PDFs
+  drawn with jsPDF 2.5.1 (cdnjs), fonts Lato + Gelasio embedded from
+  `tools/package-builder/pdf-fonts.js` (560 KB, loaded only on download).
+  Price list is built from the live prices.
+- Password gate (same password and FNV hash as the Wedding Hub; either page's
+  unlock opens both, key `debelle.pkg.unlocked`). Soft gate, not real
+  protection: the page and its prices are public on GitHub.
+- `noindex, nofollow` added; the page isn't in a sitemap. Card copy updated.
+- Scan: hosts as before plus cdnjs (jsPDF); studio email/phone and prices were
+  already public. Storage keys unchanged (`debelle.pkg.catalog`), so the
+  admin price panel and the Wedding Hub keep working.
+- Tested locally: gate (wrong / right / Hub unlock), collections, customize and
+  fall back, both PDFs (summary 1 page, price list 5 pages). No console errors.
+
+---
+
 ## v130 — 2026-10-29
 
 **Tools page — Wedding Hub card in The Biz**
