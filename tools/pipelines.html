@@ -101,8 +101,7 @@ main{padding:18px var(--gut) 40px}
 .cm{font-size:11px;color:var(--g6);font-weight:700}
 .age{font-size:11px;color:var(--g6)}
 .age.stuck{color:var(--red-dark);font-weight:700}
-.grip{cursor:grab;touch-action:none;color:#b5adad;font:800 14px/1 "Inter Tight",sans-serif;letter-spacing:-2px;padding:4px 6px 4px 2px;user-select:none;-webkit-user-select:none;flex:none}
-.grip:hover{color:var(--black)}
+.pcard,.task[data-edit],.goal{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
 .dragging{opacity:.3}
 .drag-ghost{position:fixed!important;z-index:70;pointer-events:none;margin:0!important;box-shadow:0 12px 30px rgba(0,0,0,.25);transform:rotate(1.2deg);background:var(--white)}
 body.is-dragging,body.is-dragging *{cursor:grabbing!important;user-select:none!important;-webkit-user-select:none!important}
@@ -483,7 +482,7 @@ function render() {
       + (function () { var run = c.log.some(function (e) { return !e.end; }), ms = cardMs(c); return (ms || run ? '<span class="tm' + (run ? ' run' : '') + '" data-tclock="' + c.id + '">⏱ ' + (run ? clockOf(ms) : dur(ms)) + '</span>' : '')
         + (isDone ? '' : '<button class="play' + (run ? ' on' : '') + '" data-timer="' + c.id + '" title="' + (run ? 'Stop the timer' : 'Start the timer') + '">' + (run ? '■' : '▶') + '</button>'); })()
       + (!isDone ? '<span class="age' + (d > 14 ? ' stuck' : '') + '">' + (d > 0 ? d + 'd in stage' : 'new here') + '</span>' : '')
-      + '<span class="grip" title="Drag to move or reorder" aria-hidden="true" style="margin-left:auto">⋮⋮</span><button class="amb" data-menu="' + c.id + '" title="Actions" aria-label="Actions" style="margin-left:0">⋯</button></div></div>';
+      + '<button class="amb" data-menu="' + c.id + '" title="Actions" aria-label="Actions">⋯</button></div></div>';
   }
 
   $('main').innerHTML =
@@ -668,7 +667,6 @@ function savePipe() {
 /* ---------- clicks ---------- */
 document.addEventListener('click', function (e) {
   if (!e.target.closest('[data-menu]')) closeMenu();
-  if (e.target.closest('.grip')) return;
   var el = e.target.closest('button,[data-card],#runbar [data-open]'); if (!el) return;
   var d = el.dataset;
   if (d.menu) { e.stopPropagation(); if (el.classList.contains('open')) return closeMenu(); return openMenu(el, d.menu); }
@@ -721,41 +719,63 @@ document.addEventListener('click', function (e) {
   }
 });
 
-/* ---------- drag to reorder: a ⋮⋮ grip on each item, works with a mouse and a finger ----------
-   sortable({ handle, item, container, grid, onDrop(itemEl, containerEl, beforeEl or null) }) */
+/* ---------- drag to reorder: press and hold anywhere on an item (a finger), or click-drag (a mouse) ----------
+   sortable({ item, container, grid, onDrop(itemEl, containerEl, beforeEl or null) }) */
+var dragEndedAt = 0, dragPending = false;
+document.addEventListener('click', function (e) { if (Date.now() - dragEndedAt < 450) { e.stopPropagation(); e.preventDefault(); } }, true);   // the drop is not also a tap
+document.addEventListener('touchmove', function (e) { if (document.body.classList.contains('is-dragging')) e.preventDefault(); }, { passive: false });   // hold the page still while dragging
+document.addEventListener('contextmenu', function (e) { if (dragPending || document.body.classList.contains('is-dragging')) e.preventDefault(); });
 function sortable(o) {
+  var SKIP = 'button,a,input,textarea,select,label,[contenteditable]';
   document.addEventListener('pointerdown', function (e) {
-    var h = e.target.closest && e.target.closest(o.handle); if (!h || e.button > 0) return;
-    var it = h.closest(o.item); if (!it) return;
-    e.preventDefault();
-    var r = it.getBoundingClientRect(), dx = e.clientX - r.left, dy = e.clientY - r.top, px = e.clientX, py = e.clientY;
-    var ghost = it.cloneNode(true); ghost.classList.add('drag-ghost'); ghost.classList.remove('flash');
-    ghost.style.width = r.width + 'px'; ghost.style.left = r.left + 'px'; ghost.style.top = r.top + 'px';
-    document.body.appendChild(ghost); it.classList.add('dragging'); document.body.classList.add('is-dragging');
-    var target = null, before = true, cont = null;
+    if (e.button > 0 || !e.target.closest) return;
+    var it = e.target.closest(o.item); if (!it || e.target.closest(SKIP) || it.closest('#dlg')) return;
+    var sx = e.clientX, sy = e.clientY, px = sx, py = sy, touch = e.pointerType !== 'mouse', started = false, timer = null;
+    var ghost, dx, dy, target = null, before = true, cont = null, scroller = null, self = false;
+    dragPending = true;
     function clear() { document.querySelectorAll('.drop-before,.drop-after,.drop-in').forEach(function (x) { x.classList.remove('drop-before', 'drop-after', 'drop-in'); }); }
     function place() {
       ghost.style.left = (px - dx) + 'px'; ghost.style.top = (py - dy) + 'px';
       var el = document.elementFromPoint(px, py), over = el && el.closest(o.item);
-      cont = el && el.closest(o.container); clear(); target = null;
-      if (!cont) return;
-      if (over && over !== it && cont.contains(over)) {
+      cont = el && el.closest(o.container); clear(); target = null; self = over === it;
+      if (!cont || self) return;   // still over its own spot: nothing moves
+      if (over && cont.contains(over)) {
         var b = over.getBoundingClientRect();
         before = o.grid ? (px < b.left + b.width / 2) : (py < b.top + b.height / 2);
         over.classList.add(before ? 'drop-before' : 'drop-after'); target = over;
       } else cont.classList.add('drop-in');
     }
-    var scroller = setInterval(function () {        // keep scrolling while held near an edge
-      if (py < 70) window.scrollBy(0, -14); else if (py > innerHeight - 70) window.scrollBy(0, 14);
-      var row = document.elementFromPoint(px, py); row = row && row.closest('.pboard,.lists');
-      if (row) { var rb = row.getBoundingClientRect(); if (px < rb.left + 50) row.scrollLeft -= 14; else if (px > rb.right - 50) row.scrollLeft += 14; }
+    function begin() {
+      if (started || !document.contains(it)) return;
+      started = true; dragPending = false;
+      var r = it.getBoundingClientRect(); dx = sx - r.left; dy = sy - r.top;
+      ghost = it.cloneNode(true); ghost.classList.add('drag-ghost'); ghost.classList.remove('flash');
+      ghost.style.width = r.width + 'px'; document.body.appendChild(ghost);
+      it.classList.add('dragging'); document.body.classList.add('is-dragging');
+      if (navigator.vibrate) try { navigator.vibrate(12); } catch (err) {}
       place();
-    }, 30);
-    function move(ev) { px = ev.clientX; py = ev.clientY; place(); }
-    function end(ev) {
+      scroller = setInterval(function () {        // keep scrolling while held near an edge
+        if (py < 70) window.scrollBy(0, -14); else if (py > innerHeight - 70) window.scrollBy(0, 14);
+        var row = document.elementFromPoint(px, py); row = row && row.closest('.pboard,.lists');
+        if (row) { var rb = row.getBoundingClientRect(); if (px < rb.left + 50) row.scrollLeft -= 14; else if (px > rb.right - 50) row.scrollLeft += 14; }
+        place();
+      }, 30);
+    }
+    if (touch) timer = setTimeout(begin, 330);
+    function move(ev) {
+      px = ev.clientX; py = ev.clientY;
+      if (started) return place();
+      if (Math.abs(px - sx) > 8 || Math.abs(py - sy) > 8) { if (touch) stop(); else begin(); }   // a finger that moves first is scrolling
+    }
+    function stop() {
+      clearTimeout(timer); dragPending = false;
       removeEventListener('pointermove', move); removeEventListener('pointerup', end); removeEventListener('pointercancel', end);
+    }
+    function end(ev) {
+      stop(); if (!started) return;
       clearInterval(scroller); ghost.remove(); it.classList.remove('dragging'); document.body.classList.remove('is-dragging'); clear();
-      if (ev.type === 'pointercancel' || !cont || !document.contains(it)) return;
+      dragEndedAt = Date.now();
+      if (ev.type === 'pointercancel' || !cont || self || !document.contains(it)) return;
       var beforeEl = target;
       if (target && !before) { beforeEl = target.nextElementSibling; while (beforeEl && !beforeEl.matches(o.item)) beforeEl = beforeEl.nextElementSibling; }
       if (beforeEl === it) return;
@@ -770,7 +790,7 @@ function reorder(arr, x, beforeX, sameGroup) {
   if (i < 0) { i = a.length; for (var k = a.length - 1; k >= 0; k--) if (sameGroup(a[k])) { i = k + 1; break; } }
   a.splice(i, 0, x); return a;
 }
-sortable({ handle: '.pcard .grip', item: '.pcard[data-card]', container: '[data-col]', onDrop: function (el, cont, bef) {
+sortable({ item: '.pcard[data-card]', container: '[data-col]', onDrop: function (el, cont, bef) {
   var hit = findCard(el.getAttribute('data-card')); if (!hit) return;
   var sid = cont.getAttribute('data-col'), b = bef && hit.pl.cards.find(function (x) { return x.id === bef.getAttribute('data-card'); });
   if (hit.c.stage !== sid) { hit.c.stage = sid; hit.c.stageAt = today(); }

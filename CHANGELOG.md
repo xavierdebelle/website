@@ -5,6 +5,51 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v135 — 2026-10-29
+
+**What's new** · Update · [tools/production-hub.html]
+### Hold to drag, repeats that wait,<br>and quest cards you control
+- Drag tasks and cards by holding anywhere on them: about a third of a
+  second with a finger, or just click and drag with a mouse. The ⋮⋮ handles
+  are gone. A quick swipe still scrolls, and a tap still opens.
+- A repeating task you tick now leaves the list and waits in Completed
+  ("⟳ back Thu, Nov 12"). It comes back by itself on that day.
+- On In Production, each quest's red card has a ⋯ menu to show a different
+  project of that quest, or to take the card off the board. Big Picture
+  brings it back.
+
+**Production Hub — `tools/production-hub.html`, source `production_hub_v6.html`**
+- `sortable()` without a handle: pointerdown anywhere on an item (not on its
+  buttons, links or fields). Touch starts after a 330 ms hold with no
+  movement (moving first = a scroll, nothing happens); mouse starts after
+  8 px. While dragging, `touchmove` is prevented so the page holds still;
+  the click after a drop is swallowed; long-press callouts and text selection
+  are off on cards. Releasing over the item's own spot moves nothing. Used
+  for Today tasks, In Production cards and Goals.
+- Repeating tasks: ticking sets the next due date and `wait` = that date;
+  until then the task counts as done and sits in Completed with "⟳ back …"
+  (Undo in the toast; unticking from Completed brings it back now).
+- Quest cards: hub doc `show[questId]` = a phase id (show that project) or
+  `false` (off the board); absent = the current project, as before. Menu:
+  "Show on this board" (each other project, plus "the current project
+  (automatic)" once you've picked one) and "Remove from this board" (Undo).
+  Big Picture: the shown project carries "In Production ↗", the others a
+  "Show in In Production" button, and a quest off the board gets "+ Show on
+  In Production" in its header.
+
+**Pipelines — `tools/pipelines.html`, source `pipelines_v6.html`**
+- Same hold-to-drag for cards; handles removed.
+
+**Verified** (mock database, desktop and 375px touch) — hold + drag a task
+to the top, a quick swipe moves nothing, hold + release in place moves and
+opens nothing, mouse drag, plain tap still opens; weekly task ticked → count
+drops, Completed shows "back Thu, Nov 12", Undo/untick return it, and with
+its date past it is back in the list; quest card switched to its second
+project, removed (Undo offered), restored from Big Picture; Pipelines hold +
+drag on a phone and tap to open. No console errors.
+
+---
+
 ## v134 — 2026-10-29
 
 **Package Builder — edit the collections on the page itself**

@@ -110,8 +110,7 @@ main{padding:20px var(--gut) 60px}
 .lh .sub{font-size:12px;color:var(--g6)}
 .menu{border:0;background:transparent;font-size:20px;line-height:1;padding:4px 8px;color:var(--g6)}
 .menu:hover{color:var(--black);background:var(--bg)}
-.grip{cursor:grab;touch-action:none;color:#b5adad;font:800 14px/1 "Inter Tight",sans-serif;letter-spacing:-2px;padding:4px 6px 4px 2px;user-select:none;-webkit-user-select:none;flex:none}
-.grip:hover{color:var(--black)}
+.pcard,.task[data-edit],.goal{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
 .dragging{opacity:.3}
 .drag-ghost{position:fixed!important;z-index:70;pointer-events:none;margin:0!important;box-shadow:0 12px 30px rgba(0,0,0,.25);transform:rotate(1.2deg);background:var(--white)}
 body.is-dragging,body.is-dragging *{cursor:grabbing!important;user-select:none!important;-webkit-user-select:none!important}
@@ -126,7 +125,7 @@ body.is-dragging,body.is-dragging *{cursor:grabbing!important;user-select:none!i
 .addtask .aa{display:flex;gap:8px;align-items:center;font-size:11px;color:var(--g6)}
 .addtask .aa span{flex:1}
 .addtask:not(.open) textarea,.addtask:not(.open) .aa{display:none}
-.task .grip{margin:1px -6px 0 -12px}
+
 .addtask:hover,.addtask:focus-within{background:var(--bg)}
 .addtask .plus{width:22px;height:22px;display:grid;place-items:center;font-weight:800;color:var(--red);font-size:20px;flex:none}
 
@@ -961,7 +960,7 @@ function shortCard(t) { return /^\d{6}\S* · /.test(t) ? t.replace(/^\S+ · /, '
 
 /* ============================================================ hub state */
 function defaultHub() {
-  return { lists: [{ id: 'l1', name: 'Tasks' }], tasks: [], brain: [], goals: [], checks: {}, pins: {}, due: {}, stage: {} };
+  return { lists: [{ id: 'l1', name: 'Tasks' }], tasks: [], brain: [], goals: [], checks: {}, pins: {}, due: {}, stage: {}, show: {} };
 }
 function normHub(s) {
   if (!s || typeof s !== 'object') return null;
@@ -975,7 +974,8 @@ function normHub(s) {
     else ref = null;
     return { id: String(t.id || uid('t')), list: String(t.list || out.lists[0].id), title: String(t.title == null ? '' : t.title), notes: String(t.notes || ''),
       due: isDate(t.due) ? t.due : null, repeat: ['daily', 'weekly', 'monthly'].indexOf(t.repeat) > -1 ? t.repeat : null,
-      done: !!t.done, doneAt: isDate(t.doneAt) ? t.doneAt : null, ref: ref, at: isDate(t.at) ? t.at : today() };
+      done: !!t.done, doneAt: isDate(t.doneAt) ? t.doneAt : null, ref: ref, at: isDate(t.at) ? t.at : today(),
+      wait: isDate(t.wait) ? t.wait : null };   // a repeating task ticked off sits in Completed until this date
   });
   out.tasks.forEach(function (t) { if (!out.lists.some(function (l) { return l.id === t.list; })) t.list = out.lists[0].id; });
   out.brain = listOf(s.brain).filter(Boolean).map(function (b) {
@@ -992,6 +992,7 @@ function normHub(s) {
   ['checks', 'pins'].forEach(function (k) { var v = s[k] && typeof s[k] === 'object' ? s[k] : {}; Object.keys(v).forEach(function (x) { if (v[x]) out[k][x] = true; }); });
   var due = s.due && typeof s.due === 'object' ? s.due : {}; Object.keys(due).forEach(function (x) { if (isDate(due[x])) out.due[x] = due[x]; });
   var st = s.stage && typeof s.stage === 'object' ? s.stage : {}; Object.keys(st).forEach(function (x) { if (st[x]) out.stage[x] = String(st[x]); });
+  var sh = s.show && typeof s.show === 'object' ? s.show : {}; Object.keys(sh).forEach(function (x) { if (sh[x] === false) out.show[x] = false; else if (typeof sh[x] === 'string' && sh[x]) out.show[x] = sh[x]; });
   return out;
 }
 
@@ -1047,6 +1048,9 @@ function questById(id) { return quests().find(function (p) { return p.id === id;
 function phasesOf(p) { return listOf(p.phases).filter(Boolean); }
 function stepsOf(ph) { return listOf(ph.steps).filter(Boolean); }
 function stepDone(st) { return st.status === 'done'; }
+/* the quest's project shown on the Projects board: the one you chose, else the current one; none if you took it off */
+function chosenPhase(p) { var id = S.show[p.id]; return typeof id === 'string' ? phasesOf(p).find(function (x) { return x.id === id; }) || null : null; }
+function boardPhase(p) { return S.show[p.id] === false ? null : chosenPhase(p) || phaseNow(p); }
 function phaseNow(p) { return phasesOf(p).find(function (ph) { var s = stepsOf(ph); return !s.length || s.some(function (x) { return !stepDone(x); }); }) || null; }
 function findStep(pid, phid, sid) {
   var p = questById(pid), ph = p && phasesOf(p).find(function (x) { return x.id === phid; }), st = ph && stepsOf(ph).find(function (x) { return x.id === sid; });
@@ -1064,7 +1068,7 @@ function questLogged(p) {
 
 /* ============================================================ Today: linked tasks read through to their owner */
 function resolve(t) {
-  if (!t.ref) return { title: t.title, done: t.done, due: t.due, repeat: t.repeat, tag: null };
+  if (!t.ref) { var back = t.repeat && t.wait && t.wait > today() ? t.wait : null; return { title: t.title, done: t.done || !!back, back: back, due: t.due, repeat: t.repeat, tag: null }; }
   if (t.ref.app === 'pl') {
     if (!PLD) return { title: t.title, done: false, due: null, tag: { cls: 'pl', label: 'Pipelines · not loaded' }, waiting: true };
     var h = findCard(t.ref.pl, t.ref.c), x = h && ctasks(h.c).find(function (y) { return y.id === t.ref.t; });
@@ -1148,10 +1152,9 @@ function taskRow(t) {
   var r = resolve(t); if (!r) return '';
   var chips = (r.done ? '' : dueChip(r.due, r.repeat)) + (r.tag ? '<button class="tag ' + r.tag.cls + '" data-go="' + t.id + '">' + esc(r.tag.label) + (r.tag.go ? ' ↗' : '') + '</button>' : '');
   return '<div class="task' + (r.done ? ' done' : '') + (flashId === t.id ? ' flash' : '') + '" data-edit="' + t.id + '">'
-    + (r.done ? '' : '<span class="grip" title="Drag to reorder" aria-hidden="true">⋮⋮</span>')
     + '<button class="circ' + (r.done ? ' on' : '') + '" data-tick="' + t.id + '" aria-label="Done">' + (r.done ? '✓' : '') + '</button>'
     + '<div class="tb"><div class="t">' + esc(r.title) + '</div>' + (t.notes && !r.done ? '<div class="n">' + esc(t.notes) + '</div>' : '')
-    + (chips && !r.done ? '<div class="chips">' + chips + '</div>' : '') + '</div></div>';
+    + (chips && !r.done ? '<div class="chips">' + chips + '</div>' : '') + (r.back ? '<div class="chips"><span class="due">⟳ back ' + new Date(r.back + 'T12:00').toLocaleDateString('en-CA', { weekday: 'short', month: 'short', day: 'numeric' }) + '</span></div>' : '') + '</div></div>';
 }
 function pullItems() {
   var soon = dayOff(14), free = function (id) { return !linkedTo(id); }, dated = [], seen = {};
@@ -1221,7 +1224,8 @@ function dateStr(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).pa
 function tickTask(t) {
   var r = resolve(t); if (!r || r.waiting) return;
   if (!t.ref) {
-    if (!t.done && t.repeat) { t.due = nextDue(t.due, t.repeat); flashId = t.id; commit(); return toast('Done. Next one ' + niceDate(t.due, true)); }
+    if (r.back) { t.wait = null; flashId = t.id; return commit(); }   // unticked from Completed: back now
+    if (!t.done && t.repeat) { t.due = nextDue(t.due, t.repeat); t.wait = t.due; commit(); return toast('Done. It comes back ' + niceDate(t.due, true), 'Undo', function () { t.wait = null; commit(); }); }
     t.done = !t.done; t.doneAt = t.done ? today() : null; return commit();
   }
   if (t.ref.app === 'pl') { r.src.done = !r.src.done; r.src.doneAt = r.src.done ? today() : null; savePL(); }
@@ -1287,20 +1291,20 @@ function renderProd() {
       + (function () { var run = cardRunning(c), ms = cardMs(c); return (ms || run ? '<span class="tm' + (run ? ' run' : '') + '" data-tclock="' + c.id + '">⏱ ' + (run ? clockOf(ms) : dur(ms)) + '</span>' : '')
         + (done(st) ? '' : '<button class="play' + (run ? ' on' : '') + '" data-ctimer="' + c.id + '" title="' + (run ? 'Stop the timer' : 'Start the timer') + '">' + (run ? '■' : '▶') + '</button>'); })()
       + (!done(st) && c.stageAt ? '<span class="age' + (d > 14 ? ' stuck' : '') + '">' + (d > 0 ? d + 'd in stage' : 'new here') + '</span>' : '')
-      + '<span class="grip" title="Drag to move or reorder" aria-hidden="true" style="margin-left:auto">⋮⋮</span><button class="amb" data-menu="c:' + c.id + '" title="Actions" style="margin-left:0">⋯</button></div></div>';
+      + '<button class="amb" data-menu="c:' + c.id + '" title="Actions">⋯</button></div></div>';
   }
   // on the Projects board, each quest's current project (a Project Phases phase) shows too, in red
   var stIds = stagesOf(pl).map(function (s) { return s.id; });
   var qcards = function (sid) {
     if (!isProj) return '';
-    return quests().map(function (p) { var ph = phaseNow(p); return ph && { p: p, ph: ph, n: phasesOf(p).indexOf(ph) + 1 }; }).filter(Boolean)
+    return quests().map(function (p) { var ph = boardPhase(p); return ph && { p: p, ph: ph, n: phasesOf(p).indexOf(ph) + 1 }; }).filter(Boolean)
       .filter(function (x) { return (stIds.indexOf(S.stage[x.ph.id]) > -1 ? S.stage[x.ph.id] : stIds[0]) === sid; })
       .map(function (x) { var ss = stepsOf(x.ph), dn = ss.filter(stepDone).length, nx = ss.find(function (y) { return !stepDone(y); });
         return '<div class="pcard quest' + (flashId === x.ph.id ? ' flash' : '') + '" data-qopen="' + x.p.id + '"><div class="pt">' + esc(x.ph.name) + '</div><span class="qtag">Quest · ' + esc(x.p.name) + ' · ' + x.n + '/' + phasesOf(x.p).length + '</span>'
           + (nx ? '<div class="nx">Next: <b>' + esc(nx.name) + '</b>' + (S.due[nx.id] ? ' ' + dueChip(S.due[nx.id]) : '') + '</div>' : '')
           + '<div class="pm">' + (ss.length ? '<span class="cl' + (dn === ss.length ? ' full' : '') + '">☑ ' + dn + '/' + ss.length + '</span>' : '') + '<button class="amb" data-menu="q:' + x.p.id + ':' + x.ph.id + '" title="Actions">⋯</button></div></div>'; }).join('');
   };
-  el.innerHTML = sw + (isProj ? '<p class="model"><b>Today</b> = tasks → <b>In Production</b> = projects → <b>Big Picture</b> = quests. Red cards are the project a quest is on right now.</p>' : '')
+  el.innerHTML = sw + (isProj ? '<p class="model"><b>Today</b> = tasks → <b>In Production</b> = projects → <b>Big Picture</b> = quests. Red cards are the project a quest is on right now; use ⋯ to show another of its projects or take it off the board.</p>' : '')
     + '<div class="phead"><h2>' + esc(pl.name) + '</h2>' + (arch.length ? '<button class="b ghost" data-togglearch>' + (U.showArch ? 'Hide' : 'Show') + ' archived (' + arch.length + ')</button>' : '')
     + '<a class="b" href="pipelines.html" target="_blank" rel="noopener" title="Stages, fields and checklists are edited in Pipelines">⚙ Edit in Pipelines ↗</a></div>'
     + '<div class="psum">' + stagesOf(pl).map(function (s) { var n = live.filter(function (c) { return stageOf(pl, c) === s.id; }).length; return n ? '<span>' + n + ' ' + esc(s.name) + '</span>' : ''; }).join('')
@@ -1388,17 +1392,18 @@ function renderBig() {
   var qs = quests();
   if (!qs.length) { el.innerHTML = '<div class="connect"><h2>No quests yet</h2><p>Quests are the projects in Project Phases. Start one there, or send something here from Brainstorm or In Production.</p><a class="b" href="project-tracker.html" target="_blank" rel="noopener">Open Project Phases ↗</a></div>'; return; }
   var p = questById(U.quest) || qs[0]; U.quest = p.id;
-  var cur = phaseNow(p), g = S.goals.find(function (x) { return x.year === new Date().getFullYear() && x.quests.indexOf(p.id) > -1; }), logged = questLogged(p), t0 = today();
+  var cur = boardPhase(p), g = S.goals.find(function (x) { return x.year === new Date().getFullYear() && x.quests.indexOf(p.id) > -1; }), logged = questLogged(p), t0 = today();
   el.innerHTML = '<div class="qpick">' + qs.map(function (x) { return '<button class="b" aria-pressed="' + (x.id === p.id) + '" data-quest="' + x.id + '">' + (S.pins[x.id] ? '● ' : '') + esc(x.name) + '</button>'; }).join('') + '</div>'
     + '<div class="qhead"><div style="flex:1 1 260px;min-width:0"><div class="eyebrow">Quest · in Project Phases</div><h2>' + esc(p.name) + '</h2>'
     + '<button class="qgoal' + (g ? '' : ' none') + '" data-qgoal="' + p.id + '">' + (g ? '◎ Goal: ' + esc(g.title) : '+ Link to a goal') + '</button></div>'
+    + (S.show[p.id] === false ? '<button class="b" data-qshow="' + p.id + ':auto" title="Put this quest back on the Projects board">+ Show on In Production</button>' : '')
     + '<button class="b' + (S.pins[p.id] ? ' on' : '') + '" data-qpin="' + p.id + '">' + (S.pins[p.id] ? 'Pinned to Pull in' : 'Pin to Pull in') + '</button>'
     + (logged ? '<span class="pill">' + logged + ' logged</span>' : '') + '<a class="b" href="project-tracker.html" target="_blank" rel="noopener">Open ↗</a></div>'
     + '<p class="model" style="margin-top:10px">Each project below is a phase in Project Phases, and each task a step. Ticks, new tasks and new projects go straight back there. Dates and pins are kept by the hub.</p>'
     + phasesOf(p).map(function (ph, i) {
       var ss = stepsOf(ph), dn = ss.filter(stepDone).length, pct = ss.length ? dn / ss.length * 100 : 0;
       return '<div class="panel' + (ph === cur ? ' cur' : '') + (flashId === ph.id ? ' flash' : '') + '"><div class="ph"><h3>' + esc(ph.name) + '</h3>'
-        + (ph === cur ? '<button class="pill" style="border:0" data-goprod title="See it on the Projects board">In Production ↗</button>' : '')
+        + (ph === cur ? '<button class="pill" style="border:0" data-goprod title="See it on the Projects board">In Production ↗</button>' : '<button class="b ghost" data-qshow="' + p.id + ':' + ph.id + '" title="Show this project on the Projects board instead">Show in In Production</button>')
         + '<button class="b ghost" data-addstep="' + p.id + ':' + ph.id + '">+ Task</button><span class="hint">' + dn + '/' + ss.length + '<span class="bar"><i style="width:' + pct + '%"></i></span></span></div>'
         + (ss.map(function (st) {
           var d = S.due[st.id], lk = linkedTo(st.id), done = stepDone(st);
@@ -1449,7 +1454,7 @@ function renderGoals() {
   var res = { hit: 'Hit', partly: 'Partly', missed: 'Missed' };
   var card = function (g) {
     var qs = g.quests.map(questById).filter(Boolean), pct = qs.length ? Math.round(qs.reduce(function (n, p) { return n + questPct(p); }, 0) / qs.length) : 0;
-    return '<div class="goal ' + (g.result || '') + (flashId === g.id ? ' flash' : '') + '" data-goal="' + g.id + '"><div class="gh" data-gedit="' + g.id + '"><span class="grip" title="Drag to reorder" aria-hidden="true">⋮⋮</span><b>' + esc(g.title) + '</b>' + (g.result ? '<span class="res ' + g.result + '">' + res[g.result] + '</span>' : '') + '</div>'
+    return '<div class="goal ' + (g.result || '') + (flashId === g.id ? ' flash' : '') + '" data-goal="' + g.id + '"><div class="gh" data-gedit="' + g.id + '"><b>' + esc(g.title) + '</b>' + (g.result ? '<span class="res ' + g.result + '">' + res[g.result] + '</span>' : '') + '</div>'
       + (g.measure ? '<div class="ms">' + esc(g.measure) + '</div>' : '')
       + (qs.length ? '<div class="gbar" title="' + pct + '% of its quests’ tasks done"><i style="width:' + pct + '%"></i></div>' : '')
       + qs.map(function (p) { var q = questPct(p); return '<div class="gq"><button class="qn" data-quest="' + p.id + '" data-gotobig>' + esc(p.name) + ' ↗</button><span class="mini"><i style="width:' + q + '%"></i></span><span class="pc">' + q + '%</span></div>'; }).join('')
@@ -1565,7 +1570,9 @@ function openMenu(btn, key) {
     var ids = stagesOf(pp).map(function (s) { return s.id; }), cur = ids.indexOf(S.stage[ph.id]) > -1 ? S.stage[ph.id] : ids[0];
     html = it('+', 'Add a task', 'data-addstep="' + p.id + ':' + ph.id + '"')
       + (ids.length > 1 ? '<div class="sec">Move to stage</div>' + stagesOf(pp).filter(function (s) { return s.id !== cur; }).map(function (s) { return it('→', esc(s.name), 'data-qstage="' + ph.id + '" data-to="' + s.id + '"', 'sub'); }).join('') : '')
-      + '<div class="sec">Quest</div>' + it('↗', 'Open quest', 'data-quest="' + p.id + '" data-gotobig');
+      + (phasesOf(p).length > 1 ? '<div class="sec">Show on this board</div>' + phasesOf(p).filter(function (x) { return x !== ph; }).map(function (x) { return it('◦', esc(x.name), 'data-qshow="' + p.id + ':' + x.id + '"', 'sub'); }).join('')
+        + (typeof S.show[p.id] === 'string' ? it('↺', 'The current project (automatic)', 'data-qshow="' + p.id + ':auto"', 'sub') : '') : '')
+      + '<div class="sec">Quest</div>' + it('↗', 'Open quest', 'data-quest="' + p.id + '" data-gotobig') + it('×', 'Remove from this board', 'data-qshow="' + p.id + ':off"', 'red');
   } else {
     var h = cardHit(key.slice(2)); if (!h) return;
     var c = h.c, cur2 = stageOf(h.pl, c);
@@ -1608,7 +1615,6 @@ document.addEventListener('keydown', function (e) {
 });
 document.addEventListener('click', function (e) {
   if (!e.target.closest('[data-menu]')) closeMenu();
-  if (e.target.closest('.grip')) return;
   var el = e.target.closest('button,[data-edit],[data-card],[data-qopen],[data-bedit],[data-gedit],g[data-score],#runbar [data-open]'); if (!el) return;
   var d = el.dataset, T = function (id) { return S.tasks.find(function (x) { return x.id === id; }); }, B = function (id) { return S.brain.find(function (x) { return x.id === id; }); };
   if (d.menu) { e.stopPropagation(); if (el.classList.contains('open')) return closeMenu(); return openMenu(el, d.menu); }
@@ -1708,6 +1714,13 @@ document.addEventListener('click', function (e) {
   }
   if (d.c2big) { var hbg = cardHit(d.c2big); cardOpen = null; return bigDlg('card', hbg.c.id); }
   if (d.qstage) { S.stage[d.qstage] = d.to; flashId = d.qstage; return commit(); }
+  if (d.qshow) {
+    var qa = d.qshow.split(':'), qp = questById(qa[0]), before0 = S.show[qa[0]];
+    if (qa[1] === 'off') S.show[qa[0]] = false; else if (qa[1] === 'auto') delete S.show[qa[0]]; else S.show[qa[0]] = qa[1];
+    var shownPh = qp && boardPhase(qp); if (shownPh) flashId = shownPh.id; commit();
+    if (qa[1] === 'off') return toast('“' + (qp ? qp.name : 'Quest') + '” is off the Projects board. Bring it back from Big Picture.', 'Undo', function () { if (before0 === undefined) delete S.show[qa[0]]; else S.show[qa[0]] = before0; commit(); });
+    return;
+  }
 
   /* Big Picture */
   if (d.quest) { U.quest = d.quest; saveUi(); if ('gotobig' in d) return show('big'); return render(); }
@@ -1807,41 +1820,63 @@ function brainToList(b, listId) {
   toast('Added to ' + listName(listId), 'View', function () { flashId = t.id; show('today'); });
 }
 
-/* ---------- drag to reorder: a ⋮⋮ grip on each item, works with a mouse and a finger ----------
-   sortable({ handle, item, container, grid, onDrop(itemEl, containerEl, beforeEl or null) }) */
+/* ---------- drag to reorder: press and hold anywhere on an item (a finger), or click-drag (a mouse) ----------
+   sortable({ item, container, grid, onDrop(itemEl, containerEl, beforeEl or null) }) */
+var dragEndedAt = 0, dragPending = false;
+document.addEventListener('click', function (e) { if (Date.now() - dragEndedAt < 450) { e.stopPropagation(); e.preventDefault(); } }, true);   // the drop is not also a tap
+document.addEventListener('touchmove', function (e) { if (document.body.classList.contains('is-dragging')) e.preventDefault(); }, { passive: false });   // hold the page still while dragging
+document.addEventListener('contextmenu', function (e) { if (dragPending || document.body.classList.contains('is-dragging')) e.preventDefault(); });
 function sortable(o) {
+  var SKIP = 'button,a,input,textarea,select,label,[contenteditable]';
   document.addEventListener('pointerdown', function (e) {
-    var h = e.target.closest && e.target.closest(o.handle); if (!h || e.button > 0) return;
-    var it = h.closest(o.item); if (!it) return;
-    e.preventDefault();
-    var r = it.getBoundingClientRect(), dx = e.clientX - r.left, dy = e.clientY - r.top, px = e.clientX, py = e.clientY;
-    var ghost = it.cloneNode(true); ghost.classList.add('drag-ghost'); ghost.classList.remove('flash');
-    ghost.style.width = r.width + 'px'; ghost.style.left = r.left + 'px'; ghost.style.top = r.top + 'px';
-    document.body.appendChild(ghost); it.classList.add('dragging'); document.body.classList.add('is-dragging');
-    var target = null, before = true, cont = null;
+    if (e.button > 0 || !e.target.closest) return;
+    var it = e.target.closest(o.item); if (!it || e.target.closest(SKIP) || it.closest('#dlg')) return;
+    var sx = e.clientX, sy = e.clientY, px = sx, py = sy, touch = e.pointerType !== 'mouse', started = false, timer = null;
+    var ghost, dx, dy, target = null, before = true, cont = null, scroller = null, self = false;
+    dragPending = true;
     function clear() { document.querySelectorAll('.drop-before,.drop-after,.drop-in').forEach(function (x) { x.classList.remove('drop-before', 'drop-after', 'drop-in'); }); }
     function place() {
       ghost.style.left = (px - dx) + 'px'; ghost.style.top = (py - dy) + 'px';
       var el = document.elementFromPoint(px, py), over = el && el.closest(o.item);
-      cont = el && el.closest(o.container); clear(); target = null;
-      if (!cont) return;
-      if (over && over !== it && cont.contains(over)) {
+      cont = el && el.closest(o.container); clear(); target = null; self = over === it;
+      if (!cont || self) return;   // still over its own spot: nothing moves
+      if (over && cont.contains(over)) {
         var b = over.getBoundingClientRect();
         before = o.grid ? (px < b.left + b.width / 2) : (py < b.top + b.height / 2);
         over.classList.add(before ? 'drop-before' : 'drop-after'); target = over;
       } else cont.classList.add('drop-in');
     }
-    var scroller = setInterval(function () {        // keep scrolling while held near an edge
-      if (py < 70) window.scrollBy(0, -14); else if (py > innerHeight - 70) window.scrollBy(0, 14);
-      var row = document.elementFromPoint(px, py); row = row && row.closest('.pboard,.lists');
-      if (row) { var rb = row.getBoundingClientRect(); if (px < rb.left + 50) row.scrollLeft -= 14; else if (px > rb.right - 50) row.scrollLeft += 14; }
+    function begin() {
+      if (started || !document.contains(it)) return;
+      started = true; dragPending = false;
+      var r = it.getBoundingClientRect(); dx = sx - r.left; dy = sy - r.top;
+      ghost = it.cloneNode(true); ghost.classList.add('drag-ghost'); ghost.classList.remove('flash');
+      ghost.style.width = r.width + 'px'; document.body.appendChild(ghost);
+      it.classList.add('dragging'); document.body.classList.add('is-dragging');
+      if (navigator.vibrate) try { navigator.vibrate(12); } catch (err) {}
       place();
-    }, 30);
-    function move(ev) { px = ev.clientX; py = ev.clientY; place(); }
-    function end(ev) {
+      scroller = setInterval(function () {        // keep scrolling while held near an edge
+        if (py < 70) window.scrollBy(0, -14); else if (py > innerHeight - 70) window.scrollBy(0, 14);
+        var row = document.elementFromPoint(px, py); row = row && row.closest('.pboard,.lists');
+        if (row) { var rb = row.getBoundingClientRect(); if (px < rb.left + 50) row.scrollLeft -= 14; else if (px > rb.right - 50) row.scrollLeft += 14; }
+        place();
+      }, 30);
+    }
+    if (touch) timer = setTimeout(begin, 330);
+    function move(ev) {
+      px = ev.clientX; py = ev.clientY;
+      if (started) return place();
+      if (Math.abs(px - sx) > 8 || Math.abs(py - sy) > 8) { if (touch) stop(); else begin(); }   // a finger that moves first is scrolling
+    }
+    function stop() {
+      clearTimeout(timer); dragPending = false;
       removeEventListener('pointermove', move); removeEventListener('pointerup', end); removeEventListener('pointercancel', end);
+    }
+    function end(ev) {
+      stop(); if (!started) return;
       clearInterval(scroller); ghost.remove(); it.classList.remove('dragging'); document.body.classList.remove('is-dragging'); clear();
-      if (ev.type === 'pointercancel' || !cont || !document.contains(it)) return;
+      dragEndedAt = Date.now();
+      if (ev.type === 'pointercancel' || !cont || self || !document.contains(it)) return;
       var beforeEl = target;
       if (target && !before) { beforeEl = target.nextElementSibling; while (beforeEl && !beforeEl.matches(o.item)) beforeEl = beforeEl.nextElementSibling; }
       if (beforeEl === it) return;
@@ -1858,19 +1893,19 @@ function reorder(arr, x, beforeX, sameGroup) {
 }
 
 /* Today: tasks within a list or into another list */
-sortable({ handle: '.task .grip', item: '.task[data-edit]', container: '[data-tlist]', onDrop: function (el, cont, bef) {
+sortable({ item: '.task[data-edit]', container: '[data-tlist]', onDrop: function (el, cont, bef) {
   var t = S.tasks.find(function (x) { return x.id === el.getAttribute('data-edit'); }), list = cont.getAttribute('data-tlist'); if (!t) return;
   var b = bef && S.tasks.find(function (x) { return x.id === bef.getAttribute('data-edit'); });
   t.list = list; S.tasks = reorder(S.tasks, t, b, function (x) { return x.list === list && !(resolve(x) || {}).done; }); flashId = t.id; commit();
 } });
 /* In Production: cards within a stage or into another stage (the order is the Pipelines app's order too) */
-sortable({ handle: '.pcard .grip', item: '.pcard[data-card]', container: '[data-col]', onDrop: function (el, cont, bef) {
+sortable({ item: '.pcard[data-card]', container: '[data-col]', onDrop: function (el, cont, bef) {
   var h = cardHit(el.getAttribute('data-card')); if (!h) return;
   var sid = cont.getAttribute('data-col'), b = bef && cardsOf(h.pl).find(function (x) { return x.id === bef.getAttribute('data-card'); });
   moveStage(h.c, sid); h.pl.cards = reorder(cardsOf(h.pl), h.c, b, function (x) { return !x.archived && stageOf(h.pl, x) === sid; }); savePL(); flashId = h.c.id; render();
 } });
 /* Goals: within the year */
-sortable({ handle: '.goal .grip', item: '.goal[data-goal]', container: '.ggrid', grid: true, onDrop: function (el, cont, bef) {
+sortable({ item: '.goal[data-goal]', container: '.ggrid', grid: true, onDrop: function (el, cont, bef) {
   var g = S.goals.find(function (x) { return x.id === el.getAttribute('data-goal'); }), b = bef && S.goals.find(function (x) { return x.id === bef.getAttribute('data-goal'); }); if (!g) return;
   S.goals = reorder(S.goals, g, b, function (x) { return x.year === g.year; }); flashId = g.id; commit();
 } });
