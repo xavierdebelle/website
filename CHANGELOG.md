@@ -5,6 +5,15 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v132 — 2026-10-29
+
+**Wedding Hub — Start over button (source `wedding-hub-v2.html`)**
+- Footer: **Start over** (for testing) asks once, erases `debelle.weddinghub.v1`
+  on this device and returns to the welcome screen; the password unlock stays.
+- Tested locally: names and date gone, setup shown, still unlocked, no console errors.
+
+---
+
 ## v131 — 2026-10-29
 
 **Package Builder — `tools/package-builder.html` (same URL), from the local mockup v3 (`versions/package-builder-mockup/`)**
