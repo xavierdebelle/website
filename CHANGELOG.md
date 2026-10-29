@@ -5,6 +5,42 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v137 — 2026-10-29
+
+**Package Builder — edit the à la carte prices on the page too**
+- Editing mode (footer "Studio · edit", formerly "Studio · collections";
+  or `?edit`) now covers the whole page, not just the collections. Each
+  à la carte section is outlined in yellow under "Editing the à la carte
+  prices", and clicking a card no longer selects it while editing.
+- In place: every service's name, description and price (photography,
+  cinematography, video editing, glam, additional services); albums' name,
+  price per page, sizes and fewest pages. Each one can be moved, removed or
+  added ("+ Add a service" / "+ Add an album"). Toggles: priced per hour
+  (with the fewest hours), counts as full day (photography), needs full-day
+  photography (glam). Rates in their own sentences: glam extra hour, Same
+  Night Prints per guest / minimum / group size / assistant.
+- Volume discount: a "VIII. Volume Discount" section that shows only while
+  editing (tiers, top %, add / remove a tier); clients never see it.
+- Clicking a number selects all of it, so typing replaces it.
+- Removing a service that a collection includes says which collection,
+  and takes it out of the collection too.
+- Editing starts from the catalog as published right now (read fresh, not
+  this device's copy). Publish writes the whole `catalog/package-builder`
+  plus a copy in `catalogHistory`; if someone published after you started,
+  it asks before replacing their version. No rules change.
+- The footer's "Studio · prices" link is gone. The prices panel stays
+  (linked from the edit bar as "Earlier versions & editors") for the
+  history and the editors list.
+- Tested on the mock with a copy of the live catalog: price, name,
+  description, per-hour toggle, new service, removal (taken out of The
+  Signature), glam hour rate, Same Night Prints rate, discount tier all
+  published and read by a second device (client view: totals and discount
+  correct, discount table hidden); publish over someone else's newer
+  version asks first and declining keeps your edits; Discard and Exit;
+  phone width, no sideways scroll.
+
+---
+
 ## v136 — 2026-10-29
 
 **What's new** · Project Phases · [tools/project-tracker.html]

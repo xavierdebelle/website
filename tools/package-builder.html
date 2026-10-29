@@ -304,6 +304,36 @@
   .collection.ed-new { border: 2px dashed #ffe800; color: #ffe800; background: transparent; font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 26px; cursor: pointer; align-items: center; justify-content: center; min-height: 240px; }
   body.editing .collections-grid { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
   body.editing .coll-btn { display: none; }
+  /* à la carte, while editing */
+  body.editing .builder-main { outline: 2px dashed #ffe800; outline-offset: -14px; }
+  body.editing .builder-main::before { content: 'Editing the à la carte prices'; display: inline-block; margin-bottom: 34px; background: #ffe800; color: #000; font-size: 8px; letter-spacing: 0.3em; text-transform: uppercase; font-weight: 500; padding: 6px 12px; }
+  body.editing .ed-card { cursor: default; }
+  body.editing .ed-card:hover { background: var(--black2); }
+  body.editing .card-title, body.editing .card-desc, body.editing .addon-name, body.editing .addon-detail, body.editing .album-type-name, body.editing .album-type-spec { display: block; }
+  body.editing .card-title [contenteditable], body.editing .card-desc [contenteditable], body.editing .addon-name [contenteditable], body.editing .addon-detail [contenteditable], body.editing .album-type-name [contenteditable] { display: block; }
+  body.editing .ed-card [data-field="desc"], body.editing .ed-card .album-type-spec { margin-top: 9px; }
+  body.editing .addon-detail [data-field="desc"], body.editing .ed-card .album-type-spec { color: var(--muted); }
+  .ed-mini { display: flex; gap: 4px; margin-bottom: 14px; }
+  .addon-row .ed-mini { margin: 0; flex-shrink: 0; }
+  .ed-mini button { font-family: 'Montserrat', sans-serif; font-size: 8px; letter-spacing: 0.14em; text-transform: uppercase; background: #ffe800; color: #000; border: none; padding: 5px 8px; cursor: pointer; }
+  .ed-mini button:disabled { opacity: 0.3; cursor: default; }
+  .ed-opts { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 14px; }
+  .ed-opts:empty { display: none; }
+  .ed-tog { font-family: 'Montserrat', sans-serif; font-size: 8px; letter-spacing: 0.12em; text-transform: uppercase; background: transparent; color: #ffe800; border: 1px dashed #ffe800; padding: 5px 8px; cursor: pointer; }
+  .ed-tog.on { background: #ffe800; color: #000; border-style: solid; }
+  .ed-hint { font-size: 10px; color: var(--muted); }
+  .ed-addcard { border: 2px dashed #ffe800 !important; background: transparent !important; color: #ffe800; font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 20px; cursor: pointer; justify-content: center; text-align: center; min-height: 64px; }
+  .ed-wide { grid-column: 1 / -1; background: var(--black2); padding: 16px 22px; font-size: 11px; color: var(--light); }
+  body.editing .snp-note { color: var(--light); font-size: 11px; line-height: 2.4; }
+  .ed-only { display: none; }
+  body.editing .ed-only { display: block; }
+  .ed-tiers { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); }
+  .ed-tier { background: var(--black2); padding: 12px 16px; font-size: 11px; color: var(--light); display: flex; align-items: center; gap: 6px; }
+  .ed-tier .ed-arrow { color: var(--subtle); }
+  .ed-tier .ed-x { margin-left: auto; }
+  .ed-tiers > .ed-link { grid-column: 1 / -1; background: var(--black2); margin: 0; padding: 12px 16px; }
+  #edit-bar .eb-more { color: #000; font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.6; align-self: center; margin-right: 6px; }
+  @media(max-width:700px) { #edit-bar .eb-more { display: none; } }
 
   /* RESPONSIVE */
   @media(max-width:960px) { .collections{padding:50px 24px 20px} .collections-grid{grid-template-columns:1fr} .collection.featured{margin:0} .coll-tagline{min-height:0} .carte-divider{padding:0 24px} .builder-layout{grid-template-columns:1fr} .sidebar{position:relative;height:auto} .builder-main{padding:50px 24px 80px;border-right:none} }
@@ -353,6 +383,7 @@ else setTimeout(() => document.getElementById('gate-pw').focus(), 50);
     <button id="eb-in" onclick="editSignIn()" hidden>Sign in with Google</button>
     <button id="eb-publish" onclick="publishEdits()" hidden>Publish</button>
     <button id="eb-discard" onclick="discardEdits()" hidden>Discard changes</button>
+    <a class="eb-more" href="package-builder-admin.html" target="_blank" rel="noopener nofollow">Earlier versions &amp; editors</a>
     <button id="eb-exit" onclick="exitEditor()">Exit</button>
   </span>
 </div>
@@ -439,6 +470,13 @@ else setTimeout(() => document.getElementById('gate-pw').focus(), 50);
       <div class="addon-list" id="other-addons-list"></div>
     </div>
 
+    <!-- VIII. VOLUME DISCOUNT: only while editing; clients never see the table -->
+    <div class="section ed-only">
+      <div class="section-header"><span class="section-num">VIII.</span><h2>Volume Discount</h2><span class="section-tag">Studio only</span></div>
+      <p class="section-note">Clients never see this table. An à la carte subtotal up to each amount gets that percentage off, rounded to the nearest $50. Collections never get it.</p>
+      <div class="ed-tiers" id="discount-edit"></div>
+    </div>
+
   </div>
 
   <!-- SIDEBAR -->
@@ -476,7 +514,7 @@ else setTimeout(() => document.getElementById('gate-pw').focus(), 50);
 </div>
 
 <div class="footer-band">
-  <p><a href="mailto:yourwedding@debellephotography.com">yourwedding@debellephotography.com</a> &nbsp;·&nbsp; 514.887.4686 &nbsp;·&nbsp; <a href="https://debellephotography.com" target="_blank">debellephotography.com</a> &nbsp;·&nbsp; <a href="package-builder-admin.html" rel="nofollow" style="opacity:.55">Studio · prices</a> &nbsp;·&nbsp; <a href="#" onclick="openEditor();return false" rel="nofollow" style="opacity:.55">Studio · collections</a> &nbsp;·&nbsp; <a href="#" onclick="try{localStorage.removeItem('debelle.pkg.unlocked')}catch(e){};location.reload();return false" style="opacity:.55">Lock</a></p>
+  <p><a href="mailto:yourwedding@debellephotography.com">yourwedding@debellephotography.com</a> &nbsp;·&nbsp; 514.887.4686 &nbsp;·&nbsp; <a href="https://debellephotography.com" target="_blank">debellephotography.com</a> &nbsp;·&nbsp; <a href="#" onclick="openEditor();return false" rel="nofollow" style="opacity:.55">Studio · edit</a> &nbsp;·&nbsp; <a href="#" onclick="try{localStorage.removeItem('debelle.pkg.unlocked')}catch(e){};location.reload();return false" style="opacity:.55">Lock</a></p>
 </div>
 
 <div class="modal" id="client-modal" hidden onclick="if(event.target===this)closeClient()">
@@ -688,14 +726,14 @@ function renderCollections() {
   }).join('');
 }
 
-// ── EDITING THE COLLECTIONS ───────────────────────────────────────────────────
-// Xavier (or an editor from the prices panel) edits the collections right on
-// this page. "Studio · collections" in the footer, or ?edit, loads Firebase,
-// asks for Google sign-in, and turns the collection cards editable under a
-// yellow bar. Publish writes collections, gifts and names into the same
-// catalog/package-builder the prices panel saves (read fresh first, so the
-// prices are never touched), plus a copy in catalogHistory. Clients never
-// load Firebase; they read the catalog as before.
+// ── EDITING ON THE PAGE ───────────────────────────────────────────────────────
+// Xavier (or an editor from the prices panel) edits the collections and the
+// à la carte services, prices and rates right on this page. "Studio · edit" in
+// the footer, or ?edit, loads Firebase, asks for Google sign-in, and turns the
+// page editable under a yellow bar. Editing starts from the catalog as it is
+// published now; Publish writes the whole catalog/package-builder (warning
+// first if someone published in between), plus a copy in catalogHistory.
+// Clients never load Firebase; they read the catalog as before.
 
 const FB_SDK = 'https://www.gstatic.com/firebasejs/10.12.2/';
 const FB_CONFIG = {
@@ -706,6 +744,7 @@ const FB_OWNER = 'jGJdt3h4EeaOL3mYWUHA4yMZsRx2';
 const CATALOG_DOC = 'package-builder';
 
 let fb = null, editor = null, editing = false, editSaved = '', editBusy = false;
+let editBaseAt = null;     // updatedAt of the catalog editing started from (null: unknown)
 const clone = o => JSON.parse(JSON.stringify(o));
 const emailKey = e => String(e || '').trim().toLowerCase().replace(/\./g, ',');
 
@@ -718,14 +757,17 @@ async function fbLoad() {
 }
 
 // what Publish writes, and what Discard goes back to
-const collSnapshot = () => JSON.stringify({ collections: COLLECTIONS, extras: EXTRAS, collLabels: COLL_LABELS });
-function collRestore(json) {
+const editSnapshot = () => JSON.stringify({ collections: COLLECTIONS, extras: EXTRAS, collLabels: COLL_LABELS,
+  carte: Object.fromEntries(Object.entries(CARTE).map(([k, s]) => [k, s.list])), settings: SETTINGS });
+function editRestore(json) {
   const s = JSON.parse(json);
   COLLECTIONS.splice(0, COLLECTIONS.length, ...s.collections);
   Object.keys(EXTRAS).forEach(k => delete EXTRAS[k]); Object.assign(EXTRAS, s.extras);
   Object.keys(COLL_LABELS).forEach(k => delete COLL_LABELS[k]); Object.assign(COLL_LABELS, s.collLabels);
+  Object.entries(CARTE).forEach(([k, c]) => c.list.splice(0, c.list.length, ...s.carte[k]));
+  Object.keys(SETTINGS).forEach(k => delete SETTINGS[k]); Object.assign(SETTINGS, s.settings);
 }
-const editDirty = () => editing && collSnapshot() !== editSaved;
+const editDirty = () => editing && editSnapshot() !== editSaved;
 
 function editBar(state, text) {
   const bar = document.getElementById('edit-bar');
@@ -741,7 +783,7 @@ function paintEditBar() {
   if (!editing) return;
   editBar('editing', editBusy ? '<b>Publishing…</b>'
     : editDirty() ? '<b>Unpublished changes.</b> Clients still see the last published version.'
-    : `Click any name, line or price in the collections to change it. Clients see changes once you publish. <span class="eb-who">${esc(editor.email || '')}</span>`);
+    : `Click any name, description or price on the page to change it. Clients see changes once you publish. <span class="eb-who">${esc(editor.email || '')}</span>`);
 }
 
 // Footer link and ?edit: load sign-in, then edit if this account may
@@ -766,15 +808,22 @@ async function editSignIn() {
 async function checkEditor(u) {
   let ok = u.uid === FB_OWNER;
   if (!ok) { try { ok = (await fb.f.get(fb.f.ref(fb.db, 'catalogEditors/' + emailKey(u.email)))).exists(); } catch (e) { ok = false; } }
-  if (!ok) { editBar('signin', `${esc(u.email)} can’t edit the collections. Ask Xavier to add it in the prices panel, or sign in with another account.`); return; }
-  editor = u; editing = true; editSaved = collSnapshot();
+  if (!ok) { editBar('signin', `${esc(u.email)} can’t edit this page. Ask Xavier to add it under “Who can edit”, or sign in with another account.`); return; }
+  // start from what is published right now, not this device's remembered copy
+  editBar('wait', 'Loading the published prices…');
+  try {
+    const cur = (await fb.f.get(fb.f.ref(fb.db, 'catalog/' + CATALOG_DOC))).val();
+    editBaseAt = cur ? cur.updatedAt : 0;
+    if (cur && applyCatalog(cur)) { try { localStorage.setItem(CATALOG_CACHE, JSON.stringify(cur)); } catch (e) {} }
+  } catch (e) { editBaseAt = null; }
+  editor = u; editing = true; editSaved = editSnapshot();
   document.body.classList.add('editing');
-  renderCollections(); paintEditBar();
+  renderAll(); paintEditBar();
   document.getElementById('collections').scrollIntoView({ behavior: 'smooth' });
 }
 function exitEditor() {
   if (editDirty() && !confirm('Leave editing mode? Your unpublished changes will be lost.')) return;
-  if (editing) collRestore(editSaved);
+  if (editing) editRestore(editSaved);
   editing = false; editor = null;
   document.body.classList.remove('editing', 'edit-on');
   document.getElementById('edit-bar').hidden = true;
@@ -782,10 +831,10 @@ function exitEditor() {
 }
 function discardEdits() {
   if (!confirm('Discard your unpublished changes?')) return;
-  collRestore(editSaved); renderAll(); paintEditBar();
+  editRestore(editSaved); renderAll(); paintEditBar();
 }
 
-// the services and prices on this page, in the catalog's shape (used only if nothing was ever saved)
+// the services, prices and rates on this page, in the catalog's shape
 function catalogFromPage() {
   const timed = o => Object.assign({ id:o.id, name:o.name, price:o.price, desc:o.desc }, o.qty ? { hourly:true, minQty:o.minQty || 1 } : {}, o.fullDay ? { fullDay:true } : {});
   return {
@@ -800,8 +849,8 @@ function catalogFromPage() {
 
 async function publishEdits() {
   if (!editDirty() || editBusy) return;
-  const bad = COLLECTIONS.filter(c => !String(c.name).trim()).length;
-  if (bad) { alert('Every collection needs a name.'); return; }
+  if (COLLECTIONS.some(c => !String(c.name).trim())) { alert('Every collection needs a name.'); return; }
+  if (Object.values(CARTE).some(s => s.list.some(o => !String(o.name).trim()))) { alert('Every service needs a name.'); return; }
   editBusy = true; paintEditBar();
   try {
     // keep only the gifts still in use
@@ -809,14 +858,19 @@ async function publishEdits() {
     COLLECTIONS.forEach(c => (c.variants || [c]).forEach(v => (v.gifts || []).forEach(g => used.add(g))));
     Object.keys(EXTRAS).forEach(k => { if (!used.has(k)) delete EXTRAS[k]; });
     const cur = (await fb.f.get(fb.f.ref(fb.db, 'catalog/' + CATALOG_DOC))).val();
-    const data = Object.assign({}, cur && cur.data ? cur.data : catalogFromPage(),
+    if (editBaseAt != null && (cur ? cur.updatedAt : 0) !== editBaseAt &&
+        !confirm(`${(cur && cur.by) || 'Someone'} published other changes after you started editing. Publish your version over theirs?`)) {
+      editBusy = false; paintEditBar(); return;
+    }
+    const data = Object.assign({}, cur && cur.data ? cur.data : {}, catalogFromPage(),
       clone({ collections: COLLECTIONS, extras: EXTRAS, collLabels: COLL_LABELS }));
+    data.settings.discounts.sort((a, b) => a.upTo - b.upTo);
     const now = Date.now(), doc = { data, updatedAt: now, by: editor.email || '' };
     await fb.f.update(fb.f.ref(fb.db), { ['catalog/' + CATALOG_DOC]: doc, ['catalogHistory/' + CATALOG_DOC + '/' + now]: doc });
     try { localStorage.setItem(CATALOG_CACHE, JSON.stringify(doc)); } catch (e) {}
-    editSaved = collSnapshot();
+    editSaved = editSnapshot(); editBaseAt = now;
     editBusy = false; paintEditBar();
-    document.getElementById('eb-state').innerHTML = '<b>Published.</b> Clients see these collections now.';
+    document.getElementById('eb-state').innerHTML = '<b>Published.</b> Clients see these prices now.';
   } catch (e) {
     editBusy = false; paintEditBar();
     alert(/permission/i.test(String(e && (e.code || e.message))) ? 'Not allowed to publish. Check this account is on the editors list.' : 'Couldn’t publish: ' + ((e && e.code) || e));
@@ -977,20 +1031,172 @@ function editAdd(sel) {
   redrawEdit();
 }
 
-function redrawEdit() { renderCollections(); paintEditBar(); }
+/* ---- the à la carte sections, edited in place ---- */
+
+// each builder list, what kind of service it holds, and the id prefix for new ones
+const CARTE = {
+  photo:       { list: PHOTO_OPTIONS, kind: 'timed', fullDay: true, prefix: 'ph' },
+  video:       { list: VIDEO_OPTIONS, kind: 'timed', prefix: 'vi' },
+  videoAddons: { list: VIDEO_ADDONS,  kind: 'plain', prefix: 'va' },
+  glam:        { list: GLAM_OPTIONS,  kind: 'glam',  prefix: 'gl' },
+  albums:      { list: ALBUM_TYPES,   kind: 'album', prefix: 'al' },
+  addons:      { list: OTHER_ADDONS,  kind: 'plain', prefix: 'oa' },
+};
+const edSpan = (field, text, cls = '', attrs = '') => `<span class="${cls}" contenteditable="plaintext-only" spellcheck="false" data-field="${field}" ${attrs}>${esc(text)}</span>`;
+const edSet = (k, cls = 'ed-num') => edSpan('set', SETTINGS[k], cls, `data-k="${k}"`);
+const edTog = (k, on, label) => `<button type="button" class="ed-tog${on ? ' on' : ''}" data-act="tog" data-k="${k}">${on ? '✓ ' : ''}${label}</button>`;
+function edMini(n, len, across) {
+  return `<div class="ed-mini">
+    <button type="button" data-act="up" ${n === 0 ? 'disabled' : ''} title="Move earlier">${across ? '←' : '↑'}</button>
+    <button type="button" data-act="down" ${n === len - 1 ? 'disabled' : ''} title="Move later">${across ? '→' : '↓'}</button>
+    <button type="button" data-act="del" title="Remove from the price list">Remove</button></div>`;
+}
+const edAddBtn = (key, cls, label) => `<button type="button" class="${cls} ed-addcard" data-act="add" data-l="${key}">${label}</button>`;
+
+// photography, cinematography and glam: cards
+function carteCardsEdit(key) {
+  const s = CARTE[key];
+  return s.list.map((o, n) => {
+    let opts = '';
+    if (s.kind === 'timed') opts = edTog('hourly', o.qty, 'Priced per hour') +
+      (o.qty ? `<span class="ed-hint">at least ${edSpan('minQty', o.minQty || 1, 'ed-num')} hours</span>` : '') +
+      (s.fullDay ? edTog('fullDay', o.fullDay, 'Counts as full day') : '');
+    if (s.kind === 'glam') opts = edTog('reqFullDay', o.reqFullDay, 'Needs full-day photography');
+    return `<div class="option-card ed-card" data-l="${key}" data-n="${n}">
+      ${edMini(n, s.list.length, true)}
+      <div class="card-title">${edSpan('name', o.name, '', 'data-ph="Name"')}</div>
+      <div class="card-desc">${edSpan('desc', o.desc, '', 'data-ph="What it includes"')}</div>
+      <div class="card-price">$${edSpan('price', o.price, 'ed-num')}</div>
+      ${o.qty ? '<div class="card-price-note">per hour</div>' : ''}
+      <div class="ed-opts">${opts}</div>
+    </div>`;
+  }).join('') + edAddBtn(key, 'option-card', '+ Add a service');
+}
+
+// video editing and additional services: rows
+function carteRowsEdit(key) {
+  const s = CARTE[key];
+  return s.list.map((o, n) => `<div class="addon-row ed-card" data-l="${key}" data-n="${n}">
+      <div class="addon-info"><div class="addon-name">${edSpan('name', o.name, '', 'data-ph="Name"')}</div>
+        <div class="addon-detail">${edSpan('desc', o.desc, '', 'data-ph="What it includes"')}</div></div>
+      <div class="addon-price">$${edSpan('price', o.price, 'ed-num')}</div>
+      ${edMini(n, s.list.length, false)}
+    </div>`).join('') + edAddBtn(key, 'addon-row', '+ Add a service');
+}
+
+function renderAlbumsEdit() {
+  const s = CARTE.albums;
+  document.getElementById('albums-container').innerHTML = `<div class="album-builder">` + s.list.map((a, n) =>
+    `<div class="album-type-card ed-card" data-l="albums" data-n="${n}">
+      ${edMini(n, s.list.length, true)}
+      <div class="album-type-name">${edSpan('name', a.name, '', 'data-ph="Name"')}</div>
+      <div class="album-type-price">$${edSpan('pricePerPage', a.pricePerPage, 'ed-num')}/page</div>
+      <div class="album-type-spec">${edSpan('format', a.format, '', 'data-ph="Sizes"')}</div>
+      <div class="album-type-spec">at least ${edSpan('min', a.min, 'ed-num')} pages</div>
+    </div>`).join('') + edAddBtn('albums', 'album-type-card', '+ Add an album') + `</div>`;
+}
+
+// the bundle discount, shown only while editing (clients never see the table)
+function renderDiscountEdit() {
+  document.getElementById('discount-edit').innerHTML =
+    SETTINGS.discounts.map((t, i) => `<div class="ed-tier" data-t="${i}">Up to $${edSpan('tierUpTo', t.upTo, 'ed-num')}
+      <span class="ed-arrow">→</span> ${edSpan('tierPct', t.pct, 'ed-num')}% off
+      <button type="button" class="ed-x" data-act="deltier" title="Remove this tier">×</button></div>`).join('') +
+    `<div class="ed-tier">Anything above: ${edSet('discountTop')}% off</div>
+    <button type="button" class="ed-link" data-act="addtier">+ Add a tier</button>`;
+}
+
+// typing in the à la carte sections (the model only; the page redraws on leaving the field)
+function carteField(el) {
+  const txt = el.textContent.replace(/\s+/g, ' ').trim(), f = el.dataset.field;
+  const money = () => Math.round((parseFloat(txt.replace(/[^0-9.]/g, '')) || 0) * 100) / 100;
+  const whole = () => parseInt(txt.replace(/[^0-9]/g, ''), 10) || 0;
+  if (f === 'set') SETTINGS[el.dataset.k] = ['snpBigGroup', 'discountTop'].includes(el.dataset.k) ? Math.min(el.dataset.k === 'discountTop' ? 100 : Infinity, whole()) : money();
+  else if (f === 'tierUpTo' || f === 'tierPct') {
+    const t = SETTINGS.discounts[+el.closest('[data-t]').dataset.t];
+    if (f === 'tierUpTo') t.upTo = whole(); else t.pct = Math.min(100, money());
+  } else {
+    const row = el.closest('[data-n]'); if (!row) return;
+    const o = CARTE[row.dataset.l].list[+row.dataset.n];
+    if (f === 'name' || f === 'desc' || f === 'format') o[f] = txt;
+    else if (f === 'price' || f === 'pricePerPage') o[f] = money();
+    else if (f === 'minQty' || f === 'min') o[f] = Math.max(1, whole());
+  }
+  paintEditBar();
+}
+
+function carteAction(btn) {
+  const act = btn.dataset.act;
+  if (act === 'addtier') {
+    const d = SETTINGS.discounts, last = d[d.length - 1];
+    d.push({ upTo: last ? last.upTo + 1000 : 2500, pct: last ? last.pct : 0 });
+    return redrawEdit();
+  }
+  if (act === 'deltier') { SETTINGS.discounts.splice(+btn.closest('[data-t]').dataset.t, 1); return redrawEdit(); }
+  const key = btn.closest('[data-l]').dataset.l, s = CARTE[key]; if (!s) return;
+  const list = s.list;
+  if (act === 'add') {
+    const id = s.prefix + '_' + Date.now().toString(36);
+    list.push(s.kind === 'album' ? { id, name: 'New Album', pricePerPage: 0, min: 24, format: '' }
+      : Object.assign({ id, name: 'New Service', price: 0, desc: '' }, s.kind === 'glam' ? { reqFullDay: false } : {}));
+    redrawEdit();
+    const el = document.querySelector(`[data-l="${key}"][data-n="${list.length - 1}"] [data-field="name"]`);
+    if (el) { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); el.focus({ preventScroll: true }); document.getSelection().selectAllChildren(el); }
+    return;
+  }
+  const n = +btn.closest('[data-n]').dataset.n, o = list[n];
+  switch (act) {
+    case 'up': if (n > 0) [list[n - 1], list[n]] = [list[n], list[n - 1]]; break;
+    case 'down': if (n < list.length - 1) [list[n + 1], list[n]] = [list[n], list[n + 1]]; break;
+    case 'del': {
+      const holds = v => [...(v.include || []), ...(v.gifts || [])].includes(o.id) || (v.album && v.album.id === o.id);
+      const inColl = COLLECTIONS.filter(c => (c.variants || [c]).some(holds)).map(c => c.name);
+      if (!confirm(`Remove ${o.name || 'this service'}?` + (inColl.length ? ` It is part of ${inColl.join(' and ')}, and will be taken out of ${inColl.length > 1 ? 'them' : 'it'} too.` : ''))) return;
+      list.splice(n, 1);
+      COLLECTIONS.forEach(c => (c.variants || [c]).forEach(v => {
+        v.include = (v.include || []).filter(x => x !== o.id); v.gifts = (v.gifts || []).filter(x => x !== o.id);
+        if (v.album && v.album.id === o.id) delete v.album;
+      }));
+      delete COLL_LABELS[o.id];
+      break;
+    }
+    case 'tog': {
+      const k = btn.dataset.k;
+      if (k === 'hourly') { if (o.qty) { delete o.qty; delete o.unit; delete o.minQty; } else Object.assign(o, { qty: true, unit: 'per hour', minQty: 2 }); }
+      else if (k === 'reqFullDay') o.reqFullDay = !o.reqFullDay;
+      else if (o[k]) delete o[k]; else o[k] = true;
+      break;
+    }
+    default: return;
+  }
+  redrawEdit();
+}
+
+function redrawEdit() { SETTINGS.discounts.sort((a, b) => a.upTo - b.upTo); renderAll(); paintEditBar(); }
 
 (function wireEditor() {
-  const grid = document.getElementById('collections-grid');
-  grid.addEventListener('input', e => { if (editing && e.target.dataset && e.target.dataset.field) editField(e.target); });
-  // leaving a field redraws the cards (totals, tabs); while a click is in progress, after it
+  // collection cards ([data-c]) and à la carte sections share these listeners
+  const editable = e => editing && e.target.dataset && e.target.dataset.field && e.target.closest('#collections, #builder');
+  document.addEventListener('input', e => { if (editable(e)) (e.target.closest('[data-c]') ? editField : carteField)(e.target); });
+  // leaving a field redraws the page (totals, tabs); while a click is in progress, after it
   let pressing = false, pending = false;
   const settle = () => { if (pending && !pressing) { pending = false; if (!(document.activeElement && document.activeElement.dataset && document.activeElement.dataset.field)) redrawEdit(); } };
-  grid.addEventListener('pointerdown', () => { pressing = true; });
+  document.addEventListener('pointerdown', () => { pressing = true; });
   document.addEventListener('pointerup', () => { pressing = false; setTimeout(settle, 0); });
-  grid.addEventListener('focusout', e => { if (editing && e.target.dataset && e.target.dataset.field) { pending = true; setTimeout(settle, 0); } });
-  grid.addEventListener('keydown', e => { if (editing && e.key === 'Enter' && e.target.dataset && e.target.dataset.field) { e.preventDefault(); e.target.blur(); } });
-  grid.addEventListener('click', e => { const b = editing && e.target.closest('[data-act]'); if (b && b.tagName !== 'SELECT') { e.preventDefault(); editAction(b); } });
-  grid.addEventListener('change', e => { if (editing && e.target.matches('select[data-act="add"]')) editAdd(e.target); });
+  document.addEventListener('focusout', e => { if (editable(e)) { pending = true; setTimeout(settle, 0); } });
+  document.addEventListener('keydown', e => { if (editable(e) && e.key === 'Enter') { e.preventDefault(); e.target.blur(); } });
+  // a number is replaced, not added to: entering one selects all of it
+  let fresh = null;
+  const selectNum = el => document.getSelection().selectAllChildren(el);
+  document.addEventListener('focusin', e => { if (editable(e) && e.target.classList.contains('ed-num')) { fresh = e.target; selectNum(fresh); } });
+  document.addEventListener('click', e => { if (fresh && e.target === fresh) selectNum(fresh); fresh = null; });
+  document.addEventListener('click', e => {
+    const b = editing && e.target.closest('#collections [data-act], #builder [data-act]');
+    if (!b || b.tagName === 'SELECT') return;
+    e.preventDefault(); e.stopPropagation();
+    (b.closest('[data-c]') || b.dataset.act === 'new' ? editAction : carteAction)(b);
+  }, true);
+  document.addEventListener('change', e => { if (editing && e.target.matches('select[data-act="add"]')) editAdd(e.target); });
   window.addEventListener('resize', () => { const b = document.getElementById('edit-bar'); if (!b.hidden) document.documentElement.style.setProperty('--ebh', b.offsetHeight + 'px'); });
   window.addEventListener('beforeunload', ev => { if (editDirty()) { ev.preventDefault(); ev.returnValue = ''; } });
   let again = false; try { again = sessionStorage.getItem('debelle.pkg.edit') === '1'; sessionStorage.removeItem('debelle.pkg.edit'); } catch (e) {}
@@ -1160,6 +1366,7 @@ function makeAddon(id, name, price, desc, selected) {
 // ── RENDER ────────────────────────────────────────────────────────────────────
 
 function renderPhoto() {
+  if (editing) { document.getElementById('photo-grid').innerHTML = carteCardsEdit('photo'); return; }
   document.getElementById('photo-grid').innerHTML = PHOTO_OPTIONS.map(o => {
     let ex = '';
     if (o.qty && state.photo === o.id) {
@@ -1175,6 +1382,7 @@ function renderPhoto() {
 }
 
 function renderVideo() {
+  if (editing) { document.getElementById('video-grid').innerHTML = carteCardsEdit('video'); return; }
   document.getElementById('video-grid').innerHTML = VIDEO_OPTIONS.map(o => {
     let ex = '';
     if (o.qty && state.video === o.id) {
@@ -1190,12 +1398,19 @@ function renderVideo() {
 }
 
 function renderVideoAddons() {
+  if (editing) { document.getElementById('video-addons-list').innerHTML = carteRowsEdit('videoAddons'); return; }
   document.getElementById('video-addons-list').innerHTML = VIDEO_ADDONS.map(a =>
     makeAddon(a.id, a.name, a.price, a.desc, state.videoAddons.has(a.id))
   ).join('');
 }
 
 function renderGlam() {
+  if (editing) {
+    document.getElementById('glam-conflict').classList.remove('visible');
+    document.getElementById('glam-grid').innerHTML = carteCardsEdit('glam') +
+      `<div class="ed-wide">Each extra hour beyond the five: $${edSet('glamExtraHour')}</div>`;
+    return;
+  }
   const hasFullDay = PHOTO_OPTIONS.some(o => o.id === state.photo && o.fullDay);
   const cf = document.getElementById('glam-conflict');
   if (state.glam) {
@@ -1217,6 +1432,7 @@ function renderGlam() {
 }
 
 function renderAlbums() {
+  if (editing) return renderAlbumsEdit();
   const sel = state.album;
   const aType = sel ? ALBUM_TYPES.find(a => a.id===sel) : null;
   const min = aType ? aType.min : 30;
@@ -1255,6 +1471,7 @@ function albumSubtotal() {
 }
 
 function renderOtherAddons() {
+  if (editing) { document.getElementById('other-addons-list').innerHTML = carteRowsEdit('addons'); return; }
   document.getElementById('other-addons-list').innerHTML = OTHER_ADDONS.map(a =>
     makeAddon(a.id, a.name, a.price, a.desc, state.otherAddons.has(a.id))
   ).join('');
@@ -1394,7 +1611,11 @@ function renderSummary() {
 
   // SNP note
   const g = state.snpGuests;
-  if (g > 0) {
+  if (editing) {
+    document.getElementById('snp-note-display').innerHTML = `$${edSet('snpPerGuest')} per person · Minimum charge $${edSet('snpMin')} ·
+      Groups over ${edSet('snpBigGroup')} require an assistant (+$${edSet('snpAssistant')})`;
+    document.getElementById('snp-total-display').textContent = fmt(calcSNP(g));
+  } else if (g > 0) {
     const t = calcSNP(g);
     let note = `${rate(SETTINGS.snpPerGuest)}/person · Min. ${fmt(SETTINGS.snpMin)} · Total: ${fmt(t)}`;
     if (g > SETTINGS.snpBigGroup) note += ` (incl. ${fmt(SETTINGS.snpAssistant)} assistant)`;
@@ -1477,6 +1698,7 @@ document.getElementById('snp-guests').addEventListener('input', function() {
 function renderAll() {
   renderPhoto(); renderVideo(); renderVideoAddons();
   renderGlam(); renderAlbums(); renderOtherAddons(); renderSummary();
+  if (editing) renderDiscountEdit();
 }
 
 function resetAll() {
