@@ -106,7 +106,7 @@ its ID forever. Statuses: new, planned, in progress, done, dropped.
 - Project Phases, Idea Bank and Budget Tracker already share one sign-in (assets/account.js) but feel like separate files. A single dashboard that lists your projects, ideas and budgets with links into each makes them feel like one product, which is a prerequisite for selling them.
 
 ### IDEA-025 · Shot-list builder paired with the Wedding Schedule
-- **Category:** Tool · **Effort:** M · **Impact:** ★★ · **Status:** new
+- **Category:** Tool · **Effort:** M · **Impact:** ★★ · **Status:** done (done in v129, 2026-10-29)
 - Couples tick off family groupings and must-have shots, linked to the times in tools/wedding-schedule.html. It saves hours of back-and-forth before each wedding, and the result goes straight to the photographer on the day.
 
 ### IDEA-026 · Client portal for de Belle couples
@@ -666,3 +666,25 @@ its ID forever. Statuses: new, planned, in progress, done, dropped.
 ### IDEA-152 · A "season wrap" post each November with next year's open dates
 - **Category:** Content · **Effort:** S · **Impact:** ★★★ · **Status:** new
 - The Production Hub (tools/production-hub.html) tracks goals like "40 weddings booked" and Pipelines holds every job of the year, but none of that ever becomes something the public sees, and November, right before the holiday engagement season, is when couples start comparing photographers. Publish one post every November: the season in numbers (weddings, venues, the rainiest day, favourite moment), a dozen of the year's best frames, and a closing line that lists next year's still-open Saturdays ("June 2027: 2 left"), linked to the enquiry or date check (IDEA-043 when built). Cut the same content into a reel and a carousel. It's a yearly ritual readers and past couples look forward to, it shows proof of demand, and honest scarcity is what moves an undecided couple to book.
+
+## 2026-11-01 — Wildcard (what the best photographer, creator and tool sites do that this one doesn't)
+
+### IDEA-153 · Point "Write a review" straight at the Google review box
+- **Category:** Fix · **Effort:** S · **Impact:** ★★ · **Status:** new
+- In tools/wedding-hub.html the "Share the love" tab's "→ Write a review" button uses `REVIEW_URL = 'https://www.google.com/search?q=de+Belle+Photography+Montreal+reviews'`, so a happy couple lands on a page of search results and has to find the listing, open it and hunt for the review button, on a phone. Replace it with the Google Business Profile's direct "Ask for reviews" link (the g.page/r/…/review short link, which opens the star box at once), and reuse the same constant wherever a review is asked for. Every extra tap loses reviewers, and reviews are what the next couple reads before writing.
+
+### IDEA-154 · "Add our dates to my calendar" in the Wedding Hub
+- **Category:** Feature · **Effort:** S · **Impact:** ★★ · **Status:** new
+- tools/wedding-hub.html already knows every date that matters: budget lines with a due date (nextPayment() shows only the next one, in the header), the checklist's "By <month>" deadlines from dueBy(), and the Delivery timeline (first look at 7 days, gallery at 56, film at 112). Wedding apps that couples stick with push those dates into the phone's own calendar. Add one button that downloads a .ics file with the payment dues (with a reminder 3 days before), the open checklist deadlines and the expected delivery dates, regenerated whenever the couple asks. Payments arrive on time without Xavier chasing, and the studio's name shows up in the couple's calendar all year.
+
+### IDEA-155 · "Sooner, please" priority editing offered on the Delivery tab
+- **Category:** Monetization · **Effort:** S · **Impact:** ★★ · **Status:** new
+- The Delivery tab of tools/wedding-hub.html tells every couple their film arrives about 16 weeks after the wedding (DELIVERY: film at 112 days, gallery at 56), and nothing offers a faster option, though many studios sell priority editing for couples who want the film for a party, an anniversary dinner or family abroad. Add a quiet line under the film and gallery steps, "Want it by <date 6 weeks sooner>? Priority editing, $X", that sends a request like the Keepsakes order (and add the same item to the Package Builder catalog so it can be chosen at booking). It is an upsell with almost no extra cost, only a change in the editing queue, and it lands right when couples feel the wait.
+
+### IDEA-156 · "Reserve your date" online: sign the contract and pay the retainer in one go
+- **Category:** Monetization · **Effort:** M · **Impact:** ★★★ · **Status:** new
+- Builds on IDEA-007. The Package Builder (tools/package-builder.html, now behind the client password) and the Wedding Hub's "Photography & Film" tab end in "Design your coverage", "Write to us" or a phone number, so even a couple who has chosen everything still has to wait for an email, a contract and an invoice. Top studios let a ready couple book on the spot: add a "Reserve your date" button under the total that opens a GoHighLevel Documents & Contracts template pre-filled with the package and total, with the retainer payment built into the signing step. The couple who is ready at 11 pm books at 11 pm, before they price a competitor, and Xavier wakes up to a signed, paid date.
+
+### IDEA-157 · Send each vendor a credited mini-gallery after the wedding
+- **Category:** Conversion · **Effort:** M · **Impact:** ★★★ · **Status:** new
+- The Vendors tab of tools/wedding-hub.html collects the couple's planner, venue, florist, DJ and others with emails (sendVendors() mails them to the studio), and the Wedding Day Schedule collects the same list, yet nothing ever goes back to those vendors. The best wedding photographers grow through planners and venues by giving first: a week after the gallery, each vendor gets 10–15 images of their own work, free to post with the credit "Photo: de Belle Photography" and a tag. Add a "Vendor galleries" step (a Pipelines checklist item plus a ready-written email per vendor from the hub's list), separate from the referral link and gift in IDEA-069. Vendors who post Xavier's photos advertise him to their own clients every week, and the planner who gets beautiful images is the one who recommends him next.
