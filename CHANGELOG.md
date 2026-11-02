@@ -5,6 +5,32 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v142 — 2026-11-02
+
+**Package Builder — approved volume-discount schedule, password on / off**
+- Volume discount is Xavier's approved schedule: under $5,000 none,
+  $5,000–$5,999 5%, $6,000–$6,999 6%, $7,000–$7,999 7%, $8,000–$8,499 8%,
+  $8,500–$9,999 9%, $10,000–$10,999 10%, $11,000–$11,999 11%,
+  $12,000–$13,999 12%, $14,000–$15,999 13%, $16,000–$17,999 14%,
+  $18,000+ 15% (saving still rounded to the nearest $50). The published
+  table was 20% at every level; `CONTENT_REV` 3 means tiers from an older
+  catalog are ignored, and editing mode offers Publish once to save them.
+  (The November promotion still sets the volume discount aside until
+  2026-11-30.)
+- "Password: on / off" in the edit bar: published as `data.gate` (false =
+  no password). The remembered price list unlocks the page before anything
+  loads; a first visit unlocks as soon as the price list arrives. Switching
+  it back on locks devices that haven't entered the password; the footer
+  "Lock" link hides while the password is off. The admin panel keeps the
+  setting when it saves.
+- Tested on the mock with a copy of the live catalog: approved tiers over
+  the published 20% table ($5,500 → $5,200; $8,800 → $8,000), Publish →
+  `rev` 3 with the tiers; password off → a fresh device opens without it;
+  back on → that device is locked again; an admin-panel save kept `gate`,
+  `promo` and the tiers.
+
+---
+
 ## v141 — 2026-11-02
 
 **Package Builder — promotions, regular / discount prices, price list PDF**
