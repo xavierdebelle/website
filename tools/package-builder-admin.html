@@ -489,9 +489,15 @@ function cleaned() {
   // published now (base follows the database live), never this page's older copy.
   const live = (base && base.data) || {};
   COLLECTION_KEYS.forEach(k => { if (live[k] !== undefined) d[k] = clone(live[k]); else delete d[k]; });
+  // so is the wording this panel doesn't show (v140): keep it on each service
+  SECTIONS.forEach(sec => d[sec.key].forEach(o => {
+    const was = listOf(live[sec.key]).find(x => x && x.id === o.id); if (!was) return;
+    WORD_KEYS.forEach(k => { if (was[k] !== undefined && !(k === 'desc' && sec.kind !== 'album')) o[k] = was[k]; });
+  }));
   return d;
 }
-const COLLECTION_KEYS = ['collections', 'extras', 'collLabels'];
+const COLLECTION_KEYS = ['collections', 'extras', 'collLabels', 'rev'];
+const WORD_KEYS = ['kicker', 'detail', 'unit', 'desc', 'flat'];
 $('btn-save').addEventListener('click', async () => {
   const bad = problems();
   if (bad.length) { toast('Fix first: ' + bad.slice(0, 3).join(', ') + (bad.length > 3 ? '…' : '')); return; }

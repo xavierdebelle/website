@@ -5,6 +5,56 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v140 — 2026-11-02
+
+**Package Builder — Xavier's rewrite of every heading, collection and service**
+- Top: "Package Builder" (nav) and the "Build Your Wedding Package" /
+  "Our Collections" eyebrows gone. New headline "One day. One story. Two
+  ways to remember it." with his three paragraphs; "Begin with Your Wedding
+  Collection"; "Or Create Your Own Collection" replaces the à la carte divider.
+- Collections are written out now: an intro line, paragraphs with a caps
+  heading (`features`), an "Includes" list (`bullets`) and "Your collection
+  $X". The à la carte value and "You save" left the cards (the sidebar and
+  summary PDF still show the saving; in editing mode the card shows it as
+  "Studio only"). Essential keeps Photography / Film, each with its own
+  wording. The Signature has no price in his text: kept at $8,000.
+- What "Choose" selects now matches the text: Essential Film = full-day
+  film + reel; Signature = photo + film + reel; Ultimate = photo + film +
+  Second Photographer + Glam Studio + second cinematographer + reel + parent
+  albums + Young Book 30 pages. Glam Studio can now be part of a collection.
+- Services gain a small heading (`kicker`) and an "Includes…" line
+  (`detail`); hourly ones say "per hour · 2-hour minimum"; a plain service
+  can have a unit (retouching "per hour"); price 0 shows "Custom quote".
+  Albums gain a heading and description; the Magazine Album is sold at its
+  set 60 pages ($600, `flat`), with no page count to change. New wording
+  for Glam Studio (3 options), Same Night Prints (intro + list), Albums,
+  "Personalize Your Experience". Video Editing unchanged, as he asked.
+- New "Additional Information & Terms" drop-down under the builder, with
+  "Full-Day Coverage"; the same text is the price list PDF's last chapter.
+  The PDFs carry the new headline, intros, paragraphs and lists.
+- Everything new is editable in editing mode (headings, paragraphs and
+  list lines with add / remove, kickers, Includes lines, units, the
+  Magazine's set page count).
+- The published catalog predates this wording, and would have undone it.
+  `data.rev` (2) marks a catalog that has it; from an older one the page
+  takes only prices (so an admin-panel price change still reaches clients)
+  and editing mode says "The new wording isn't in the published prices
+  yet" with Publish ready. The admin panel now keeps `rev` and the new
+  service fields when it saves.
+- Tested on the mock with a copy of the live catalog: new wording with live
+  prices (two changed prices came through); choosing each collection
+  selects the right services and totals; Magazine flat $600; Custom quote;
+  editing mode publish → `rev` 2 with edits, then a fresh load reads it;
+  an admin-panel save kept every new field; both PDFs build without errors
+  (not looked at page by page); phone width has no sideways scroll. Found
+  and fixed on the way: albums lost their names when read back from a
+  published catalog.
+- Outstanding: Xavier opens Studio · edit and presses Publish once. He was
+  entering this same wording by hand as gift lines on the live page; those
+  lines are superseded (prices identical).
+
+---
+
 ## v139 — 2026-11-02
 
 **Package Builder — editors (not just Xavier) can get into editing mode**

@@ -335,8 +335,54 @@
   #edit-bar .eb-more { color: #000; font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.6; align-self: center; margin-right: 6px; }
   @media(max-width:700px) { #edit-bar .eb-more { display: none; } }
 
+  /* v140: the written-out collections, card headings, terms */
+  .header-story { max-width: 560px; margin: 0 auto; }
+  header .header-story p { font-family: 'Cormorant Garamond', serif; font-size: 18px; font-style: italic; color: var(--light); line-height: 1.6; margin: 0 auto 14px; max-width: none; letter-spacing: 0; text-transform: none; }
+  .carte-head { max-width: 1380px; margin: 70px auto 0; padding: 50px 65px 0; border-top: 1px solid var(--line); margin-bottom: 0; }
+  .coll-feature { padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.06); }
+  .coll-feature-title { font-size: 8.5px; letter-spacing: 0.24em; text-transform: uppercase; font-weight: 500; margin-bottom: 6px; }
+  .coll-feature p, .coll-feature-text { font-size: 10.5px; color: var(--muted); line-height: 1.8; letter-spacing: 0.02em; }
+  .coll-includes-label { font-size: 7.5px; letter-spacing: 0.3em; text-transform: uppercase; color: var(--subtle); margin: 20px 0 8px; }
+  .coll-bullets { list-style: none; }
+  .coll-bullets li { position: relative; padding: 5px 0 5px 16px; font-size: 11px; line-height: 1.55; letter-spacing: 0.02em; }
+  .coll-bullets li::before { content: ''; position: absolute; left: 0; top: 12px; width: 6px; height: 1px; background: currentColor; opacity: 0.6; }
+  .coll-price-label { font-size: 7.5px; letter-spacing: 0.3em; text-transform: uppercase; color: var(--subtle); }
+  .collection.featured .coll-feature { border-bottom-color: rgba(0,0,0,0.1); }
+  .collection.featured .coll-feature p, .collection.featured .coll-feature-text { color: #555; }
+  .collection.featured .coll-includes-label, .collection.featured .coll-price-label { color: #777; }
+  .card-kicker { font-size: 7.5px; letter-spacing: 0.28em; text-transform: uppercase; color: var(--subtle); margin-bottom: 8px; padding-right: 22px; }
+  .card-detail { font-size: 9.5px; color: var(--light); line-height: 1.75; margin: -6px 0 16px; letter-spacing: 0.02em; }
+  .album-type-desc { font-size: 9.5px; color: var(--muted); line-height: 1.7; margin: 4px 0 8px; }
+  .album-type-card .album-type-price { margin-top: 8px; }
+  .addon-unit { display: block; font-family: 'Montserrat', sans-serif; font-size: 7.5px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--subtle); }
+  .addon-quote { font-family: 'Montserrat', sans-serif; font-size: 8px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--light); }
+  .snp-includes { font-size: 7.5px; letter-spacing: 0.3em; text-transform: uppercase; margin-bottom: 4px; }
+  .snp-note ul { list-style: none; }
+  .snp-note li::before { content: '— '; opacity: 0.6; }
+  .terms { max-width: 1380px; margin: 0 auto; padding: 0 65px 60px; }
+  .terms details { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+  .terms summary { cursor: pointer; list-style: none; padding: 24px 0; font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 22px; display: flex; justify-content: space-between; align-items: center; }
+  .terms summary::-webkit-details-marker { display: none; }
+  .terms summary::after { content: '+'; font-family: 'Montserrat', sans-serif; font-style: normal; font-size: 18px; color: var(--muted); }
+  .terms details[open] summary::after { content: '−'; }
+  .terms-body { padding: 0 0 30px; max-width: 760px; }
+  .terms-body ul { list-style: none; }
+  .terms-body li, .terms-body p { font-size: 10.5px; color: var(--muted); line-height: 1.9; letter-spacing: 0.02em; }
+  .terms-body li { position: relative; padding: 4px 0 4px 16px; }
+  .terms-body li::before { content: ''; position: absolute; left: 0; top: 14px; width: 6px; height: 1px; background: var(--muted); }
+  .terms-body h3 { font-family: 'Cormorant Garamond', serif; font-weight: 400; font-style: italic; font-size: 19px; margin: 28px 0 10px; }
+  .terms-body p { margin-bottom: 8px; }
+  .ed-sub { font-size: 7.5px; letter-spacing: 0.24em; text-transform: uppercase; color: #ffe800; margin: 24px 0 2px; }
+  .collection.featured .ed-sub { color: #8a7a00; }
+  body.editing .coll-feature-title, body.editing .coll-feature-text, body.editing .card-kicker [contenteditable], body.editing .card-detail [contenteditable], body.editing .album-type-desc [contenteditable] { display: block; }
+  body.editing .coll-feature { position: relative; padding-right: 30px; }
+  body.editing .coll-feature > .ed-x { position: absolute; top: 12px; right: 0; margin: 0; }
+  body.editing .coll-bullets li { display: flex; align-items: baseline; }
+  body.editing .coll-bullets li > span { flex: 1; }
+  body.editing .card-detail { margin-top: 0; }
+
   /* RESPONSIVE */
-  @media(max-width:960px) { .collections{padding:50px 24px 20px} .collections-grid{grid-template-columns:1fr} .collection.featured{margin:0} .coll-tagline{min-height:0} .carte-divider{padding:0 24px} .builder-layout{grid-template-columns:1fr} .sidebar{position:relative;height:auto} .builder-main{padding:50px 24px 80px;border-right:none} }
+  @media(max-width:960px) { .collections{padding:50px 24px 20px} .collections-grid{grid-template-columns:1fr} .collection.featured{margin:0} .coll-tagline{min-height:0} .carte-head{padding:40px 24px 0} .terms{padding:0 24px 50px} .builder-layout{grid-template-columns:1fr} .sidebar{position:relative;height:auto} .builder-main{padding:50px 24px 80px;border-right:none} }
   @media(max-width:580px) { .carte-divider span{font-size:18px;white-space:normal;text-align:center} .field-row{grid-template-columns:1fr} .modal-card{padding:32px 22px 26px} header{padding:120px 20px 60px} .options-grid{grid-template-columns:1fr} .album-builder{grid-template-columns:1fr 1fr} }
 </style>
 <script defer src="../assets/stats.js"></script>
@@ -391,28 +437,32 @@ else setTimeout(() => document.getElementById('gate-pw').focus(), 50);
 <nav>
   <a class="nav-logo" href="https://debellephotography.com" target="_blank">
     <img src="https://assets.cdn.filesafe.space/jkQ5EV9KVntkUlZAm9MS/media/698f33297d6877ee9ebde8b1.png" alt="de Belle Photography" class="nav-logo-img">
-    <span>Package Builder</span>
   </a>
 </nav>
 
 <header>
-  <div class="header-eyebrow">Build Your Wedding Package</div>
-  <h1>Every Way to<br><em>Remember Your Day.</em></h1>
-  <p>Begin with one of our collections,<br>or build your own, service by service.</p>
+  <h1>One day. One story.<br><em>Two ways to remember it.</em></h1>
+  <div class="header-story">
+    <p>Your wedding day will happen once. The moments. The emotions. The people. The voices. The laughter.</p>
+    <p>Photography captures the moments you’ll want to see forever. Cinematography brings back the moments you’ll want to feel again.</p>
+    <p>Together, they preserve your wedding day in a way neither can do alone. Because years from now, you won’t wish you had fewer memories. You’ll wish you could relive just one more.</p>
+  </div>
   <div class="header-rule"></div>
 </header>
 
 <section class="collections" id="collections">
   <div class="collections-head">
-    <div class="header-eyebrow">Our Collections</div>
-    <h2>Begin with a collection.</h2>
-    <p>Each collection comes with complimentary gifts. Choose one, then add anything you like below.</p>
+    <h2>Begin with Your Wedding Collection</h2>
+    <p>Choose the experience that best tells your story, then personalize it with additional services below.</p>
   </div>
   <div class="collections-grid" id="collections-grid"></div>
   <div class="collections-foot"><button class="text-link" onclick="downloadPriceList(this)">→ Download our full price list (PDF)</button></div>
 </section>
 
-<div class="carte-divider"><span>Or build your own, à la carte</span></div>
+<div class="collections-head carte-head">
+  <h2>Or Create Your Own Collection</h2>
+  <p>Prefer to start from scratch? Build your perfect wedding experience by selecting only the services that matter most to you.</p>
+</div>
 
 <div class="builder-layout" id="builder">
   <div class="builder-main">
@@ -439,34 +489,36 @@ else setTimeout(() => document.getElementById('gate-pw').focus(), 50);
     <!-- IV. GLAM STUDIO -->
     <div class="section">
       <div class="section-header"><span class="section-num">IV.</span><h2>Glam Studio</h2><span class="section-tag">Portrait experience</span></div>
-      <div class="glam-info">This isn't a photo booth. This is a full editorial portrait experience — real photographer, beautiful lighting, sleek black-and-white. Five hours of coverage, instant 4x6 prints, and an experience your guests will be talking about long after the last dance.</div>
-      <div id="glam-conflict" class="conflict-msg">The evening-only rate requires full day photography to be selected above.</div>
+      <div class="glam-info">This isn’t a photo booth. This is a full editorial portrait experience. A professional photographer, beautiful studio lighting, and stunning portraits in colour or timeless black-and-white.</div>
+      <div id="glam-conflict" class="conflict-msg">This option requires full-day wedding photography to be selected above.</div>
       <div class="options-grid" id="glam-grid"></div>
     </div>
 
     <!-- V. SAME NIGHT PRINTS -->
     <div class="section">
       <div class="section-header"><span class="section-num">V.</span><h2>Same Night Prints</h2><span class="section-tag">Guest keepsake</span></div>
+      <div class="glam-info">Give your guests a beautiful keepsake to take home! We’ll capture a professional portrait of every couple, family or individual during your celebration and have their 4×6 prints ready before the night ends.<br><br>Want to make it extra special? Provide your own frames, and we’ll even frame the photos for you. A thoughtful, personalized gift your guests will love.</div>
       <div class="snp-calculator">
         <div class="snp-input-row">
           <label for="snp-guests">Number of guests</label>
           <input type="number" id="snp-guests" class="snp-input" min="0" max="600" value="0">
           <div class="snp-total" id="snp-total-display">$0</div>
         </div>
-        <div class="snp-note" id="snp-note-display">$4.50 per person &nbsp;·&nbsp; Minimum charge $375 &nbsp;·&nbsp; Groups over 100 require an assistant (+$300)</div>
+        <div class="snp-note" id="snp-note-display"></div>
       </div>
     </div>
 
     <!-- VI. ALBUMS -->
     <div class="section">
       <div class="section-header"><span class="section-num">VI.</span><h2>Albums</h2><span class="section-tag">À la carte</span></div>
-      <p class="section-note">Priced per page. Select your album format, then specify your page count.</p>
+      <p class="section-note">Your wedding memories deserve more than a screen. Beautifully crafted albums that transform your favourite moments into timeless keepsakes, to be treasured for generations.</p>
       <div id="albums-container"></div>
     </div>
 
     <!-- VII. ADDITIONAL SERVICES -->
     <div class="section">
-      <div class="section-header"><span class="section-num">VII.</span><h2>Additional Services</h2><span class="section-tag">Optional</span></div>
+      <div class="section-header"><span class="section-num">VII.</span><h2>Personalize Your Experience</h2><span class="section-tag">Optional</span></div>
+      <p class="section-note">The finishing touches that make your wedding experience uniquely yours.</p>
       <div class="addon-list" id="other-addons-list"></div>
     </div>
 
@@ -513,6 +565,18 @@ else setTimeout(() => document.getElementById('gate-pw').focus(), 50);
   </div>
 </div>
 
+<!-- Terms: the same text goes on the last page of the price list PDF (TERMS below) -->
+<section class="terms">
+  <details>
+    <summary>Additional Information &amp; Terms</summary>
+    <div class="terms-body">
+      <ul id="terms-list"></ul>
+      <h3>Full-Day Coverage</h3>
+      <div id="coverage-text"></div>
+    </div>
+  </details>
+</section>
+
 <div class="footer-band">
   <p><a href="mailto:yourwedding@debellephotography.com">yourwedding@debellephotography.com</a> &nbsp;·&nbsp; 514.887.4686 &nbsp;·&nbsp; <a href="https://debellephotography.com" target="_blank">debellephotography.com</a> &nbsp;·&nbsp; <a href="#" onclick="openEditor();return false" rel="nofollow" style="opacity:.55">Studio · edit</a> &nbsp;·&nbsp; <a href="#" onclick="try{localStorage.removeItem('debelle.pkg.unlocked')}catch(e){};location.reload();return false" style="opacity:.55">Lock</a></p>
 </div>
@@ -538,16 +602,26 @@ else setTimeout(() => document.getElementById('gate-pw').focus(), 50);
 <script>
 // ── DATA ──────────────────────────────────────────────────────────────────────
 
+// `kicker` is the small heading above a service's name, `detail` the line under
+// its description ("Includes: …"), `unit` what a plain service's price is per.
+// A price of 0 shows as "Custom quote".
+
 const PHOTO_OPTIONS = [
-  { id:'hourly',        name:'Hourly Coverage',  price:400,  unit:'per hour', qty:true, minQty:2, desc:'200–300 photos per hour. Top 50 images enhanced per hour. Minimum 2 hours.' },
-  { id:'eight_hour',    name:'8-Hour Service',    price:3200,                             desc:'All high-resolution photos. Top 400 images enhanced.' },
-  { id:'full_day',      name:'Full Day',          price:4000, fullDay:true,               desc:'10am to midnight. All high-resolution photos. Top 700 images enhanced.' },
+  { id:'hourly',   kicker:'Flexible Coverage', name:'Hourly Photography', price:400, unit:'per hour', qty:true, minQty:2,
+    desc:'Perfect for intimate celebrations or capturing a few special moments.',
+    detail:'Includes: 200–300 original images per hour, with 50 professionally enhanced photographs per hour.' },
+  { id:'full_day', kicker:'The Signature Experience', name:'Full Day Photography', price:4400, fullDay:true,
+    desc:'From the anticipation of getting ready to the energy of the celebration. Your entire wedding story, beautifully preserved.',
+    detail:'Includes: 11+ hours of coverage, 2,000–3,000 original images, and 700 professionally enhanced photographs.' },
 ];
 
 const VIDEO_OPTIONS = [
-  { id:'video_hourly',      name:'Hourly Coverage', price:400,  unit:'per hour', qty:true, minQty:2, desc:'20–30 video clips per hour. All footage via download link. Minimum 2 hours.' },
-  { id:'video_eight_hour',  name:'8-Hour Service',  price:3200,                             desc:'100–200 video clips. Includes a 1–2 min edited clip.' },
-  { id:'video_full_day',    name:'Full Day',         price:4000,                             desc:'200–300 video clips. Includes a 3–5 min edited clip and a 15–30 sec reel.' },
+  { id:'video_full_day', name:'Full Day Cinematography', price:4400,
+    desc:'Relive the voices, the laughter, the tears and the moments that made your wedding unforgettable. Your love story, beautifully brought to life.',
+    detail:'Includes: 200–300 original video clips, a professionally edited 3–5 minute wedding film.' },
+  { id:'video_hourly',   name:'Hourly Cinematography', price:400, unit:'per hour', qty:true, minQty:2,
+    desc:'Perfect for intimate celebrations or capturing a few meaningful moments in motion.',
+    detail:'Includes: 20–30 original video clips per hour, with all footage delivered via digital download.' },
 ];
 
 const VIDEO_ADDONS = [
@@ -557,69 +631,116 @@ const VIDEO_ADDONS = [
   { id:'va_supplements',   name:'Video Supplements',           price:300,  desc:'Approx. 10 minutes — speeches, first dance, etc.' },
   { id:'va_reel',          name:'Social Media Reel',           price:150,  desc:'IG / FB / TikTok reel.' },
   { id:'va_asst_cine',     name:'Assistant Cinematographer',   price:1000, desc:'Second cinematographer for the full day.' },
+  { id:'va_mvzi4xfg',      name:'Additional Video Editing $90 Hour', price:90, desc:'' },
 ];
 
 const GLAM_OPTIONS = [
-  { id:'glam_standalone', name:'Glam Studio',           price:2000, desc:'5 hours of coverage. Instant 4x6 B&W prints. Standalone booking.', reqFullDay:false },
-  { id:'glam_bundled',    name:'Glam Studio + Assistant',price:1750, desc:'5 hours. Bundled with full day photography. Includes assistant photographer.', reqFullDay:true },
-  { id:'glam_evening',    name:'Evening Glam Studio',   price:1500, desc:'5-hour evening-only service. Requires full day photography.', reqFullDay:true },
+  { id:'glam_standalone', kicker:'Option 1 · Standalone', name:'Glam Studio Experience', price:2000, reqFullDay:false,
+    desc:'A complete editorial portrait experience for your guests, booked independently of your wedding photography.',
+    detail:'Includes 5 hours of Glam Studio photography and instant 4×6 prints. No wedding photography booking required.' },
+  { id:'glam_bundled',    kicker:'Option 2 · Wedding Day Package', name:'Second Photographer + Glam Studio', price:2000, reqFullDay:true,
+    desc:'The best of both worlds. Enjoy a second photographer capturing additional moments throughout your wedding day, who then transitions into your dedicated Glam Studio photographer for 5 hours of evening portraits.',
+    detail:'Requires full-day wedding photography. Includes instant 4×6 prints.' },
+  { id:'glam_evening',    kicker:'Option 3 · Evening Add-on', name:'Evening Glam Studio', price:1500, reqFullDay:true,
+    desc:'Add our signature Glam Studio experience to your wedding celebration, with a dedicated photographer for 5 hours of editorial portraits.',
+    detail:'Requires full-day wedding photography. Includes instant 4×6 prints. No second photographer during the day.' },
 ];
 
+// `flat`: sold at its set page count (pricePerPage × min), with no pages to add
 const ALBUM_TYPES = [
-  { id:'youngbook', name:'Young Book / Graphi Box', pricePerPage:55, min:30, format:'min. 30 pages · 8x12' },
-  { id:'graphi',    name:'Graphi Album',             pricePerPage:65, min:24, format:'min. 24 pages · 9x13 or 12x12' },
-  { id:'matted',    name:'Matted Album',             pricePerPage:75, min:24, format:'min. 24 pages · 9x13 or 12x12' },
-  { id:'layflat',   name:'Layflat Album',            pricePerPage:30, min:24, format:'custom size' },
+  { id:'youngbook',   kicker:'The Heirloom Collection', name:'Young Book', pricePerPage:60, min:30, format:'Starting at 30 pages · 8×10',
+    desc:'A luxurious, beautifully crafted wedding album, presented in its own elegant box.' },
+  { id:'al_mvzik3ar', kicker:'The Modern Keepsake', name:'Magazine Album', pricePerPage:10, min:60, flat:true, format:'60 pages included · 8×10',
+    desc:'A contemporary, editorial-style album that tells your wedding story beautifully.', detail:'Additional copies $80 each' },
 ];
 
 const OTHER_ADDONS = [
-  { id:'oa_asst_photo',   name:'Assistant Photographer',           price:1000, desc:'Second photographer for the full day, capturing additional angles.' },
-  { id:'oa_engagement',   name:'Engagement / Casual Photoshoot',   price:350,  desc:'1-hour session. Top 50 images enhanced, delivered via online gallery.' },
-  { id:'oa_slideshow',    name:'Photo Slideshow',                  price:200,  desc:'4–5 min slideshow, 80–100 images.' },
-  { id:'oa_parent_albums',name:'Parent Album Duplicates',          price:500,  desc:'One set of parent albums (4x5, 6x8, 8x10 for Graphi or Young Book).' },
-  { id:'oa_sleeve',       name:'Graphi Sleeve for Album',         price:150,  desc:'Protective sleeve for Graphi or Young Book albums.' },
-  { id:'oa_layflat_addon',name:'24-Page Layflat Album (Add-on)',   price:700,  desc:'Compact layflat album, 24 pages.' },
+  { id:'oa_asst_photo',    name:'Second Photographer',            price:1100, desc:'Two perspectives, more unforgettable moments. Additional full-day coverage to capture every angle of your celebration.' },
+  { id:'oa_parent_albums', name:'Parent Albums (Set of Two)',     price:600,  desc:'Share your wedding memories with the people who helped make them possible. Two beautifully crafted Young Book parent albums.' },
+  { id:'oa_engagement',    name:'Engagement / Casual Photoshoot', price:400,  desc:'A relaxed, one-hour portrait session to celebrate your story before the big day. Includes 50 enhanced images.' },
+  { id:'oa_mvziexmj',      name:'Professional Photo Retouching',  price:90, unit:'per hour', desc:'Expert, personalized retouching for photographs that deserve a little extra attention.' },
+  { id:'oa_mvzigw94',      name:'Custom Prints & Framing',        price:0,    desc:'Beautifully finished prints, custom framing and personalized keepsakes. Available upon request.' },
 ];
 
 // ── COLLECTIONS ───────────────────────────────────────────────────────────────
-// Premade collections at a set price. `include` are builder services that come
-// with it, `gifts` are complimentary and shown with their value (EXTRAS are
-// gifts that aren't sold à la carte). Services added on top are priced à la
-// carte, without the volume discount. Removing or changing an included service
-// leaves the collection, and everything is priced à la carte again.
+// Premade collections at a set price. What the card says is written out:
+// `intro`, `features` ({ title, text }) and `bullets` (the "Includes" list).
+// `include` and `album` are the builder services choosing it selects, and
+// `gifts` are complimentary (EXTRAS are gifts that aren't sold à la carte).
+// Services added on top are priced à la carte, without the volume discount.
+// Removing or changing an included service leaves the collection, and
+// everything is priced à la carte again. A collection with `variants` keeps
+// all of these per variant.
 
-const EXTRAS = {
-  magazine: { name:'Wedding Magazine', value:400 },   // value is a placeholder until Xavier sets it
-};
+const EXTRAS = {};
 
 // Names the collections use for services, where the catalog name reads too plainly.
 const COLL_LABELS = {
-  va_highlight_35: '5 Minute Highlight Film',
-  va_reel:         'Instagram Highlight Reel',
-  oa_engagement:   'Engagement Session',
-  oa_asst_photo:   'Third Shooter',
+  va_reel:          '15–30 Second Highlight Reel',
+  va_asst_cine:     'Second Cinematographer',
+  oa_parent_albums: 'Two Matching Parent Albums',
 };
 
 const COLLECTIONS = [
-  { id:'essential', name:'The Essential', price:3900,
-    tagline:'A full day, ten hours and more, told in photographs or in film.',
+  { id:'essential', name:'The Essential', price:4400, tagline:'',
     variants: [
-      { id:'photo', label:'Photography', include:['full_day'],       gifts:['magazine'] },
-      { id:'video', label:'Film',        include:['video_full_day'], gifts:['va_highlight_35'] },
+      { id:'photo', label:'Photography', include:['full_day'], gifts:[],
+        intro:'Your wedding story, beautifully captured and preserved. Because some memories deserve more than a screen.',
+        features:[{ title:'Full Day Photography', text:'From the anticipation of getting ready to the energy of the celebration. Every meaningful moment, beautifully preserved.' }],
+        bullets:['Full-day wedding photography (11+ hours)', 'Approximately 2,000–3,000 original images', '700 professionally enhanced photographs', 'Complete online gallery of original images'] },
+      { id:'video', label:'Film', include:['video_full_day','va_reel'], gifts:[],
+        intro:'Your wedding story, beautifully captured in motion. Because some moments deserve to be experienced again.',
+        features:[
+          { title:'Full Day Cinematography', text:'From the anticipation of getting ready to the emotion of your vows and the energy of the celebration. Every meaningful moment, beautifully brought to life.' },
+          { title:'Wedding Highlight Film', text:'A professionally edited 3–5 minute cinematic film, bringing together the most unforgettable moments of your wedding day. A timeless keepsake to relive and share for generations.' },
+          { title:'15–30 Second Highlight Reel', text:'A beautifully edited short film, perfect for sharing your favourite moments with family and friends.' }],
+        bullets:[] },
     ] },
-  { id:'complete', name:'The Complete', price:8000, featured:true, badge:'Most popular',
-    tagline:'Photography and film side by side, with an engagement session to begin the story.',
-    include:['full_day','video_full_day'], gifts:['magazine','va_highlight_35','oa_engagement'] },
-  { id:'signature', name:'The Signature', price:10000,
-    tagline:'Everything we do, together. A third shooter on the day, an heirloom album and a film for Instagram.',
-    include:['full_day','video_full_day','oa_asst_photo','va_reel'], album:{ id:'graphi', pages:24 },
-    gifts:['magazine','va_highlight_35','oa_engagement'] },
+  { id:'complete', name:'The Signature', price:8000, featured:true, badge:'Most popular', tagline:'',
+    include:['full_day','video_full_day','va_reel'], gifts:[],
+    intro:'One unforgettable day. Two beautiful ways to relive it. Every image, every voice, every emotion.',
+    features:[{ title:'Full Day Photography & Cinematography', text:'From the anticipation of getting ready to the magic of your first dance. Every meaningful moment captured in beautiful photographs and cinematic film. Two perspectives, one complete love story.' }],
+    bullets:['Full-day wedding photography (11+ hours)', 'Full-day wedding cinematography (11+ hours)', 'Approximately 2,000–3,000 original photographs', '700 professionally enhanced photographs',
+             'Complete online photography gallery', 'Professionally edited 3–5 minute wedding film', '15–30 second cinematic highlight reel', 'Complete collection of original video clips'] },
+  { id:'signature', name:'The Ultimate', price:12450, tagline:'',
+    include:['full_day','video_full_day','glam_bundled','va_asst_cine','va_reel','oa_parent_albums'], album:{ id:'youngbook', pages:30 }, gifts:[],
+    intro:'The complete de Belle experience. Every moment, every perspective, every emotion. Beautifully captured, celebrated and preserved for generations.',
+    features:[
+      { title:'Full Day Photography & Cinematography', text:'From the anticipation of getting ready to the magic of your celebration. Our extended creative team captures every detail, every emotion and every unforgettable moment, bringing your entire wedding story to life.' },
+      { title:'The Glam Studio Experience', text:'An exclusive editorial portrait experience for your guests, with beautiful lighting, professional photography and instant prints. An unforgettable addition to your celebration.' },
+      { title:'The Young Book Collection', text:'Your wedding story preserved in a luxurious, beautifully crafted heirloom album, accompanied by two matching parent albums to share with your families.' }],
+    bullets:['Full-day wedding photography (11+ hours)', 'Full-day wedding cinematography (11+ hours)', 'Second photographer for additional coverage', 'Second cinematographer for additional perspectives',
+             'Glam Studio experience with instant prints', 'Professionally edited 3–5 minute wedding film', '15–30 second cinematic highlight reel', 'Young Book wedding album (30 pages)', 'Two matching parent albums'] },
+];
+
+// The "Additional Information & Terms" drop-down, also the price list's last page.
+const TERMS = [
+  'All prices are in Canadian dollars (CAD), before applicable taxes.',
+  'Travel is included within 100 km of Montreal. Additional travel fees may apply beyond this area or for destination weddings.',
+  'High-resolution photographs and video files are delivered digitally through an online gallery or shared drive. Standard photo enhancements are included; detailed retouching is available separately.',
+  'Image and video quantities are approximate and may vary depending on the event.',
+  'Full-day coverage follows a mutually agreed wedding-day itinerary and is not unlimited.',
+  'All collections, services and team assignments are subject to availability.',
+  'Album production timelines depend on final image selections and design approvals.',
+  'Collection discounts cannot be combined with other promotions unless otherwise approved.',
+  'Booking deposits, payment schedules, cancellation policies and delivery timelines are governed by the signed photography and/or cinematography agreement.',
+  'Custom requests, additional coverage and special arrangements are subject to approval and availability.',
+];
+const COVERAGE = [
+  'Our full-day coverage is designed around the natural flow of your wedding, not a rigid hourly cutoff.',
+  'Coverage typically begins between 9:00 and 10:00 a.m. and concludes around 11:00 p.m. to midnight, depending on your celebration.',
+  'We’ll work together to create a personalized timeline, ensuring the moments that matter most are beautifully captured.',
+  'Final coverage times are established in your wedding-day itinerary. Full-day coverage is not unlimited or open-ended.',
 ];
 
 const collVariant = {};   // the variant picked on each card, e.g. { essential:'video' }
 
+// "Full Day" reads "Full Day Photography" in a collection; "Full Day Photography" stays as it is
+const withKind = (name, kind) => new RegExp(kind, 'i').test(name) ? name : `${name} ${kind}`;
+const defaultName = f => f.kind === 'photo' ? withKind(f.o.name, 'Photography') : f.kind === 'video' ? withKind(f.o.name, 'Cinematography') : f.o.name;
+
 function findItem(id) {
-  const lists = [['photo',PHOTO_OPTIONS],['video',VIDEO_OPTIONS],['videoAddon',VIDEO_ADDONS],['otherAddon',OTHER_ADDONS]];
+  const lists = [['photo',PHOTO_OPTIONS],['video',VIDEO_OPTIONS],['videoAddon',VIDEO_ADDONS],['glam',GLAM_OPTIONS],['otherAddon',OTHER_ADDONS]];
   for (const [kind, list] of lists) { const o = list.find(x => x.id===id); if (o) return { kind, o }; }
   return null;
 }
@@ -634,7 +755,7 @@ function resolveCollection(id, variantId) {
   [...(v.include||[]).map(i => [i,false]), ...(v.gifts||[]).map(i => [i,true])].forEach(([iid, gift]) => {
     if (EXTRAS[iid]) { items.push({ id:iid, kind:'extra', name:EXTRAS[iid].name, price:EXTRAS[iid].value, gift:true }); return; }
     const f = findItem(iid); if (!f) return;
-    const name = COLL_LABELS[iid] || (f.kind==='photo' ? `${f.o.name} Photography` : f.kind==='video' ? `${f.o.name} Cinematography` : f.o.name);
+    const name = COLL_LABELS[iid] || defaultName(f);
     items.push({ id:iid, kind:f.kind, name, price:f.o.price, gift });
   });
   let album = null;
@@ -656,6 +777,7 @@ function isSelected(i, r) {
   if (i.kind==='video') return state.video===i.id;
   if (i.kind==='videoAddon') return state.videoAddons.has(i.id);
   if (i.kind==='otherAddon') return state.otherAddons.has(i.id);
+  if (i.kind==='glam') return state.glam===i.id;
   if (i.kind==='album') return state.album===i.id && state.albumPages >= r.album.pages;
   return true;
 }
@@ -677,6 +799,7 @@ function applyCollection(r, keepOthers) {
     else if (i.kind==='video') state.video = i.id;
     else if (i.kind==='videoAddon') state.videoAddons.add(i.id);
     else if (i.kind==='otherAddon') state.otherAddons.add(i.id);
+    else if (i.kind==='glam') state.glam = i.id;
   });
   if (r.album) { state.album = r.album.id; state.albumPages = keepOthers ? Math.max(state.albumPages, r.album.pages) : r.album.pages; }
   state.collection = { id:r.c.id, variant:r.variant };
@@ -699,27 +822,32 @@ function setVariant(id, v) {
 function restoreCollection() { const r = activeColl(); if (r) { applyCollection(r, true); renderAll(); } }
 function leaveCollection() { state.collection = null; renderAll(); }
 
+// the wording on show: the picked variant's, or the collection's own
+function collCopy(c, variantId) {
+  const t = c.variants ? (c.variants.find(v => v.id === (variantId || collVariant[c.id])) || c.variants[0]) : c;
+  return { t, intro: t.intro != null ? t.intro : (c.tagline || ''), features: t.features || [], bullets: t.bullets || [] };
+}
+const featuresHTML = fs => fs.map(f => `<div class="coll-feature"><div class="coll-feature-title">${esc(f.title)}</div><p>${esc(f.text)}</p></div>`).join('');
+const bulletsHTML = bs => bs.length ? `<div class="coll-includes-label">Includes</div><ul class="coll-bullets">${bs.map(b => `<li>${esc(b)}</li>`).join('')}</ul>` : '';
+
 function renderCollections() {
   if (editing) return renderCollectionsEdit();
   const held = intactColl();
   document.getElementById('collections-grid').innerHTML = COLLECTIONS.map((c, n) => {
-    const r = resolveCollection(c.id);
+    const r = resolveCollection(c.id), w = collCopy(c, r.variant);
     const on = held && held.c.id===c.id && held.variant===r.variant;
-    const save = r.value - r.price;
     const variants = c.variants ? `<div class="coll-variants">${c.variants.map(v =>
       `<button type="button" class="${r.variant===v.id?'on':''}" onclick="setVariant('${c.id}','${v.id}')">${esc(v.label)}</button>`).join('')}</div>` : '';
     return `<div class="collection${c.featured?' featured':''}${on?' active':''}">
       ${c.badge ? `<div class="coll-badge">${esc(c.badge)}</div>` : ''}
       <div class="coll-num">${['I','II','III','IV','V'][n] || n+1}.</div>
       <div class="coll-name">${esc(c.name)}</div>
-      ${c.tagline ? `<p class="coll-tagline">${esc(c.tagline)}</p>` : ''}
       ${variants}
-      <div class="coll-items">${r.items.map(i =>
-        `<div class="coll-item"><span>${esc(i.name)}</span><span class="coll-tag${i.gift?' gift':''}">${i.gift?'Complimentary':'Included'}</span></div>`).join('')}</div>
+      ${w.intro ? `<p class="coll-tagline">${esc(w.intro)}</p>` : ''}
+      <div class="coll-items">${featuresHTML(w.features)}${bulletsHTML(w.bullets)}</div>
       <div>
-        ${save > 0 ? `<div class="coll-was">${fmt(r.value)} à la carte</div>` : ''}
+        <div class="coll-price-label">Your collection</div>
         <div class="coll-price">${fmt(r.price)}</div>
-        ${save > 0 ? `<div class="coll-save">You save ${fmt(save)}</div>` : ''}
         <button class="coll-btn" onclick="chooseCollection('${c.id}')">${on ? 'Selected ✓' : '→ Choose &amp; customize'}</button>
       </div>
     </div>`;
@@ -767,7 +895,7 @@ function editRestore(json) {
   Object.entries(CARTE).forEach(([k, c]) => c.list.splice(0, c.list.length, ...s.carte[k]));
   Object.keys(SETTINGS).forEach(k => delete SETTINGS[k]); Object.assign(SETTINGS, s.settings);
 }
-const editDirty = () => editing && editSnapshot() !== editSaved;
+const editDirty = () => editing && (catalogStale || editSnapshot() !== editSaved);
 
 function editBar(state, text) {
   const bar = document.getElementById('edit-bar');
@@ -782,6 +910,7 @@ function editBar(state, text) {
 function paintEditBar() {
   if (!editing) return;
   editBar('editing', editBusy ? '<b>Publishing…</b>'
+    : catalogStale && editSnapshot() === editSaved ? '<b>The new wording isn’t in the published prices yet.</b> Clients see it already; publish once so later edits start from it.'
     : editDirty() ? '<b>Unpublished changes.</b> Clients still see the last published version.'
     : `Click any name, description or price on the page to change it. Clients see changes once you publish. <span class="eb-who">${esc(editor.email || '')}</span>`);
 }
@@ -859,13 +988,16 @@ function discardEdits() {
 
 // the services, prices and rates on this page, in the catalog's shape
 function catalogFromPage() {
-  const timed = o => Object.assign({ id:o.id, name:o.name, price:o.price, desc:o.desc }, o.qty ? { hourly:true, minQty:o.minQty || 1 } : {}, o.fullDay ? { fullDay:true } : {});
+  const words = o => pick(o, ['kicker', 'detail']);
+  const plain = o => Object.assign({ id:o.id, name:o.name, price:o.price, desc:o.desc }, words(o));
+  const timed = o => Object.assign(plain(o), o.qty ? { hourly:true, minQty:o.minQty || 1 } : {}, o.fullDay ? { fullDay:true } : {});
   return {
+    rev: CONTENT_REV,
     photo: PHOTO_OPTIONS.map(timed), video: VIDEO_OPTIONS.map(timed),
-    videoAddons: VIDEO_ADDONS.map(o => ({ id:o.id, name:o.name, price:o.price, desc:o.desc })),
-    glam: GLAM_OPTIONS.map(o => ({ id:o.id, name:o.name, price:o.price, desc:o.desc, reqFullDay:!!o.reqFullDay })),
-    albums: ALBUM_TYPES.map(o => ({ id:o.id, name:o.name, pricePerPage:o.pricePerPage, min:o.min, format:o.format })),
-    addons: OTHER_ADDONS.map(o => ({ id:o.id, name:o.name, price:o.price, desc:o.desc })),
+    videoAddons: VIDEO_ADDONS.map(o => Object.assign(plain(o), pick(o, ['unit']))),
+    glam: GLAM_OPTIONS.map(o => Object.assign(plain(o), { reqFullDay:!!o.reqFullDay })),
+    albums: ALBUM_TYPES.map(o => Object.assign({ id:o.id, name:o.name, pricePerPage:o.pricePerPage, min:o.min, format:o.format }, words(o), pick(o, ['desc']), o.flat ? { flat:true } : {})),
+    addons: OTHER_ADDONS.map(o => Object.assign(plain(o), pick(o, ['unit']))),
     settings: clone(SETTINGS),
   };
 }
@@ -891,7 +1023,7 @@ async function publishEdits() {
     const now = Date.now(), doc = { data, updatedAt: now, by: editor.email || '' };
     await fb.f.update(fb.f.ref(fb.db), { ['catalog/' + CATALOG_DOC]: doc, ['catalogHistory/' + CATALOG_DOC + '/' + now]: doc });
     try { localStorage.setItem(CATALOG_CACHE, JSON.stringify(doc)); } catch (e) {}
-    editSaved = editSnapshot(); editBaseAt = now;
+    editSaved = editSnapshot(); editBaseAt = now; catalogStale = false;
     editBusy = false; paintEditBar();
     document.getElementById('eb-state').innerHTML = '<b>Published.</b> Clients see these prices now.';
   } catch (e) {
@@ -904,16 +1036,15 @@ async function publishEdits() {
 
 // the list an edit applies to: the choice on show, or the collection itself
 const collTarget = c => c.variants ? (c.variants.find(v => v.id === collVariant[c.id]) || c.variants[0]) : c;
-const defaultName = f => f.kind === 'photo' ? `${f.o.name} Photography` : f.kind === 'video' ? `${f.o.name} Cinematography` : f.o.name;
 const newId = p => p + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
 
 function addItemOptions(t) {
   const has = new Set([...(t.include || []), ...(t.gifts || [])]);
   const group = (label, list, fn) => `<optgroup label="${label}">${list.filter(o => !has.has(o.id)).map(o => `<option value="svc:${o.id}">${esc(fn ? fn(o) : o.name)}</option>`).join('')}</optgroup>`;
   return `<option value="">+ Add a line…</option>` +
-    group('Photography', PHOTO_OPTIONS, o => o.name + ' Photography') +
-    group('Cinematography', VIDEO_OPTIONS, o => o.name + ' Cinematography') +
-    group('Video editing', VIDEO_ADDONS) + group('Additional services', OTHER_ADDONS) +
+    group('Photography', PHOTO_OPTIONS, o => withKind(o.name, 'Photography')) +
+    group('Cinematography', VIDEO_OPTIONS, o => withKind(o.name, 'Cinematography')) +
+    group('Video editing', VIDEO_ADDONS) + group('Glam Studio', GLAM_OPTIONS) + group('Personalize', OTHER_ADDONS) +
     `<optgroup label="Album">${ALBUM_TYPES.map(a => `<option value="album:${a.id}">${esc(a.name)}</option>`).join('')}</optgroup>` +
     `<optgroup label="Gift not sold à la carte">${Object.keys(EXTRAS).filter(k => !has.has(k)).map(k => `<option value="extra:${k}">${esc(EXTRAS[k].name)}</option>`).join('')}<option value="gift:new">New gift…</option></optgroup>`;
 }
@@ -921,7 +1052,7 @@ function addItemOptions(t) {
 function renderCollectionsEdit() {
   const ed = (field, text, cls = '', attrs = '') => `<span class="${cls}" contenteditable="plaintext-only" spellcheck="false" data-field="${field}" ${attrs}>${esc(text)}</span>`;
   document.getElementById('collections-grid').innerHTML = COLLECTIONS.map((c, n) => {
-    const r = resolveCollection(c.id), t = collTarget(c);
+    const r = resolveCollection(c.id), t = collTarget(c), w = collCopy(c, r.variant);
     const variants = c.variants ? `<div class="coll-variants">${c.variants.map(v =>
       `<button type="button" class="${r.variant===v.id?'on':''}" data-act="variant" data-v="${v.id}">${esc(v.label)}</button>`).join('')}</div>
       <div class="ed-row"><span class="ed-label">This choice is called</span>${ed('vlabel', t.label, 'ed-inline')}
@@ -946,17 +1077,24 @@ function renderCollectionsEdit() {
       </div>
       <div class="coll-num">${['I','II','III','IV','V','VI'][n] || n + 1}.</div>
       ${ed('name', c.name, 'coll-name')}
-      ${ed('tagline', c.tagline || '', 'coll-tagline', 'data-ph="A line about this collection"')}
       ${variants}
-      <div class="coll-items">${items}
+      ${ed('intro', w.intro, 'coll-tagline', 'data-ph="A line about this collection"')}
+      <div class="coll-items">
+        ${w.features.map((f, k) => `<div class="coll-feature" data-k="${k}">${ed('ftitle', f.title, 'coll-feature-title', 'data-ph="Heading"')}${ed('ftext', f.text, 'coll-feature-text', 'data-ph="What it is"')}<button class="ed-x" data-act="rmfeat" data-k="${k}" title="Remove this paragraph">×</button></div>`).join('')}
+        <button class="ed-link" data-act="addfeat">+ Add a paragraph</button>
+        <div class="coll-includes-label">Includes</div>
+        <ul class="coll-bullets">${w.bullets.map((b, k) => `<li data-k="${k}">${ed('bullet', b, '', 'data-ph="One line"')}<button class="ed-x" data-act="rmbullet" data-k="${k}" title="Remove this line">×</button></li>`).join('')}</ul>
+        <button class="ed-link" data-act="addbullet">+ Add a line</button>
+        <div class="ed-sub">Choosing it selects in the builder</div>
+        ${items}
         <select class="ed-add" data-act="add">${addItemOptions(t)}</select>
         ${c.variants ? '' : '<button class="ed-link" data-act="addchoice">Offer two choices (like Photography or Film)</button>'}
         ${c.variants && c.variants.length < 4 ? '<button class="ed-link" data-act="addchoice">Add another choice</button>' : ''}
       </div>
       <div>
-        <div class="coll-was">${fmt(r.value)} à la carte</div>
+        <div class="coll-price-label">Your collection</div>
         <div class="coll-price">$${ed('price', c.price, 'ed-num')}</div>
-        <div class="coll-save">${r.value > r.price ? 'You save ' + fmt(r.value - r.price) : 'No saving against à la carte'}</div>
+        <div class="coll-save">Studio only: ${fmt(r.value)} à la carte${r.value > r.price ? ', saves ' + fmt(r.value - r.price) : ''}</div>
       </div>
     </div>`;
   }).join('') + `<button class="collection ed-new" data-act="new">+ Add a collection</button>`;
@@ -969,7 +1107,9 @@ function editField(el) {
   const n = () => Math.max(0, parseInt(txt.replace(/[^0-9]/g, ''), 10) || 0);
   switch (el.dataset.field) {
     case 'name': c.name = txt; break;
-    case 'tagline': c.tagline = txt; break;
+    case 'intro': t.intro = txt; break;
+    case 'ftitle': case 'ftext': { const f = (t.features || [])[+el.closest('[data-k]').dataset.k]; if (f) f[el.dataset.field === 'ftitle' ? 'title' : 'text'] = txt; break; }
+    case 'bullet': { const k = +el.closest('[data-k]').dataset.k; if (t.bullets && k < t.bullets.length) t.bullets[k] = txt; break; }
     case 'badge': if (txt) c.badge = txt; else delete c.badge; break;
     case 'price': c.price = n(); break;
     case 'vlabel': t.label = txt || 'Choice'; break;
@@ -985,10 +1125,14 @@ function editField(el) {
   paintEditBar();
 }
 
+// what each choice of a collection keeps for itself
+const VARIANT_KEYS = ['include', 'gifts', 'album', 'intro', 'features', 'bullets'];
+const pick = (o, keys) => Object.fromEntries(keys.filter(k => o[k] !== undefined).map(k => [k, o[k]]));
+
 function editAction(btn) {
   const card = btn.closest('[data-c]'), act = btn.dataset.act;
   if (act === 'new') {
-    COLLECTIONS.push({ id: newId('c'), name: 'New Collection', price: 0, tagline: '', include: [], gifts: [] });
+    COLLECTIONS.push({ id: newId('c'), name: 'New Collection', price: 0, tagline: '', intro: '', features: [], bullets: [], include: [], gifts: [] });
     return redrawEdit();
   }
   if (!card) return;
@@ -1008,17 +1152,20 @@ function editAction(btn) {
       if ((t.gifts || []).includes(id)) { t.gifts = drop(t.gifts); t.include = [...(t.include || []), id]; }
       else { t.include = drop(t.include); t.gifts = [...(t.gifts || []), id]; }
       break;
+    case 'addfeat': t.features = [...(t.features || []), { title: 'New heading', text: '' }]; break;
+    case 'rmfeat': (t.features || []).splice(+btn.dataset.k, 1); break;
+    case 'addbullet': t.bullets = [...(t.bullets || []), 'New line']; break;
+    case 'rmbullet': (t.bullets || []).splice(+btn.dataset.k, 1); break;
     case 'rm':
       if (t.album && t.album.id === id) delete t.album;
       else { t.include = drop(t.include); t.gifts = drop(t.gifts); }
       break;
     case 'addchoice': {
       if (!c.variants) {
-        c.variants = [{ id: newId('v'), label: 'Photography', include: c.include || [], gifts: c.gifts || [] },
-                      { id: newId('v'), label: 'Film', include: [], gifts: [] }];
-        if (c.album) c.variants[0].album = c.album;
-        delete c.include; delete c.gifts; delete c.album;
-      } else c.variants.push({ id: newId('v'), label: 'Another choice', include: [], gifts: [] });
+        c.variants = [Object.assign({ id: newId('v'), label: 'Photography' }, pick(c, VARIANT_KEYS)),
+                      { id: newId('v'), label: 'Film', include: [], gifts: [], intro: '', features: [], bullets: [] }];
+        VARIANT_KEYS.forEach(k => delete c[k]);
+      } else c.variants.push({ id: newId('v'), label: 'Another choice', include: [], gifts: [], intro: '', features: [], bullets: [] });
       collVariant[c.id] = c.variants[c.variants.length - 1].id;
       break;
     }
@@ -1026,8 +1173,7 @@ function editAction(btn) {
       if (!confirm(`Remove the “${t.label}” choice and its lines?`)) return;
       c.variants = c.variants.filter(v => v !== t);
       if (c.variants.length === 1) {
-        const v = c.variants[0];
-        c.include = v.include || []; c.gifts = v.gifts || []; if (v.album) c.album = v.album;
+        Object.assign(c, pick(c.variants[0], VARIANT_KEYS));
         delete c.variants;
       }
       delete collVariant[c.id];
@@ -1087,8 +1233,10 @@ function carteCardsEdit(key) {
     if (s.kind === 'glam') opts = edTog('reqFullDay', o.reqFullDay, 'Needs full-day photography');
     return `<div class="option-card ed-card" data-l="${key}" data-n="${n}">
       ${edMini(n, s.list.length, true)}
+      <div class="card-kicker">${edSpan('kicker', o.kicker || '', '', 'data-ph="Small heading (optional)"')}</div>
       <div class="card-title">${edSpan('name', o.name, '', 'data-ph="Name"')}</div>
-      <div class="card-desc">${edSpan('desc', o.desc, '', 'data-ph="What it includes"')}</div>
+      <div class="card-desc">${edSpan('desc', o.desc, '', 'data-ph="Description"')}</div>
+      <div class="card-detail">${edSpan('detail', o.detail || '', '', 'data-ph="Includes… (optional)"')}</div>
       <div class="card-price">$${edSpan('price', o.price, 'ed-num')}</div>
       ${o.qty ? '<div class="card-price-note">per hour</div>' : ''}
       <div class="ed-opts">${opts}</div>
@@ -1102,7 +1250,7 @@ function carteRowsEdit(key) {
   return s.list.map((o, n) => `<div class="addon-row ed-card" data-l="${key}" data-n="${n}">
       <div class="addon-info"><div class="addon-name">${edSpan('name', o.name, '', 'data-ph="Name"')}</div>
         <div class="addon-detail">${edSpan('desc', o.desc, '', 'data-ph="What it includes"')}</div></div>
-      <div class="addon-price">$${edSpan('price', o.price, 'ed-num')}</div>
+      <div class="addon-price">$${edSpan('price', o.price, 'ed-num')}<span class="addon-unit">${edSpan('unit', o.unit || '', '', 'data-ph="per …"')}</span>${o.price ? '' : '<span class="ed-hint">0 shows Custom quote</span>'}</div>
       ${edMini(n, s.list.length, false)}
     </div>`).join('') + edAddBtn(key, 'addon-row', '+ Add a service');
 }
@@ -1112,10 +1260,14 @@ function renderAlbumsEdit() {
   document.getElementById('albums-container').innerHTML = `<div class="album-builder">` + s.list.map((a, n) =>
     `<div class="album-type-card ed-card" data-l="albums" data-n="${n}">
       ${edMini(n, s.list.length, true)}
+      <div class="card-kicker">${edSpan('kicker', a.kicker || '', '', 'data-ph="Small heading (optional)"')}</div>
       <div class="album-type-name">${edSpan('name', a.name, '', 'data-ph="Name"')}</div>
-      <div class="album-type-price">$${edSpan('pricePerPage', a.pricePerPage, 'ed-num')}/page</div>
-      <div class="album-type-spec">${edSpan('format', a.format, '', 'data-ph="Sizes"')}</div>
-      <div class="album-type-spec">at least ${edSpan('min', a.min, 'ed-num')} pages</div>
+      <div class="album-type-desc">${edSpan('desc', a.desc || '', '', 'data-ph="Description"')}</div>
+      <div class="album-type-spec">${edSpan('format', a.format, '', 'data-ph="Pages and size"')}</div>
+      <div class="album-type-price">$${edSpan('pricePerPage', a.pricePerPage, 'ed-num')} per page</div>
+      <div class="album-type-spec">${a.flat ? 'exactly' : 'at least'} ${edSpan('min', a.min, 'ed-num')} pages${a.flat ? ` = ${fmt(a.pricePerPage * a.min)}` : ''}</div>
+      <div class="album-type-spec">${edSpan('detail', a.detail || '', '', 'data-ph="Another line (optional)"')}</div>
+      <div class="ed-opts">${edTog('flat', a.flat, 'Set page count')}</div>
     </div>`).join('') + edAddBtn('albums', 'album-type-card', '+ Add an album') + `</div>`;
 }
 
@@ -1142,6 +1294,7 @@ function carteField(el) {
     const row = el.closest('[data-n]'); if (!row) return;
     const o = CARTE[row.dataset.l].list[+row.dataset.n];
     if (f === 'name' || f === 'desc' || f === 'format') o[f] = txt;
+    else if (f === 'kicker' || f === 'detail' || f === 'unit') { if (txt) o[f] = txt; else delete o[f]; }
     else if (f === 'price' || f === 'pricePerPage') o[f] = money();
     else if (f === 'minQty' || f === 'min') o[f] = Math.max(1, whole());
   }
@@ -1232,13 +1385,12 @@ function redrawEdit() { SETTINGS.discounts.sort((a, b) => a.upTo - b.upTo); rend
 
 const SETTINGS = {
   glamExtraHour: 375,                       // per hour beyond the 5-hour glam coverage
-  snpPerGuest: 4.5, snpMin: 375,            // Same Night Prints
-  snpBigGroup: 100, snpAssistant: 300,      // groups over snpBigGroup add an assistant
+  snpPerGuest: 5, snpMin: 375,              // Same Night Prints
+  snpBigGroup: 100, snpAssistant: 400,      // groups over snpBigGroup add an assistant
   // bundle discount: a subtotal up to `upTo` gets `pct` % off; above the last tier, `top` %
-  discounts: [[2500,0],[3000,1],[3500,2],[4000,3],[4500,4],[5000,5],[5500,6],[6000,7],[6500,8],[7000,8],
-              [7500,9],[8000,9],[8500,10],[9000,10],[9500,11],[10000,11],[11000,12],[12000,13],[13000,14],
-              [14000,15],[15000,16],[16000,17],[17000,18],[18000,19],[19000,20]].map(([upTo,pct]) => ({upTo, pct})),
-  discountTop: 20,
+  discounts: [[5000,0],[5999,5],[6999,6],[7999,7],[8499,8],[9999,9],[10999,10],[11999,11],[13999,12],[15999,13],[17999,14]]
+    .map(([upTo,pct]) => ({upTo, pct})),
+  discountTop: 15,
 };
 
 function getDiscount(subtotal) {
@@ -1256,6 +1408,11 @@ function getDiscount(subtotal) {
 const CATALOG_URL = 'https://xdb-tools-default-rtdb.firebaseio.com/catalog/package-builder.json';
 const CATALOG_CACHE = 'debelle.pkg.catalog';
 const CATALOG_DRAFT = 'debelle.pkg.draft';
+// Bumped when the page's own wording changes in a way an older published
+// catalog would undo (v140: Xavier's rewrite). From an older catalog only the
+// prices are taken, and editing mode offers to publish the page's version once.
+const CONTENT_REV = 2;
+let catalogStale = false;
 
 function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c])); }
 function listOf(v) { return Array.isArray(v) ? v : (v && typeof v === 'object' ? Object.values(v) : []); }
@@ -1267,31 +1424,47 @@ function num(v, d) { v = Number(v); return isFinite(v) && v >= 0 ? v : d; }
 function applyCatalog(c) {
   if (!c || typeof c !== 'object' || !c.data) return false;
   const d = c.data;
-  const item = x => x && typeof x === 'object' && x.id && x.name;
-  const base = x => ({ id: String(x.id), name: String(x.name), price: num(x.price, 0), desc: String(x.desc || '') });
-  const timed = x => Object.assign(base(x), x.hourly ? { qty: true, unit: 'per hour', minQty: Math.max(1, Math.round(num(x.minQty, 2))) } : {});
-  const put = (arr, list) => arr.splice(0, arr.length, ...list);
-  put(PHOTO_OPTIONS, listOf(d.photo).filter(item).map(x => Object.assign(timed(x), x.fullDay ? { fullDay: true } : {})));
-  put(VIDEO_OPTIONS, listOf(d.video).filter(item).map(timed));
-  put(VIDEO_ADDONS,  listOf(d.videoAddons).filter(item).map(base));
-  put(GLAM_OPTIONS,  listOf(d.glam).filter(item).map(x => Object.assign(base(x), { reqFullDay: !!x.reqFullDay })));
-  put(ALBUM_TYPES,   listOf(d.albums).filter(item).map(x => ({ id: String(x.id), name: String(x.name), pricePerPage: num(x.pricePerPage, 0),
-                                                                min: Math.max(1, Math.round(num(x.min, 24))), format: String(x.format || '') })));
-  put(OTHER_ADDONS,  listOf(d.addons).filter(item).map(base));
-  // collections edited on this page (see EDITING THE COLLECTIONS); the built-in ones until saved once
-  const strs = v => listOf(v).map(String);
-  const part = x => Object.assign({ include: strs(x.include), gifts: strs(x.gifts) },
-    x.album && x.album.id ? { album: { id: String(x.album.id), pages: Math.max(1, Math.round(num(x.album.pages, 24))) } } : {});
-  const colls = listOf(d.collections).filter(x => x && x.id && x.name).map(x => Object.assign(
-    { id: String(x.id), name: String(x.name), price: num(x.price, 0), tagline: String(x.tagline || '') },
-    x.badge ? { badge: String(x.badge) } : {}, x.featured ? { featured: true } : {},
-    listOf(x.variants).length ? { variants: listOf(x.variants).filter(v => v && v.id).map(v => Object.assign({ id: String(v.id), label: String(v.label || '') }, part(v))) } : part(x)));
-  if (colls.length) {
-    put(COLLECTIONS, colls);
-    if (d.extras && typeof d.extras === 'object') { Object.keys(EXTRAS).forEach(k => delete EXTRAS[k]);
-      Object.entries(d.extras).forEach(([k, x]) => { if (x && x.name) EXTRAS[k] = { name: String(x.name), value: num(x.value, 0) }; }); }
-    Object.keys(COLL_LABELS).forEach(k => delete COLL_LABELS[k]);
-    if (d.collLabels && typeof d.collLabels === 'object') Object.entries(d.collLabels).forEach(([k, v]) => { COLL_LABELS[k] = String(v); });
+  // Published before this wording: keep the page's own words and collections,
+  // and take only the prices (an edit in the admin panel still reaches clients).
+  catalogStale = num(d.rev, 0) < CONTENT_REV;
+  if (catalogStale) {
+    const merge = (arr, list, keys) => listOf(list).forEach(x => {
+      const o = x && arr.find(y => y.id === x.id); if (o) keys.forEach(k => { if (x[k] != null) o[k] = num(x[k], o[k]); });
+    });
+    [[PHOTO_OPTIONS, d.photo], [VIDEO_OPTIONS, d.video], [VIDEO_ADDONS, d.videoAddons], [GLAM_OPTIONS, d.glam], [OTHER_ADDONS, d.addons], [COLLECTIONS, d.collections]]
+      .forEach(([arr, list]) => merge(arr, list, ['price']));
+    merge(ALBUM_TYPES, d.albums, ['pricePerPage', 'min']);
+  } else {
+    const item = x => x && typeof x === 'object' && x.id && x.name;
+    const strs = v => listOf(v).map(String);
+    const words = (x, keys) => Object.fromEntries(keys.filter(k => x[k]).map(k => [k, String(x[k])]));
+    const base = x => Object.assign({ id: String(x.id), name: String(x.name), price: num(x.price, 0), desc: String(x.desc || '') }, words(x, ['kicker', 'detail', 'unit']));
+    const timed = x => Object.assign(base(x), x.hourly ? { qty: true, unit: 'per hour', minQty: Math.max(1, Math.round(num(x.minQty, 2))) } : {});
+    const put = (arr, list) => arr.splice(0, arr.length, ...list);
+    put(PHOTO_OPTIONS, listOf(d.photo).filter(item).map(x => Object.assign(timed(x), x.fullDay ? { fullDay: true } : {})));
+    put(VIDEO_OPTIONS, listOf(d.video).filter(item).map(timed));
+    put(VIDEO_ADDONS,  listOf(d.videoAddons).filter(item).map(base));
+    put(GLAM_OPTIONS,  listOf(d.glam).filter(item).map(x => Object.assign(base(x), { reqFullDay: !!x.reqFullDay })));
+    put(ALBUM_TYPES,   listOf(d.albums).filter(item).map(x => Object.assign({ id: String(x.id), name: String(x.name), pricePerPage: num(x.pricePerPage, 0),
+                                                                  min: Math.max(1, Math.round(num(x.min, 24))), format: String(x.format || '') },
+                                                                  words(x, ['kicker', 'desc', 'detail']), x.flat ? { flat: true } : {})));
+    put(OTHER_ADDONS,  listOf(d.addons).filter(item).map(base));
+    // collections edited on this page (see EDITING THE COLLECTIONS); the built-in ones until saved once
+    const part = x => Object.assign({ include: strs(x.include), gifts: strs(x.gifts) },
+      x.intro != null ? { intro: String(x.intro) } : {},
+      { features: listOf(x.features).filter(f => f && (f.title || f.text)).map(f => ({ title: String(f.title || ''), text: String(f.text || '') })), bullets: strs(x.bullets) },
+      x.album && x.album.id ? { album: { id: String(x.album.id), pages: Math.max(1, Math.round(num(x.album.pages, 24))) } } : {});
+    const colls = listOf(d.collections).filter(x => x && x.id && x.name).map(x => Object.assign(
+      { id: String(x.id), name: String(x.name), price: num(x.price, 0), tagline: String(x.tagline || '') },
+      x.badge ? { badge: String(x.badge) } : {}, x.featured ? { featured: true } : {},
+      listOf(x.variants).length ? { variants: listOf(x.variants).filter(v => v && v.id).map(v => Object.assign({ id: String(v.id), label: String(v.label || '') }, part(v))) } : part(x)));
+    if (colls.length) {
+      put(COLLECTIONS, colls);
+      if (d.extras && typeof d.extras === 'object') { Object.keys(EXTRAS).forEach(k => delete EXTRAS[k]);
+        Object.entries(d.extras).forEach(([k, x]) => { if (x && x.name) EXTRAS[k] = { name: String(x.name), value: num(x.value, 0) }; }); }
+      Object.keys(COLL_LABELS).forEach(k => delete COLL_LABELS[k]);
+      if (d.collLabels && typeof d.collLabels === 'object') Object.entries(d.collLabels).forEach(([k, v]) => { COLL_LABELS[k] = String(v); });
+    }
   }
   if (state.collection && !COLLECTIONS.some(c => c.id === state.collection.id)) state.collection = null;
   const st = d.settings || {};
@@ -1367,22 +1540,27 @@ function resetState() {
 const fmt = n => '$' + n.toLocaleString('en-CA');
 const rate = n => '$' + (Number.isInteger(n) ? n : n.toFixed(2));   // $4.50, $5
 
-function makeCard(id, title, price, desc, selected, extraHTML='', unitNote='') {
+const price0 = p => p ? fmt(p) : 'Custom quote';
+const perUnit = o => o.unit ? o.unit + (o.qty && o.minQty > 1 ? ` · ${o.minQty}-hour minimum` : '') : '';
+
+function makeCard(id, title, price, desc, selected, extraHTML='', unitNote='', o={}) {
   return `<div class="option-card ${selected?'selected':''}" onclick="toggleCard('${id}')">
     <div class="card-check">✓</div>
+    ${o.kicker ? `<div class="card-kicker">${esc(o.kicker)}</div>` : ''}
     <div class="card-title">${esc(title)}</div>
     <div class="card-desc">${esc(desc)}</div>
+    ${o.detail ? `<div class="card-detail">${esc(o.detail)}</div>` : ''}
     ${extraHTML}
     ${inclTag(id) ? `<div class="incl-price">${inclTag(id)}</div>` : `<div class="card-price">${fmt(price)}</div>
     ${unitNote ? `<div class="card-price-note">${unitNote}</div>` : ''}`}
   </div>`;
 }
 
-function makeAddon(id, name, price, desc, selected) {
+function makeAddon(id, name, price, desc, selected, unit='') {
   return `<div class="addon-row ${selected?'selected':''}" onclick="toggleAddon('${id}')">
     <div class="addon-check"></div>
     <div class="addon-info"><div class="addon-name">${esc(name)}</div><div class="addon-detail">${esc(desc)}</div></div>
-    <div class="addon-price">${inclTag(id) ? `<span class="incl-price">${inclTag(id)}</span>` : fmt(price)}</div>
+    <div class="addon-price">${inclTag(id) ? `<span class="incl-price">${inclTag(id)}</span>` : price ? fmt(price) + (unit ? `<span class="addon-unit">${esc(unit)}</span>` : '') : '<span class="addon-quote">Custom quote</span>'}</div>
   </div>`;
 }
 
@@ -1400,7 +1578,7 @@ function renderPhoto() {
       </div>`;
     }
     const p = o.qty ? o.price * (state.photo===o.id ? state.photoQty : 1) : o.price;
-    return makeCard(o.id, o.name, p, o.desc, state.photo===o.id, ex, o.unit||'');
+    return makeCard(o.id, o.name, p, o.desc, state.photo===o.id, ex, perUnit(o), o);
   }).join('');
 }
 
@@ -1416,14 +1594,14 @@ function renderVideo() {
       </div>`;
     }
     const p = o.qty ? o.price * (state.video===o.id ? state.videoQty : 1) : o.price;
-    return makeCard(o.id, o.name, p, o.desc, state.video===o.id, ex, o.unit||'');
+    return makeCard(o.id, o.name, p, o.desc, state.video===o.id, ex, perUnit(o), o);
   }).join('');
 }
 
 function renderVideoAddons() {
   if (editing) { document.getElementById('video-addons-list').innerHTML = carteRowsEdit('videoAddons'); return; }
   document.getElementById('video-addons-list').innerHTML = VIDEO_ADDONS.map(a =>
-    makeAddon(a.id, a.name, a.price, a.desc, state.videoAddons.has(a.id))
+    makeAddon(a.id, a.name, a.price, a.desc, state.videoAddons.has(a.id), a.unit)
   ).join('');
 }
 
@@ -1450,7 +1628,7 @@ function renderGlam() {
     </div>`;
   }
   document.getElementById('glam-grid').innerHTML = GLAM_OPTIONS.map(g =>
-    makeCard(g.id, g.name, g.price, g.desc + (g.reqFullDay && !hasFullDay ? ' · Requires full day photo' : ''), state.glam===g.id)
+    makeCard(g.id, g.name, g.price, g.desc, state.glam===g.id, '', '', g)
   ).join('') + extra;
 }
 
@@ -1466,12 +1644,15 @@ function renderAlbums() {
     `<div class="album-builder">` +
     ALBUM_TYPES.map(a => `
       <div class="album-type-card ${sel===a.id?'selected':''}" onclick="selectAlbum('${a.id}')">
+        ${a.kicker ? `<div class="card-kicker">${esc(a.kicker)}</div>` : ''}
         <div class="album-type-name">${esc(a.name)}</div>
-        <div class="album-type-price">$${a.pricePerPage}/page</div>
+        ${a.desc ? `<div class="album-type-desc">${esc(a.desc)}</div>` : ''}
         <div class="album-type-spec">${esc(a.format)}</div>
+        <div class="album-type-price">${a.flat ? fmt(a.pricePerPage * a.min) : `$${a.pricePerPage} per page`}</div>
+        ${a.detail ? `<div class="album-type-spec">${esc(a.detail)}</div>` : ''}
       </div>`).join('') +
     `</div>` +
-    (sel ? `<div class="album-pages-control">
+    (sel && !aType.flat ? `<div class="album-pages-control">
       <div class="pages-label">Pages (min. ${min})</div>
       <div class="pages-input-wrap">
         <button class="qty-btn" onclick="changePages(-2)">−</button>
@@ -1496,7 +1677,7 @@ function albumSubtotal() {
 function renderOtherAddons() {
   if (editing) { document.getElementById('other-addons-list').innerHTML = carteRowsEdit('addons'); return; }
   document.getElementById('other-addons-list').innerHTML = OTHER_ADDONS.map(a =>
-    makeAddon(a.id, a.name, a.price, a.desc, state.otherAddons.has(a.id))
+    makeAddon(a.id, a.name, a.price, a.desc, state.otherAddons.has(a.id), a.unit)
   ).join('');
 }
 
@@ -1536,7 +1717,7 @@ function calcRaw() {
   }
   if (state.album) {
     const a = ALBUM_TYPES.find(x => x.id===state.album);
-    if (a) { const p=a.pricePerPage*state.albumPages; total+=p; lines.push({id:a.id, section:'Album', name:`${a.name} (${state.albumPages} pages)`, price:p}); }
+    if (a) { const pages = a.flat ? a.min : state.albumPages, p=a.pricePerPage*pages; total+=p; lines.push({id:a.id, section:'Album', name:`${a.name} (${pages} pages)`, price:p}); }
   }
   state.otherAddons.forEach(id => {
     const a = OTHER_ADDONS.find(x => x.id===id);
@@ -1570,7 +1751,7 @@ function calcQuote() {
 }
 
 const groupBy = lines => { const g = {}; lines.forEach(l => { (g[l.section] = g[l.section] || []).push(l); }); return g; };
-const lineHTML = l => `<div class="summary-line"><span class="summary-line-name">${esc(l.name)}</span><span class="summary-line-price">${fmt(l.price)}</span></div>`;
+const lineHTML = l => `<div class="summary-line"><span class="summary-line-name">${esc(l.name)}</span><span class="summary-line-price">${price0(l.price)}</span></div>`;
 
 // ── RENDER SUMMARY ────────────────────────────────────────────────────────────
 
@@ -1633,21 +1814,13 @@ function renderSummary() {
   document.getElementById('total-tax-display').innerHTML = fmt(withTax) + ' <span>incl. tax</span>';
 
   // SNP note
-  const g = state.snpGuests;
-  if (editing) {
-    document.getElementById('snp-note-display').innerHTML = `$${edSet('snpPerGuest')} per person · Minimum charge $${edSet('snpMin')} ·
-      Groups over ${edSet('snpBigGroup')} require an assistant (+$${edSet('snpAssistant')})`;
-    document.getElementById('snp-total-display').textContent = fmt(calcSNP(g));
-  } else if (g > 0) {
-    const t = calcSNP(g);
-    let note = `${rate(SETTINGS.snpPerGuest)}/person · Min. ${fmt(SETTINGS.snpMin)} · Total: ${fmt(t)}`;
-    if (g > SETTINGS.snpBigGroup) note += ` (incl. ${fmt(SETTINGS.snpAssistant)} assistant)`;
-    document.getElementById('snp-note-display').textContent = note;
-    document.getElementById('snp-total-display').textContent = fmt(t);
-  } else {
-    document.getElementById('snp-note-display').textContent = `${rate(SETTINGS.snpPerGuest)} per person · Minimum charge ${fmt(SETTINGS.snpMin)} · Groups over ${SETTINGS.snpBigGroup} require an assistant (+${fmt(SETTINGS.snpAssistant)})`;
-    document.getElementById('snp-total-display').textContent = '$0';
-  }
+  const g = state.snpGuests, v = k => editing ? edSet(k) : null;
+  const li = editing
+    ? [`$${v('snpPerGuest')} per guest (minimum $${v('snpMin')})`, `Events over ${v('snpBigGroup')} guests require an additional assistant ($${v('snpAssistant')})`]
+    : [`${rate(SETTINGS.snpPerGuest)} per guest (minimum ${fmt(SETTINGS.snpMin)})`, `Events over ${SETTINGS.snpBigGroup} guests require an additional assistant (${fmt(SETTINGS.snpAssistant)})`];
+  li.push('Photography is coordinated with your wedding-day schedule to ensure seamless coverage.');
+  document.getElementById('snp-note-display').innerHTML = `<div class="snp-includes">Includes</div><ul>${li.map(x => `<li>${x}</li>`).join('')}</ul>`;
+  document.getElementById('snp-total-display').textContent = fmt(calcSNP(g));
 }
 
 // ── INTERACTIONS ──────────────────────────────────────────────────────────────
@@ -1695,7 +1868,7 @@ function changeGlamHours(delta) {
 
 function selectAlbum(id) {
   state.album = state.album===id ? null : id;
-  if (state.album) { const a=ALBUM_TYPES.find(x=>x.id===id); if(state.albumPages<a.min) state.albumPages=a.min; }
+  if (state.album) { const a=ALBUM_TYPES.find(x=>x.id===id); if(state.albumPages<a.min || a.flat) state.albumPages=a.min; }
   renderAlbums(); renderSummary();
 }
 
@@ -1911,7 +2084,8 @@ function exportSummary() {
       p.text(q.coll.name, MX, p.y, { font: SERIF, size: 19 });
       p.text(fmt(q.coll.price), PW - MX, p.y, { font: SERIF, size: 19, align: 'right' });
       p.y += 14;
-      p.y += p.lines(p.wrap(q.coll.c.tagline, PW - 2 * MX, { font: SERIF, style: 'italic', size: 9.5 }), MX, p.y, 13, { font: SERIF, style: 'italic', size: 9.5, color: GRAPHITE }) - 2;
+      const intro = collCopy(q.coll.c, q.coll.variant).intro;
+      if (intro) p.y += p.lines(p.wrap(intro, PW - 2 * MX, { font: SERIF, style: 'italic', size: 9.5 }), MX, p.y, 13, { font: SERIF, style: 'italic', size: 9.5, color: GRAPHITE }) - 2;
       q.coll.items.forEach(i => p.row(i.name, { tag: i.gift ? 'Complimentary' : 'Included', gift: i.gift }));
       if (q.extras.length) {
         p.label('Added to your collection');
@@ -1921,7 +2095,7 @@ function exportSummary() {
       p.y += 8;
       Object.entries(groupBy(q.lines)).forEach(([s, items]) => {
         p.label(s);
-        items.forEach(l => p.row(l.name, { price: fmt(l.price) }));
+        items.forEach(l => p.row(l.name, { price: price0(l.price) }));
       });
     }
 
@@ -1969,8 +2143,8 @@ function downloadPriceList() {
     p.y += p.logo(150, p.y) + 20;
     p.caps('Montréal  ·  Est. 1993', PW / 2, p.y, { align: 'center', size: 6.5, space: 2.8 });
     p.caps('Collections & Pricing', PW / 2, 318, { align: 'center' });
-    p.text('Every Way to', PW / 2, 360, { font: SERIF, size: 36, align: 'center' });
-    p.text('Remember Your Day.', PW / 2, 402, { font: SERIF, size: 36, align: 'center' });
+    p.text('One day. One story.', PW / 2, 360, { font: SERIF, size: 36, align: 'center' });
+    p.text('Two ways to remember it.', PW / 2, 402, { font: SERIF, size: 36, align: 'center' });
     p.caps('Prepared for', PW / 2, 482, { align: 'center' });
     p.text(coupleNames(), PW / 2, 510, { font: SERIF, size: 20, align: 'center' });
     p.text(longDate(client.date), PW / 2, 528, { font: SERIF, style: 'italic', size: 11, align: 'center', color: GRAPHITE });
@@ -1981,7 +2155,7 @@ function downloadPriceList() {
       p.y += 30;
       p.text(title, MX, p.y, { font: SERIF, size: 28 });
       p.y += 18;
-      p.y += p.lines(p.wrap(intro, PW - 2 * MX, { font: SERIF, style: 'italic', size: 10 }), MX, p.y, 14, { font: SERIF, style: 'italic', size: 10, color: GRAPHITE });
+      if (intro) p.y += p.lines(p.wrap(intro, PW - 2 * MX, { font: SERIF, style: 'italic', size: 10 }), MX, p.y, 14, { font: SERIF, style: 'italic', size: 10, color: GRAPHITE });
     };
     const heading = (title, note) => {
       p.need(30 + (note ? 12 : 0) + 40);
@@ -1990,36 +2164,43 @@ function downloadPriceList() {
       if (note) { p.y += 13; p.text(note, MX, p.y, { size: 7.5, style: 'light', color: GREY }); }
       p.y += 2;
     };
-    const priced = o => p.row(o.name, { price: fmt(o.price), unit: o.qty ? 'per hour' : '' }, o.desc);
+    const priced = o => p.row(o.name, o.price ? { price: fmt(o.price), unit: o.unit || '' } : { tag: 'Custom quote' }, [o.kicker, o.desc, o.detail].filter(Boolean).join('  ·  '));
+    const italic = (str, size = 9.5) => { if (str) p.y += p.lines(p.wrap(str, PW - 2 * MX, { font: SERIF, style: 'italic', size }), MX, p.y, size + 3.5, { font: SERIF, style: 'italic', size, color: GRAPHITE }); };
 
-    chapter('I.', 'Our Collections', 'Each collection comes with complimentary gifts, and anything from the pages that follow can be added to it.');
+    chapter('I.', 'Your Wedding Collection', 'Choose the experience that best tells your story, then personalize it with additional services below.');
     COLLECTIONS.forEach(c => {
-      const variants = c.variants ? c.variants.map(v => resolveCollection(c.id, v.id)) : [resolveCollection(c.id)];
-      const rows = variants.reduce((n, r) => n + r.items.length, 0);
-      p.need(56 + rows * 23 + (c.variants ? c.variants.length * 18 : 0));
+      const ws = c.variants ? c.variants.map(v => Object.assign(collCopy(c, v.id), { label: v.label })) : [collCopy(c)];
+      p.need(110);
       p.y += 30;
       p.text(c.name, MX, p.y, { font: SERIF, size: 19 });
       if (c.badge) p.caps(c.badge, MX + p.width(c.name, { font: SERIF, size: 19 }) + 12, p.y - 3, { size: 6, color: INK });
       p.text(fmt(c.price), PW - MX, p.y, { font: SERIF, size: 19, align: 'right' });
-      p.y += 15;
-      p.text(c.tagline, MX, p.y, { font: SERIF, style: 'italic', size: 9.5, color: GRAPHITE });
       p.y += 4;
-      variants.forEach(r => {
-        if (c.variants) { p.y += 14; p.caps(c.variants.find(v => v.id === r.variant).label, MX, p.y); p.y += 1; }
-        r.items.forEach(i => p.row(i.name, { tag: i.gift ? 'Complimentary' : 'Included', gift: i.gift }, '', true));
+      ws.forEach(w => {
+        if (w.label) { p.need(60); p.y += 18; p.caps(w.label, MX, p.y); p.y += 2; }
+        p.y += 13; italic(w.intro); p.y -= 4;
+        w.features.forEach(f => p.row(f.title, {}, f.text, true));
+        w.bullets.forEach(b => p.row(b, {}, '', true));
       });
     });
 
-    chapter('II.', 'À la carte', `Build your own day, service by service. A volume discount of up to ${SETTINGS.discountTop}% applies automatically as your selection grows.`);
+    chapter('II.', 'Or Create Your Own Collection', `Prefer to start from scratch? Build your perfect wedding experience by selecting only the services that matter most to you. A volume discount of up to ${SETTINGS.discountTop}% applies automatically as your selection grows.`);
     heading('Photography');          PHOTO_OPTIONS.forEach(priced);
     heading('Cinematography');       VIDEO_OPTIONS.forEach(priced);
     heading('Video Editing', 'Available with any cinematography coverage.'); VIDEO_ADDONS.forEach(priced);
     heading('Glam Studio', `Extra hours ${fmt(SETTINGS.glamExtraHour)} each beyond the five hour coverage.`); GLAM_OPTIONS.forEach(priced);
     heading('Same Night Prints');
     p.row('Same Night Prints', { price: rate(SETTINGS.snpPerGuest), unit: 'per guest' },
-      `Minimum ${fmt(SETTINGS.snpMin)}. Groups over ${SETTINGS.snpBigGroup} guests add an assistant (${fmt(SETTINGS.snpAssistant)}).`);
-    heading('Albums');               ALBUM_TYPES.forEach(a => p.row(a.name, { price: rate(a.pricePerPage), unit: 'per page' }, a.format));
-    heading('Additional Services');  OTHER_ADDONS.forEach(priced);
+      `A portrait of every couple, family or individual, printed 4×6 before the night ends. Minimum ${fmt(SETTINGS.snpMin)}. Events over ${SETTINGS.snpBigGroup} guests require an additional assistant (${fmt(SETTINGS.snpAssistant)}).`);
+    heading('Albums');               ALBUM_TYPES.forEach(a => p.row(a.name, a.flat ? { price: fmt(a.pricePerPage * a.min) } : { price: rate(a.pricePerPage), unit: 'per page' }, [a.desc, a.format, a.detail].filter(Boolean).join('  ·  ')));
+    heading('Personalize Your Experience'); OTHER_ADDONS.forEach(priced);
+
+    chapter('III.', 'Additional Information & Terms', '');
+    p.y -= 8;
+    TERMS.forEach(t => p.row(t, {}, '', true));
+    heading('Full-Day Coverage');
+    p.y += 12;
+    COVERAGE.forEach(t => { const l = p.wrap(t, PW - 2 * MX, { size: 9 }); p.need(l.length * 13 + 8); p.y += p.lines(l, MX, p.y, 13, { size: 9, color: GRAPHITE }) + 6; });
 
     const close = p.wrap('Every day we photograph is different, and so is every collection. Write to us and we will shape yours together.', 380, { font: SERIF, style: 'italic', size: 12 });
     p.need(50 + close.length * 18);
@@ -2031,6 +2212,8 @@ function downloadPriceList() {
   });
 }
 
+document.getElementById('terms-list').innerHTML = TERMS.map(t => `<li>${esc(t)}</li>`).join('');
+document.getElementById('coverage-text').innerHTML = COVERAGE.map(t => `<p>${esc(t)}</p>`).join('');
 loadCatalog();
 </script>
 </body>
