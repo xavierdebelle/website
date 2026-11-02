@@ -381,6 +381,32 @@
   body.editing .coll-bullets li > span { flex: 1; }
   body.editing .card-detail { margin-top: 0; }
 
+  /* v141: the promotion, in the colours of its artwork */
+  .promo { background: #e3d0ab; color: #1a1a1a; text-align: center; padding: 30px 24px 22px; font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif; font-weight: 400; }
+  .promo[hidden], .promo-bar[hidden] { display: none; }
+  .promo-kicker { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: #5b4a30; }
+  .promo-title { font-size: clamp(26px, 3.4vw, 40px); font-weight: 600; letter-spacing: -0.01em; margin: 16px 0 18px; }
+  .promo-line { font-size: 17px; line-height: 1.55; margin: 6px auto; max-width: 760px; }
+  .promo-tagline { font-size: 18px; color: #5b4a30; margin-top: 18px; }
+  .promo-rule { height: 1px; background: #a58f6b; margin: 26px -24px 20px; }
+  .promo-deadline { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: #5b4a30; }
+  .promo-bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 95; background: #e3d0ab; color: #1a1a1a; display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 4px 18px; padding: 11px 16px; font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif; font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; border-top: 1px solid #a58f6b; transform: translateY(100%); transition: transform 0.3s ease; }
+  .promo-bar.show { transform: none; }
+  .promo-bar b { font-weight: 600; }
+  .promo-bar span { color: #5b4a30; }
+  body.promo-on { padding-bottom: 46px; }
+  body.promo-on .sidebar { padding-bottom: 60px; }
+  s.was { font-size: 0.55em; color: var(--subtle); margin-right: 8px; text-decoration-thickness: 1px; }
+  .addon-price s.was { font-size: 0.7em; }
+  .coll-was-edit { font-size: 10px; color: var(--muted); margin-bottom: 10px; }
+  .collection.featured .coll-was-edit { color: #666; }
+  body.editing .promo { outline: 2px dashed #b8a400; outline-offset: -8px; }
+  body.editing .promo [contenteditable] { outline-color: #8a7a00; }
+  .promo-tools { display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 8px 16px; margin-bottom: 22px; font-size: 11px; color: #5b4a30; }
+  .promo-tools button { font-family: 'Montserrat', sans-serif; font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; background: #000; color: #ffe800; border: none; padding: 7px 12px; cursor: pointer; }
+  .promo .ed-link.promo-add { margin: 4px auto 0; text-align: center; color: #5b4a30; }
+  @media(max-width:580px) { .promo-line { font-size: 15px; } .promo-bar { font-size: 10px; } }
+
   /* RESPONSIVE */
   @media(max-width:960px) { .collections{padding:50px 24px 20px} .collections-grid{grid-template-columns:1fr} .collection.featured{margin:0} .coll-tagline{min-height:0} .carte-head{padding:40px 24px 0} .terms{padding:0 24px 50px} .builder-layout{grid-template-columns:1fr} .sidebar{position:relative;height:auto} .builder-main{padding:50px 24px 80px;border-right:none} }
   @media(max-width:580px) { .carte-divider span{font-size:18px;white-space:normal;text-align:center} .field-row{grid-template-columns:1fr} .modal-card{padding:32px 22px 26px} header{padding:120px 20px 60px} .options-grid{grid-template-columns:1fr} .album-builder{grid-template-columns:1fr 1fr} }
@@ -449,6 +475,9 @@ else setTimeout(() => document.getElementById('gate-pw').focus(), 50);
   </div>
   <div class="header-rule"></div>
 </header>
+
+<section class="promo" id="promo" hidden></section>
+<div class="promo-bar" id="promo-bar" hidden></div>
 
 <section class="collections" id="collections">
   <div class="collections-head">
@@ -713,6 +742,30 @@ const COLLECTIONS = [
              'Glam Studio experience with instant prints', 'Professionally edited 3–5 minute wedding film', '15–30 second cinematic highlight reel', 'Young Book wedding album (30 pages)', 'Two matching parent albums'] },
 ];
 
+// The promotion: while it runs (`on`, and up to `until` if set) every price on
+// the page is `pct` % off its regular price, collections included. The volume
+// discount and the collections' own discount prices are set aside meanwhile.
+// Shown as a banner under the header and a bar along the bottom.
+const PROMO = {
+  on: true, pct: 20, until: '2026-11-30',
+  kicker: 'The Elegant Wedding Event', title: 'OFF Wedding Experience',      // the title reads "20% OFF Wedding Experience"
+  lines: ['From photography and cinematography to albums and unforgettable extras.', 'Enjoy our biggest savings of the year.'],
+  tagline: 'Once a year. One month only.', deadline: 'Contract must be signed by November 30, 2026',
+};
+const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+const promoEnded = () => /^\d{4}-\d{2}-\d{2}$/.test(PROMO.until || '') && today() > PROMO.until;
+const promoOn = () => !!PROMO.on && PROMO.pct > 0 && !promoEnded();
+const promoCut = n => Math.round(n * (1 - PROMO.pct / 100));
+const promoTitle = () => `${PROMO.pct}% ${PROMO.title}`;
+
+// What a collection costs now, and the struck-out price beside it (0: none).
+// `regular` is optional; during a promotion the cut is taken from it.
+function collPrice(c) {
+  const regular = c.regular > 0 ? c.regular : c.price;
+  if (promoOn()) return { price: promoCut(regular), was: regular };
+  return { price: c.price, was: c.regular > c.price ? c.regular : 0 };
+}
+
 // The "Additional Information & Terms" drop-down, also the price list's last page.
 const TERMS = [
   'All prices are in Canadian dollars (CAD), before applicable taxes.',
@@ -769,7 +822,8 @@ function resolveCollection(id, variantId) {
   const sold = items.filter(i => i.kind!=='extra').reduce((s,i) => s+i.price, 0);
   const pct = getDiscount(sold);
   const value = sold - (pct ? roundTo50(sold*pct/100) : 0) + items.filter(i => i.kind==='extra').reduce((s,i) => s+i.price, 0);
-  return { c, variant: c.variants ? v.id : null, name:c.name, price:c.price, items, album, value };
+  const cp = collPrice(c);
+  return { c, variant: c.variants ? v.id : null, name:c.name, price:cp.price, was:cp.was, items, album, value };
 }
 
 function isSelected(i, r) {
@@ -846,8 +900,10 @@ function renderCollections() {
       ${w.intro ? `<p class="coll-tagline">${esc(w.intro)}</p>` : ''}
       <div class="coll-items">${featuresHTML(w.features)}${bulletsHTML(w.bullets)}</div>
       <div>
+        ${r.was ? `<div class="coll-was">${fmt(r.was)}</div>` : ''}
         <div class="coll-price-label">Your collection</div>
         <div class="coll-price">${fmt(r.price)}</div>
+        ${r.was ? `<div class="coll-save">You save ${fmt(r.was - r.price)}${promoOn() ? ` · ${esc(promoTitle())}` : ''}</div>` : ''}
         <button class="coll-btn" onclick="chooseCollection('${c.id}')">${on ? 'Selected ✓' : '→ Choose &amp; customize'}</button>
       </div>
     </div>`;
@@ -885,11 +941,12 @@ async function fbLoad() {
 }
 
 // what Publish writes, and what Discard goes back to
-const editSnapshot = () => JSON.stringify({ collections: COLLECTIONS, extras: EXTRAS, collLabels: COLL_LABELS,
+const editSnapshot = () => JSON.stringify({ collections: COLLECTIONS, extras: EXTRAS, collLabels: COLL_LABELS, promo: PROMO,
   carte: Object.fromEntries(Object.entries(CARTE).map(([k, s]) => [k, s.list])), settings: SETTINGS });
 function editRestore(json) {
   const s = JSON.parse(json);
   COLLECTIONS.splice(0, COLLECTIONS.length, ...s.collections);
+  Object.keys(PROMO).forEach(k => delete PROMO[k]); Object.assign(PROMO, s.promo);
   Object.keys(EXTRAS).forEach(k => delete EXTRAS[k]); Object.assign(EXTRAS, s.extras);
   Object.keys(COLL_LABELS).forEach(k => delete COLL_LABELS[k]); Object.assign(COLL_LABELS, s.collLabels);
   Object.entries(CARTE).forEach(([k, c]) => c.list.splice(0, c.list.length, ...s.carte[k]));
@@ -1018,7 +1075,7 @@ async function publishEdits() {
       editBusy = false; paintEditBar(); return;
     }
     const data = Object.assign({}, cur && cur.data ? cur.data : {}, catalogFromPage(),
-      clone({ collections: COLLECTIONS, extras: EXTRAS, collLabels: COLL_LABELS }));
+      clone({ collections: COLLECTIONS, extras: EXTRAS, collLabels: COLL_LABELS, promo: PROMO }));
     data.settings.discounts.sort((a, b) => a.upTo - b.upTo);
     const now = Date.now(), doc = { data, updatedAt: now, by: editor.email || '' };
     await fb.f.update(fb.f.ref(fb.db), { ['catalog/' + CATALOG_DOC]: doc, ['catalogHistory/' + CATALOG_DOC + '/' + now]: doc });
@@ -1092,9 +1149,10 @@ function renderCollectionsEdit() {
         ${c.variants && c.variants.length < 4 ? '<button class="ed-link" data-act="addchoice">Add another choice</button>' : ''}
       </div>
       <div>
-        <div class="coll-price-label">Your collection</div>
+        <div class="coll-was-edit">Regular price $${ed('regular', c.regular || '', 'ed-num', 'data-ph="none"')}</div>
+        <div class="coll-price-label">Discount price, the main price</div>
         <div class="coll-price">$${ed('price', c.price, 'ed-num')}</div>
-        <div class="coll-save">Studio only: ${fmt(r.value)} à la carte${r.value > r.price ? ', saves ' + fmt(r.value - r.price) : ''}</div>
+        <div class="coll-save">${promoOn() ? `During the promotion clients see ${fmt(r.price)}, ${PROMO.pct}% off the regular price. ` : ''}Studio only: ${fmt(r.value)} à la carte</div>
       </div>
     </div>`;
   }).join('') + `<button class="collection ed-new" data-act="new">+ Add a collection</button>`;
@@ -1112,6 +1170,7 @@ function editField(el) {
     case 'bullet': { const k = +el.closest('[data-k]').dataset.k; if (t.bullets && k < t.bullets.length) t.bullets[k] = txt; break; }
     case 'badge': if (txt) c.badge = txt; else delete c.badge; break;
     case 'price': c.price = n(); break;
+    case 'regular': if (n()) c.regular = n(); else delete c.regular; break;
     case 'vlabel': t.label = txt || 'Choice'; break;
     case 'pages': if (t.album) t.album.pages = Math.max((ALBUM_TYPES.find(a => a.id === t.album.id) || {}).min || 1, n()); break;
     case 'xvalue': if (EXTRAS[el.dataset.i]) EXTRAS[el.dataset.i].value = n(); break;
@@ -1286,7 +1345,11 @@ function carteField(el) {
   const txt = el.textContent.replace(/\s+/g, ' ').trim(), f = el.dataset.field;
   const money = () => Math.round((parseFloat(txt.replace(/[^0-9.]/g, '')) || 0) * 100) / 100;
   const whole = () => parseInt(txt.replace(/[^0-9]/g, ''), 10) || 0;
-  if (f === 'set') SETTINGS[el.dataset.k] = ['snpBigGroup', 'discountTop'].includes(el.dataset.k) ? Math.min(el.dataset.k === 'discountTop' ? 100 : Infinity, whole()) : money();
+  if (f.startsWith('p_')) {
+    if (f === 'p_pct') PROMO.pct = Math.min(100, whole());
+    else if (f === 'p_line') PROMO.lines[+el.dataset.k] = txt;
+    else PROMO[f.slice(2)] = txt;
+  } else if (f === 'set') SETTINGS[el.dataset.k] = ['snpBigGroup', 'discountTop'].includes(el.dataset.k) ? Math.min(el.dataset.k === 'discountTop' ? 100 : Infinity, whole()) : money();
   else if (f === 'tierUpTo' || f === 'tierPct') {
     const t = SETTINGS.discounts[+el.closest('[data-t]').dataset.t];
     if (f === 'tierUpTo') t.upTo = whole(); else t.pct = Math.min(100, money());
@@ -1303,6 +1366,8 @@ function carteField(el) {
 
 function carteAction(btn) {
   const act = btn.dataset.act;
+  if (act === 'p_toggle') { PROMO.on = !PROMO.on; return redrawEdit(); }
+  if (act === 'p_addline') { PROMO.lines.push(''); return redrawEdit(); }
   if (act === 'addtier') {
     const d = SETTINGS.discounts, last = d[d.length - 1];
     d.push({ upTo: last ? last.upTo + 1000 : 2500, pct: last ? last.pct : 0 });
@@ -1352,7 +1417,7 @@ function redrawEdit() { SETTINGS.discounts.sort((a, b) => a.upTo - b.upTo); rend
 
 (function wireEditor() {
   // collection cards ([data-c]) and à la carte sections share these listeners
-  const editable = e => editing && e.target.dataset && e.target.dataset.field && e.target.closest('#collections, #builder');
+  const editable = e => editing && e.target.dataset && e.target.dataset.field && e.target.closest('#collections, #builder, #promo');
   document.addEventListener('input', e => { if (editable(e)) (e.target.closest('[data-c]') ? editField : carteField)(e.target); });
   // leaving a field redraws the page (totals, tabs); while a click is in progress, after it
   let pressing = false, pending = false;
@@ -1367,7 +1432,7 @@ function redrawEdit() { SETTINGS.discounts.sort((a, b) => a.upTo - b.upTo); rend
   document.addEventListener('focusin', e => { if (editable(e) && e.target.classList.contains('ed-num')) { fresh = e.target; selectNum(fresh); } });
   document.addEventListener('click', e => { if (fresh && e.target === fresh) selectNum(fresh); fresh = null; });
   document.addEventListener('click', e => {
-    const b = editing && e.target.closest('#collections [data-act], #builder [data-act]');
+    const b = editing && e.target.closest('#collections [data-act], #builder [data-act], #promo [data-act]');
     if (!b || b.tagName === 'SELECT') return;
     e.preventDefault(); e.stopPropagation();
     (b.closest('[data-c]') || b.dataset.act === 'new' ? editAction : carteAction)(b);
@@ -1455,7 +1520,7 @@ function applyCatalog(c) {
       { features: listOf(x.features).filter(f => f && (f.title || f.text)).map(f => ({ title: String(f.title || ''), text: String(f.text || '') })), bullets: strs(x.bullets) },
       x.album && x.album.id ? { album: { id: String(x.album.id), pages: Math.max(1, Math.round(num(x.album.pages, 24))) } } : {});
     const colls = listOf(d.collections).filter(x => x && x.id && x.name).map(x => Object.assign(
-      { id: String(x.id), name: String(x.name), price: num(x.price, 0), tagline: String(x.tagline || '') },
+      { id: String(x.id), name: String(x.name), price: num(x.price, 0), tagline: String(x.tagline || '') }, num(x.regular, 0) ? { regular: num(x.regular, 0) } : {},
       x.badge ? { badge: String(x.badge) } : {}, x.featured ? { featured: true } : {},
       listOf(x.variants).length ? { variants: listOf(x.variants).filter(v => v && v.id).map(v => Object.assign({ id: String(v.id), label: String(v.label || '') }, part(v))) } : part(x)));
     if (colls.length) {
@@ -1465,6 +1530,11 @@ function applyCatalog(c) {
       Object.keys(COLL_LABELS).forEach(k => delete COLL_LABELS[k]);
       if (d.collLabels && typeof d.collLabels === 'object') Object.entries(d.collLabels).forEach(([k, v]) => { COLL_LABELS[k] = String(v); });
     }
+  }
+  if (d.promo && typeof d.promo === 'object') {
+    const pr = d.promo;
+    Object.assign(PROMO, { on: !!pr.on, pct: Math.min(100, num(pr.pct, 0)), lines: listOf(pr.lines).map(String) },
+      ...['until', 'kicker', 'title', 'tagline', 'deadline'].map(k => ({ [k]: String(pr[k] || '') })));
   }
   if (state.collection && !COLLECTIONS.some(c => c.id === state.collection.id)) state.collection = null;
   const st = d.settings || {};
@@ -1539,6 +1609,8 @@ function resetState() {
 
 const fmt = n => '$' + n.toLocaleString('en-CA');
 const rate = n => '$' + (Number.isInteger(n) ? n : n.toFixed(2));   // $4.50, $5
+// a price as shown on a card: during a promotion, the regular one struck out beside it
+const shown = (n, f = fmt) => promoOn() && n ? `<s class="was">${f(n)}</s>${f(Math.round(n * (1 - PROMO.pct / 100) * 100) / 100)}` : f(n);
 
 const price0 = p => p ? fmt(p) : 'Custom quote';
 const perUnit = o => o.unit ? o.unit + (o.qty && o.minQty > 1 ? ` · ${o.minQty}-hour minimum` : '') : '';
@@ -1551,7 +1623,7 @@ function makeCard(id, title, price, desc, selected, extraHTML='', unitNote='', o
     <div class="card-desc">${esc(desc)}</div>
     ${o.detail ? `<div class="card-detail">${esc(o.detail)}</div>` : ''}
     ${extraHTML}
-    ${inclTag(id) ? `<div class="incl-price">${inclTag(id)}</div>` : `<div class="card-price">${fmt(price)}</div>
+    ${inclTag(id) ? `<div class="incl-price">${inclTag(id)}</div>` : `<div class="card-price">${shown(price)}</div>
     ${unitNote ? `<div class="card-price-note">${unitNote}</div>` : ''}`}
   </div>`;
 }
@@ -1560,7 +1632,7 @@ function makeAddon(id, name, price, desc, selected, unit='') {
   return `<div class="addon-row ${selected?'selected':''}" onclick="toggleAddon('${id}')">
     <div class="addon-check"></div>
     <div class="addon-info"><div class="addon-name">${esc(name)}</div><div class="addon-detail">${esc(desc)}</div></div>
-    <div class="addon-price">${inclTag(id) ? `<span class="incl-price">${inclTag(id)}</span>` : price ? fmt(price) + (unit ? `<span class="addon-unit">${esc(unit)}</span>` : '') : '<span class="addon-quote">Custom quote</span>'}</div>
+    <div class="addon-price">${inclTag(id) ? `<span class="incl-price">${inclTag(id)}</span>` : price ? shown(price) + (unit ? `<span class="addon-unit">${esc(unit)}</span>` : '') : '<span class="addon-quote">Custom quote</span>'}</div>
   </div>`;
 }
 
@@ -1648,7 +1720,7 @@ function renderAlbums() {
         <div class="album-type-name">${esc(a.name)}</div>
         ${a.desc ? `<div class="album-type-desc">${esc(a.desc)}</div>` : ''}
         <div class="album-type-spec">${esc(a.format)}</div>
-        <div class="album-type-price">${a.flat ? fmt(a.pricePerPage * a.min) : `$${a.pricePerPage} per page`}</div>
+        <div class="album-type-price">${a.flat ? shown(a.pricePerPage * a.min) : `${shown(a.pricePerPage, rate)} per page`}</div>
         ${a.detail ? `<div class="album-type-spec">${esc(a.detail)}</div>` : ''}
       </div>`).join('') +
     `</div>` +
@@ -1732,7 +1804,7 @@ function calcRaw() {
    service à la carte with the volume discount. */
 function calcQuote() {
   const { raw, lines } = calcRaw();
-  const r = intactColl();
+  const r = intactColl(), promo = promoOn();
   if (r) {
     const inc = new Set(r.items.map(i => i.id));
     const extras = [];
@@ -1742,12 +1814,13 @@ function calcQuote() {
         if (more > 0) extras.push({ id:l.id, section:'Album', name:`${a.name}, ${more} extra pages`, price: more*a.pricePerPage });
       } else if (!inc.has(l.id)) extras.push(l);
     });
-    const added = extras.reduce((s,l) => s+l.price, 0);
-    return { coll:r, extras, added, raw, lines, discPct:0, saving:0, total: r.price + added, before: r.value + added };
+    const addedRaw = extras.reduce((s,l) => s+l.price, 0), added = promo ? promoCut(addedRaw) : addedRaw;
+    return { coll:r, extras, added, raw, lines, promo, discPct:0, saving:0, total: r.price + added, before: (r.was || r.value) + addedRaw };
   }
-  const discPct = getDiscount(raw);
-  const saving = discPct > 0 ? roundTo50(raw * discPct / 100) : 0;
-  return { coll:null, changed: activeColl(), raw, lines, discPct, saving, total: raw - saving, before: raw };
+  // a promotion takes the place of the volume discount
+  const discPct = promo ? PROMO.pct : getDiscount(raw);
+  const saving = !discPct ? 0 : promo ? raw - promoCut(raw) : roundTo50(raw * discPct / 100);
+  return { coll:null, changed: activeColl(), raw, lines, promo, discPct, saving, total: raw - saving, before: raw };
 }
 
 const groupBy = lines => { const g = {}; lines.forEach(l => { (g[l.section] = g[l.section] || []).push(l); }); return g; };
@@ -1793,10 +1866,10 @@ function renderSummary() {
   const saved = q.coll ? q.before - q.total : saving;
   if (saved > 0 && raw > 0) {
     db.classList.add('visible');
-    document.getElementById('discount-label').textContent = q.coll ? 'Collection Savings' : 'Volume Discount Applied';
+    document.getElementById('discount-label').textContent = q.promo ? promoTitle() : q.coll ? 'Collection Savings' : 'Volume Discount Applied';
     document.getElementById('discount-saving-display').textContent = fmt(saved);
-    document.getElementById('discount-pct-display').textContent = q.coll ? 'vs. à la carte' : discPct + '% off';
-    document.getElementById('discount-note').textContent = q.coll ? 'saved, gifts included' : 'saved · rounded to nearest $50';
+    document.getElementById('discount-pct-display').textContent = q.promo ? PROMO.pct + '% off' : q.coll ? (q.coll.was ? 'vs. regular price' : 'vs. à la carte') : discPct + '% off';
+    document.getElementById('discount-note').textContent = q.promo ? 'saved · ' + PROMO.kicker : q.coll ? 'saved' : 'saved · rounded to nearest $50';
   } else {
     db.classList.remove('visible');
   }
@@ -1891,7 +1964,38 @@ document.getElementById('snp-guests').addEventListener('input', function() {
   state.snpGuests = parseInt(this.value) || 0; renderSummary();
 });
 
+// the promotion banner, the bar along the bottom, and its editing version
+function renderPromo() {
+  const box = document.getElementById('promo'), bar = document.getElementById('promo-bar'), on = promoOn();
+  box.hidden = !on && !editing; bar.hidden = !on;
+  document.body.classList.toggle('promo-on', on);
+  if (editing) {
+    const state = PROMO.on ? (promoEnded() ? 'Ended on ' + esc(PROMO.until) + ' — clients don’t see it' : 'Running — clients see it') : 'Off — clients don’t see it';
+    box.innerHTML = `<div class="promo-tools"><button type="button" data-act="p_toggle">${PROMO.on ? '● Promotion on' : '○ Promotion off'}</button>
+        <span>${state}</span><span>Ends after ${edSpan('p_until', PROMO.until || '', '', 'data-ph="YYYY-MM-DD, optional"')}</span></div>
+      <div class="promo-kicker">${edSpan('p_kicker', PROMO.kicker, '', 'data-ph="Small heading"')}</div>
+      <h2 class="promo-title">${edSpan('p_pct', PROMO.pct, 'ed-num')}% ${edSpan('p_title', PROMO.title, '', 'data-ph="OFF …"')}</h2>
+      ${PROMO.lines.map((l, k) => `<p class="promo-line">${edSpan('p_line', l, '', `data-k="${k}" data-ph="A line (empty: hidden)"`)}</p>`).join('')}
+      <button type="button" class="ed-link promo-add" data-act="p_addline">+ Add a line</button>
+      <p class="promo-tagline">${edSpan('p_tagline', PROMO.tagline, '', 'data-ph="Tagline"')}</p>
+      <div class="promo-rule"></div>
+      <div class="promo-deadline">${edSpan('p_deadline', PROMO.deadline, '', 'data-ph="Deadline"')}</div>`;
+  } else if (on) {
+    box.innerHTML = `<div class="promo-kicker">${esc(PROMO.kicker)}</div>
+      <h2 class="promo-title">${esc(promoTitle())}</h2>
+      ${PROMO.lines.filter(Boolean).map(l => `<p class="promo-line">${esc(l)}</p>`).join('')}
+      ${PROMO.tagline ? `<p class="promo-tagline">${esc(PROMO.tagline)}</p>` : ''}
+      ${PROMO.deadline ? `<div class="promo-rule"></div><div class="promo-deadline">${esc(PROMO.deadline)}</div>` : ''}`;
+  }
+  bar.innerHTML = on ? `<b>${esc(promoTitle())}</b>${PROMO.deadline ? `<span>${esc(PROMO.deadline)}</span>` : ''}` : '';
+}
+// the bar shows once the banner is out of sight
+if (window.IntersectionObserver) new IntersectionObserver(([e]) => {
+  document.getElementById('promo-bar').classList.toggle('show', !e.isIntersecting);
+}).observe(document.getElementById('promo'));
+
 function renderAll() {
+  renderPromo();
   renderPhoto(); renderVideo(); renderVideoAddons();
   renderGlam(); renderAlbums(); renderOtherAddons(); renderSummary();
   if (editing) renderDiscountEdit();
@@ -2006,7 +2110,7 @@ async function newPdf() {
   p.wrap = (str, w, o = {}) => { set(o); return doc.splitTextToSize(String(str), w); };
   p.lines = (lines, x, y, lead, o = {}) => { lines.forEach((l, i) => p.text(l, x, y + i * lead, o)); return lines.length * lead; };
   p.rule = (y, x0 = MX, x1 = PW - MX, color = RULE, w = 0.5) => { doc.setDrawColor(color); doc.setLineWidth(w); doc.line(x0, y, x1, y); };
-  p.page = () => { doc.addPage(); p.y = 64; };
+  p.page = () => { doc.addPage(); p.y = 92; };      // below the logo header (p.finish)
   p.need = h => { if (p.y + h > p.bottom) p.page(); };
   p.logo = (w, y) => { doc.addImage(PDF_LOGO, 'PNG', (PW - w) / 2, y, w, w * LOGO_RATIO); return w * LOGO_RATIO; };
 
@@ -2038,6 +2142,7 @@ async function newPdf() {
     const n = doc.getNumberOfPages();
     for (let i = 1; i <= n; i++) {
       doc.setPage(i);
+      if (i > 1) { p.logo(64, 26); p.rule(26 + 64 * LOGO_RATIO + 10); }
       if (note && i === n) p.text(note, PW / 2, PH - 50, { align: 'center', size: 7, color: GREY });
       p.text('yourwedding@debellephotography.com   ·   514-887-4686   ·   debellephotography.com', PW / 2, PH - 36, { align: 'center', size: 7, color: GREY });
     }
@@ -2101,8 +2206,8 @@ function exportSummary() {
 
     // totals, in a column on the right
     const totals = [];
-    if (q.coll) { totals.push([q.coll.name, fmt(q.coll.price)]); if (q.added) totals.push(['Additions', fmt(q.added)]); }
-    else { totals.push(['Subtotal', fmt(q.raw)]); if (q.saving) totals.push([`Volume discount (${q.discPct}%)`, '-' + fmt(q.saving)]); }
+    if (q.coll) { totals.push([q.coll.name + (q.promo ? ` (${PROMO.pct}% off)` : ''), fmt(q.coll.price)]); if (q.added) totals.push([q.promo ? `Additions (${PROMO.pct}% off)` : 'Additions', fmt(q.added)]); }
+    else { totals.push(['Subtotal', fmt(q.raw)]); if (q.saving) totals.push([q.promo ? promoTitle() : `Volume discount (${q.discPct}%)`, '-' + fmt(q.saving)]); }
     totals.push(['Total before tax', fmt(q.total)], ['GST + QST (14.975%)', fmt(tax)]);
     const save = q.coll && q.before > q.total ? q.before - q.total : 0;
     p.need(28 + totals.length * 17 + 46 + (save ? 16 : 0));
@@ -2117,7 +2222,8 @@ function exportSummary() {
     p.y += 20;
     p.text('Total', x0, p.y, { size: 10 });
     p.text(fmt(q.total + tax), PW - MX, p.y, { font: SERIF, size: 22, align: 'right' });
-    if (save) { p.y += 18; p.text(`You save ${fmt(save)} compared to à la carte.`, PW - MX, p.y, { font: SERIF, style: 'italic', size: 9.5, align: 'right', color: GRAPHITE }); }
+    if (save) { p.y += 18; p.text(`You save ${fmt(save)}.`, PW - MX, p.y, { font: SERIF, style: 'italic', size: 9.5, align: 'right', color: GRAPHITE }); }
+    if (q.promo) { p.y += 16; p.caps(`${PROMO.kicker}  ·  ${PROMO.deadline}`, PW - MX, p.y, { align: 'right', size: 6 }); }
 
     const close = p.wrap('Thank you for thinking of us for your day. Reply to us with any questions, and we would love to hold your date.', 360, { font: SERIF, style: 'italic', size: 11 });
     p.need(40 + close.length * 16);
@@ -2148,6 +2254,12 @@ function downloadPriceList() {
     p.caps('Prepared for', PW / 2, 482, { align: 'center' });
     p.text(coupleNames(), PW / 2, 510, { font: SERIF, size: 20, align: 'center' });
     p.text(longDate(client.date), PW / 2, 528, { font: SERIF, style: 'italic', size: 11, align: 'center', color: GRAPHITE });
+    if (promoOn()) {
+      p.doc.setFillColor('#E3D0AB'); p.doc.rect(MX, 580, PW - 2 * MX, 96, 'F');
+      p.caps(PROMO.kicker, PW / 2, 604, { align: 'center', color: '#5B4A30' });
+      p.text(promoTitle(), PW / 2, 632, { size: 18, style: 'bold', align: 'center' });
+      p.caps(PROMO.deadline, PW / 2, 658, { align: 'center', color: '#5B4A30' });
+    }
 
     const chapter = (num, title, intro) => {
       p.page();
@@ -2168,23 +2280,31 @@ function downloadPriceList() {
     const italic = (str, size = 9.5) => { if (str) p.y += p.lines(p.wrap(str, PW - 2 * MX, { font: SERIF, style: 'italic', size }), MX, p.y, size + 3.5, { font: SERIF, style: 'italic', size, color: GRAPHITE }); };
 
     chapter('I.', 'Your Wedding Collection', 'Choose the experience that best tells your story, then personalize it with additional services below.');
+    // a collection with choices (the Essential: photography or film) is one entry per choice
     COLLECTIONS.forEach(c => {
+      const cp = collPrice(c);
       const ws = c.variants ? c.variants.map(v => Object.assign(collCopy(c, v.id), { label: v.label })) : [collCopy(c)];
-      p.need(110);
-      p.y += 30;
-      p.text(c.name, MX, p.y, { font: SERIF, size: 19 });
-      if (c.badge) p.caps(c.badge, MX + p.width(c.name, { font: SERIF, size: 19 }) + 12, p.y - 3, { size: 6, color: INK });
-      p.text(fmt(c.price), PW - MX, p.y, { font: SERIF, size: 19, align: 'right' });
-      p.y += 4;
-      ws.forEach(w => {
-        if (w.label) { p.need(60); p.y += 18; p.caps(w.label, MX, p.y); p.y += 2; }
-        p.y += 13; italic(w.intro); p.y -= 4;
+      ws.forEach((w, k) => {
+        p.need(120);
+        p.y += 34;
+        p.rule(p.y - 22, MX, PW - MX, INK, 0.8);
+        if (c.variants) { p.caps(`Separate collection  ·  choice ${k + 1} of ${ws.length}`, MX, p.y - 6, { size: 5.5 }); p.y += 16; }
+        const name = c.variants ? `${c.name} — ${w.label}` : c.name;
+        p.text(name, MX, p.y, { font: SERIF, size: 19 });
+        if (c.badge) p.caps(c.badge, MX + p.width(name, { font: SERIF, size: 19 }) + 12, p.y - 3, { size: 6, color: INK });
+        const pw = p.text(fmt(cp.price), PW - MX, p.y, { font: SERIF, size: 19, align: 'right' });
+        if (cp.was) {
+          const x = PW - MX - pw - 10, ww = p.text(fmt(cp.was), x, p.y, { font: SERIF, size: 12, align: 'right', color: GREY });
+          p.rule(p.y - 4, x - ww, x, GREY, 0.6);
+        }
+        p.y += 17; italic(w.intro); p.y -= 4;
         w.features.forEach(f => p.row(f.title, {}, f.text, true));
         w.bullets.forEach(b => p.row(b, {}, '', true));
       });
     });
 
-    chapter('II.', 'Or Create Your Own Collection', `Prefer to start from scratch? Build your perfect wedding experience by selecting only the services that matter most to you. A volume discount of up to ${SETTINGS.discountTop}% applies automatically as your selection grows.`);
+    chapter('II.', 'Or Create Your Own Collection', `Prefer to start from scratch? Build your perfect wedding experience by selecting only the services that matter most to you. ` +
+      (promoOn() ? `${promoTitle()}: ${PROMO.pct}% off every price below. ${PROMO.deadline}.` : `A volume discount of up to ${SETTINGS.discountTop}% applies automatically as your selection grows.`));
     heading('Photography');          PHOTO_OPTIONS.forEach(priced);
     heading('Cinematography');       VIDEO_OPTIONS.forEach(priced);
     heading('Video Editing', 'Available with any cinematography coverage.'); VIDEO_ADDONS.forEach(priced);

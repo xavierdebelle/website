@@ -5,6 +5,41 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v141 — 2026-11-02
+
+**Package Builder — promotions, regular / discount prices, price list PDF**
+- Promotion (`PROMO`, published as `data.promo`): while on, and up to
+  `until` (2026-11-30), every price is `pct` % off its regular price —
+  collections and à la carte alike. The volume discount and the
+  collections' own discount prices are set aside meanwhile. A banner in the
+  colours of Xavier's artwork ("The Elegant Wedding Event · 20% OFF Wedding
+  Experience …") sits under the header, and a slim bar along the bottom
+  shows once it scrolls away. Cards show the regular price struck out
+  beside the promotion price; the sidebar shows the saving under the
+  promotion's name. Ships on, 20%, for November.
+- Editing mode: the banner is editable in place (heading, %, title, lines,
+  tagline, deadline, end date) with a "Promotion on / off" button; it stays
+  visible while editing even when off or ended.
+- Collections gain an optional regular price (`regular`): shown struck out
+  above the discount price (the main price), with "You save". During a
+  promotion the cut is taken from the regular price.
+- Price list PDF: the de Belle logo heads every page after the cover; the
+  Essential's Photography and Film are two separate entries ("Separate
+  collection · choice 1 of 2"); collection prices show the struck regular
+  price; a promotion band on the cover and in the à la carte intro. The
+  summary PDF names the promotion in its totals.
+- The admin panel keeps `promo` when it saves.
+- Tested on the mock with a copy of the live catalog: banner, bar, struck
+  prices, totals (Ultimate $9,960; +$400 engagement adds $320; à la carte
+  20% off), regular price and promotion off published and read back, an
+  ended promotion hides itself, both PDFs built and the price list looked
+  at page by page, phone width.
+- Note: the live volume-discount table is 20% at every level (Xavier's
+  stand-in for the promotion). The promotion sets it aside until
+  2026-11-30; after that it applies again unless the tiers are changed.
+
+---
+
 ## v140 — 2026-11-02
 
 **Package Builder — Xavier's rewrite of every heading, collection and service**
