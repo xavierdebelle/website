@@ -5,6 +5,23 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v139 — 2026-11-02
+
+**Package Builder — editors (not just Xavier) can get into editing mode**
+- Bug since v134: an editor added under "Who can edit" (Xavier's dad,
+  jeff@debellephotography.com) was told "can't edit this page" on signing in.
+  The page asked the database for the editors list the instant the Google
+  popup closed, before the database knew who was signed in; the refused
+  lookup was read as "not on the list". Xavier never hit it: his account is
+  recognised without a lookup.
+- Now it waits until the sign-in reaches the database, asks again if a
+  lookup is refused, and says "Couldn't check…" (not "can't edit") if it
+  still can't tell. No rules change.
+- Reproduced and tested on the mock: editor refused before, let in after and
+  published a price; an unlisted account still refused; owner unchanged.
+
+---
+
 ## v138 — 2026-10-29
 
 **What's new** · Project Phases + Pipelines · [tools/project-tracker.html]

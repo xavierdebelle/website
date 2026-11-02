@@ -805,10 +805,33 @@ async function editSignIn() {
   }
   if (res && res.user) checkEditor(res.user);
 }
+// The database learns about a new sign-in a moment after the popup closes, and
+// refuses an editor's lookup until then: wait for it, and ask again if refused.
+function authSettled(u) {
+  return new Promise(done => {
+    let off = null, over = false;
+    const end = () => { if (over) return; over = true; if (off) off(); done(); };
+    off = fb.a.onAuthStateChanged(fb.auth, x => { if (x && x.uid === u.uid) end(); });
+    if (over) off();
+    setTimeout(end, 4000);
+  });
+}
 async function checkEditor(u) {
-  let ok = u.uid === FB_OWNER;
-  if (!ok) { try { ok = (await fb.f.get(fb.f.ref(fb.db, 'catalogEditors/' + emailKey(u.email)))).exists(); } catch (e) { ok = false; } }
-  if (!ok) { editBar('signin', `${esc(u.email)} can’t edit this page. Ask Xavier to add it under “Who can edit”, or sign in with another account.`); return; }
+  let ok = u.uid === FB_OWNER, unsure = false;
+  if (!ok) {
+    editBar('wait', 'Checking access…');
+    await authSettled(u);
+    for (let i = 0; i < 4; i++) {
+      try { ok = (await fb.f.get(fb.f.ref(fb.db, 'catalogEditors/' + emailKey(u.email)))).exists(); unsure = false; break; }
+      catch (e) { unsure = true; await new Promise(r => setTimeout(r, 800)); }
+    }
+  }
+  if (!ok) {
+    editBar('signin', unsure
+      ? `Couldn’t check whether ${esc(u.email)} can edit. Check the connection and sign in again.`
+      : `${esc(u.email)} can’t edit this page. Ask Xavier to add it under “Who can edit”, or sign in with another account.`);
+    return;
+  }
   // start from what is published right now, not this device's remembered copy
   editBar('wait', 'Loading the published prices…');
   try {
