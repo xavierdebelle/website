@@ -33,7 +33,8 @@ Every previous release is frozen, complete and runnable, under `versions/`.
   PDF looked at page by page (accents render).
 - Outstanding: a native French speaker should read the translations.
 - Deploy: GitHub's first Pages deploy of v143 timed out (2026-11-05
-  20:15 UTC, build fine, deploy step failed); this note re-triggered it.
+  20:15 UTC, build fine, deploy step failed); the retry at 20:21 was
+  refused while GitHub still held the stuck deployment; retried again.
 
 ---
 
