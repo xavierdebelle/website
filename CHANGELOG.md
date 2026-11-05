@@ -32,6 +32,8 @@ Every previous release is frozen, complete and runnable, under `versions/`.
   In the mockup: no English left on the French page, French price list
   PDF looked at page by page (accents render).
 - Outstanding: a native French speaker should read the translations.
+- Deploy: GitHub's first Pages deploy of v143 timed out (2026-11-05
+  20:15 UTC, build fine, deploy step failed); this note re-triggered it.
 
 ---
 
