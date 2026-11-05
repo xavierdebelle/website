@@ -5,6 +5,36 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v143 — 2026-11-05
+
+**Package Builder — French version, with an EN / FR switch**
+- EN / FR switch in the top right corner (also on the password screen).
+  English by default; the choice is remembered on the device; `?lang=fr`
+  opens in French. Built and reviewed as a local mockup first
+  (`versions/package-builder-french/`, v1–v2).
+- Everything a client sees is in Quebec French when FR is on: the page's
+  own text, every collection and service as the live catalog read on
+  2026-11-04, the promotion banner and bar, terms, sidebar, client form,
+  and both PDFs (French file names and dates, "4 400 $", "TPS + TVQ
+  (14,975 %)").
+- Editing mode has a French side: flip to FR while editing and every text
+  field edits its French; prices, page counts, rates and dates are shared.
+  A line with no French yet shows its English in orange as "FR? …" and the
+  bar counts them; clients see that line in English until it has French.
+  French is matched by the English wording (identical lines share one
+  French). Published as `data.fr`, a list of { en, fr } pairs, over the
+  built-in translations; the admin panel keeps it when it saves.
+- The page's fixed text (headline, section titles, form) is translated in
+  the code and not editable, in either language, as before.
+- Tested on the mock with a copy of the live catalog: English by default,
+  French edit published with the real sign-in → `fr` saved → a fresh
+  device opened with `?lang=fr` shows it; an admin-panel save kept `fr`.
+  In the mockup: no English left on the French page, French price list
+  PDF looked at page by page (accents render).
+- Outstanding: a native French speaker should read the translations.
+
+---
+
 ## v142 — 2026-11-02
 
 **Package Builder — approved volume-discount schedule, password on / off**
