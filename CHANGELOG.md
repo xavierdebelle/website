@@ -5,6 +5,42 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v146 — 2026-11-06
+
+**What's new** · New piece · [tools.html#art]
+### Wedding Invite
+An invitation for Enya & Sami, who are getting married in Los Cabos on
+11 November 2027. It opens like an envelope: scroll and the wax seal breaks,
+the flap lifts, and the card slides out to you.
+- Then the camera travels over a Baja desert while the day goes by. The sky
+  follows the schedule, from morning to sunset to a night of stars and paper
+  lanterns along the path.
+- A countdown to the ceremony, the day hour by hour, and a few gift ideas
+  along the way. Papel picado overhead, Talavera tiles inside the envelope.
+
+**Wedding Invite — `tools/wedding-invite.html`, source `Tools files/Art/wedding-invite-v1.html`** (Art)
+- New scroll-driven three.js piece (three@0.169.0 from jsdelivr, same as
+  Galaxy Map; fonts Cormorant Garamond + Jost from Google Fonts). All
+  geometry and textures drawn in code: envelope (seal, flap, Talavera liner),
+  card face, dunes, sea, rock arch, instanced cacti/agaves, luminarias,
+  papel picado in camera space. Sky/time of day keyed to the scroll phase.
+- Own palette (sand, terracotta, sage, Talavera blue), not the site's — it
+  is a gift for Xavier's sister, not a site page.
+- Placeholders still to replace: ceremony time (countdown targets 3:30 pm
+  Los Cabos time, UTC-7), the timeline times, gift details.
+- `noindex, nofollow` (a family invite shouldn't show up in search); the
+  card is public on the tools page. Visit counter on. Nothing stored.
+- Reduced motion: no long opening, no unfold animation. No WebGL: a plain
+  card on a desert gradient.
+- Scan: clean (the "email" hit is the three.js version string).
+
+**Verified** — local preview, desktop and 375×812 phone: envelope opens,
+card fills the screen, every section unfolds, countdown ticks, timeline sun
+follows the scroll, night with stars and lanterns at the end; no console
+errors.
+
+---
+
 ## v145 — 2026-11-06
 
 **What's new** · Update · [tools/production-hub.html]
