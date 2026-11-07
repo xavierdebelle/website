@@ -5,6 +5,49 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v144 — 2026-11-06
+
+**What's new** · The map · [index.html]
+### All Tools on the map,<br>and an inverted map you can read
+The Tools branch of the map now starts with **All Tools**, straight to the
+whole tools page. Double-tap the mark to invert the map and the name and
+instructions down the left now turn dark with it, so they stay readable.
+Video Corrections has moved to Archived Tools; Video Review does its job now.
+
+**Homepage — `index.html`**
+- `MAP` Tools branch: new first child "All Tools" → `tools.html` (node count
+  changes, so the particle layout regrows once). Index list (The Tools
+  column): "All Tools" first.
+- Inverted theme: the double-tap now also toggles `html.inverted`; CSS turns
+  the HUD dark to match THEME.light — name #101114, "Belle" the map's dark
+  gold rgb(176,124,6) (yellow on near-white wasn't readable), tagline and
+  instructions #55565a, the Index / zoom / Recentre buttons light with dark
+  borders — with a 0.6 s crossfade like the map.
+
+**Tools page — `tools.html`**
+- Video Corrections → Archived Tools (`data-cat="archive"`), card text in the
+  past tense, pointing to Video Review.
+
+**Access — `access.html`: a record of everyone who asked**
+- New list **Everyone who asked** (Xavier only): every person who requested
+  access, their current status (waiting, approved, declined, removed,
+  allowed to ask again) and their history ("asked Oct 26 → approved Nov 6").
+- Stored at `users/{Xavier}/accessLog/{uid}` (`email`, `name`, `tool`,
+  `firstAsked`, `lastAsked`, `status`, `statusAt`, `history: {time: what}`) —
+  under his own user node, so the existing rules cover it: no rules change.
+  A request is logged when the page sees it; every Approve / Decline /
+  Remove / Allow again writes its log entry in the same atomic update as the
+  decision. People decided before this release are added once from the
+  members and declined lists, flagged "decided before this log started".
+
+**Verified (Playwright Chromium; Access on the mock database)** — map node
+and Index link; double-tap inverts the HUD colours and back; Video
+Corrections only in Archived; Access: two waiting requests logged on open,
+an old member and an old decline back-filled, then approve / decline /
+remove each recorded with history; no page errors.
+
+---
+
 ## v143 — 2026-11-05
 
 **Package Builder — French version, with an EN / FR switch**

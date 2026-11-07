@@ -20,7 +20,7 @@
 <meta name="description" content="Sync for Xavier de Belle's tools is by invitation. Request access here.">
 <meta name="robots" content="noindex">
 <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
-<link rel="stylesheet" href="assets/style.css?v=143">
+<link rel="stylesheet" href="assets/style.css?v=144">
 <script src="assets/account.js"></script>
 <script defer src="assets/stats.js"></script>
 <script src="assets/site-index.js"></script>
@@ -98,6 +98,7 @@
   .row .acts { margin: 0; gap: 8px; }
   .row .btn { padding: 10px 14px; font-size: 11px; }
   .row .btn[disabled] { opacity: .45; cursor: default; transform: none; }
+  .row small.hist { margin-top: 4px; color: var(--dust); opacity: .8; }
   .empty { font-family: var(--mono); font-size: 12px; letter-spacing: .06em; color: var(--dust); padding: 14px 0; border-top: 2px solid var(--ash); border-bottom: 2px solid var(--ash); }
   .msg { font-family: var(--mono); font-size: 12px; line-height: 1.6; letter-spacing: .04em; min-height: 1.6em; margin: 0 0 18px; }
   .msg.bad { color: var(--volt); font-weight: 700; }
@@ -183,6 +184,10 @@
       <h3 id="h-blk">Declined</h3>
       <div id="l-blk"></div>
     </div>
+    <div class="list">
+      <h3 id="h-log">Everyone who asked</h3>
+      <div id="l-log"></div>
+    </div>
     <p style="font-size:14px;color:var(--dust);max-width:60ch">
       Removing someone stops their sync straight away; their tools carry on in their
       browser, and whatever they synced stays stored under their account in case you
@@ -210,7 +215,7 @@
       <a href="mailto:xavier@debellephotography.com">Email</a>
     </div>
   </div>
-  <p class="foot__sig">&copy; <span id="yr"></span> Xavier de Belle &middot; v143</p>
+  <p class="foot__sig">&copy; <span id="yr"></span> Xavier de Belle &middot; v144</p>
 </footer>
 
 <script>document.getElementById('yr').textContent = new Date().getFullYear();</script>
@@ -237,7 +242,8 @@
 
   var fb = null;
   var offs = [];          // live listeners to drop on sign-out
-  var data = { requests: {}, members: {}, blocked: {} };
+  var data = { requests: {}, members: {}, blocked: {}, log: {} };
+  var LOG = 'users/' + OWNER + '/accessLog';   // Xavier's own record of every request and decision (private: his rules already cover users/{his uid})
   var TOOLS = { 'project-phases': 'Project Phases', 'budget-tracker': 'Budget Tracker', 'idea-bank': 'Idea Bank', 'access': 'this page', 'site': 'the account panel' };
 
   function $(id) { return document.getElementById(id); }
@@ -322,12 +328,64 @@
   function admin(user) {
     $('admin-who').textContent = user.email || 'Signed in';
     show('p-admin');
-    ['requests', 'members', 'blocked'].forEach(function (k) {
-      offs.push(fb.f.onValue(ref(k), function (snap) {
-        data[k] = snap.val() || {};
+    var seen = {};
+    [['requests', 'requests'], ['members', 'members'], ['blocked', 'blocked'], ['log', LOG]].forEach(function (k) {
+      offs.push(fb.f.onValue(ref(k[1]), function (snap) {
+        data[k[0]] = snap.val() || {};
+        seen[k[0]] = true;
         paint();
-      }, function (err) { say('Couldn’t read ' + k + ' — ' + explain(err), true); }));
+        if (seen.requests && seen.members && seen.blocked && seen.log) record();
+      }, function (err) { say('Couldn’t read ' + k[0] + ' — ' + explain(err), true); }));
     });
+  }
+
+  /* ---- the log: everyone who ever asked ----
+     Requests are deleted once decided, so the record is kept here instead:
+     users/{Xavier}/accessLog/{uid} = { email, name, tool, firstAsked,
+     lastAsked, status, statusAt, history: { <time>: 'asked' | 'approved' |
+     'declined' | 'removed' | 'allowed again' } }. A request is logged when
+     this page sees it; each decision is logged in the same write that makes
+     it. People decided before the log existed are added once, from the
+     members and declined lists, flagged `before`. */
+  var recording = false;
+  function record() {
+    if (recording) return;
+    var change = {}, log = data.log || {};
+    Object.keys(data.requests || {}).forEach(function (uid) {
+      var p = person(uid, data.requests[uid]), e = log[uid] || {};
+      if (e.lastAsked === p.at && e.status === 'waiting') return;
+      var base = LOG + '/' + uid + '/';
+      change[base + 'email'] = p.email; change[base + 'name'] = p.name; change[base + 'tool'] = p.tool;
+      if (!e.firstAsked) change[base + 'firstAsked'] = p.at || Date.now();
+      change[base + 'lastAsked'] = p.at || Date.now();
+      change[base + 'status'] = 'waiting'; change[base + 'statusAt'] = p.at || Date.now();
+      change[base + 'history/' + (p.at || Date.now())] = 'asked';
+    });
+    [['members', 'approved'], ['blocked', 'declined']].forEach(function (k) {
+      Object.keys(data[k[0]] || {}).forEach(function (uid) {
+        if (log[uid]) return;
+        var p = person(uid, data[k[0]][uid]), base = LOG + '/' + uid + '/';
+        change[base + 'email'] = p.email; change[base + 'name'] = p.name;
+        change[base + 'status'] = k[1]; change[base + 'statusAt'] = p.at || 0;
+        change[base + 'history/' + (p.at || 1)] = k[1];
+        change[base + 'before'] = true;
+      });
+    });
+    if (!Object.keys(change).length) return;
+    recording = true;
+    withTimeout(fb.f.update(ref('/'), change), 12000).then(function () { recording = false; },
+      function (err) { recording = false; say('Couldn’t update the log — ' + explain(err), true); });
+  }
+  var STATUS = { waiting: 'Waiting', approved: 'Approved', declined: 'Declined', removed: 'Removed', 'allowed again': 'Allowed to ask again' };
+  function logged() {
+    var log = data.log || {};
+    return Object.keys(log).map(function (uid) {
+      var e = log[uid] || {};
+      var hist = Object.keys(e.history || {}).map(function (t) { return { at: +t, what: e.history[t] }; }).sort(function (a, b) { return a.at - b.at; });
+      return { uid: uid, email: String(e.email || ''), name: String(e.name || ''), status: String(e.status || ''), statusAt: +e.statusAt || 0,
+               firstAsked: +e.firstAsked || 0, tool: String(e.tool || ''), before: !!e.before, hist: hist,
+               last: Math.max(+e.statusAt || 0, hist.length ? hist[hist.length - 1].at : 0) };
+    }).sort(function (a, b) { return b.last - a.last; });
   }
 
   function say(text, bad) {
@@ -380,7 +438,7 @@
     if (!people.length) {
       var e = document.createElement('div');
       e.className = 'empty';
-      e.textContent = id === 'l-req' ? 'No one waiting.' : 'None.';
+      e.textContent = id === 'l-req' ? 'No one waiting.' : id === 'l-log' ? 'No requests recorded yet.' : 'None.';
       box.appendChild(e);
       return;
     }
@@ -396,6 +454,15 @@
     });
     fill('l-blk', 'h-blk', 'Declined', sorted(data.blocked), function (p) {
       return row(p, 'declined ' + when(p.at), [{ label: 'Allow again', act: 'unblock' }]);
+    });
+    fill('l-log', 'h-log', 'Everyone who asked', logged(), function (e) {
+      var steps = e.hist.map(function (h) { return h.what + (h.at > 1 ? ' ' + when(h.at) : ''); }).join(' → ');
+      var r = row(e, (STATUS[e.status] || e.status) + (e.statusAt > 1 ? ' · ' + when(e.statusAt) : '') + (TOOLS[e.tool] ? ' · asked from ' + TOOLS[e.tool] : ''), []);
+      var h = document.createElement('small');
+      h.className = 'hist';
+      h.textContent = e.before ? 'Decided before this log started' + (steps ? ' · ' + steps : '') : steps;
+      r.firstChild.appendChild(h);
+      return r;
     });
   }
 
@@ -414,6 +481,12 @@
       change['members/' + uid] = null;
     }
     if (kind === 'unblock') change['blocked/' + uid] = null;
+    // the log, in the same write: the decision can never happen without its record
+    var what = { approve: 'approved', decline: 'declined', remove: 'removed', unblock: 'allowed again' }[kind];
+    var now = Date.now(), base = LOG + '/' + uid + '/';
+    change[base + 'status'] = what; change[base + 'statusAt'] = now; change[base + 'history/' + now] = what;
+    if (p.email) change[base + 'email'] = p.email;
+    if (p.name) change[base + 'name'] = p.name;
     btn.disabled = true;
     withTimeout(fb.f.update(ref('/'), change), 12000).then(function () {
       say({ approve: 'Approved ' + label + '. Their sync starts on its own.',

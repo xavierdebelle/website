@@ -19,7 +19,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="description" content="Photographer, cinematographer, tool-builder. Montreal. A mind map of everything I make.">
 <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
-<link rel="stylesheet" href="assets/style.css?v=143">
+<link rel="stylesheet" href="assets/style.css?v=144">
 <script src="assets/account.js"></script>
 <script defer src="assets/stats.js"></script>
 <style>
@@ -121,6 +121,16 @@
   }
   .hud--top a:hover { background: var(--volt); border-color: var(--volt); color: var(--ink); }
 
+  /* inverted (double-tap the mark): the map turns near-white, so the HUD text
+     around it turns dark and crossfades with it. Colours from THEME.light. */
+  .hud, .hud--brand h1, .hud--brand h1 em, .hud--hint b, .ctl, .hud--top a { transition: color .6s ease, background-color .6s ease, border-color .6s ease; }
+  html.inverted .hud { color: #55565a; }
+  html.inverted .hud--brand h1 { color: #101114; }
+  html.inverted .hud--brand h1 em { color: rgb(176,124,6); }
+  html.inverted .hud--hint b { color: #101114; }
+  html.inverted .ctl, html.inverted .hud--top a { background: #f6f6f4; border-color: #101114; color: #101114; }
+  html.inverted .ctl:hover, html.inverted .hud--top a:hover { background: var(--volt); border-color: var(--volt); color: var(--ink); }
+
   /* ============ INDEX (fallback / list view) ============ */
 
   .index {
@@ -207,7 +217,7 @@
 <div class="hud hud--hint" aria-hidden="true">
   <b>Tap the mark</b> to open the map &middot; twice to invert it<br>
   <b>Click</b> a node to open it &middot; <b>Drag</b> to move &middot; <b>Scroll</b> to zoom<br>
-  <span style="opacity:.5">v143</span>
+  <span style="opacity:.5">v144</span>
 </div>
 
 <div class="hud hud--ctl">
@@ -232,6 +242,7 @@
     </div>
     <div class="index__col">
       <h3>Tools</h3>
+      <a href="tools.html">All Tools</a>
       <a href="tools.html#portfolio">Portfolio Makers</a>
       <a href="tools.html#debelle">The Biz</a>
       <a href="tools.html#personal">Personal</a>
@@ -281,6 +292,7 @@ const MAP = [
       { label:"De Belle Photo", href:"https://debellephotography.com/", external:true } ]},
 
   { label:"Tools", children:[
+      { label:"All Tools",        href:"tools.html" },
       { label:"Portfolio Makers", href:"tools.html#portfolio" },
       { label:"The Biz",          href:"tools.html#debelle" },
       { label:"Personal",         href:"tools.html#personal" },
@@ -2158,6 +2170,7 @@ function handleTap(x, y, now){
       lastLogoTap  = -99;
       pendingToggle = 0;                             // cancel the queued toggle
       themeTarget   = 1 - themeTarget;
+      document.documentElement.classList.toggle('inverted', themeTarget === 1);   // the HUD text follows (CSS)
     } else {
       lastLogoTap   = now;
       pendingToggle = now + T.doubleTap;             // fires from the loop
