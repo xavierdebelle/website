@@ -5,6 +5,36 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v145 — 2026-11-06
+
+**What's new** · Update · [tools/production-hub.html]
+### Move the quest cards, and every card field in the hub
+- The red quest cards on In Production now drag like any other card: hold
+  and drag them into another stage, or anywhere in a column.
+- A card opened in the Production Hub now shows every field its pipeline
+  has (dates, prices, notes…), as boxes you can fill in, just like in
+  Pipelines. Before, only fields that already had something in them showed,
+  and they couldn't be edited.
+
+**Production Hub — `tools/production-hub.html`, source `production_hub_v7.html`**
+- Quest cards (`data-qcard`) join the card drag. Their place is kept in the
+  hub doc: `stage[phaseId]` (as before) and new `qbefore[phaseId]` = the id
+  of the Pipelines card it sits before, or `_end`; unset = top of the
+  column (as before). A regular card dropped right above quest cards that
+  sat at the top keeps them below it. Tapping a quest card still opens Big
+  Picture.
+- Card window: all of the pipeline's fields as inputs (text, multi-line,
+  number, money with $, date), written into the Pipelines doc's
+  `card.fields` exactly as Pipelines does; empty clears the field.
+
+**Verified** (mock database, desktop) — quest card dragged to the end of
+another stage, between two cards, back to the top; a regular card dropped
+above it in both cases; tap still opens Big Picture; card window shows every
+field, an edit saves into the Pipelines copy and shows on the board. No
+console errors.
+
+---
+
 ## v144 — 2026-11-06
 
 **What's new** · The map · [index.html]

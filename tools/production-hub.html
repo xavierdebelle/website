@@ -369,8 +369,10 @@ textarea[data-grow]{min-height:40px!important;height:40px;overflow:hidden;resize
 .cw-stage button.on{background:var(--black);color:var(--yellow);border-color:var(--black)}
 .cw-fields{display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;margin-top:8px}
 .cw-fields div{font-size:14px}
-.cw-fields div small{display:block;font:var(--wide);font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:var(--g6)}
-.cw-fields .full{grid-column:1/-1;white-space:pre-wrap}
+.money{position:relative}
+.money span{position:absolute;left:10px;top:50%;transform:translateY(-50%);font-weight:700;color:var(--g6);pointer-events:none}
+#dlg .money input{padding-left:22px}
+.cw-fields .full{grid-column:1/-1}
 .sec-h{margin:16px 0 8px;padding-top:12px;border-top:2px solid var(--black);font:800 14px/1 "Inter Tight",sans-serif;text-transform:uppercase;display:flex;gap:10px;align-items:center}
 .sec-h .bar{flex:1;width:auto}
 .ctask{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line);flex-wrap:wrap}
@@ -960,7 +962,7 @@ function shortCard(t) { return /^\d{6}\S* · /.test(t) ? t.replace(/^\S+ · /, '
 
 /* ============================================================ hub state */
 function defaultHub() {
-  return { lists: [{ id: 'l1', name: 'Tasks' }], tasks: [], brain: [], goals: [], checks: {}, pins: {}, due: {}, stage: {}, show: {} };
+  return { lists: [{ id: 'l1', name: 'Tasks' }], tasks: [], brain: [], goals: [], checks: {}, pins: {}, due: {}, stage: {}, show: {}, qbefore: {} };
 }
 function normHub(s) {
   if (!s || typeof s !== 'object') return null;
@@ -992,6 +994,7 @@ function normHub(s) {
   ['checks', 'pins'].forEach(function (k) { var v = s[k] && typeof s[k] === 'object' ? s[k] : {}; Object.keys(v).forEach(function (x) { if (v[x]) out[k][x] = true; }); });
   var due = s.due && typeof s.due === 'object' ? s.due : {}; Object.keys(due).forEach(function (x) { if (isDate(due[x])) out.due[x] = due[x]; });
   var st = s.stage && typeof s.stage === 'object' ? s.stage : {}; Object.keys(st).forEach(function (x) { if (st[x]) out.stage[x] = String(st[x]); });
+  var qb = s.qbefore && typeof s.qbefore === 'object' ? s.qbefore : {}; Object.keys(qb).forEach(function (x) { if (typeof qb[x] === 'string' && qb[x]) out.qbefore[x] = qb[x]; });
   var sh = s.show && typeof s.show === 'object' ? s.show : {}; Object.keys(sh).forEach(function (x) { if (sh[x] === false) out.show[x] = false; else if (typeof sh[x] === 'string' && sh[x]) out.show[x] = sh[x]; });
   return out;
 }
@@ -1034,6 +1037,13 @@ function fieldText(f, v) {
   if (f.type === 'number') return isNaN(Number(v)) ? String(v) : Number(v).toLocaleString('en-CA') + ' ' + String(f.name).toLowerCase();
   if (f.type === 'multi') { var l = String(v).split('\n')[0]; return l.length > 40 ? l.slice(0, 39) + '…' : l + (String(v).indexOf('\n') > -1 ? '…' : ''); }
   return String(v);
+}
+/* the box for a card field in the card window — the same kinds as in Pipelines */
+function fieldInput(f, v) {
+  v = v == null ? '' : v;
+  if (f.type === 'multi') return '<div class="full"><label>' + esc(f.name) + '</label><textarea data-pf="' + f.id + '" data-grow rows="1">' + esc(v) + '</textarea></div>';
+  if (f.type === 'money') return '<div><label>' + esc(f.name) + '</label><div class="money"><span>$</span><input type="number" step="0.01" min="0" inputmode="decimal" value="' + esc(v) + '" data-pf="' + f.id + '"></div></div>';
+  return '<div><label>' + esc(f.name) + '</label><input type="' + (f.type === 'date' ? 'date' : f.type === 'number' ? 'number' : 'text') + '"' + (f.type === 'number' ? ' step="any" inputmode="decimal"' : '') + ' value="' + esc(v) + '" data-pf="' + f.id + '"></div>';
 }
 function newPlTask(title) { return { id: uid('t'), title: title, done: false, due: null, doneAt: null }; }
 function newPlCard(pl, stageId, title, taskTitles) {
@@ -1295,14 +1305,17 @@ function renderProd() {
   }
   // on the Projects board, each quest's current project (a Project Phases phase) shows too, in red
   var stIds = stagesOf(pl).map(function (s) { return s.id; });
-  var qcards = function (sid) {
-    if (!isProj) return '';
+  /* quest cards sit where you dropped them: before a given card (S.qbefore = card id), at the end ('_end'), or at the top (default) */
+  var qcards = function (sid, colIds) {
+    if (!isProj) return [];
     return quests().map(function (p) { var ph = boardPhase(p); return ph && { p: p, ph: ph, n: phasesOf(p).indexOf(ph) + 1 }; }).filter(Boolean)
       .filter(function (x) { return (stIds.indexOf(S.stage[x.ph.id]) > -1 ? S.stage[x.ph.id] : stIds[0]) === sid; })
       .map(function (x) { var ss = stepsOf(x.ph), dn = ss.filter(stepDone).length, nx = ss.find(function (y) { return !stepDone(y); });
-        return '<div class="pcard quest' + (flashId === x.ph.id ? ' flash' : '') + '" data-qopen="' + x.p.id + '"><div class="pt">' + esc(x.ph.name) + '</div><span class="qtag">Quest · ' + esc(x.p.name) + ' · ' + x.n + '/' + phasesOf(x.p).length + '</span>'
+        var a = S.qbefore[x.ph.id]; x.anchor = a === '_end' ? '_end' : colIds.indexOf(a) > -1 ? a : '_top';
+        x.html = '<div class="pcard quest' + (flashId === x.ph.id ? ' flash' : '') + '" data-qopen="' + x.p.id + '" data-qcard="' + x.p.id + ':' + x.ph.id + '" data-anchor="' + x.anchor + '"><div class="pt">' + esc(x.ph.name) + '</div><span class="qtag">Quest · ' + esc(x.p.name) + ' · ' + x.n + '/' + phasesOf(x.p).length + '</span>'
           + (nx ? '<div class="nx">Next: <b>' + esc(nx.name) + '</b>' + (S.due[nx.id] ? ' ' + dueChip(S.due[nx.id]) : '') + '</div>' : '')
-          + '<div class="pm">' + (ss.length ? '<span class="cl' + (dn === ss.length ? ' full' : '') + '">☑ ' + dn + '/' + ss.length + '</span>' : '') + '<button class="amb" data-menu="q:' + x.p.id + ':' + x.ph.id + '" title="Actions">⋯</button></div></div>'; }).join('');
+          + '<div class="pm">' + (ss.length ? '<span class="cl' + (dn === ss.length ? ' full' : '') + '">☑ ' + dn + '/' + ss.length + '</span>' : '') + '<button class="amb" data-menu="q:' + x.p.id + ':' + x.ph.id + '" title="Actions">⋯</button></div></div>';
+        return x; });
   };
   el.innerHTML = sw + (isProj ? '<p class="model"><b>Today</b> = tasks → <b>In Production</b> = projects → <b>Big Picture</b> = quests. Red cards are the project a quest is on right now; use ⋯ to show another of its projects or take it off the board.</p>' : '')
     + '<div class="phead"><h2>' + esc(pl.name) + '</h2>' + (arch.length ? '<button class="b ghost" data-togglearch>' + (U.showArch ? 'Hide' : 'Show') + ' archived (' + arch.length + ')</button>' : '')
@@ -1311,9 +1324,10 @@ function renderProd() {
     + (lateN ? '<span class="late">' + lateN + ' late</span>' : '') + (stuckN ? '<span class="stuck">' + stuckN + ' stuck 14+ days</span>' : '') + (sum ? '<span class="money-sum">' + money(sum) + ' ' + esc(String(moneyF.name).toLowerCase()) + ' open</span>' : '')
     + (function () { var ms = live.reduce(function (n, c) { return n + cardMs(c); }, 0); return ms ? '<span>⏱ ' + dur(ms) + ' logged</span>' : ''; })() + '</div>'
     + '<div class="pboard">' + stagesOf(pl).map(function (s) {
-      var cs = live.filter(function (c) { return stageOf(pl, c) === s.id; }), qs = qcards(s.id);
-      return '<div class="pcol' + (s.done ? ' donecol' : '') + '" data-col="' + s.id + '"><div class="ch"><b>' + esc(s.name) + (s.done ? ' ✓' : '') + '</b><span>' + (cs.length + (qs.match(/pcard quest/g) || []).length) + '</span></div>'
-        + '<button class="padd" data-padd="' + s.id + '">+ Add a ' + (isProj ? 'project' : 'card') + '</button>' + qs + cs.map(card).join('') + '</div>';
+      var cs = live.filter(function (c) { return stageOf(pl, c) === s.id; }), qs = qcards(s.id, cs.map(function (c) { return c.id; }));
+      var at = function (a) { return qs.filter(function (x) { return x.anchor === a; }).map(function (x) { return x.html; }).join(''); };
+      return '<div class="pcol' + (s.done ? ' donecol' : '') + '" data-col="' + s.id + '"><div class="ch"><b>' + esc(s.name) + (s.done ? ' ✓' : '') + '</b><span>' + (cs.length + qs.length) + '</span></div>'
+        + '<button class="padd" data-padd="' + s.id + '">+ Add a ' + (isProj ? 'project' : 'card') + '</button>' + at('_top') + cs.map(function (c) { return at(c.id) + card(c); }).join('') + at('_end') + '</div>';
     }).join('') + '</div>'
     + (U.showArch && arch.length ? '<div class="panel" style="margin-top:8px"><div class="ph"><h3>Archived</h3></div>' + arch.map(function (c) { return '<div class="srow"><span class="ttl">' + esc(c.title) + '</span><button class="b ghost" data-unarch="' + c.id + '">Restore</button></div>'; }).join('') + '</div>' : '');
 }
@@ -1323,11 +1337,11 @@ function cardDlg(plid, cid) {
   var pl = h.pl, c = h.c, ts = ctasks(c), dn = ts.filter(function (t) { return t.done; }).length, pct = ts.length ? dn / ts.length * 100 : 0, t0 = today(), f = c.fields || {};
   cardOpen = { pl: plid, c: cid };
   var comments = listOf(c.comments).filter(Boolean).slice().reverse().sort(function (a, b) { return String(b.at).localeCompare(String(a.at)); });
-  var fl = cfields(pl).filter(function (x) { return f[x.id] !== undefined && f[x.id] !== ''; });
+  var fl = cfields(pl);
   openDlg('<h3><textarea class="cw-title" id="cw-title" data-grow rows="1" aria-label="Card title">' + esc(c.title) + '</textarea></h3><div class="body">'
-    + '<p class="lead">' + esc(pl.name) + (c.archived ? ' · archived' : '') + ' · <a href="pipelines.html" target="_blank" rel="noopener">fields are edited in Pipelines ↗</a></p>'
+    + '<p class="lead">' + esc(pl.name) + (c.archived ? ' · archived' : '') + '</p>'
     + '<label>Stage</label><div class="cw-stage">' + stagesOf(pl).map(function (s) { return '<button class="' + (s.id === stageOf(pl, c) ? 'on' : '') + '" data-cstage="' + s.id + '">' + esc(s.name) + '</button>'; }).join('') + '</div>'
-    + (fl.length ? '<div class="cw-fields">' + fl.map(function (x) { return '<div class="' + (x.type === 'multi' ? 'full' : '') + '"><small>' + esc(x.name) + '</small>' + esc(x.type === 'multi' ? f[x.id] : fieldText(x, f[x.id])) + '</div>'; }).join('') + '</div>' : '')
+    + (fl.length ? '<div class="cw-fields">' + fl.map(function (x) { return fieldInput(x, f[x.id]); }).join('') + '</div>' : '')
     + '<div class="sec-h">Checklist <span class="pill">' + dn + '/' + ts.length + '</span><span class="bar"><i style="width:' + pct + '%"></i></span></div>'
     + ts.map(function (t) {
       var lk = linkedTo(t.id);
@@ -1356,6 +1370,15 @@ function cardDlg(plid, cid) {
   ttl.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); ttl.blur(); } });
   ttl.addEventListener('input', function () { c.title = ttl.value; savePL(); });
   ttl.addEventListener('change', function () { render(); });
+  box.querySelectorAll('[data-pf]').forEach(function (inp) {
+    inp.addEventListener('input', function () {
+      if (!c.fields || typeof c.fields !== 'object') c.fields = {};
+      var k = inp.getAttribute('data-pf');
+      if (inp.value === '') delete c.fields[k]; else c.fields[k] = inp.value;
+      savePL();
+    });
+    inp.addEventListener('change', function () { render(); });
+  });
   box.querySelectorAll('[data-ctt]').forEach(function (inp) {
     inp.addEventListener('input', function () { var t = ts.find(function (x) { return x.id === inp.getAttribute('data-ctt'); }); if (t) { t.title = inp.value; savePL(); } });
     inp.addEventListener('change', function () { render(); });
@@ -1899,10 +1922,24 @@ sortable({ item: '.task[data-edit]', container: '[data-tlist]', onDrop: function
   t.list = list; S.tasks = reorder(S.tasks, t, b, function (x) { return x.list === list && !(resolve(x) || {}).done; }); flashId = t.id; commit();
 } });
 /* In Production: cards within a stage or into another stage (the order is the Pipelines app's order too) */
-sortable({ item: '.pcard[data-card]', container: '[data-col]', onDrop: function (el, cont, bef) {
+sortable({ item: '.pcard[data-card],.pcard[data-qcard]', container: '[data-col]', onDrop: function (el, cont, bef) {
+  var sid = cont.getAttribute('data-col');
+  var firstCard = cont.querySelector('.pcard[data-card]'), firstId = firstCard && firstCard.getAttribute('data-card');
+  // where a drop lands, as "before this card" / '_top' / '_end'
+  var anchor = !bef ? '_end' : bef.hasAttribute('data-card') ? bef.getAttribute('data-card') : bef.getAttribute('data-anchor');
+  if (el.hasAttribute('data-qcard')) {          // a quest card (a Project Phases phase): its stage and place live in the hub
+    var phid = el.getAttribute('data-qcard').split(':')[1];
+    S.stage[phid] = sid; S.qbefore[phid] = anchor === '_top' && firstId ? firstId : anchor;
+    flashId = phid; return commit();
+  }
   var h = cardHit(el.getAttribute('data-card')); if (!h) return;
-  var sid = cont.getAttribute('data-col'), b = bef && cardsOf(h.pl).find(function (x) { return x.id === bef.getAttribute('data-card'); });
-  moveStage(h.c, sid); h.pl.cards = reorder(cardsOf(h.pl), h.c, b, function (x) { return !x.archived && stageOf(h.pl, x) === sid; }); savePL(); flashId = h.c.id; render();
+  var target = anchor === '_end' ? null : anchor === '_top' ? firstId : anchor;
+  if (bef && bef.hasAttribute('data-qcard') && anchor === '_top') {   // dropped above quest cards that sat at the top: they now sit before the old first card
+    cont.querySelectorAll('.pcard[data-qcard][data-anchor="_top"]').forEach(function (q) { S.qbefore[q.getAttribute('data-qcard').split(':')[1]] = firstId && firstId !== h.c.id ? firstId : '_end'; });
+    if (firstId === h.c.id) target = null;
+  }
+  var b = target && target !== h.c.id ? cardsOf(h.pl).find(function (x) { return x.id === target; }) : null;
+  moveStage(h.c, sid); h.pl.cards = reorder(cardsOf(h.pl), h.c, b, function (x) { return !x.archived && stageOf(h.pl, x) === sid; }); savePL(); flashId = h.c.id; commit();
 } });
 /* Goals: within the year */
 sortable({ item: '.goal[data-goal]', container: '.ggrid', grid: true, onDrop: function (el, cont, bef) {
