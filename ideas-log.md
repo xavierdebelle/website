@@ -783,3 +783,21 @@ its ID forever. Statuses: new, planned, in progress, done, dropped.
 ### IDEA-178 · "Do our team photos match?" checker that leads to a Team headshot day (builds on IDEA-080)
 - **Category:** Tool · **Effort:** S · **Impact:** ★★ · **Status:** new
 - IDEA-080 sets the Team headshot day offer, but nothing shows a company why it needs one. tools/portfolio-grid.html already lays photos into an even grid in the browser; reuse it so an office manager drops in the team's current headshots and sees them side by side at the same crop, with simple flags read from each file (low resolution, landscape vs. portrait, very different brightness or background colour). The result screen says "7 photos, 4 different backgrounds, 2 too small for your website" and offers "Make them match: Team headshot day, from $X per person" into GoHighLevel tagged "headshot-check". Most team pages are a patchwork of selfies and old photos, and seeing it laid out is the moment the buyer decides to fix it.
+
+## 2026-11-07 — Content, the blog, newsletter, Instagram, audience growth
+
+### IDEA-179 · "Thought of the day" on the home page map
+- **Category:** Content · **Effort:** S · **Impact:** ★★ · **Status:** new
+- Food for Thought now holds 16 posts, and they are short (5 to 117 words, about 35 on average: "Love is not enough", "Quick Wins", "The Pillars"), yet index.html only reaches them through a "Food for Thought" leaf in the map and the Index list. Show one post a day under the name and tagline in the home page's left-hand panel (picked by date from blog/posts, so everyone sees the same one that day), in italics, with "Read more thoughts →" linking to food-for-thought.html#<id>. Posts this short are made to be read in passing, the home page gets something new every day for people who come back, and the blog gets traffic from the page most people land on.
+
+### IDEA-180 · "Five questions" interviews with Montreal wedding vendors
+- **Category:** Content · **Effort:** M · **Impact:** ★★ · **Status:** new
+- The wedding-related content ideas so far are written by Xavier alone (venue guides IDEA-066, real weddings IDEA-099, season wrap IDEA-152), and food-for-thought.html has no other voices. Start a monthly post where one planner, florist, DJ or venue coordinator answers the same five couple-facing questions ("What do couples wish they'd booked sooner?", "One thing to cut from the budget?"), with their portrait and links, and end it with "Planning yours? Check my date." Each vendor shares the interview with their own followers and links to it from their site, so every post borrows an audience Xavier doesn't have yet and starts a referral relationship before any wedding together.
+
+### IDEA-181 · Sell the scroll invitation as a de Belle product
+- **Category:** Monetization · **Effort:** M · **Impact:** ★★★ · **Status:** new
+- v146 shipped tools/wedding-invite.html for Enya & Sami: an envelope that opens on scroll, a Baja desert that follows the day, a countdown and a timeline, all drawn in code. Couples already budget for this: the Wedding Hub lists Invitations at $600 (tools/wedding-hub.html, line 334). Turn the piece into a template driven by one data block (names, date, place, palette, schedule) and offer it in the Package Builder as "Animated invitation — $450, made in your colours," with a short reel of Enya & Sami's envelope opening as the launch post on Instagram. It sells something no other Montreal photographer offers, costs a few hours per couple once templated, and every guest who opens it sees de Belle's work before the wedding.
+
+### IDEA-182 · RSVP and meal choice inside the Wedding Invite
+- **Category:** Feature · **Effort:** M · **Impact:** ★★ · **Status:** new
+- tools/wedding-invite.html tells guests when and where, but ends without asking them anything, so the couple still has to chase answers by text and the gift cards only say "soon." Add an RSVP card after the timeline (name, attending yes/no, number of guests, meal choice, a note for the couple) that saves to Firebase, and a private list for the couple with totals they can export. An invitation that collects the replies is what makes it worth paying for (IDEA-181), and the guest count can feed the "Make a guest list" step in the Wedding Hub.
