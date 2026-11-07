@@ -19,7 +19,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="description" content="Every browser tool Xavier de Belle has built — portfolio makers, business tools, personal tools, event builds, generative art and a few archived ones.">
 <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
-<link rel="stylesheet" href="assets/style.css?v=146">
+<link rel="stylesheet" href="assets/style.css?v=147">
 <script src="assets/account.js"></script>
 <script defer src="assets/stats.js"></script>
 <script src="assets/site-index.js"></script>
@@ -515,6 +515,14 @@
         <div class="card__tags"><i>Wallet</i><i>Saves locally</i></div>
         <span class="card__go">Open Tool <span>&#8599;</span><span class="sr-only">(opens in a new tab)</span></span>
       </a>
+
+      <a class="card" href="tools/memory-map.html" target="_blank" rel="noopener" data-cat="personal" data-owner data-keys="memory map memories mind map neural brain claude what claude knows love health success pillars private">
+        <span class="card__no">00</span>
+        <h3>Memory Map</h3>
+        <p>What Claude knows about me, as a living map: who, the businesses, the tools, the people, wired the way it all connects. Mine only.</p>
+        <div class="card__tags"><i>Private</i><i>Only when signed in</i></div>
+        <span class="card__go">Open Tool <span>&#8599;</span><span class="sr-only">(opens in a new tab)</span></span>
+      </a>
     </div>
   </section>
 
@@ -691,7 +699,7 @@
       <a href="mailto:xavier@debellephotography.com">Email</a>
     </div>
   </div>
-  <p class="foot__sig">&copy; <span id="yr"></span> Xavier de Belle &middot; v146</p>
+  <p class="foot__sig">&copy; <span id="yr"></span> Xavier de Belle &middot; v147</p>
 </footer>
 
 <script>
@@ -729,9 +737,28 @@
     document.querySelectorAll('.card[data-private]').forEach(function (c) { c.remove(); });
   }
 
-  document.querySelectorAll('.card').forEach(function (c, i) {
-    c.querySelector('.card__no').textContent = ('0' + (i + 1)).slice(-2);
+  /* Owner-only tools (data-owner) are never shown to anyone else: they are
+     lifted out before anything is counted and put back only once the site
+     account says Xavier himself is signed in. The page such a card opens
+     holds no data of its own (it reads his private Firebase area), so this
+     only decides whether the card is seen. */
+  var ownerCards = [];
+  document.querySelectorAll('.card[data-owner]').forEach(function (c) {
+    var mark = document.createComment(' owner-only card ');
+    c.parentNode.replaceChild(mark, c);
+    ownerCards.push({ card: c, mark: mark });
   });
+
+  function renumber() {
+    document.querySelectorAll('.card').forEach(function (c, i) {
+      c.querySelector('.card__no').textContent = ('0' + (i + 1)).slice(-2);
+    });
+    var total = document.querySelectorAll('.card').length;
+    document.querySelector('.chip[data-filter="all"]').innerHTML = 'All &mdash; ' + total;
+    document.querySelector('.mast .kicker').innerHTML =
+      'The Workshop &mdash; ' + total + ' builds, all in-browser';
+  }
+  renumber();
 
   // a category can empty out entirely once private tools are removed
   document.querySelectorAll('.chip[data-filter]').forEach(function (chip) {
@@ -740,10 +767,7 @@
     if (!document.querySelector('.card[data-cat="' + f + '"]')) chip.remove();
   });
 
-  var n = document.querySelectorAll('.card').length;
-  document.querySelector('.chip[data-filter="all"]').innerHTML = 'All &mdash; ' + n;
-  document.querySelector('.mast .kicker').innerHTML =
-    'The Workshop &mdash; ' + n + ' builds, all in-browser';
+  renumber();   // counts again, now that empty categories are gone
 
   var chips = Array.prototype.slice.call(document.querySelectorAll('.chip'));
   var cards = Array.prototype.slice.call(document.querySelectorAll('.card'));
@@ -798,6 +822,22 @@
   // Run once on load so a section left empty by the private-tool filter
   // doesn't render a heading with nothing beneath it.
   apply();
+
+  // Xavier signed in: his owner-only cards come back, numbered in place.
+  // Signed out again: reload, so they leave the page with him.
+  var ownerShown = false;
+  function ownerCardsFor(S) {
+    if (!S) return;
+    if (S.status === 'owner' && ownerCards.length) {
+      ownerCards.forEach(function (o) { o.mark.parentNode.replaceChild(o.card, o.mark); });
+      ownerCards = []; ownerShown = true;
+      cards = Array.prototype.slice.call(document.querySelectorAll('.card'));
+      renumber(); apply();
+    } else if (ownerShown && S.status === 'signedout') {
+      location.reload();
+    }
+  }
+  if (window.xdbAccount) { window.xdbAccount.on(ownerCardsFor); ownerCardsFor(window.xdbAccount.state()); }
 })();
 </script>
 

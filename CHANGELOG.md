@@ -5,6 +5,38 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v147 — 2026-11-07
+
+**Memory Map — `tools/memory-map.html`, source `Claude memory map/` (local, v10)** (Personal, owner-only)
+- Xavier's map of what Claude knows about him (Organic and Graphic styles,
+  Love / Health / Success filters, phone bottom sheet). Visible to Xavier
+  only, when signed in.
+- **The page holds no data.** Its contents live at
+  `users/<owner uid>/tools/memory-map` = `{data, updatedAt, device}`, which
+  the existing `users` rule lets only his signed-in account read or write.
+  No rules change. Anyone else, signed in or not, gets a "Private" screen and
+  the map code never starts. Signing out with the map open reloads the page.
+- First load on his account: "Load your map" takes the local file
+  `Claude memory map/memory-map-data.json` (kept out of git) and saves it to
+  that path. Later updates: Index → "Update the map from a file".
+- **Owner-only cards** (new on `tools.html`): a card marked `data-owner` is
+  lifted out before anything is counted and put back, numbered in place,
+  only when `xdbAccount` reports `owner`; signing out reloads the page.
+  The card's text is generic.
+- `noindex, nofollow`; visit counter on (his own visits are never counted).
+- Scan: clean — no hosts, endpoints, secrets or personal data in the page.
+
+**Verified** — on the mock database (copy of the site wired to it): signed
+out and another account both get "Private" with nothing loaded; owner with an
+empty path gets "Load your map"; the import writes only under the owner's
+uid and the map opens (132 memories, 111 connected dots); reload reads it
+back intact (pillars, connections, panel). Tools page: owner sees the card
+(33 builds), a signed-out device does not (32, numbering closes the gap).
+Reading the path without sign-in is refused (401) on the mock and on the
+live database. No console errors.
+
+---
+
 ## v146 — 2026-11-06
 
 **What's new** · New piece · [tools.html#art]

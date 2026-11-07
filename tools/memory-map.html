@@ -1,0 +1,1345 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="../assets/logo.svg" type="image/svg+xml">
+<script src="../assets/account.js"></script>
+<script defer src="../assets/stats.js"></script>
+<title>Memory Map — XAVIER DE BELLE</title>
+<style>
+/* Tokens from the site's assets/style.css */
+:root{
+  --ink:#000000; --paper:#ffffff; --volt:#ffe800;
+  --smoke:#141414; --ash:#2a2a2a; --dust:#8a8a8a;
+  --stack:"Helvetica Neue",Helvetica,Arial,"Segoe UI",system-ui,sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --edge:3px; --gut:clamp(16px,4vw,40px);
+  --pbg:var(--ink); --pfg:var(--paper); --pline:var(--ash);
+}
+*{box-sizing:border-box}
+html,body{height:100%;overflow:hidden;margin:0;background:var(--ink);color:var(--paper);font-family:var(--stack);-webkit-font-smoothing:antialiased}
+button{font:inherit}
+
+/* ============ THE MAP ============ */
+#c{display:block;position:fixed;inset:0;width:100%;height:100%;background:var(--ink);touch-action:none;cursor:grab}
+#c.dragging{cursor:grabbing}
+#c.hot{cursor:pointer}
+
+/* ============ HUD (as on the homepage) ============ */
+.hud{position:fixed;z-index:40;font-family:var(--mono);font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--dust)}
+.hud--brand{top:0;left:0;padding:var(--gut);max-width:min(46vw,460px);pointer-events:none}
+.hud--brand h1{font-family:var(--stack);font-weight:900;text-transform:uppercase;letter-spacing:-0.05em;line-height:.84;font-size:clamp(30px,5.2vw,62px);margin:0 0 10px;color:var(--paper)}
+.hud--brand h1 i{font-style:normal;display:block}
+.hud--brand h1 em{font-style:normal;color:var(--volt);display:block}
+.hud--brand p{margin:0;line-height:1.9}
+
+.hud--hint{bottom:0;left:0;padding:var(--gut);line-height:2;pointer-events:none}
+.hud--hint b{color:var(--paper);font-weight:700}
+
+.hud--ctl{bottom:0;right:0;padding:var(--gut);display:flex;gap:8px;align-items:center}
+.ctl{width:42px;height:42px;display:grid;place-items:center;background:var(--ink);border:3px solid var(--paper);color:var(--paper);font-family:var(--stack);font-weight:900;font-size:16px;cursor:pointer;transition:background .15s,color .15s,border-color .15s}
+.ctl:hover,.ctl[aria-pressed="true"]{background:var(--volt);border-color:var(--volt);color:var(--ink)}
+.ctl--wide{width:auto;padding:0 16px;font-size:11px;letter-spacing:.16em;font-family:var(--mono)}
+.ctl:focus-visible,.tab:focus-visible,#q:focus-visible{outline:3px solid var(--volt);outline-offset:2px}
+
+.hud--top{top:0;right:0;padding:var(--gut);display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.tab{padding:11px 16px;border:3px solid var(--paper);color:var(--paper);font-weight:700;background:var(--ink);cursor:pointer;letter-spacing:.22em;text-transform:uppercase;font-family:var(--mono);font-size:10px;transition:background .15s,color .15s,border-color .15s}
+.tab:hover,.tab[aria-pressed="true"]{background:var(--volt);border-color:var(--volt);color:var(--ink)}
+#q{padding:11px 16px;border:3px solid var(--paper);color:var(--paper);background:var(--ink);font-family:var(--mono);font-size:10px;letter-spacing:.22em;text-transform:uppercase;width:250px;font-weight:700}
+#q::placeholder{color:var(--dust)}
+.style-pick{margin-bottom:4px}
+.style-pick .lbl{align-self:center;margin-right:4px}
+.style-pick .tab{padding:8px 12px}
+#pdesc{max-width:250px;text-align:right;line-height:1.7;min-height:1em}
+#pdesc b{color:var(--volt);font-weight:700}
+html.inverted #pdesc b{color:rgb(176,124,6)}
+
+/* ============ PANEL ============ */
+#panel{position:fixed;z-index:60;top:0;right:0;height:100%;width:min(440px,100%);background:var(--pbg);color:var(--pfg);border-left:var(--edge) solid var(--pfg);padding:var(--gut);overflow-y:auto;transform:translateX(105%);transition:transform .45s cubic-bezier(.2,.8,.2,1),background-color .6s,color .6s}
+#panel.open{transform:none}
+#panel .kick{font-family:var(--mono);font-size:10px;letter-spacing:.24em;text-transform:uppercase;color:var(--volt)}
+#panel h2{font-weight:900;letter-spacing:-.05em;line-height:.84;font-size:clamp(34px,5vw,54px);margin:12px 0 20px;text-transform:uppercase;word-break:break-word}
+#panel .body{font-size:15px;line-height:1.6;opacity:.86}
+#panel .body b{opacity:1}
+#panel .src{display:flex;gap:8px;flex-wrap:wrap;margin:20px 0 0}
+#panel .src span{font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;border:2px solid var(--volt);color:var(--volt);padding:5px 8px}
+html.inverted #panel .src span{border-color:rgb(176,124,6);color:rgb(176,124,6)}
+#panel .learned{flex-basis:100%;margin:6px 0 0;font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;opacity:.5}
+#panel h3{font-family:var(--mono);font-size:10px;letter-spacing:.24em;text-transform:uppercase;color:var(--volt);margin:28px 0 6px;padding-top:16px;border-top:var(--edge) solid var(--pfg)}
+#panel ul{list-style:none;margin:0;padding:0}
+#panel li button{all:unset;cursor:pointer;display:block;width:100%;padding:10px 0;border-bottom:2px solid var(--pline);font-weight:900;text-transform:uppercase;font-size:15px;letter-spacing:-.01em}
+#panel li button small{display:block;font-family:var(--mono);font-weight:400;font-size:10px;letter-spacing:.14em;opacity:.55;margin-top:4px}
+#panel li button:hover,#panel li button:focus-visible{color:var(--volt)}
+#panel li button.cross::before{content:"\2194  ";color:var(--volt)}
+#close{position:absolute;top:calc(var(--gut) - 8px);right:calc(var(--gut) - 8px);width:42px;height:42px;background:var(--pbg);border:3px solid var(--pfg);color:var(--pfg);font-weight:900;font-size:18px;cursor:pointer}
+#close:hover{background:var(--volt);border-color:var(--volt);color:var(--ink)}
+
+/* ============ INDEX (as on the homepage) ============ */
+.index{position:fixed;inset:0;z-index:70;background:var(--pbg);color:var(--pfg);overflow-y:auto;padding:var(--gut);display:none}
+.index.is-on{display:block}
+.index h2{font-weight:900;text-transform:uppercase;letter-spacing:-.04em;font-size:clamp(34px,8vw,76px);line-height:.85;margin:0 0 8px}
+.index h2 span{color:var(--volt)}
+.index .kicker{font-family:var(--mono);font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--dust);margin:14px 0 0}
+.index__grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:var(--edge);margin-top:34px;background:var(--pfg);border:var(--edge) solid var(--pfg)}
+.index__col{background:var(--pbg);padding:24px}
+.index__col h3{font-family:var(--mono);font-size:11px;letter-spacing:.24em;color:var(--volt);margin:0 0 18px;text-transform:uppercase}
+.index__col button{all:unset;cursor:pointer;display:block;font-weight:900;text-transform:uppercase;font-size:15px;padding:9px 0;border-bottom:2px solid var(--pline);letter-spacing:-.01em;width:100%}
+.index__col button.sub{font-weight:700;font-size:13px;padding-left:16px;opacity:.75}
+.index__col button:hover{color:var(--volt)}
+.btn{display:inline-block;padding:14px 22px;border:3px solid var(--pfg);background:transparent;color:var(--pfg);font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;font-weight:700;cursor:pointer}
+.btn:hover{background:var(--volt);border-color:var(--volt);color:var(--ink)}
+
+/* inverted (double-tap the mark): same treatment as the homepage */
+.hud,.hud--brand h1,.hud--brand h1 em,.hud--hint b,.ctl,.tab,#q{transition:color .6s ease,background-color .6s ease,border-color .6s ease}
+html.inverted{--pbg:#f6f6f4;--pfg:#101114;--pline:#d6d6d2}
+html.inverted body,html.inverted #c{background:#f6f6f4}
+html.inverted .hud{color:#55565a}
+html.inverted .hud--brand h1{color:#101114}
+html.inverted .hud--brand h1 em{color:rgb(176,124,6)}
+html.inverted .hud--hint b{color:#101114}
+html.inverted .ctl,html.inverted .tab,html.inverted #q{background:#f6f6f4;border-color:#101114;color:#101114}
+html.inverted .ctl:hover,html.inverted .tab:hover,html.inverted .tab[aria-pressed="true"]{background:var(--volt);border-color:var(--volt);color:var(--ink)}
+html.inverted #panel .kick,html.inverted #panel h3,html.inverted .index__col h3,html.inverted .index h2 span{color:rgb(176,124,6)}
+
+body.panel-open .hud--top{opacity:0;pointer-events:none}
+.hud--top{transition:opacity .3s}
+
+/* ============ PHONE ============
+   html.phone = narrow or short screen (set from JS) · html.sheet = narrow:
+   the panel becomes a bottom sheet. Desktop never matches either. */
+:root{--peek:40vh}
+#btnMenu,#btnIndex2,.chips,.grab{display:none}
+.hud--ctl,.hud--brand{transition:opacity .3s}
+html.phone .hud--hint{display:none}
+html.phone .hud--brand{max-width:100%;padding:14px 16px}
+html.phone .hud--brand h1{font-size:clamp(21px,6.4vw,30px);margin-bottom:6px;transition:font-size .3s,margin .3s}
+html.phone .hud--brand h1 i,html.phone .hud--brand h1 em{display:inline}
+html.phone .hud--brand p{font-size:9px;letter-spacing:.18em;line-height:1.7}
+html.phone body.engaged .hud--brand h1{font-size:17px;margin:0}
+html.phone body.engaged .hud--brand p{display:none}
+html.phone .tab{padding:9px 12px;font-size:10px}
+html.phone .style-pick,html.phone #q,html.phone #btnIndex,html.phone #btnIn,html.phone #btnOut{display:none}
+html.phone #btnMenu{display:grid}
+html.phone body.menu-open .style-pick{display:flex}
+html.phone body.menu-open #q{display:block}
+html.phone body.menu-open #btnIndex2{display:inline-block}
+html.phone .tabs[aria-label="Filter by pillar"]{display:none}
+html.phone body.menu-open .tabs[aria-label="Filter by pillar"]{display:flex}
+html.phone #btnMenu[aria-expanded="true"]{background:var(--volt);border-color:var(--volt);color:var(--ink)}
+html.phone .hud--ctl{padding:0 12px 14px}
+html.phone .ctl--wide{padding:0 16px;font-size:10px}
+html.phone body.panel-open .hud--ctl{opacity:0;pointer-events:none}
+html.phone:not(.sheet) .hud--top{padding:12px}
+html.phone:not(.sheet) #panel{width:min(360px,100%)}
+
+html.sheet .hud--top{top:auto;bottom:68px;left:0;right:0;align-items:stretch;padding:0 12px}
+html.sheet .tabs{justify-content:center}
+html.sheet #q{width:100%}
+html.sheet #pdesc{max-width:none;text-align:center}
+html.sheet .hud--ctl{left:0;right:0;justify-content:center}
+
+/* the bottom sheet: peeks with the essentials, swipes up for everything */
+html.sheet #panel{top:auto;bottom:0;left:0;right:0;width:100%;height:86vh;height:86dvh;border-left:0;border-top:var(--edge) solid var(--pfg);padding:6px 18px 28px;display:flex;flex-direction:column;overflow:hidden;transform:translateY(105%)}
+html.sheet #panel.open{transform:translateY(calc(100% - var(--peek)))}
+html.sheet #panel.open.full{transform:none;overflow-y:auto}
+html.sheet #panel.open:not(.full){touch-action:none}
+html.sheet .grab{display:block;order:0;flex:none;height:26px;margin:0 -18px 2px;touch-action:none;cursor:grab;position:relative}
+html.sheet .grab::before{content:"";position:absolute;left:50%;top:9px;width:46px;height:4px;margin-left:-23px;background:var(--pfg);opacity:.45}
+html.sheet #panel .kick{order:1}
+html.sheet #panel h2{order:2;font-size:clamp(26px,8vw,38px);margin:8px 52px 4px 0}
+html.sheet #panel .src{order:3;margin:10px 0 0}
+html.sheet .chips{order:4}
+html.sheet #panel .body{order:5;margin-top:18px}
+html.sheet #panel h3{order:6}
+html.sheet #panel ul{order:7}
+html.sheet #close{top:22px;right:14px;width:38px;height:38px}
+html.sheet .chips{display:flex;gap:8px;overflow-x:auto;margin:14px -18px 0;padding:0 18px 6px;touch-action:pan-x;scrollbar-width:none;flex:none}
+html.sheet .chips::-webkit-scrollbar{display:none}
+.chips button{flex:none;font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;padding:10px 12px;border:2px solid var(--pfg);background:var(--pbg);color:var(--pfg);cursor:pointer;white-space:nowrap}
+.chips button.x{border-color:var(--volt);color:var(--volt)}
+.chips button.x::before{content:"\2194  "}
+html.inverted .chips button.x{border-color:rgb(176,124,6);color:rgb(176,124,6)}
+
+/* a short hint that appears and fades */
+#toast{position:fixed;left:50%;top:64px;transform:translateX(-50%);z-index:45;font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;background:var(--ink);color:var(--paper);border:3px solid var(--paper);padding:9px 12px;opacity:0;transition:opacity .35s;pointer-events:none;width:max-content;max-width:min(92vw,520px);text-align:center;line-height:1.6}
+#toast.show{opacity:1}
+html.inverted #toast{background:#f6f6f4;color:#101114;border-color:#101114}
+
+/* ============ GATE: only Xavier's account gets past this ============ */
+body.locked .hud, body.locked #c, body.locked #panel{visibility:hidden}
+#gate{position:fixed;inset:0;z-index:90;background:var(--ink);display:grid;place-items:center;padding:var(--gut)}
+#gate[hidden]{display:none}
+.gate__box{max-width:540px;width:100%}
+.gate__kick{font-family:var(--mono);font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--volt);margin:0}
+#gate h2{font-weight:900;text-transform:uppercase;letter-spacing:-.05em;line-height:.84;font-size:clamp(46px,11vw,96px);margin:14px 0 18px}
+#gate p{font-size:15px;line-height:1.6;color:#cfcfcf;margin:0 0 26px}
+.gate__row{display:flex;gap:10px;flex-wrap:wrap}
+.gate__row .btn{text-decoration:none}
+.gate__row .btn[hidden]{display:none}
+#updateRow{margin-top:18px}
+</style>
+</head>
+<body class="locked">
+
+<section id="gate" aria-live="polite">
+  <div class="gate__box">
+    <p class="gate__kick">Memory Map</p>
+    <h2 id="gateTitle">Private</h2>
+    <p id="gateText">Checking who you are&hellip;</p>
+    <div class="gate__row">
+      <button class="btn" id="gateSignIn" type="button" hidden>Sign in</button>
+      <label class="btn" id="gateLoad" hidden>Load your map file<input type="file" id="gateFile" accept=".json,application/json" hidden></label>
+      <a class="btn" href="../tools.html">Back to the tools</a>
+    </div>
+  </div>
+</section>
+
+<canvas id="c" role="img" aria-label="Neural mind map of everything Claude knows about Xavier. Click a node to read it. A full text index is behind the Index button."></canvas>
+
+<header class="hud hud--brand">
+  <h1><i>Xavier</i> <i>de</i> <em>Belle</em></h1>
+  <p>What Claude knows about you<br><span id="count"></span><br>Memory map v10 &middot; 2026-11-07</p>
+</header>
+
+<div class="hud hud--top">
+  <div class="tabs style-pick" role="group" aria-label="Map style">
+    <span class="lbl">Style</span>
+    <button class="tab" data-s="organic" aria-pressed="true">Organic</button>
+    <button class="tab" data-s="graphic" aria-pressed="false">Graphic</button>
+    <button class="tab" id="btnIndex2" type="button">Index</button>
+  </div>
+  <div class="tabs" role="group" aria-label="Filter by pillar">
+    <button class="tab" data-f="all" aria-pressed="true">All</button>
+    <button class="tab" data-f="L" aria-pressed="false" title="Partner, family, friends, relationships">Love</button>
+    <button class="tab" data-f="H" aria-pressed="false" title="Mental health, physical health">Health</button>
+    <button class="tab" data-f="S" aria-pressed="false" title="Your purpose, what you're valued for, work, projects">Success</button>
+  </div>
+  <input id="q" type="search" placeholder="Search the map" autocomplete="off" aria-label="Search the map">
+  <div id="pdesc" aria-live="polite"></div>
+</div>
+
+<div class="hud hud--hint" aria-hidden="true">
+  <b>Click</b> a node to open it &middot; <b>Drag</b> to move &middot; <b>Scroll</b> to zoom<br>
+  <b>Tap the mark</b> to fire it &middot; twice to invert it<br>
+  <span style="opacity:.5">v10</span>
+</div>
+
+<div class="hud hud--ctl">
+  <button class="ctl ctl--wide" id="btnMenu" type="button" aria-expanded="false">Menu</button>
+  <button class="ctl ctl--wide" id="btnIndex" type="button">Index</button>
+  <button class="ctl" id="btnOut" type="button" aria-label="Zoom out">&minus;</button>
+  <button class="ctl" id="btnIn" type="button" aria-label="Zoom in">+</button>
+  <button class="ctl ctl--wide" id="btnReset" type="button">Recentre</button>
+</div>
+
+<aside id="panel" aria-live="polite">
+  <div class="grab" aria-hidden="true"></div>
+  <button id="close" aria-label="Close">&times;</button>
+  <div class="kick" id="pk"></div>
+  <h2 id="pt"></h2>
+  <div class="chips" id="pc" aria-label="Connections"></div>
+  <div class="body" id="pb"></div>
+  <div class="src" id="ps"></div>
+  <h3>Connected to</h3>
+  <ul id="pl"></ul>
+</aside>
+
+<div id="toast" role="status"></div>
+
+<section class="index" id="index-view" aria-label="Text index of every memory">
+  <h2>The <span>Index</span></h2>
+  <p class="kicker">Everything Claude knows, as a plain list</p>
+  <div class="index__grid" id="indexGrid"></div>
+  <p style="margin-top:34px"><button class="btn" id="btnIndexClose" type="button">Back to the map</button></p>
+  <p id="updateRow"><label class="btn">Update the map from a file<input type="file" id="updateFile" accept=".json,application/json" hidden></label></p>
+</section>
+
+<script>
+"use strict";
+function startMap(D){
+const ROOT = D.root, DATA = D.nodes, CROSS = D.cross, PILLARS = D.pillars;
+
+/* ==========================================================================
+   1 · DATA  — identical to v2
+   sources: c = Claude Code · a = Claude.ai · w = Cowork
+   ========================================================================== */
+/* (the map's contents are not in this file: they load from Xavier's private
+   Firebase area after he signs in — see the gate at the bottom) */
+
+const SRC_NAME = { c: "Claude Code", a: "Claude.ai", w: "Cowork" };
+
+/* The three pillars: L = Love (partner, family, friends, relationships)
+   H = Health (mental and physical) · S = Success (purpose, what you're valued
+   for, work, projects). A memory can sit in more than one. Branches take the
+   union of everything inside them. */
+const PILLAR_NAME = { L: "Love", H: "Health", S: "Success" };
+const PILLAR_DESC = {
+  L: "Partner, family, friends, relationships",
+  H: "Mental health, physical health",
+  S: "Your purpose, what you're valued for, work, projects"
+};
+
+
+
+/* ==========================================================================
+   2 · COLOUR TOKENS — the homepage's two themes, crossfaded
+   ========================================================================== */
+const THEME = {
+  dark : { bg:[0,0,0], particle:[255,255,255], accent:[243,201,63],
+           label:[236,238,242], labelDim:[176,180,190], alphaK:1.00 },
+  light: { bg:[246,246,244], particle:[8,8,10], accent:[176,124,6],
+           label:[16,17,20], labelDim:[96,100,108], alphaK:0.86 }
+};
+
+/* ==========================================================================
+   3 · MOTION + FORM TUNING — the homepage's numbers, adapted to 132 nodes
+   ========================================================================== */
+const T = {
+  cloudDesktop:5200, cloudMobile:2200, filamentShare:0.64,
+  yawSpeed:0.030, tiltBase:0.20, tiltSwing:0.11, tiltRate:0.017,
+  driftAmp:13,
+  nAnchor:76, nChild:22, nLeaf:14,
+  orbitAnchor:17, orbitChild:9.5, orbitLeaf:7,
+  linkSpacing:9.5, crossSpacing:15, linkJitter:2.4,
+  breathPeriod:7.0, breathBright:0.26, breathOrbit:0.11,
+  fireRate:1.15, fireTravel:0.62, fireWidth:0.30, fireNodeDecay:0.85, cascadeChance:0.55,
+  bloomSpread:0.85, bloomJitter:0.30,
+  zoomRange:[0.18, 3.2], tapSlop:7, doubleTap:0.32, themeEase:0.075
+};
+const S = 0.45;            // v2 layout units → homepage layout units
+
+/* logo — the four triangles of the mark (same source as the homepage) */
+const LOGO = [
+  [[184,81],[555,81],[749,693]], [[1015,81],[1386,81],[821,693]],
+  [[184,1503],[563,1503],[762,876]], [[1007,1503],[1386,1503],[808,876]]
+].map(tri => tri.map(p => [(p[0]-785.5)/1584, (p[1]-792)/1584]));
+
+/* ==========================================================================
+   4 · GRAPH + LAYOUT — v2's force layout, unchanged
+   ========================================================================== */
+const nodes = [], byId = {};
+function addNode(row){
+  const [id, parent, label, text, src] = row;
+  const n = { id, parent, label, text, src, level:0, kids:[], links:[],
+    x:0, y:0, vx:0, vy:0, fixed:false, branch:null, fireAt:-99, labelA:0, idx:nodes.length };
+  nodes.push(n); byId[id] = n; return n;
+}
+addNode(ROOT); DATA.forEach(addNode);
+nodes.forEach(n => { if(n.parent) byId[n.parent].kids.push(n); });
+(function depth(n, d, br){ n.level = d; n.branch = br; n.kids.forEach(k => depth(k, d+1, d===0 ? k : br)); })(byId.me, 0, null);
+
+nodes.forEach(n => { n.p = PILLARS[n.id] || ""; });
+branches_union: {
+  const up = n => { n.kids.forEach(k => { up(k); for(const c of k.p) if(!n.p.includes(c)) n.p += c; }); };
+  byId.me.kids.forEach(up);
+}
+const links = [];
+nodes.forEach(n => { if(n.parent) links.push({ a:byId[n.parent], b:n, cross:false, why:"" }); });
+CROSS.forEach(([a,b,why]) => { if(byId[a] && byId[b]) links.push({ a:byId[a], b:byId[b], cross:true, why }); });
+links.forEach((l,i) => { l.i = i; l.a.links.push(l); l.b.links.push(l); l.fireAt = -99; l.dir = 1; l.done = 1;
+  l.bend = (l.cross ? 0.20 : 0.06) * (Math.random() < .5 ? -1 : 1) * (0.6 + Math.random()*0.8); });
+const branches = byId.me.kids;
+document.getElementById("count").textContent =
+  nodes.length + " memories · " + branches.length + " branches · " + CROSS.length + " connected dots";
+
+branches.forEach((b,i) => {
+  const ang = -Math.PI/2 + i*(Math.PI*2/branches.length);
+  b.ang = ang; b.x = Math.cos(ang)*520; b.y = Math.sin(ang)*520;
+  b.kids.forEach((k,j) => {
+    const t = b.kids.length > 1 ? j/(b.kids.length-1) - .5 : 0;
+    const a2 = ang + t*0.5; k.ang = a2;
+    const R = 820 + (j%2)*130;
+    k.x = Math.cos(a2)*R; k.y = Math.sin(a2)*R;
+    k.kids.forEach((g,m) => { g.ang = a2 + (m-(k.kids.length-1)/2)*0.12; g.x = Math.cos(g.ang)*(R+160); g.y = Math.sin(g.ang)*(R+160); });
+  });
+});
+let heat = 1;
+function step(){
+  if(heat < 0.002) return;
+  const N = nodes.length;
+  for(let i=0;i<N;i++){
+    const a = nodes[i];
+    for(let j=i+1;j<N;j++){
+      const b = nodes[j];
+      let dx = b.x-a.x, dy = b.y-a.y, d2 = dx*dx+dy*dy+0.01;
+      if(d2 > 640000) continue;
+      const ra = a.level===0?3:a.level===1?2:1, rb = b.level===0?3:b.level===1?2:1;
+      const f = 4200*ra*rb/d2*heat, d = Math.sqrt(d2);
+      dx/=d; dy/=d; a.vx-=dx*f; a.vy-=dy*f; b.vx+=dx*f; b.vy+=dy*f;
+    }
+  }
+  links.forEach(l => {
+    const a = l.a, b = l.b;
+    const len = l.cross ? 480 : (a.level===0 ? 500 : a.level===1 ? 210 : 120);
+    const k = l.cross ? 0.0008 : 0.04;
+    let dx = b.x-a.x, dy = b.y-a.y, d = Math.sqrt(dx*dx+dy*dy)||1;
+    const f = (d-len)*k*heat; dx/=d; dy/=d;
+    a.vx+=dx*f; a.vy+=dy*f; b.vx-=dx*f; b.vy-=dy*f;
+  });
+  branches.forEach(b => { b.vx += (Math.cos(b.ang)*520-b.x)*0.012*heat; b.vy += (Math.sin(b.ang)*520-b.y)*0.012*heat; });
+  nodes.forEach(n => {
+    if(n.level < 2 || n.ang === undefined) return;
+    const R = n.level===2 ? 880 : 1120;
+    n.vx += (Math.cos(n.ang)*R-n.x)*0.0035*heat; n.vy += (Math.sin(n.ang)*R-n.y)*0.0035*heat;
+  });
+  nodes.forEach(n => {
+    if(n.id === "me"){ n.x = n.y = n.vx = n.vy = 0; return; }
+    if(n.fixed){ n.vx = n.vy = 0; return; }
+    n.vx*=0.82; n.vy*=0.82; n.x+=n.vx; n.y+=n.vy;
+  });
+  heat *= 0.996;
+}
+for(let i=0;i<500;i++) step();
+heat = 0.25;
+let AX = 1, AY = 1;   // portrait phones stretch the circle into a tall oval
+const LX = n => n.x*S*AX, LY = n => n.y*S*AY;   // layout position (homepage units)
+
+/* ==========================================================================
+   5 · CANVAS + VIEWPORT
+   ========================================================================== */
+const cv = document.getElementById("c");
+const ctx = cv.getContext("2d", { alpha:false });
+let W=0, H=0, cw=0, ch=0, dpr=1, isSmall=false, phone=false, sheetMode=false;
+const rmq = window.matchMedia ? matchMedia("(prefers-reduced-motion: reduce)") : null;
+let reduced = rmq ? rmq.matches : false;
+if(rmq && rmq.addEventListener) rmq.addEventListener("change", e => { reduced = e.matches; });
+function resize(){
+  dpr = Math.min(window.devicePixelRatio||1, 2);
+  W = innerWidth; H = innerHeight; cw = W*dpr; ch = H*dpr;
+  cv.width = cw; cv.height = ch; isSmall = W < 820;
+  phone = W < 820 || H < 500; sheetMode = W < 820;
+  const portrait = isSmall && H > W*1.15;
+  AX = portrait ? 0.74 : 1; AY = portrait ? 1.34 : 1;
+  document.documentElement.classList.toggle("phone", phone);
+  document.documentElement.classList.toggle("sheet", sheetMode);
+}
+resize();
+if(isSmall){ T.nAnchor = 58; T.nChild = 16; T.nLeaf = 10; T.crossSpacing = 22; }   // lighter on phones
+
+/* ==========================================================================
+   6 · PARTICLES — flat typed arrays, allocated once
+   kind 0 = free (the cloud) · 1 = node orbit · 2 = link chain
+   ========================================================================== */
+let mapHalfW = 400, mapHalfH = 400;
+function measureMap(){
+  let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
+  nodes.forEach(n => { x0=Math.min(x0,LX(n)); x1=Math.max(x1,LX(n)); y0=Math.min(y0,LY(n)); y1=Math.max(y1,LY(n)); });
+  mapHalfW = Math.max(Math.abs(x0),Math.abs(x1)); mapHalfH = Math.max(Math.abs(y0),Math.abs(y1));
+}
+measureMap();
+const RX = mapHalfW*1.22, RY = mapHalfH*1.22, RZ = Math.max(RX,RY)*0.75, FOV = 2.9*Math.max(RX,RY);
+
+const nFree = isSmall ? T.cloudMobile : T.cloudDesktop;
+const plan = [];  // [kind, owner, param]
+nodes.forEach(n => {
+  if(n.level === 0) return;           // the root holds no particles: the mark lives there
+  const c = n.level===1 ? T.nAnchor : n.level===2 ? T.nChild : T.nLeaf;
+  for(let i=0;i<c;i++) plan.push([1, n.idx, i/c]);
+});
+links.forEach(l => {
+  const len = Math.hypot(LX(l.b)-LX(l.a), LY(l.b)-LY(l.a))*1.05;
+  const m = Math.max(3, Math.min(160, Math.round(len/(l.cross ? T.crossSpacing : T.linkSpacing))));
+  for(let k=1;k<m;k++) plan.push([2, l.i, k/m]);
+});
+const N = nFree + plan.length;
+const F = () => new Float32Array(N);
+const kind = new Uint8Array(N), own = new Int32Array(N);
+const hx=F(), hy=F(), hz=F(), px=F(), py=F(), vx=F(), vy=F(),
+      prm=F(), oa=F(), orr=F(), ofl=F(), orot=F(), rate=F(), jit=F(),
+      bri=F(), szb=F(), dph=F(), drt=F(), t0=F(), stiff=F(), damp=F(), zdep=F();
+
+/* cloud: strands along smooth 3D curves, then dust */
+function rnd3(){ let x,y,z; do { x=Math.random()*2-1; y=Math.random()*2-1; z=Math.random()*2-1; } while(x*x+y*y+z*z>1); return [x*RX,y*RY,z*RZ]; }
+const strands = [];
+for(let s=0;s<46;s++){ const cps=[]; for(let k=0;k<5;k++){ const p = rnd3(); cps.push(p); } strands.push(cps); }
+function splineAt(cps, t){
+  const n = cps.length, f = t*(n-1); let i = Math.min(n-2, Math.floor(f)); const u = f-i;
+  const p0 = cps[Math.max(0,i-1)], p1 = cps[i], p2 = cps[i+1], p3 = cps[Math.min(n-1,i+2)];
+  const o = [];
+  for(let d=0;d<3;d++) o[d] = 0.5*((2*p1[d]) + (-p0[d]+p2[d])*u + (2*p0[d]-5*p1[d]+4*p2[d]-p3[d])*u*u + (-p0[d]+3*p1[d]-3*p2[d]+p3[d])*u*u*u);
+  return o;
+}
+function gauss(){ return (Math.random()+Math.random()+Math.random()-1.5)*1.15; }
+for(let i=0;i<N;i++){
+  let p;
+  if(Math.random() < T.filamentShare){ const s = strands[(Math.random()*strands.length)|0]; p = splineAt(s, Math.random()); p[0]+=gauss()*22; p[1]+=gauss()*22; p[2]+=gauss()*22; }
+  else p = rnd3();
+  hx[i]=p[0]; hy[i]=p[1]; hz[i]=p[2];
+  dph[i]=Math.random()*6.283; drt[i]=0.035+Math.random()*0.05;
+  if(i < nFree){
+    kind[i]=0; bri[i]=0.14+Math.random()*0.5; szb[i]=0.8+Math.random()*1.25;
+  } else {
+    const pl = plan[i-nFree]; kind[i]=pl[0]; own[i]=pl[1]; prm[i]=pl[2];
+    if(kind[i]===1){
+      const n = nodes[own[i]];
+      oa[i] = prm[i]*6.283 + Math.random()*0.4;
+      const base = n.level===1 ? T.orbitAnchor : n.level===2 ? T.orbitChild : T.orbitLeaf;
+      orr[i] = base*(0.55+Math.random()*0.6);
+      ofl[i] = 0.45 + Math.random()*0.55; orot[i] = Math.random()*6.283;
+      rate[i] = (0.25+Math.random()*0.5)*(Math.random()<.5?-1:1);
+      bri[i] = n.level===1 ? 0.62+Math.random()*0.38 : 0.5+Math.random()*0.4;
+      szb[i] = n.level===1 ? 1.2+Math.random()*1.3 : 1.0+Math.random()*1.0;
+      stiff[i] = 0.115+Math.random()*0.1; damp[i] = 0.80;
+    } else {
+      const l = links[own[i]];
+      jit[i] = (Math.random()*2-1)*T.linkJitter*(l.cross?1.3:1);
+      rate[i] = 0.6+Math.random()*0.9;
+      bri[i] = l.cross ? 0.30+Math.random()*0.25 : 0.50+Math.random()*0.35;
+      szb[i] = l.cross ? 0.9+Math.random()*0.7 : 1.1+Math.random()*0.9;
+      stiff[i] = 0.07+Math.random()*0.06; damp[i] = 0.83;
+    }
+  }
+}
+
+/* ==========================================================================
+   7 · CAMERA + THEME
+   ========================================================================== */
+let camX=0, camY=0, zoom=0.5, camTX=0, camTY=0, zoomT=0.5;
+function fit(){
+  if(sheetMode){   // phones: frame by the names that are actually showing
+    const list = nodes.filter(visible);
+    const f = frameNodes(list, 60, 80, T.zoomRange[0], 1.4, false);
+    camTX = f.cx; camTY = f.cy; zoomT = f.k; return;
+  }
+  let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
+  nodes.forEach(n => { if(!visible(n)) return; x0=Math.min(x0,LX(n)); x1=Math.max(x1,LX(n)); y0=Math.min(y0,LY(n)); y1=Math.max(y1,LY(n)); });
+  const k = Math.min(W/(x1-x0+320), (H-110)/(y1-y0+150), 1.4);
+  zoomT = clamp(k, T.zoomRange[0], T.zoomRange[1]); camTX = (x0+x1)/2; camTY = (y0+y1)/2;
+}
+/* How far a node's name hangs off its dot, in screen px, at zoom k — matching
+   how each style actually draws it. Hidden names count as just the dot. */
+function labelHang(n, k, withKids){
+  const stack = getComputedStyle(document.documentElement).getPropertyValue("--stack");
+  const g = style === "graphic", kk = k*S;
+  if(n.level === 0) return [50, 50, 50, 50];
+  if(n.level === 1){
+    if(g){ const size = Math.max(13, 26*kk), r = 13*Math.max(0.6, Math.min(kk, 1.6));
+      ctx.font = "900 " + size + "px " + stack; const w = ctx.measureText(n.label.toUpperCase()).width + r + 14;
+      return sheetMode ? [w/2, w/2, r+4, r + size*1.6] : n.x >= 0 ? [r+4, w, size, size] : [w, r+4, size, size]; }
+    ctx.font = "600 " + (isSmall ? 10.5 : 11.5) + "px " + FONT;
+    const w = ctx.measureText(n.label.toUpperCase()).width*1.15 + 10;
+    return [w/2, w/2, 20, 40];
+  }
+  const shown = withKids || (g ? kk > 0.36 : k > (n.level === 2 ? 1.05 : 1.35));
+  if(!shown) return [8, 8, 8, 8];
+  if(g){ const size = Math.max(11, 13*Math.min(kk, 1.4)); ctx.font = "600 " + size + "px " + stack;
+    const w = ctx.measureText(n.label).width + 22; return n.x >= byId[n.parent].x ? [8, w, 14, 14] : [w, 8, 14, 14]; }
+  ctx.font = "400 " + (isSmall ? 9.5 : 10.5) + "px " + FONT;
+  const w = ctx.measureText(n.label).width + 18, lox = n.lox || 0;
+  return Math.abs(lox) > 0.58 ? (lox > 0 ? [8, w, 14, 14] : [w, 8, 14, 14]) : [w/2, w/2, 24, 30];
+}
+function frameNodes(list, top, bottom, kmin, kmax, withKids){
+  const availW = W - 20, availH = H - top - bottom - 30;
+  let k = zoomT || 0.6, px0 = 0, px1 = 0, py0 = 0, py1 = 0;
+  for(let it=0; it<8; it++){
+    px0 = 1e9; px1 = -1e9; py0 = 1e9; py1 = -1e9;
+    list.forEach(n => { const h = labelHang(n, k, withKids), x = LX(n)*k, y = LY(n)*k;
+      px0 = Math.min(px0, x - h[0]); px1 = Math.max(px1, x + h[1]); py0 = Math.min(py0, y - h[2]); py1 = Math.max(py1, y + h[3]); });
+    const f = Math.min(availW/(px1-px0), availH/(py1-py0));
+    k = clamp(k*Math.pow(f, 0.85), kmin, kmax);
+  }
+  return { k, cx: ((px0+px1)/2)/k, cy: ((py0+py1)/2)/k + ((bottom-top)/2)/k };
+}
+let themeT=0, themeTarget=0, themeBuilt=-1;
+const CUR = { bg:"#000", particle:"255,255,255", accent:"243,201,63", label:"rgba(236,238,242,", labelDim:"rgba(176,180,190," };
+const WB = 14, GB = 8, STYLES = new Array(WB+GB);
+const bucket = []; for(let b=0;b<WB+GB;b++) bucket.push(new Int32Array(N));
+const bCount = new Int32Array(WB+GB);
+function mix3(a,b,t){ return ((a[0]+(b[0]-a[0])*t)|0)+","+((a[1]+(b[1]-a[1])*t)|0)+","+((a[2]+(b[2]-a[2])*t)|0); }
+function applyTheme(t){
+  const A = THEME.dark, B = THEME.light;
+  CUR.bg = "rgb("+mix3(A.bg,B.bg,t)+")"; CUR.particle = mix3(A.particle,B.particle,t); CUR.accent = mix3(A.accent,B.accent,t);
+  CUR.label = "rgba("+mix3(A.label,B.label,t)+","; CUR.labelDim = "rgba("+mix3(A.labelDim,B.labelDim,t)+",";
+  const ak = A.alphaK+(B.alphaK-A.alphaK)*t;
+  for(let i=0;i<WB;i++) STYLES[i] = "rgba("+CUR.particle+","+(((i+0.5)/WB)*0.92*ak).toFixed(4)+")";
+  for(let i=0;i<GB;i++) STYLES[WB+i] = "rgba("+CUR.accent+","+(((i+0.6)/GB)*0.96).toFixed(4)+")";
+  themeBuilt = t;
+}
+applyTheme(0);
+
+/* ==========================================================================
+   8 · STATE
+   ========================================================================== */
+let filter="all", query="", sel=null, hover=null, selAt=-9, selCross=null, focusB=null, preview=null;
+function visible(n){ return filter==="all" || n.level===0 || n.p.includes(filter); }
+function matches(n){ if(!query) return false; return (n.label+" "+n.text.replace(/<[^>]+>/g,"")).toLowerCase().includes(query.toLowerCase()); }
+const dimN = new Float32Array(nodes.length);
+function computeDim(){
+  const focus = sel || preview || hover;
+  let near = focus ? new Set([focus]) : null;
+  if(focus) focus.links.forEach(l => { near.add(l.a); near.add(l.b); });
+  else if(focusB){ near = new Set(); const add = n => { near.add(n); n.kids.forEach(add); }; add(focusB); }
+  const anyMatch = query && nodes.some(matches);
+  nodes.forEach((n,i) => {
+    let d = 1;
+    if(!visible(n)) d = 0.05;
+    else if(near) d = near.has(n) ? 1 : 0.16;
+    else if(anyMatch) d = matches(n) ? 1 : 0.16;
+    dimN[i] += (d - dimN[i])*0.12;
+  });
+  return near;
+}
+dimN.fill(1);
+
+/* ==========================================================================
+   9 · FIRING — a brightness wave along a link's own particle chain
+   ========================================================================== */
+function linkVisible(l){ return visible(l.a) && visible(l.b); }
+function fireLink(l, from, when){
+  if(!linkVisible(l)) return;
+  if(when - l.fireAt < T.fireTravel*1.15) return;
+  l.fireAt = when; l.done = 0; l.dir = (l.a === from) ? 1 : -1;
+}
+function fireNode(n, now){
+  n.fireAt = now;
+  n.links.forEach((l,k) => fireLink(l, n, now + 0.05 + (l.cross ? 0.12 : 0) + k*0.01));
+}
+function updateFirings(now, breath, dt){
+  if(!reduced){
+    const p = T.fireRate*dt*(0.10 + breath*breath*breath*1.35)*2.2;
+    if(Math.random() < p){
+      for(let tries=0; tries<12; tries++){ const l = links[(Math.random()*links.length)|0];
+        if(linkVisible(l)){ fireLink(l, Math.random()<.5 ? l.a : l.b, now); break; } }
+    }
+  }
+  links.forEach(l => {
+    if(l.done) return;
+    if(now - l.fireAt >= T.fireTravel*(l.cross ? 1.6 : 1)){
+      l.done = 1;
+      const to = l.dir > 0 ? l.b : l.a;
+      to.fireAt = now;
+      if(!reduced && breath > 0.72 && Math.random() < T.cascadeChance){
+        let spilled = 0;
+        to.links.forEach(m => { if(m !== l && spilled < 3 && linkVisible(m)){ fireLink(m, to, now + 0.04 + spilled*0.07); spilled++; } });
+      }
+    }
+  });
+}
+
+/* ==========================================================================
+   10 · FRAME
+   ========================================================================== */
+const MASK_CELL = 40;
+let maskCols = 0, maskRows = 0, mask = new Float32Array(1);
+function buildMask(near){
+  maskCols = Math.ceil(W/MASK_CELL)+1; maskRows = Math.ceil(H/MASK_CELL)+1;
+  if(mask.length < maskCols*maskRows) mask = new Float32Array(maskCols*maskRows);
+  mask.fill(0, 0, maskCols*maskRows);
+  const carve = (sx, sy, rx, ry, k) => {
+    const c0 = Math.max(0, ((sx-rx)/MASK_CELL)|0), c1 = Math.min(maskCols-1, ((sx+rx)/MASK_CELL)|0);
+    const r0 = Math.max(0, ((sy-ry)/MASK_CELL)|0), r1 = Math.min(maskRows-1, ((sy+ry)/MASK_CELL)|0);
+    for(let r=r0;r<=r1;r++) for(let c=c0;c<=c1;c++){
+      const dx = ((c+0.5)*MASK_CELL - sx)/rx, dy = ((r+0.5)*MASK_CELL - sy)/ry, d = dx*dx+dy*dy;
+      if(d < 1){ const v = (1-d)*k; const o = r*maskCols+c; if(v > mask[o]) mask[o] = v; }
+    }
+  };
+  carve(W/2 - camX*zoom, H/2 - camY*zoom, 90, 90, 1);
+  nodes.forEach(n => {
+    if(n.level === 0 || n.labelA < 0.05) return;
+    const sx = (LX(n)-camX)*zoom + W/2, sy = (LY(n)-camY)*zoom + H/2;
+    if(sx < -150 || sx > W+150 || sy < -60 || sy > H+60) return;
+    if(n.level === 1) carve(sx, sy+10, 110, 52, n.labelA);
+    else carve(sx + n.lox*55, sy, 85, 26, n.labelA*0.85);
+  });
+}
+
+const tmp = [0,0];
+function curveCtl(l, o){
+  const ax=LX(l.a), ay=LY(l.a), bx=LX(l.b), by=LY(l.b);
+  const mx=(ax+bx)/2, my=(ay+by)/2, dx=bx-ax, dy=by-ay;
+  o.ax=ax; o.ay=ay; o.bx=bx; o.by=by; o.cx=mx-dy*l.bend; o.cy=my+dx*l.bend;
+  const L = Math.hypot(dx,dy)||1; o.nx = -dy/L; o.ny = dx/L;
+}
+const CC = links.map(() => ({}));
+
+let last = performance.now()/1000, start = last, logoPulse = 0;
+function frame(){
+  const nowAbs = performance.now()/1000;
+  const dt = Math.min(0.05, nowAbs-last); last = nowAbs;
+  const now = nowAbs - start, dts = dt*60;
+  step();
+
+  camX += (camTX-camX)*0.10*dts; camY += (camTY-camY)*0.10*dts; zoom += (zoomT-zoom)*0.10*dts;
+  themeT += (themeTarget-themeT)*T.themeEase*dts;
+  if(Math.abs(themeT-themeBuilt) > 0.002) applyTheme(themeT);
+
+  const breath = 0.5 - 0.5*Math.cos(now*6.2832/T.breathPeriod);   // 0..1
+  const yaw = reduced ? 0.6 : now*T.yawSpeed + 0.6;
+  const tilt = T.tiltBase + (reduced ? 0 : T.tiltSwing*Math.sin(now*T.tiltRate*6.283));
+  const cyw = Math.cos(yaw), syw = Math.sin(yaw), ct = Math.cos(tilt), st = Math.sin(tilt);
+  updateFirings(now, breath, dt);
+  logoPulse *= 0.92;
+
+  const near = computeDim();
+  const S0 = sel || preview;
+  selCross = S0 ? new Set(S0.links.filter(l => l.cross && linkVisible(l)).map(l => l.a === S0 ? l.b : l.a)) : null;
+  nodes.forEach(n => {
+    const want = (dimN[n.idx] > 0.3 && now > 0.8 + n.level*0.35) ? 1 : 0;
+    n.labelA += (want - n.labelA)*0.055*dts;
+    const p = n.parent ? byId[n.parent] : null;
+    if(p){ const dx = n.x-p.x, dy = n.y-p.y, d = Math.hypot(dx,dy)||1; n.lox = dx/d; n.loy = dy/d; } else { n.lox = 0; n.loy = 0; }
+  });
+  buildMask(near);
+  links.forEach((l,i) => curveCtl(l, CC[i]));
+  if(style === "graphic"){ drawGraphic(now); ctx.setTransform(1,0,0,1,0,0); drawSelLinks(now); drawGraphicLabels(near); ctx.setTransform(1,0,0,1,0,0);
+    { const Zd = zoom*dpr, sz = (phone ? (H < 500 ? 52 : 66) : 86)*dpr, x = (0-camX)*Zd + cw*0.5, y = (0-camY)*Zd + ch*0.5;   // clear the lines around the mark
+      ctx.fillStyle = CUR.bg; ctx.beginPath(); ctx.arc(x, y, sz*0.66, 0, 6.283); ctx.fill(); }
+    drawLogo(); requestAnimationFrame(frame); return; }
+
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.fillStyle = CUR.bg; ctx.fillRect(0,0,cw,ch);
+  bCount.fill(0);
+  const Zd = zoom*dpr, halfW = cw*0.5, halfH = ch*0.5;
+  const orbitK = 1 + (breath-0.5)*2*T.breathOrbit;
+  const briK = 1 + (breath-0.5)*2*T.breathBright;
+
+  for(let i=0;i<N;i++){
+    /* where the particle sits in the cloud (also where map particles bloom from) */
+    const dx = Math.sin(now*drt[i]*6.283 + dph[i])*T.driftAmp, dy = Math.cos(now*drt[i]*5.1 + dph[i]*1.3)*T.driftAmp;
+    const wx = hx[i]+dx, wy = hy[i]+dy, wz = hz[i];
+    const x1 = wx*cyw - wz*syw, z1 = wx*syw + wz*cyw;
+    const y2 = wy*ct - z1*st, z2 = wy*st + z1*ct;
+    const s = FOV/(FOV+z2);
+    const cxp = x1*s, cyp = y2*s;
+    const depth = 0.45 + 0.55*(1 - (z2+RZ)/(2*RZ));
+
+    let X, Y, a, gold = 0, size;
+    const k = kind[i];
+    if(k === 0){
+      X = cxp; Y = cyp;
+      a = bri[i]*depth*(0.85 + breath*0.15);
+      size = szb[i]*s;
+    } else {
+      if(t0[i] === 0){ // bloom timing, set on first frame from distance to centre
+        let tx0, ty0;
+        if(k===1){ const n = nodes[own[i]]; tx0 = LX(n); ty0 = LY(n); }
+        else { const l = links[own[i]]; tx0 = (LX(l.a)+LX(l.b))/2; ty0 = (LY(l.a)+LY(l.b))/2; }
+        t0[i] = 0.25 + Math.hypot(tx0,ty0)/Math.max(mapHalfW,mapHalfH)*T.bloomSpread + Math.random()*T.bloomJitter;
+        px[i] = cxp; py[i] = cyp;
+      }
+      let tx, ty, d, z = 0;
+      if(k === 1){
+        const n = nodes[own[i]];
+        const ang = oa[i] + now*rate[i]*(reduced?0:1);
+        const R = orr[i]*orbitK*(n === hover ? 1.25 : 1);
+        const ex = Math.cos(ang)*R, ey = Math.sin(ang)*R*ofl[i];
+        const cr = Math.cos(orot[i]), sr = Math.sin(orot[i]);
+        tx = LX(n) + ex*cr - ey*sr; ty = LY(n) + ex*sr + ey*cr;
+        z = Math.sin(ang)*(1-ofl[i]);
+        d = dimN[n.idx];
+        a = bri[i]*briK*(0.82 + 0.18*z)*(n === hover ? 1.25 : 1);
+        const lit = now - n.fireAt;
+        if(lit >= 0 && lit < T.fireNodeDecay) gold = 1 - lit/T.fireNodeDecay;
+        if(n === sel || matches(n)) gold = Math.max(gold, 0.7);
+        else if(selCross && selCross.has(n)) gold = Math.max(gold, 0.55);
+      } else {
+        const l = links[own[i]], c = CC[own[i]], u = prm[i], v = 1-u;
+        const wob = reduced ? 0 : Math.sin(now*rate[i] + dph[i])*1.1;
+        tx = v*v*c.ax + 2*v*u*c.cx + u*u*c.bx + c.nx*(jit[i]+wob);
+        ty = v*v*c.ay + 2*v*u*c.cy + u*u*c.by + c.ny*(jit[i]+wob);
+        d = Math.min(dimN[l.a.idx], dimN[l.b.idx]);
+        a = bri[i]*(0.9 + breath*0.2);
+        if(l.cross) gold = 0.2;  // the connected dots run in gold, quietly
+        const prog = (now - l.fireAt)/(T.fireTravel*(l.cross ? 1.6 : 1));
+        if(prog > -0.05 && prog < 1 + T.fireWidth){
+          const uu = l.dir > 0 ? u : 1-u;
+          const w = Math.exp(-Math.pow((uu - prog)/(T.fireWidth*0.5), 2));
+          gold = Math.max(gold, w); a += w*0.6;
+        }
+        if(sel && (l.a === sel || l.b === sel)) { a *= 1.35; if(!l.cross) gold = Math.max(gold, 0.0); }
+      }
+      if(now < t0[i]){ X = cxp; Y = cyp; a = bri[i]*depth*0.6; gold = 0; size = szb[i]*s; px[i]=X; py[i]=Y; }
+      else {
+        vx[i] = (vx[i] + (tx-px[i])*stiff[i]*dts)*Math.pow(damp[i], dts);
+        vy[i] = (vy[i] + (ty-py[i])*stiff[i]*dts)*Math.pow(damp[i], dts);
+        px[i] += vx[i]*dts; py[i] += vy[i]*dts;
+        X = px[i]; Y = py[i];
+        a *= d;
+        size = szb[i];
+      }
+    }
+    const SX = (X-camX)*Zd + halfW, SY = (Y-camY)*Zd + halfH;
+    if(SX < -4 || SY < -4 || SX > cw+4 || SY > ch+4) continue;
+    if(k === 0){
+      const mc = ((SX/dpr)/MASK_CELL)|0, mr = ((SY/dpr)/MASK_CELL)|0;
+      if(mc < maskCols && mr < maskRows) a *= 1 - 0.85*mask[mr*maskCols+mc];
+    }
+    if(a < 0.02) continue;
+    let b;
+    if(gold > 0.12){ b = WB + Math.min(GB-1, ((Math.min(1, a*0.55 + gold*0.6))*GB)|0); }
+    else b = Math.min(WB-1, (a*WB)|0);
+    const list = bucket[b]; list[bCount[b]++] = i;
+    sxs[i] = SX; sys[i] = SY; szs[i] = Math.max(0.8, size)*dpr;
+  }
+  for(let b=0;b<WB+GB;b++){
+    const c = bCount[b]; if(!c) continue;
+    ctx.fillStyle = STYLES[b];
+    const list = bucket[b];
+    for(let j=0;j<c;j++){ const i = list[j], z = szs[i]; ctx.fillRect(sxs[i]-z*0.5, sys[i]-z*0.5, z, z); }
+  }
+
+  drawSelLinks(now);
+  drawLabels(now, near);
+  drawLogo();
+  requestAnimationFrame(frame);
+}
+const sxs = new Float32Array(N), sys = new Float32Array(N), szs = new Float32Array(N);
+
+function selRef(){ return sel || preview; }
+/* ==========================================================================
+   10b · SELECTED CONNECTIONS — once a node is clicked, every link it has is
+   drawn as a dotted line that flows outward: yellow for the connected dots
+   across branches, white for its own branch. A ring marks each node it reaches.
+   ========================================================================== */
+function drawSelLinks(now){
+  const sel = selRef();   // the selected node, or the one being long-pressed
+  if(!sel) return;
+  const fade = Math.min(1, (now - selAt)/0.45);
+  const Zd = zoom*dpr, hw = cw*0.5, hh = ch*0.5;
+  const toS = (x, y) => [(x-camX)*Zd + hw, (y-camY)*Zd + hh];
+  const yellow = "rgba(" + mix3([255,232,0], THEME.light.accent, themeT) + ",";
+  const white = "rgba(" + CUR.particle + ",";
+  ctx.save();
+  ctx.lineCap = "round";
+  sel.links.slice().sort((a,b) => a.cross - b.cross).forEach(l => {
+    if(!linkVisible(l)) return;
+    const c = ctrlFor(l);
+    let A = toS(c.ax, c.ay), B = toS(c.bx, c.by);
+    if(l.b === sel){ const t = A; A = B; B = t; }   // always flow away from the selected node
+    const C = toS(c.cx, c.cy);
+    ctx.setLineDash([0.1, (l.cross ? 7 : 6)*dpr]);
+    ctx.lineDashOffset = -now*22*dpr;
+    ctx.lineWidth = (l.cross ? 3 : 2)*dpr;
+    ctx.strokeStyle = l.cross ? yellow + (0.95*fade).toFixed(3) + ")" : white + (0.55*fade).toFixed(3) + ")";
+    ctx.beginPath(); ctx.moveTo(A[0], A[1]); ctx.quadraticCurveTo(C[0], C[1], B[0], B[1]); ctx.stroke();
+    if(l.cross){
+      ctx.setLineDash([]);
+      ctx.lineWidth = 1.5*dpr;
+      ctx.strokeStyle = yellow + (0.8*fade).toFixed(3) + ")";
+      ctx.beginPath(); ctx.arc(B[0], B[1], (16 + 2*Math.sin(now*3))*dpr, 0, 6.283); ctx.stroke();
+    }
+  });
+  ctx.restore();
+}
+
+/* ==========================================================================
+   10c · GRAPHIC STYLE — the v2 look, drawn over the same layout, filters,
+   selection and firing as Organic. White discs, ringed branch nodes, thin
+   white branches, dashed yellow connected dots, pulses, plated labels.
+   ========================================================================== */
+let style = "organic";
+const gDust = Array.from({ length: 420 }, () => ({ x: (Math.random()-.5)*4200*S, y: (Math.random()-.5)*3200*S, z: .2+Math.random()*.8, t: Math.random()*6.28 }));
+const gPulses = [];
+function gRadius(n){ return n.level===0 ? 34 : n.level===1 ? 13 : n.level===2 ? 5.5 : 4; }
+function gScale(){ return Math.max(0.6, Math.min(zoom*S, 1.6)); }
+function ctrlFor(l){
+  const c = CC[l.i];
+  if(style === "organic") return c;
+  const mx = (c.ax+c.bx)/2, my = (c.ay+c.by)/2, dx = c.bx-c.ax, dy = c.by-c.ay;
+  return l.cross ? { ax:c.ax, ay:c.ay, bx:c.bx, by:c.by, cx: mx - dy*0.15, cy: my + dx*0.15 }
+                 : { ax:c.ax, ay:c.ay, bx:c.bx, by:c.by, cx: mx, cy: my };
+}
+function gDrawX(x, y, s, col){
+  ctx.fillStyle = col;
+  const w = s*0.32;
+  for(let i=0;i<4;i++){
+    const ang = Math.PI/4 + i*Math.PI/2, cx = Math.cos(ang), cy = Math.sin(ang);
+    ctx.beginPath();
+    ctx.moveTo(x + cx*s*0.16, y + cy*s*0.16);
+    ctx.lineTo(x + cx*s - cy*w*0.5, y + cy*s + cx*w*0.5);
+    ctx.lineTo(x + cx*s + cy*w*0.5, y + cy*s - cx*w*0.5);
+    ctx.closePath(); ctx.fill();
+  }
+}
+function drawGraphic(now){
+  const kk = zoom*S, rs = gScale();
+  const FG = "rgb(" + CUR.particle + ")", YL = "rgb(" + mix3([255,232,0], THEME.light.accent, themeT) + ")";
+  const toS = (x, y) => [(x-camX)*zoom + W/2, (y-camY)*zoom + H/2];
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = CUR.bg; ctx.fillRect(0,0,W,H);
+
+  gDust.forEach(p => {
+    const sx = (p.x - camX*p.z)*zoom*p.z + W/2, sy = (p.y - camY*p.z)*zoom*p.z + H/2;
+    if(sx < -5 || sy < -5 || sx > W+5 || sy > H+5) return;
+    ctx.globalAlpha = (0.08 + 0.12*Math.sin(now*0.8 + p.t)**2)*p.z;
+    ctx.fillStyle = FG; ctx.fillRect(sx, sy, 1.4*p.z, 1.4*p.z);
+  });
+
+  const focus = sel || hover;
+  links.forEach(l => {
+    const c = ctrlFor(l), A = toS(c.ax, c.ay), B = toS(c.bx, c.by);
+    const a = Math.min(dimN[l.a.idx], dimN[l.b.idx]);
+    const active = focus && (l.a === focus || l.b === focus);
+    ctx.beginPath(); ctx.moveTo(A[0], A[1]);
+    if(l.cross){
+      const C = toS(c.cx, c.cy);
+      ctx.quadraticCurveTo(C[0], C[1], B[0], B[1]);
+      ctx.setLineDash([5, 6]); ctx.strokeStyle = YL;
+      ctx.globalAlpha = active ? 0.95 : a*(focus ? 0.55 : 0.28);
+      ctx.lineWidth = active ? 1.8 : 1.1;
+    } else {
+      ctx.lineTo(B[0], B[1]);
+      ctx.setLineDash([]); ctx.strokeStyle = FG;
+      ctx.globalAlpha = a*(active ? 0.9 : l.a.level === 0 ? 0.55 : 0.32);
+      ctx.lineWidth = l.a.level === 0 ? 2.4 : active ? 1.6 : 1;
+    }
+    ctx.stroke();
+  });
+  ctx.setLineDash([]);
+
+  /* pulses: quiet ambient ones, plus the shared firing waves in yellow */
+  const at = (l, u) => { const c = ctrlFor(l), v = 1-u;
+    return toS(v*v*c.ax + 2*v*u*c.cx + u*u*c.bx, v*v*c.ay + 2*v*u*c.cy + u*u*c.by); };
+  if(!reduced && Math.random() < 0.35){ const l = links[(Math.random()*links.length)|0]; if(linkVisible(l)) gPulses.push({ l, t:0, dir: Math.random()<.5 ? 1 : -1, sp: 0.004 + Math.random()*0.006 }); }
+  for(let i=gPulses.length-1;i>=0;i--){
+    const p = gPulses[i]; p.t += p.sp;
+    if(p.t >= 1){ gPulses.splice(i,1); continue; }
+    const P = at(p.l, p.dir > 0 ? p.t : 1-p.t);
+    ctx.globalAlpha = Math.min(dimN[p.l.a.idx], dimN[p.l.b.idx])*Math.sin(p.t*Math.PI)*0.7;
+    ctx.fillStyle = p.l.cross ? YL : FG;
+    ctx.beginPath(); ctx.arc(P[0], P[1], 1.6, 0, 6.283); ctx.fill();
+  }
+  links.forEach(l => {
+    const prog = (now - l.fireAt)/(T.fireTravel*(l.cross ? 1.6 : 1));
+    if(prog < 0 || prog > 1) return;
+    const P = at(l, l.dir > 0 ? prog : 1-prog);
+    ctx.globalAlpha = Math.min(dimN[l.a.idx], dimN[l.b.idx])*Math.sin(prog*Math.PI);
+    ctx.fillStyle = YL; ctx.beginPath(); ctx.arc(P[0], P[1], 2.6, 0, 6.283); ctx.fill();
+  });
+
+  /* nodes */
+  const order = nodes.slice().sort((a, b) => b.level - a.level);
+  order.forEach(n => {
+    const [x, y] = toS(LX(n), LY(n));
+    const r = gRadius(n)*rs;
+    if(x < -200 || y < -100 || x > W+200 || y > H+100) return;
+    const a = dimN[n.idx];
+    const since = now - n.fireAt, glow = since >= 0 && since < T.fireNodeDecay ? 1 - since/T.fireNodeDecay : 0;
+    const isSel = n === sel, hit = matches(n), linked = selCross && selCross.has(n);
+    ctx.globalAlpha = a;
+    if(n.level === 0) return;   // the centre is the same white X mark as Organic, drawn last
+    if(glow > 0.02 || isSel || hit || linked){
+      ctx.globalAlpha = a*Math.max(glow, isSel || hit ? 0.5 : linked ? 0.35 : 0)*0.6;
+      ctx.fillStyle = YL; ctx.beginPath(); ctx.arc(x, y, r*2.4, 0, 6.283); ctx.fill();
+      ctx.globalAlpha = a;
+    }
+    ctx.fillStyle = isSel || hit || linked ? YL : FG;
+    ctx.beginPath(); ctx.arc(x, y, r, 0, 6.283); ctx.fill();
+    if(n.level === 1){ ctx.strokeStyle = CUR.bg; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(x, y, r*0.45, 0, 6.283); ctx.stroke(); }
+    if(n === hover && !isSel){ ctx.strokeStyle = YL; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, y, r+5, 0, 6.283); ctx.stroke(); }
+  });
+  ctx.globalAlpha = 1;
+}
+function drawGraphicLabels(near){
+  const kk = zoom*S, rs = gScale();
+  const FG = "rgb(" + CUR.particle + ")", YL = "rgb(" + mix3([255,232,0], THEME.light.accent, themeT) + ")";
+  const stack = getComputedStyle(document.documentElement).getPropertyValue("--stack");
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.textBaseline = "middle";
+  nodes.forEach(n => {
+    if(n.level === 0) return;
+    const hit = matches(n), isNear = near && near.has(n), linked = selCross && selCross.has(n);
+    if(n.level >= 2 && !(kk > 0.36 || isNear || hit)) return;
+    const x = (LX(n)-camX)*zoom + W/2, y = (LY(n)-camY)*zoom + H/2;
+    if(x < -220 || y < -40 || x > W+220 || y > H+40) return;
+    const a = dimN[n.idx], r = gRadius(n)*rs;
+    let size, text = n.label;
+    if(n.level === 1){ size = Math.max(13, 26*kk); text = text.toUpperCase(); ctx.font = "900 " + size + "px " + stack; }
+    else { size = Math.max(11, 13*Math.min(kk, 1.4)); ctx.font = "600 " + size + "px " + stack; }
+    const w = ctx.measureText(text).width;
+    let lx, ly = y;
+    if(n.level === 1 && sheetMode){   // phones: branch names sit centred under the dot, so the map can be bigger
+      ctx.textAlign = "center"; lx = x; ly = y + r + size*0.85;
+      ctx.globalAlpha = a*0.75; ctx.fillStyle = CUR.bg;
+      ctx.fillRect(lx - w/2 - 3, ly - size*0.62, w + 6, size*1.24);
+    } else {
+      const right = n.level === 1 ? n.x >= 0 : n.x >= byId[n.parent].x;
+      ctx.textAlign = right ? "left" : "right";
+      lx = x + (right ? r + 8 : -r - 8);
+      ctx.globalAlpha = a*0.75; ctx.fillStyle = CUR.bg;
+      ctx.fillRect(right ? lx - 3 : lx - w - 3, y - size*0.62, w + 6, size*1.24);
+    }
+    ctx.globalAlpha = n.level === 1 ? a : a*(isNear || hit || n === hover ? 1 : 0.78);
+    ctx.fillStyle = n.level === 1 ? FG : (n === sel || hit || linked ? YL : FG);
+    ctx.fillText(text, lx, ly);
+  });
+  ctx.globalAlpha = 1;
+}
+
+/* ==========================================================================
+   11 · LABELS — real text, quiet, fading in once their particles land
+   ========================================================================== */
+const FONT = '-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Helvetica,Arial,sans-serif';
+function drawLabels(now, near){
+  ctx.textBaseline = "middle";
+  const Zd = zoom*dpr, halfW = cw*0.5, halfH = ch*0.5;
+  const aSize = (isSmall ? 10.5 : 11.5)*dpr, cSize = (isSmall ? 9.5 : 10.5)*dpr;
+  for(let i=1;i<nodes.length;i++){
+    const n = nodes[i];
+    if(n.labelA < 0.01) continue;
+    const anchor = n.level === 1, hit = matches(n), isNear = near && near.has(n);
+    if(!anchor && !(zoom > (n.level===2 ? 1.05 : 1.35) || isNear || hit || n === hover)) continue;
+    const SX = (LX(n)-camX)*Zd + halfW, SY = (LY(n)-camY)*Zd + halfH;
+    if(SX < -160*dpr || SX > cw+160*dpr || SY < -40*dpr || SY > ch+40*dpr) continue;
+    let a = n.labelA*(anchor ? 0.92 : 0.68)*Math.max(0.12, dimN[i]);
+    const gold = n === sel || hit || (selCross && selCross.has(n)) || (now - n.fireAt >= 0 && now - n.fireAt < T.fireNodeDecay*0.9);
+    if(gold || n === hover || isNear) a = Math.min(1, a + 0.22);
+    let tx, ty;
+    if(anchor){ ctx.textAlign = "center"; tx = SX; ty = SY + 30*dpr; }
+    else if(Math.abs(n.lox) > 0.58){ ctx.textAlign = n.lox > 0 ? "left" : "right"; tx = SX + (n.lox > 0 ? 14 : -14)*dpr; ty = SY + 0.5*dpr; }
+    else { ctx.textAlign = "center"; tx = SX; ty = SY + (n.loy >= 0 ? 19 : -18)*dpr; }
+    ctx.font = (anchor ? "600 " : "400 ") + (anchor ? aSize : cSize).toFixed(1) + "px " + FONT;
+    if("letterSpacing" in ctx) ctx.letterSpacing = anchor ? (1.2*dpr)+"px" : (0.3*dpr)+"px";
+    ctx.fillStyle = gold ? "rgba("+CUR.accent+","+a.toFixed(3)+")" : (anchor ? CUR.label : CUR.labelDim) + a.toFixed(3) + ")";
+    ctx.fillText(anchor ? n.label.toUpperCase() : n.label, tx, ty);
+  }
+  if("letterSpacing" in ctx) ctx.letterSpacing = "0px";
+}
+
+/* ==========================================================================
+   12 · LOGO — sharp vector mark at the heart of the cloud
+   ========================================================================== */
+let logoX=0, logoY=0, logoR=0;
+function drawLogo(){
+  const Zd = zoom*dpr;
+  const size = (phone ? (H < 500 ? 52 : 66) : 86)*dpr*(1 + logoPulse*0.10);
+  logoX = (0-camX)*Zd + cw*0.5; logoY = (0-camY)*Zd + ch*0.5; logoR = size*0.62;
+  ctx.fillStyle = sel === byId.me ? "rgba("+CUR.accent+",0.97)" : "rgba("+CUR.particle+",0.97)";
+  ctx.beginPath();
+  LOGO.forEach(tri => { ctx.moveTo(logoX+tri[0][0]*size, logoY+tri[0][1]*size); ctx.lineTo(logoX+tri[1][0]*size, logoY+tri[1][1]*size); ctx.lineTo(logoX+tri[2][0]*size, logoY+tri[2][1]*size); ctx.closePath(); });
+  ctx.fill();
+}
+
+/* ==========================================================================
+   13 · INTERACTION — pointer events, one path for mouse and touch
+   ========================================================================== */
+const toWorld = (sx, sy) => [((sx - W/2)/zoom + camX)/(S*AX), ((sy - H/2)/zoom + camY)/(S*AY)];
+function onLogo(sx, sy){ return Math.hypot(sx*dpr - logoX, sy*dpr - logoY) < logoR; }
+let crowded = false;
+function pick(sx, sy, touch){
+  let best = null, bd = 1e9, second = 1e9;
+  nodes.forEach(n => {
+    if(n.level === 0 || !visible(n)) return;
+    const SX = (LX(n)-camX)*zoom + W/2, SY = (LY(n)-camY)*zoom + H/2;
+    let r = style === "graphic" ? gRadius(n)*gScale() + 10 : (n.level===1 ? T.orbitAnchor : T.orbitChild)*zoom + 10;
+    if(touch) r = Math.max(r, n.level === 1 ? 34 : 26);   // a fingertip, not a cursor
+    const d = Math.hypot(SX-sx, SY-sy);
+    if(d < r){ if(d < bd){ second = bd; bd = d; best = n; } else if(d < second) second = d; }
+  });
+  /* two nodes about equally close to a finger: zoom in rather than guess */
+  crowded = !!(touch && best && second < 1e9 && second - bd < 12 && zoomT < 2.2);
+  return best;
+}
+function toast(msg){
+  const t = document.getElementById("toast"); t.textContent = msg; t.classList.add("show");
+  clearTimeout(toast.h); toast.h = setTimeout(() => t.classList.remove("show"), 2600);
+}
+/* phones: tapping a branch first zooms into it, so its memories are readable */
+function focusOn(b){
+  focusB = b; fireNode(b, performance.now()/1000 - start);
+  const list = []; const add = n => { if(visible(n)) list.push(n); n.kids.forEach(add); }; add(b);
+  /* fit the names too, never so small they stop being readable */
+  const f = frameNodes(list, 60, sheetMode ? 80 : 20, 0.9, 1.6, true);
+  camTX = f.cx; camTY = f.cy; zoomT = f.k;
+  toast("Tap a memory to open it · tap " + b.label + " again to read it");
+}
+const ptrs = new Map();
+let dragNode=null, panning=false, moved=0, lastP=null, pinch0=null, lastLogoTap=-9, lpTimer=0, longPressed=false;
+cv.addEventListener("pointerdown", e => {
+  cv.setPointerCapture(e.pointerId);
+  document.body.classList.add("engaged");
+  if(document.body.classList.contains("menu-open")) setMenu(false);
+  ptrs.set(e.pointerId, {x:e.clientX, y:e.clientY});
+  moved = 0; lastP = {x:e.clientX, y:e.clientY};
+  if(ptrs.size === 2){ const [p,q] = [...ptrs.values()]; pinch0 = {d:Math.hypot(p.x-q.x,p.y-q.y), k:zoomT}; dragNode=null; panning=false; return; }
+  const touch = e.pointerType === "touch";
+  const n = onLogo(e.clientX, e.clientY) ? null : pick(e.clientX, e.clientY, touch);
+  if(n){ dragNode = n; n.fixed = true; heat = Math.max(heat, 0.3); } else panning = true;
+  cv.classList.add("dragging");
+  /* long-press a node: show its connections while the finger stays down */
+  clearTimeout(lpTimer); longPressed = false;
+  if(touch && n && ptrs.size === 1) lpTimer = setTimeout(() => {
+    if(moved >= T.tapSlop) return;
+    longPressed = true; preview = n; selAt = performance.now()/1000 - start; fireNode(n, selAt);
+    if(navigator.vibrate) navigator.vibrate(12);
+  }, 450);
+});
+cv.addEventListener("pointermove", e => {
+  if(!ptrs.has(e.pointerId)){
+    const onL = onLogo(e.clientX, e.clientY);
+    const n = onL ? null : pick(e.clientX, e.clientY);
+    hover = n; cv.classList.toggle("hot", !!n || onL); return;
+  }
+  ptrs.set(e.pointerId, {x:e.clientX, y:e.clientY});
+  if(pinch0 && ptrs.size === 2){ const [p,q] = [...ptrs.values()]; zoomT = clamp(pinch0.k*Math.hypot(p.x-q.x,p.y-q.y)/pinch0.d, T.zoomRange[0], T.zoomRange[1]); return; }
+  const dx = e.clientX-lastP.x, dy = e.clientY-lastP.y;
+  moved += Math.abs(dx)+Math.abs(dy); lastP = {x:e.clientX, y:e.clientY};
+  if(moved > T.tapSlop) clearTimeout(lpTimer);
+  if(dragNode && moved > T.tapSlop && !longPressed){ const [wx,wy] = toWorld(e.clientX, e.clientY); dragNode.x = wx; dragNode.y = wy; heat = Math.max(heat, 0.3); }
+  else if(panning){ camTX -= dx/zoom; camTY -= dy/zoom; camX = camTX; camY = camTY; }
+});
+function up(e){
+  ptrs.delete(e.pointerId);
+  if(ptrs.size < 2) pinch0 = null;
+  if(ptrs.size) return;
+  cv.classList.remove("dragging");
+  clearTimeout(lpTimer);
+  if(longPressed){ longPressed = false; preview = null; }
+  else if(moved < T.tapSlop){
+    const nowS = performance.now()/1000;
+    if(onLogo(e.clientX, e.clientY)){
+      if(nowS - lastLogoTap < T.doubleTap){ themeTarget = 1 - themeTarget; document.documentElement.classList.toggle("inverted", themeTarget === 1); lastLogoTap = -9; }
+      else { lastLogoTap = nowS; select(byId.me); }
+    } else {
+      const touch = e.pointerType === "touch";
+      const n = pick(e.clientX, e.clientY, touch);
+      if(n && crowded) zoomAt(e.clientX, e.clientY, 1.8);
+      else if(n && phone && n.level === 1 && focusB !== n){ deselect(); focusOn(n); }
+      else if(n) select(n);
+      else if(sel) deselect();
+      else if(focusB){ focusB = null; fit(); }
+    }
+  }
+  if(dragNode) dragNode.fixed = false;
+  dragNode = null; panning = false;
+}
+cv.addEventListener("pointerup", up);
+cv.addEventListener("pointercancel", up);
+cv.addEventListener("pointerleave", () => { if(!ptrs.size) hover = null; });
+cv.addEventListener("wheel", e => {
+  e.preventDefault();
+  zoomAt(e.clientX, e.clientY, Math.exp(-e.deltaY*0.0015));
+}, {passive:false});
+function zoomAt(sx, sy, f){
+  const wx = (sx - W/2)/zoomT + camTX, wy = (sy - H/2)/zoomT + camTY;
+  const k = clamp(zoomT*f, T.zoomRange[0], T.zoomRange[1]);
+  camTX = wx - (sx - W/2)/k; camTY = wy - (sy - H/2)/k; zoomT = k;
+}
+function clamp(v,a,b){ return v<a?a:v>b?b:v; }
+
+document.getElementById("btnIn").onclick = () => zoomAt(W/2, H/2, 1.3);
+document.getElementById("btnOut").onclick = () => zoomAt(W/2, H/2, 1/1.3);
+document.getElementById("btnReset").onclick = () => { focusB = null; deselect(); fit(); document.body.classList.remove("engaged"); };
+
+/* ==========================================================================
+   14 · PANEL
+   ========================================================================== */
+const panel = document.getElementById("panel");
+function select(n){
+  sel = n; selAt = performance.now()/1000 - start; fireNode(n, selAt);
+  if(n === byId.me) logoPulse = 1;
+  const br = n.level === 0 ? "The centre" : n.level === 1 ? "Branch" : byId[n.branch ? n.branch.id : n.parent].label;
+  document.getElementById("pk").textContent = br;
+  document.getElementById("pt").textContent = n.label;
+  document.getElementById("pb").innerHTML = n.text;
+  document.getElementById("ps").innerHTML = [...n.p].map(s => "<span class=\"pil\">"+PILLAR_NAME[s]+"</span>").join("") +
+    '<p class="learned">Learned in ' + [...n.src].map(s => SRC_NAME[s]).join(" · ") + "</p>";
+  const ul = document.getElementById("pl"), pc = document.getElementById("pc");
+  ul.innerHTML = ""; pc.innerHTML = "";
+  const seen = new Set();
+  n.links.slice().sort((a,b) => b.cross - a.cross).forEach(l => {   // connected dots first in the chips
+    const o = l.a === n ? l.b : l.a;
+    if(seen.has(o)) return; seen.add(o);
+    const chip = document.createElement("button");
+    chip.textContent = o.label; if(l.cross) chip.className = "x";
+    chip.onclick = () => select(o);
+    pc.appendChild(chip);
+  });
+  seen.clear();
+  n.links.slice().sort((a,b) => a.cross - b.cross).forEach(l => {
+    const o = l.a === n ? l.b : l.a;
+    if(seen.has(o)) return; seen.add(o);
+    const li = document.createElement("li"), b = document.createElement("button");
+    if(l.cross) b.className = "cross";
+    b.textContent = o.label;
+    const sm = document.createElement("small");
+    sm.textContent = l.cross ? (l.why || "Connected") : (o.id === n.parent ? "Part of" : "Inside");
+    b.appendChild(sm); b.onclick = () => select(o);
+    li.appendChild(b); ul.appendChild(li);
+  });
+  panel.classList.remove("full");
+  panel.classList.add("open"); panel.scrollTop = 0; pc.scrollLeft = 0;
+  document.body.classList.add("panel-open", "engaged");
+
+  /* the sheet peeks exactly down to the chips */
+  let peek = 0;
+  if(sheetMode){
+    peek = clamp(pc.offsetTop + pc.offsetHeight + 16, 170, H*0.6);
+    panel.style.setProperty("--peek", peek + "px");
+  }
+
+  /* frame the node and everything it connects to, in the space left over */
+  const panelW = sheetMode ? 0 : phone ? Math.min(360, W) : Math.min(440, W);
+  let x0 = LX(n), x1 = x0, y0 = LY(n), y1 = y0;
+  n.links.forEach(l => { if(!linkVisible(l)) return; const o = l.a === n ? l.b : l.a;
+    x0 = Math.min(x0, LX(o)); x1 = Math.max(x1, LX(o)); y0 = Math.min(y0, LY(o)); y1 = Math.max(y1, LY(o)); });
+  const top = sheetMode ? 52 : 0, bottom = peek;
+  const availW = W - panelW, availH = H - top - bottom;
+  const k = clamp(Math.min((availW-(sheetMode ? 150 : 220))/(x1-x0+1), (availH-(sheetMode ? 90 : 200))/(y1-y0+1), n.level >= 2 ? 1.25 : 1.05), 0.3, 1.25);
+  camTX = (x0+x1)/2 + (panelW/2)/k; camTY = (y0+y1)/2 + ((bottom-top)/2)/k; zoomT = k;
+}
+function deselect(){
+  const had = !!sel;
+  sel = null; panel.classList.remove("open", "full"); document.body.classList.remove("panel-open");
+  if(had && focusB) focusOn(focusB);
+}
+
+/* ---- the bottom sheet: drag the handle (or the peeking card) up or down ---- */
+let sheetDrag = null;
+panel.addEventListener("pointerdown", e => {
+  if(!sheetMode || !panel.classList.contains("open")) return;
+  const onGrab = !!e.target.closest(".grab");
+  if(!onGrab && (e.target.closest("button") || e.target.closest(".chips"))) return;
+  if(!onGrab && panel.classList.contains("full")) return;   // full: the content scrolls
+  const full = panel.classList.contains("full");
+  const peek = parseFloat(getComputedStyle(panel).getPropertyValue("--peek")) || H*0.4;
+  sheetDrag = { id:e.pointerId, y:e.clientY, dy:0, base: full ? 0 : panel.offsetHeight - peek, full, onGrab };
+  panel.setPointerCapture(e.pointerId);
+  panel.style.transition = "none";
+});
+panel.addEventListener("pointermove", e => {
+  if(!sheetDrag || e.pointerId !== sheetDrag.id) return;
+  sheetDrag.dy = e.clientY - sheetDrag.y;
+  panel.style.transform = "translateY(" + Math.max(0, sheetDrag.base + sheetDrag.dy) + "px)";
+});
+function sheetUp(e){
+  if(!sheetDrag || e.pointerId !== sheetDrag.id) return;
+  const d = sheetDrag; sheetDrag = null;
+  panel.style.transition = ""; panel.style.transform = "";
+  if(Math.abs(d.dy) < 6){ if(d.onGrab) panel.classList.toggle("full"); return; }
+  if(d.full){ if(d.dy > H*0.45) deselect(); else if(d.dy > 60) panel.classList.remove("full"); }
+  else { if(d.dy < -40) panel.classList.add("full"); else if(d.dy > 50) deselect(); }
+}
+panel.addEventListener("pointerup", sheetUp);
+panel.addEventListener("pointercancel", sheetUp);
+
+/* ---- phone menu: style, search and index tucked behind one button ---- */
+const btnMenu = document.getElementById("btnMenu");
+function setMenu(on){ document.body.classList.toggle("menu-open", on); btnMenu.setAttribute("aria-expanded", on); }
+btnMenu.onclick = () => setMenu(!document.body.classList.contains("menu-open"));
+document.getElementById("close").onclick = deselect;
+
+/* filters + search */
+document.querySelectorAll(".tab[data-f]").forEach(c => c.onclick = () => {
+  filter = c.dataset.f;
+  document.querySelectorAll(".tab[data-f]").forEach(d => d.setAttribute("aria-pressed", d === c));
+  btnMenu.textContent = filter === "all" ? "Menu" : "Menu \u00b7 " + PILLAR_NAME[filter];
+  document.getElementById("pdesc").innerHTML = filter === "all" ? "" :
+    "<b>" + PILLAR_NAME[filter] + "</b> \u00b7 " + PILLAR_DESC[filter] + "<br>" + nodes.filter(n => n.level >= 2 && n.p.includes(filter)).length + " memories";
+  if(sel && !visible(sel)) deselect();
+  fit();
+});
+document.querySelectorAll(".tab[data-s]").forEach(c => c.onclick = () => {
+  style = c.dataset.s;
+  document.querySelectorAll(".tab[data-s]").forEach(d => d.setAttribute("aria-pressed", d === c));
+  if(!sel && !focusB) fit();   // each style frames itself (Graphic's names are wider)
+  hover = null;
+  fireNode(byId.me, performance.now()/1000 - start);
+});
+const q = document.getElementById("q");
+q.addEventListener("input", () => { query = q.value.trim(); });
+q.addEventListener("keydown", e => { if(e.key === "Enter"){ const n = nodes.find(m => m.level && visible(m) && matches(m)); if(n) select(n); } });
+
+/* index */
+const idx = document.getElementById("index-view"), grid = document.getElementById("indexGrid");
+branches.forEach(b => {
+  const col = document.createElement("div"); col.className = "index__col";
+  const h = document.createElement("h3"); h.textContent = b.label; col.appendChild(h);
+  const add = (n, sub) => { const btn = document.createElement("button"); btn.textContent = n.label; if(sub) btn.className = "sub";
+    btn.onclick = () => { idx.classList.remove("is-on"); select(n); }; col.appendChild(btn); n.kids.forEach(k => add(k, true)); };
+  b.kids.forEach(k => add(k, false));
+  grid.appendChild(col);
+});
+document.getElementById("btnIndex").onclick = () => { idx.classList.add("is-on"); idx.scrollTop = 0; };
+document.getElementById("btnIndex2").onclick = () => { setMenu(false); idx.classList.add("is-on"); idx.scrollTop = 0; };
+document.getElementById("btnIndexClose").onclick = () => idx.classList.remove("is-on");
+
+addEventListener("keydown", e => {
+  if(e.key === "Escape"){
+    if(idx.classList.contains("is-on")) { idx.classList.remove("is-on"); return; }
+    focusB = null; deselect(); query = ""; q.value = ""; fit(); document.body.classList.remove("engaged");
+  }
+});
+addEventListener("resize", () => { resize(); if(!sel) fit(); });
+
+/* ==========================================================================
+   15 · BOOT — the map blooms out of the cloud
+   ========================================================================== */
+fit(); camX = camTX; camY = camTY; zoom = zoomT*0.82;
+setTimeout(() => fireNode(byId.me, performance.now()/1000 - start), 1800);
+requestAnimationFrame(frame);
+
+}
+</script>
+<script>
+/* ==========================================================================
+   GATE — this page holds no memories. They live at
+   users/<Xavier's uid>/tools/memory-map in Firebase, which the database
+   rules let only his signed-in account read or write. Anyone else gets the
+   "Private" screen and an empty page.
+   ========================================================================== */
+(function(){
+  "use strict";
+  var DOC = "memory-map";
+  var gate = document.getElementById("gate"), title = document.getElementById("gateTitle"), text = document.getElementById("gateText");
+  var bIn = document.getElementById("gateSignIn"), bLoad = document.getElementById("gateLoad");
+  var started = false, loading = false;
+  function listOf(v){ return Array.isArray(v) ? v : (v && typeof v === "object" ? Object.keys(v).sort(function(a,b){return a-b;}).map(function(k){ return v[k]; }) : []); }
+  /* the database drops nulls and may hand arrays back as objects: rebuild the shape */
+  function normalise(d){
+    if(!d || !d.root || !d.nodes) return null;
+    var row = function(r){ r = listOf(r); return [r[0], r[1] || null, r[2] || "", r[3] || "", r[4] || ""]; };
+    return { root: row(d.root), nodes: listOf(d.nodes).map(row), cross: listOf(d.cross).map(function(c){ c = listOf(c); return [c[0], c[1], c[2] || ""]; }), pillars: d.pillars || {} };
+  }
+  function show(t, p, signIn, load){ title.textContent = t; text.textContent = p; bIn.hidden = !signIn; bLoad.hidden = !load; gate.hidden = false; }
+  function start(d){
+    if(started){ location.reload(); return; }
+    started = true; gate.hidden = true; document.body.classList.remove("locked");
+    startMap(d);
+  }
+  function ref(fb, uid){ return fb.f.ref(fb.db, "users/" + uid + "/tools/" + DOC); }
+  function load(user){
+    if(loading || started) return; loading = true;
+    show("Opening", "Loading your map…", false, false);
+    window.xdbAccount.sdk().then(function(fb){ return fb.f.get(ref(fb, user.uid)); }).then(function(snap){
+      loading = false;
+      var v = snap.val(), d = v && normalise(v.data);
+      if(d) start(d);
+      else show("Load your map", "Your map isn't saved to your account yet. Pick the file memory-map-data.json from the Claude memory map folder on your Mac. It goes to your private space, readable only by you.", false, true);
+    }, function(){ loading = false; show("Can't open it", "The database didn't answer. Check your connection and reload.", false, false); });
+  }
+  function save(file){
+    var user = window.xdbAccount.state().user;
+    if(!user || window.xdbAccount.state().status !== "owner") return;
+    file.text().then(function(t){
+      var raw = JSON.parse(t), d = normalise(raw);
+      if(!d || d.nodes.length < 10) throw new Error("not a map file");
+      d.root[1] = "";                                   // the database won't keep a null
+      d.nodes.forEach(function(r){ if(r[1] === null) r[1] = ""; });
+      return window.xdbAccount.sdk().then(function(fb){
+        return fb.f.set(ref(fb, user.uid), { data: d, updatedAt: Date.now(), device: "Memory Map (file)" });
+      }).then(function(){ start(normalise(d)); });
+    }).catch(function(e){ alert("That file didn't load: " + (e && e.message || e)); });
+  }
+  document.getElementById("gateFile").addEventListener("change", function(e){ if(e.target.files[0]) save(e.target.files[0]); });
+  document.getElementById("updateFile").addEventListener("change", function(e){ if(e.target.files[0]){ started = true; save(e.target.files[0]); } });
+  bIn.addEventListener("click", function(){ window.xdbAccount.signIn(); });
+
+  function react(S){
+    if(started){ if(S.status !== "owner") location.reload(); return; }   // signed out: wipe the map from the screen
+    if(S.status === "owner") load(S.user);
+    else if(S.status === "signedout") show("Private", "This map is for one person. Sign in to open it.", true, false);
+    else if(S.status === "checking") show("Private", "Checking who you are…", false, false);
+    else show("Private", "This map is for one person, and it isn't you. Nothing here is shared.", false, false);
+  }
+  if(!window.xdbAccount){ show("Private", "This page needs the site's sign-in, which didn't load.", false, false); return; }
+  window.xdbAccount.on(react);
+  react(window.xdbAccount.state());
+})();
+</script>
+</body>
+</html>
