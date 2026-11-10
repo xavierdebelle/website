@@ -5,6 +5,63 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v148 — 2026-11-10
+
+**What's new** · Update · [tools.html#events]
+### Activity Planner: pay by card
+Organisers can now write a short description of the event, shown in a box at
+the top of the sign-up page, and pick how guests pay: card (a Stripe payment
+link, so guests get a "Pay by card" button), Interac e-Transfer (with a Copy
+button for the address), cash, or any mix. Guests see the options under the
+form and are told where to find them once they book.
+
+**Activity Planner v4 — `tools/activity-planner.html`, source `Tools files/Events/activity_planner_v4.html`** (Events)
+- **Event description**: new "Event description" box in Event settings →
+  `meta.description` (string, ≤ 5000). Shown as "About the event" above the
+  form on the guest page and on each activity's `&a=` page; hidden when empty.
+- **How guests can pay**: new card in Event settings with three ticks —
+  Card (Stripe payment link, must start with `https://`), Interac e-Transfer
+  (email/phone), Cash (optional note) — plus "Other details" (the old
+  free-text `meta.payment`, unchanged). Stored as
+  `meta.payWith = {stripe?, etransfer?, cash?, cashNote?}`. Empty extras are
+  left out of meta rather than stored blank, so events using neither still
+  save under the old rules.
+- Guests see "How to pay" under the form (Pay by card button, e-Transfer
+  address with Copy, Cash, Other details), on the guest page and the `&a=`
+  page. Booking confirmations say "How to pay is below." when there's
+  something to pay. The default welcome text no longer promises a follow-up
+  email (events still carrying the old default get the new wording when pay
+  options exist).
+- Payments are still ticked off by hand: "Stripe" added to the method list in
+  the payment log. No server, no webhook — Stripe emails Xavier each payment.
+- If a save is refused because the rules aren't published yet, the alert
+  says so instead of a bare PERMISSION_DENIED.
+- Scan: nothing new — `buy.stripe.com` appears only as placeholder text;
+  example email/phone placeholders as before.
+
+**Firebase rules** — `events/$eid/meta` gains `description` (string ≤ 5000)
+and `payWith` (`cash` boolean, `cashNote` ≤ 300, `etransfer` ≤ 200,
+`stripe` ≤ 500 starting `https://`, nothing else). Nothing else changed.
+
+**Verified** — on the mock database (site copy with `assets/` rewired):
+created an event with a paid activity, filled the description, ticked all
+three pay options + Other details and saved → meta holds `description` and
+`payWith`. Guest page (second device, signed out) shows About the event and
+How to pay with the Stripe link button, e-Transfer + Copy, Cash note and Other
+details; the `&a=` page shows both; a booking and an RSVP both say "How to pay
+is below."; a non-https Stripe link is refused and nothing saved; unticking
+everything and clearing the description removes both keys from meta and
+hides both boxes. Phone width (375 px): guest, `&a=` and admin settings pages
+have no sideways scroll. No console errors.
+
+**Outstanding**
+- **Xavier publishes the updated rules** (Firebase console → Realtime
+  Database → Rules → paste the whole file → Publish). Until then, saving a
+  description or payment options is refused with a clear message; everything
+  else works as before.
+
+---
+
 ## v147 — 2026-11-07
 
 **Memory Map — `tools/memory-map.html`, source `Claude memory map/` (local, v10)** (Personal, owner-only)
