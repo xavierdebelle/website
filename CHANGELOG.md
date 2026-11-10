@@ -5,6 +5,70 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v150 — 2026-11-10
+
+**What's new** · Privacy fix · [tools.html#events]
+### Activity Planner keeps guests' details private
+Guests' emails, phone numbers and notes are now visible only to the organiser
+and to the guest who booked. Before, someone with the event link who knew
+where to look could read them. Nothing changes in how you sign up or change a
+booking.
+
+**Activity Planner v5 — `tools/activity-planner.html`, source `Tools files/Events/activity_planner_v5.html`** (Events)
+- **The leak (security review 2026-10-12, item 6a):** `roster/{k}` is public
+  and used the same key as `guests/{k}` / `pay/{k}` (k = SHA-256 of event id +
+  email, readable by key). Anyone with the link could list the roster keys and
+  open every booking: email, phone, notes, payment log. They could also
+  overwrite any booking, since the rules let anyone with a key write it.
+- **Fix:** the roster line now has its own random key, `rk` (16 bytes, 32 hex),
+  stored only inside the private record (`guests/{k}/rk`). The public roster no
+  longer lists any private key. A guest still opens and changes their booking
+  by typing their email, and the duplicate-email check reads `guests/{k}` by
+  key instead of the roster.
+- **Existing events:** the first time the organiser's dashboard loads, each
+  booking without its own `rk` gets one, a new roster line, and the old line
+  under k is deleted (`migrateRosterKeys`, once per page load; fails quietly
+  and retries if the rules aren't published). Until an event's dashboard is
+  opened, a guest editing an old booking keeps using its old line (`rk = k`),
+  so there's never a duplicate line.
+- **No outage while the rules wait:** if the database refuses `rk` (rules from
+  before v150), a booking saves the old way.
+- Deleting a guest also removes their roster line under `rk`.
+- Not changed, said plainly: someone who knows a guest's exact email can
+  still open or change that one booking (the email is the key). Keys that
+  were public before this release stay valid for anyone who already copied
+  them; they can't be rotated because they come from the email. Roster lines
+  (names, spots) stay public and writable, as before.
+- Scan: nothing new.
+
+**Firebase rules** — `events/$eid/guests/$k` must now carry `rk` (string,
+20–80 characters): `.validate` is `hasChildren(['first', 'last', 'rk'])`.
+Pages from before v150 left open on a phone can no longer save a booking
+(they get "Could not save"; a reload fixes it), so none can re-list a private
+key. Mock harness (`server.py`) mirrors the rule and gains `/__rules/v148`
+to simulate the old rules.
+
+**Verified** — on the mock database: under the old rules the new page saves
+the old way, an old page books as before, and the dashboard's move fails
+quietly. Under the new rules, a guest editing an unmoved booking updates its
+old line with no duplicate. Opening the dashboard gives every booking its own
+`rk`, the roster lists no private key, its lines match the bookings, and a
+second load changes nothing. An old page is refused. A new booking gets a
+random line and the private key isn't listed. A duplicate email is still caught. A moved
+guest edits their own line, and spots left are right (12 = 20 − 8). The RSVP
+page adds to the same booking. An outsider reading `guests/<roster key>` for
+every roster key gets nothing. The dashboard shows all guests, deleting a
+guest removes their line, and a payment saves with `rk` kept. The v148 checks
+(description, pay options, phone width) all still pass.
+
+**Outstanding**
+- **Xavier publishes the updated rules** (whole file). Until then the leak is
+  still open: bookings save the old way.
+- **Then open each existing event's dashboard once** to move its bookings
+  over.
+
+---
+
 ## v149 — 2026-11-10
 
 **What's new** · Update · [tools.html#debelle]

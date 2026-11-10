@@ -703,11 +703,15 @@ Guest form
 // connection and Google sign-in. Layout, per event — events/{id}/:
 //   meta        name, dates, place, currency, texts, owner uid   — public
 //   activities  the activity list                                — public
-//   roster/{k}  first, last, activities+spots                    — public (capacity, who's coming)
-//   guests/{k}  full booking incl. email, phone, notes           — organiser, or anyone holding k
+//   roster/{rk} first, last, activities+spots                    — public (capacity, who's coming)
+//   guests/{k}  full booking incl. email, phone, notes, rk       — organiser, or anyone holding k
 //   pay/{k}     paymentLog                                       — organiser writes; read like guests/{k}
 // k = SHA-256 of event id + email, so a booking can be opened by typing its email but
-// the list of bookings can't be read. eventIndex/{uid}/{id} lists an organiser's events.
+// the list of bookings can't be read. rk is a separate random key (v5): the public roster
+// must never list k, or anyone with the link could open every booking. Only the private
+// record knows which roster line is its own. Events from before v5 filed the roster under
+// k; the organiser's dashboard moves them over (migrateRosterKeys).
+// eventIndex/{uid}/{id} lists an organiser's events.
 // The rules in .claude/skills/add-cloud-sync/assets/firebase-rules.json enforce all this.
 const OWNER_UID = 'jGJdt3h4EeaOL3mYWUHA4yMZsRx2';
 let F = null, DB = null, db = null;
@@ -762,11 +766,21 @@ function rebuildGuests() {
 if (isAdmin) {
 guests = Object.entries(recMap).map(([k, rec]) => fullGuest(k, rec, payMap[k]));
 } else {
-guests = Object.entries(rosterMap).map(([k, r]) => mine[k]
-? fullGuest(k, {...mine[k].rec, activities: r.activities}, mine[k].pay)
-: {id: k, first: r.first||'', last: r.last||'', email: '', phone: '', notes: '',
+// A booking this visitor opened by email takes over its own roster line (found through
+// the rk in the private record); every other line stays name + spots only.
+const own = {};
+Object.entries(mine).forEach(([k, m]) => { own[(m.rec && m.rec.rk) || k] = k; });
+guests = Object.entries(rosterMap).map(([rk, r]) => own[rk]
+? fullGuest(own[rk], {...mine[own[rk]].rec, activities: r.activities}, mine[own[rk]].pay)
+: {id: rk, first: r.first||'', last: r.last||'', email: '', phone: '', notes: '',
 activities: listOf(r.activities).map(x => ({id: x.id, spots: x.spots||1})), payments: {}, paymentLog: []});
 }
+}
+// Does a booking already exist under this key? Readable by key for anyone, so it works
+// without the public roster knowing private keys.
+async function bookingExists(k) {
+if (recMap[k] || mine[k]) return true;
+try { return (await get(ref(db, 'guests/' + k))).exists(); } catch(e) { return false; }
 }
 // Fetch one booking by its key (the guest typed their email). null if there is none.
 async function loadMine(k) {
@@ -977,7 +991,7 @@ if (!EID) { renderHomeAccount(); return; }
 const should = isOrganiserOf(EVENT);
 if (should && !isAdmin) {
 isAdmin = true;
-ownerOffs.push(onValue(ref(db, 'guests'), snap => { recMap = snap.val() || {}; rebuildGuests(); refreshViews(); },
+ownerOffs.push(onValue(ref(db, 'guests'), snap => { recMap = snap.val() || {}; rebuildGuests(); refreshViews(); migrateRosterKeys(); },
 () => toast('Could not read the bookings — check the database rules')));
 ownerOffs.push(onValue(ref(db, 'pay'), snap => { payMap = snap.val() || {}; rebuildGuests(); refreshViews(); }));
 unlockPanel();
@@ -990,6 +1004,32 @@ document.getElementById('admin-login').style.display = 'block';
 rebuildGuests(); refreshViews();
 }
 renderAdminGate();
+}
+// Events from before v5 filed each public roster line under the booking's private key,
+// which let anyone with the link open every booking. The first time the organiser's
+// dashboard loads, give each such booking its own random roster key and drop the old
+// line. Runs once per page; if the rules aren't published yet it fails quietly and
+// tries again next time.
+let rosterMigrated = false;
+async function migrateRosterKeys() {
+if (rosterMigrated || !isAdmin) return;
+rosterMigrated = true;
+const upd = {};
+Object.entries(recMap).forEach(([k, rec]) => {
+if (!rec || typeof rec !== 'object') return;
+if (!rec.rk || rec.rk === k) {
+const rk = randomId(16);
+upd['guests/' + k + '/rk'] = rk;
+upd['roster/' + rk] = {first: rec.first||'', last: rec.last||'',
+activities: listOf(rec.activities).map(r => ({id: r.id, spots: r.spots||1}))};
+upd['roster/' + k] = null;
+} else if (rosterMap[k]) {
+upd['roster/' + k] = null; // a stale line under the private key
+}
+});
+if (!Object.keys(upd).length) return;
+try { await F.update(rootRef('events/' + EID), upd); }
+catch(e) { rosterMigrated = false; }
 }
 function renderAdminGate() {
 const el = document.getElementById('admin-gate');
@@ -1100,17 +1140,37 @@ document.getElementById('hdr-meta').innerHTML = '';
 // and (organiser only) the payment log. Money is never written from the guest side.
 async function saveGuest(g) {
 const acts = (g.activities||[]).map(r => ({id: r.id, spots: r.spots||1}));
-const rec = {id: g.id, first: g.first||'', last: g.last||'', email: g.email||'', phone: g.phone||'',
+// The roster line's key: the one the booking already has; for a booking from before v5,
+// its old line (filed under k) until the organiser's dashboard moves it; else a new one.
+const known = recMap[g.id] || (mine[g.id] && mine[g.id].rec);
+const rk = g.rk || (known ? (known.rk || g.id) : randomId(16));
+const base = {id: g.id, first: g.first||'', last: g.last||'', email: g.email||'', phone: g.phone||'',
 notes: g.notes||'', activities: acts, registeredAt: g.registeredAt||''};
-const upd = {['guests/' + g.id]: rec, ['roster/' + g.id]: {first: rec.first, last: rec.last, activities: acts}};
-if (isAdmin) upd['pay/' + g.id] = {paymentLog: (g.paymentLog||[]).map(e => ({
+const line = {first: base.first, last: base.last, activities: acts};
+const pay = isAdmin ? {paymentLog: (g.paymentLog||[]).map(e => ({
 id: String(e.id||''), amount: String(e.amount||''), date: e.date||'', method: e.method||'',
-notes: e.notes||'', actId: e.actId||'', recordedAt: e.recordedAt||''}))};
+notes: e.notes||'', actId: e.actId||'', recordedAt: e.recordedAt||''}))} : null;
+const write = (rec, lineKey) => {
+const upd = {['guests/' + g.id]: rec, ['roster/' + lineKey]: line};
+if (pay) upd['pay/' + g.id] = pay;
 else mine[g.id] = {rec, pay: mine[g.id] ? mine[g.id].pay : null};
-await F.update(rootRef('events/' + EID), upd);
+return F.update(rootRef('events/' + EID), upd);
+};
+const rec = {...base, rk};
+try { await write(rec, rk); g.rk = rk; }
+catch(e) {
+// Database rules from before v5 refuse rk: save the old way (roster under k) so
+// bookings keep working until the new rules are published.
+if (!/PERMISSION_DENIED/i.test(String(e.code || e.message || ''))) throw e;
+await write(base, g.id);
+delete g.rk;
+}
 }
 async function deleteGuest(k) {
-await F.update(rootRef('events/' + EID), {['guests/'+k]: null, ['roster/'+k]: null, ['pay/'+k]: null});
+const rk = (recMap[k] && recMap[k].rk) || (mine[k] && mine[k].rec && mine[k].rec.rk);
+const upd = {['guests/'+k]: null, ['roster/'+k]: null, ['pay/'+k]: null};
+if (rk && rk !== k) upd['roster/' + rk] = null;
+await F.update(rootRef('events/' + EID), upd);
 }
 async function saveActivity(a) { await set(ref(db, 'activities/' + a.id), a); }
 async function deleteActivityFromDb(id) { await remove(ref(db, 'activities/' + id)); }
@@ -1319,7 +1379,7 @@ const notes = document.getElementById('g-notes').value.trim();
 const sel = sortedActivities().filter(a => document.getElementById('cb-'+a.id)?.checked);
 if (!first||!last||!email) { alert('Please fill in your name and email.'); return; }
 const key = await emailKey(email);
-if (rosterMap[key] || recMap[key]) {
+if (rosterMap[key] || await bookingExists(key)) {
 alert('A reservation with this email already exists. Use "View and modify your reservation" at the top to make changes.'); return;
 }
 if (!sel.length) { alert('Please select at least one activity.'); return; }
@@ -2623,7 +2683,7 @@ if (!first||!last) { saveBtn.disabled=false; saveBtn.textContent='Save'; return;
 const sel = Array.from(document.querySelectorAll('.m-act:checked')).map(c=>c.value);
 const mEmail = document.getElementById('m-email').value.trim();
 const key = mEmail ? await emailKey(mEmail) : 'm' + randomId(10);
-if (recMap[key]) { alert('A guest with this email is already booked.'); saveBtn.disabled=false; saveBtn.textContent='Save'; return; }
+if (recMap[key] || (mEmail && await bookingExists(key))) { alert('A guest with this email is already booked.'); saveBtn.disabled=false; saveBtn.textContent='Save'; return; }
 const g = {
 id:key, first, last,
 email: mEmail,
