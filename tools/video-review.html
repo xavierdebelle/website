@@ -217,6 +217,7 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:var(--volt)}
   <div class="topacts">
     <a class="btn sm" id="navBack" href="?" hidden>← Reviews</a>
     <select id="verSel" hidden aria-label="Version"></select>
+    <button type="button" class="btn sm" id="btnDl" hidden title="Download this version">↓ Download</button>
     <button type="button" class="btn sm" id="btnShare" hidden>Client link</button>
     <button type="button" class="btn sm" id="btnHostMenu" hidden>Manage</button>
     <span id="acctSlot" data-xdb-account hidden></span>
@@ -395,7 +396,7 @@ function normalise(v, id) {
     .sort((a, b) => a.n - b.n);
   const comments = Object.entries(v.comments || {}).map(([k, c]) => ({ key: k, v: c.v || '', t: Number(c.t) || 0, text: c.text || '', name: c.name || 'Guest', by: c.by || '', at: c.at || 0,
     draw: c.draw || '', done: !!c.done, re: c.re || '', host: !!c.host, gone: !!c.gone, edited: c.edited || 0 }));
-  return { id, owner: v.owner, title: v.title || 'Video review', createdAt: v.createdAt || 0, versions, comments };
+  return { id, owner: v.owner, title: v.title || 'Video review', createdAt: v.createdAt || 0, dl: v.dl === true, versions, comments };
 }
 const curVer = () => R && (R.versions.find(x => x.key === verKey) || R.versions[R.versions.length - 1]) || null;
 const fps = () => (curVer() && curVer().fps) || 24;
@@ -864,6 +865,7 @@ function renderReview() {
     return '<option value="' + esc(x.key) + '"' + (v && x.key === v.key ? ' selected' : '') + '>Version ' + x.n + (x.name ? ' — ' + esc(x.name) : '') + ' (' + n + ')</option>';
   }).join('') + (host ? '<option value="__add">+ Add a version…</option>' : '');
   if (!R.versions.length) sel.hidden = !host;
+  $('btnDl').hidden = !canDownload(v);
   loadVideo();
   renderList(); renderMarks(); paintCompose();
 }
@@ -1225,6 +1227,22 @@ function exportText() {
   return lines.join('\n');
 }
 $('btnExport').onclick = () => { if (curVer()) copy(exportText()); };
+// ── Downloads (v149) ── the host can always save a version; clients only
+// once the host ticks "Clients can download" in Manage (R.dl). Only files we
+// can actually hand over: a Drive upload or a direct video file. YouTube,
+// Vimeo, Wistia, Loom and Dailymotion links never show the button.
+const dlSource = ver => { const s = sourceOf(ver); return s && (s.kind === 'drive' || s.kind === 'file') ? s : null; };
+const canDownload = ver => !!(R && dlSource(ver) && (isHost() || R.dl));
+$('btnDl').onclick = () => {
+  const v = curVer(), s = dlSource(v);
+  if (!s || !canDownload(v)) return;
+  // a new tab: Drive shows its "can't scan this for viruses" page for big
+  // films, and another site's file opens there with its own save option
+  const url = s.kind === 'drive' ? 'https://drive.google.com/uc?export=download&id=' + encodeURIComponent(s.id) : s.url;
+  window.open(url, '_blank', 'noopener');
+  toast(s.kind === 'drive' ? 'Downloading from Google Drive…' : 'Opened the file — save it from there if it doesn’t download');
+  if (window.xdbTrack && !isHost()) window.xdbTrack('video-download');
+};
 $('btnHostMenu').onclick = () => {
   const v = curVer();
   dialog('<h3>Manage</h3>' +
@@ -1235,6 +1253,8 @@ $('btnHostMenu').onclick = () => {
       (v ? '<button type="button" class="btn sm" id="dlgTxt">Download notes (.txt)</button>' : '') +
       (v && R.versions.length > 1 ? '<button type="button" class="btn sm" id="dlgDelV">Delete this version</button>' : '') +
       '<button type="button" class="btn sm" id="dlgDelR">Delete review</button></div>' +
+    '<div class="field"><p class="k">Downloads</p><label class="pchk"><input type="checkbox" id="dlgDl"' + (R.dl ? ' checked' : '') + '>Clients can download the video</label>' +
+      '<p class="note" style="margin:4px 0 0">Adds a ↓ Download button for anyone with the link, for the version they’re watching. Works for Google Drive uploads and direct video files — not YouTube, Vimeo, Wistia, Loom or Dailymotion links.</p></div>' +
     '<div class="field"><p class="k">Client portals</p><div id="dlgPortals" class="note">Loading…</div></div>' +
     '<p class="note">Deleting removes the notes here. The video files stay where they were uploaded.</p>',
     // read the fields while the box is still open — it's gone once Save resolves
@@ -1247,6 +1267,8 @@ $('btnHostMenu').onclick = () => {
       if (v && got.fps && Math.abs(got.fps - v.fps) > .001) write('reviews/' + R.id + '/versions/' + v.key + '/fps', got.fps);
     });
   $('dlgAdd').onclick = () => { closeDialog(); openAdd(); };
+  $('dlgDl').onchange = e => { const on = e.target.checked;
+    write('reviews/' + R.id + '/dl', on ? true : null).then(ok => { if (ok) toast(on ? 'Clients can download ✓' : 'Downloads off for clients'); else e.target.checked = !on; }); };
   // which portals this review is in — ticking writes straight away
   fb.f.get(dbRef('users/' + me().uid + '/portals')).then(snap => {
     const list = Object.entries(snap.val() || {});

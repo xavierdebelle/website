@@ -5,6 +5,52 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v149 — 2026-11-10
+
+**What's new** · Update · [tools.html#debelle]
+### Client downloads in the review tools
+Photo Review and Video Review can now let clients download what they're
+looking at. It's off until you tick "Clients can download" in Manage, per
+review. Photos: this one or all of them, the latest version of each. Videos:
+the version being watched, for Drive uploads and direct video files.
+
+**Photo Review — `tools/photo-review.html`, source `Tools files/de Belle Photography apps/photo-review-v12.html`** (The Biz)
+- New "↓ Download" button beside Approve. The host always has it; clients
+  only when the review's `dl` is `true`. With more than one photo it asks
+  "This photo" or "All N photos" (latest version of each, fired one at a
+  time 0.7 s apart; the browser may ask once to allow multiple downloads).
+- Drive photos download through `drive.google.com/uc?export=download&id=…`
+  — the file Drive holds, i.e. the 3000 px review copy, not the original.
+  Linked photos (ShootProof `3x`) are fetched and saved under the photo's
+  name; if the site refuses the fetch, a single download opens the image in
+  a new tab and a batch counts it as "couldn't be saved from here".
+- Manage → Downloads: "Clients can download the photos" tick, writes
+  `photoReviews/{id}/dl` straight away (`null` when off). Clients' button
+  appears/disappears live.
+- New Umami event `photo-download` (`photos: n`), clients only.
+
+**Video Review — `tools/video-review.html`, source `Tools files/de Belle Photography apps/video-review-v8.html`** (The Biz)
+- "↓ Download" in the header for the version being watched, same rule
+  (`reviews/{id}/dl`). Only for Drive uploads (opens Drive's download in a
+  new tab — big films get Drive's "can't scan for viruses" page there) and
+  direct video files (GoHighLevel etc., opened in a new tab). Never shown for
+  YouTube, Vimeo, Wistia, Loom or Dailymotion links.
+- Manage → Downloads tick, as above. Umami event `video-download`.
+
+**Firebase** — no rule change: the review root accepts extra fields from the
+host only (owner/member write), so `dl` saves under the published rules.
+Clients can't set it.
+
+**Verified** on the mock database (two devices): off → no button for the
+client; host ticks → `dl: true`, client's button appears without reload;
+single + "all" photo downloads (named file `IMG_001.jpg` when fetchable,
+Drive link for Drive photos); untick → `dl` removed, button gone; video
+Drive download opens the `uc?export=download` link; YouTube review shows no
+button. Phone width (iPhone 13): no horizontal scroll. No console errors.
+Scan: nothing new (same hosts as before).
+
+---
+
 ## v148 — 2026-11-10
 
 **What's new** · Update · [tools.html#events]

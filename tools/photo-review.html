@@ -283,6 +283,7 @@ label.chk input{margin-top:3px;accent-color:var(--volt)}
     <div class="pbar">
       <div class="pname" id="pname"></div>
       <select id="verSel" hidden aria-label="Version"></select>
+      <button type="button" class="btn sm" id="btnDl" hidden title="Download this photo">↓ Download</button>
       <button type="button" class="btn sm" id="btnApprove" hidden>✓ Approve</button>
     </div>
     <div class="stage" id="stage">
@@ -397,7 +398,7 @@ function normalise(v, id) {
   const num = n => (typeof n === 'number' && n >= 0 && n <= 1 ? n : null);
   const comments = Object.entries(v.comments || {}).map(([k, c]) => ({ key: k, p: c.p || '', v: c.v || '', x: num(c.x), y: num(c.y), text: c.text || '', name: c.name || 'Guest',
     by: c.by || '', at: c.at || 0, draw: c.draw || '', done: !!c.done, re: c.re || '', host: !!c.host, gone: !!c.gone, edited: c.edited || 0, ok: !!c.ok }));
-  return { id, owner: v.owner, title: v.title || 'Photo review', createdAt: v.createdAt || 0, photos, comments };
+  return { id, owner: v.owner, title: v.title || 'Photo review', createdAt: v.createdAt || 0, dl: v.dl === true, photos, comments };
 }
 const curPhoto = () => R && (R.photos.find(p => p.key === photoKey) || R.photos[0]) || null;
 const latest = p => p && p.versions.length ? p.versions[p.versions.length - 1] : null;
@@ -432,6 +433,50 @@ function setUrl() {
   const q = '?r=' + encodeURIComponent(R.id) + (portalId ? '&p=' + encodeURIComponent(portalId) : '') + (curPhoto() ? '&ph=' + encodeURIComponent(curPhoto().key) : '') + (verKey ? '&v=' + encodeURIComponent(verKey) : '');
   history.replaceState(null, '', q);
 }
+
+// ── Downloads (v149) ── the host can always save a photo; clients only once
+// the host ticks "Clients can download" in Manage (R.dl). What downloads is
+// the file this review shows: the review copy on Drive (Drive serves it as a
+// download), or the linked image (ShootProof's 3000 px).
+const canDownload = ver => !!(ver && (ver.drive || ver.url) && (isHost() || R.dl));
+const safeName = s => String(s || '').replace(/[\\/:*?"<>|]+/g, '').replace(/\s+/g, ' ').trim().slice(0, 120) || 'photo';
+function dlName(p, ver) {
+  const base = safeName(p && p.name ? p.name.replace(/\.[a-z0-9]{2,5}$/i, '') : R.title + ' ' + (R.photos.indexOf(p) + 1));
+  return base + (ver && ver.n > 1 ? ' v' + ver.n : '') + '.jpg';
+}
+function saveVersion(p, ver, batch) {
+  if (!ver) return Promise.resolve(false);
+  const a = document.createElement('a'); a.rel = 'noopener';
+  if (ver.drive) {
+    // Drive answers with the file as an attachment, so the page stays put
+    a.href = 'https://drive.google.com/uc?export=download&id=' + encodeURIComponent(ver.drive);
+    document.body.appendChild(a); a.click(); a.remove();
+    return Promise.resolve(true);
+  }
+  // another site's image: fetch it to give it a name; if it won't share, open it
+  return fetch(ver.url, { mode: 'cors' }).then(r => { if (!r.ok) throw 0; return r.blob(); }).then(b => {
+    a.href = URL.createObjectURL(b); a.download = dlName(p, ver);
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    return true;
+  }).catch(() => { if (batch) return false; window.open(ver.url, '_blank', 'noopener'); return true; });   // in a batch a pop-up would be blocked
+}
+function trackDl(n) { if (window.xdbTrack && !isHost()) window.xdbTrack('photo-download', { photos: n }); }
+$('btnDl').onclick = () => {
+  const p = curPhoto(), v = curVer();
+  if (!canDownload(v)) return;
+  const all = R.photos.filter(x => latest(x) && canDownload(latest(x)));
+  if (all.length < 2) { saveVersion(p, v); trackDl(1); toast('Downloading…'); return; }
+  dialog('<h3>Download</h3><p class="note">Photos save to your downloads folder. For several at once your browser may ask to allow multiple downloads — say yes.</p>',
+    [['Cancel', null], ['All ' + all.length + ' photos', () => 'all'], ['This photo', () => 'one', true]]).then(got => {
+      if (!got) return;
+      if (got === 'one') { saveVersion(p, v); trackDl(1); toast('Downloading…'); return; }
+      // one at a time, a beat apart — browsers drop downloads fired together
+      trackDl(all.length); toast('Downloading ' + all.length + ' photos…');
+      let missed = 0;
+      all.reduce((chain, x) => chain.then(() => saveVersion(x, latest(x), true)).then(ok => { if (!ok) missed++; return new Promise(r => setTimeout(r, 700)); }), Promise.resolve())
+        .then(() => toast(missed ? missed + ' couldn’t be saved from here — open those one at a time' : 'Done — check your downloads'));
+    });
+};
 
 // ══════════════════ HOME ══════════════════
 let homeOff = null, homeUid, homeData = {}, homeWatch = {};
@@ -567,6 +612,7 @@ function renderReview() {
   // approve: clients and the host each have their own approval on a version
   const ap = v ? approvals(v) : [], mineOk = myApproval(v);
   $('btnApprove').hidden = !v;
+  $('btnDl').hidden = !v || !canDownload(v);
   $('btnApprove').className = 'btn sm' + (ap.length ? ' ok' : '');
   $('btnApprove').textContent = mineOk ? '✓ Approved — undo' : host ? (ap.length ? '✓ Client approved · approve too' : '✓ Approve') : '✓ Approve this photo';
   $('btnApprove').title = ap.length ? 'Approved by ' + ap.map(c => c.name).join(', ') : '';
@@ -1037,6 +1083,8 @@ $('btnHostMenu').onclick = () => {
       (v && p.versions.length > 1 ? '<button type="button" class="btn sm" id="dlgDelV">Delete this version</button>' : '') +
       (p ? '<button type="button" class="btn sm" id="dlgDelP">Delete this photo</button>' : '') +
       '<button type="button" class="btn sm" id="dlgDelR">Delete review</button></div>' +
+    '<div class="field"><p class="k">Downloads</p><label class="chk" style="margin-top:6px"><input type="checkbox" id="dlgDl"' + (R.dl ? ' checked' : '') + '><span>Clients can download the photos</span></label>' +
+      '<p class="note" style="margin:6px 0 0">Adds a ↓ Download button for anyone with the link — one photo or all of them, the latest version of each.</p></div>' +
     '<div class="field"><p class="k">Client portals</p><div id="dlgPortals"><p class="note">Loading…</p></div></div>' +
     '<p class="note">Deleting removes the notes here. The files stay in your Google Drive folder “' + DRIVE_FOLDER + '”.</p>',
     // read the fields while the box is still open — it's gone once Save resolves
@@ -1049,6 +1097,8 @@ $('btnHostMenu').onclick = () => {
       if (p && got.pname != null && got.pname !== p.name) write(ROOT + '/' + R.id + '/photos/' + p.key + '/name', got.pname);
     });
   $('dlgAddP').onclick = () => { closeDialog(); openAddPhotos(); };
+  $('dlgDl').onchange = e => { const on = e.target.checked;
+    write(ROOT + '/' + R.id + '/dl', on ? true : null).then(ok => { if (ok) toast(on ? 'Clients can download ✓' : 'Downloads off for clients'); else e.target.checked = !on; }); };
   fillPortalPicker();
   if ($('dlgAddV')) $('dlgAddV').onclick = () => { closeDialog(); openAddVersion(); };
   const move = d => reorder(photoIndex(), photoIndex() + d);
