@@ -126,7 +126,7 @@ its ID forever. Statuses: new, planned, in progress, done, dropped.
 - work.html has a real-estate chapter but no tools for it. Add a renovation budget (fork of budget-tracker.html), a duplex cash-flow calculator and a contractor and quote tracker.
 
 ### IDEA-030 · Stripe payment links in the Activity Planner
-- **Category:** Feature · **Effort:** M · **Impact:** ★★ · **Status:** new
+- **Category:** Feature · **Effort:** M · **Impact:** ★★ · **Status:** done (done in v148, 2026-11-10)
 - tools/activity-planner.html already tracks who has paid, but payment happens elsewhere. A Stripe payment link per activity closes the loop and is the first step toward charging for the tool itself.
 
 ### IDEA-031 · "Lock this price for 7 days, book a call" in the Package Builder
@@ -855,3 +855,25 @@ its ID forever. Statuses: new, planned, in progress, done, dropped.
 ### IDEA-194 · Sell the galaxy intro to 333 Photo clients as a website centrepiece
 - **Category:** Monetization · **Effort:** M · **Impact:** ★★ · **Status:** new
 - The Galaxy Map is already driven by data: the logo is four triangles taken from an SVG (`LOGO`), the sections come from one list (`MAP`), and every visual setting (speed, colours, star count, gold) sits in one `T` block. That means the same piece can be rebuilt for another brand in hours, not weeks: their logo as the mark the camera flies through, their services as constellations, their colours. Offer it on the 333 Photo side as a fixed-price "Signature intro" for restaurants, venues, developers and creative studios (for example $1,500–2,500, sold with a photo or brand shoot), with Galaxy Map itself as the live demo. It turns an art experiment into a high-margin add-on that no other photographer in Montreal can offer, and every client site that runs one is a showcase linking back to 333 Photo.
+
+## 2026-11-11 — Monetization and offers
+
+### IDEA-195 · "Your day runs longer than your coverage" in the Wedding Day Schedule
+- **Category:** Monetization · **Effort:** M · **Impact:** ★★ · **Status:** new
+- tools/wedding-schedule.html asks for an Arrival and Departure time in every block (groom, bride, ceremony, family, couple, reception), but never compares the first arrival with the last departure, while couples on "Hourly Photography" in tools/package-builder.html ($400/h, 2-hour minimum) book a fixed number of hours. Pass the booked hours in the couple's schedule link (for example `?h=6`), read the times, and when the day spans longer show one card: "Your day runs 8½ hours and you booked 6. Add 2½ hours now at $400/h instead of overtime on the day." with a button that emails or posts the request. The couple finds the gap while planning, not at 10 pm when the photographer has to leave, and the extra hours are sold at full price with no discount.
+
+### IDEA-196 · Turn "Design your coverage" into "Your coverage, and what you can add" for booked couples
+- **Category:** Monetization · **Effort:** M · **Impact:** ★★★ · **Status:** new
+- The Photography & Film tab of tools/wedding-hub.html (VIEWS.photo, line ~578) shows every couple the same pitch, "Nothing is booked until we have spoken", even after they have signed, and only links to a blank Package Builder. For a booked couple, show what they booked (collection and add-ons, stored with the hub or passed in their link), then an "Upgrade" row: "Move from The Essential to The Signature: pay only the $3,600 difference, at your booking price, until 90 days before the wedding." plus the two or three add-ons they didn't pick. Couples' budgets loosen as the day gets close; a clear upgrade path with a deadline turns that into revenue instead of a vague "can we add something?" email in month eleven.
+
+### IDEA-197 · A "Wedding weekend" add-on for welcome parties and the day after
+- **Category:** Monetization · **Effort:** S · **Impact:** ★★ · **Status:** new
+- Every line in tools/package-builder.html covers the wedding day only (hourly or full-day photo and film, Glam Studio, albums), yet the site's own wedding pages are multi-day: tools/wedding-activities.html lists the events around the wedding and tools/wedding-invite.html is for a Los Cabos destination wedding. Add a "Wedding weekend" section with two fixed items, "Welcome party or rehearsal dinner, 2 hours, $X" and "Day-after session (brunch, beach or city walk), 90 minutes, $X", with a one-line note that destination couples are already paying to bring the team there. This is different from IDEA-185 (the travel fee): it sells more hours of the trip the couple is already paying for, at the moment they're building the package.
+
+### IDEA-198 · One-tick order bump in the Package Builder's PDF form
+- **Category:** Monetization · **Effort:** S · **Impact:** ★★ · **Status:** new
+- The last step in tools/package-builder.html is the "Tell us about your day" form (client-modal, line ~636): names, email, date, "Download PDF". Nothing is offered there, though it's the moment the couple has decided. If the package doesn't already include it, add one pre-written tick box above the button, "Add a Social Media Reel, +$150: a 60-second film ready to post within a week", which adds the line to the summary and the PDF. A single, cheap, relevant add-on at checkout (the classic order bump) is taken by a share of buyers with no extra selling, and $150 on every fifth couple adds up over a season.
+
+### IDEA-199 · Match card payments to guests in the Activity Planner (builds on IDEA-030)
+- **Category:** Feature · **Effort:** M · **Impact:** ★ · **Status:** new
+- v148 added a "Pay by card" Stripe link to tools/activity-planner.html, but the changelog says payments are still ticked off by hand: the organiser reads Stripe's emails and finds the guest. Open the link with the guest's email and booking filled in (Stripe payment links accept `?prefilled_email=` and `?client_reference_id=`), and show those in the organiser's payment log, so each Stripe receipt names the booking it belongs to; a small webhook can later tick it off automatically. Fewer "did you pay?" messages for organisers makes the tool worth recommending, and it's the plumbing any paid version of the tool (IDEA-034) would need.
