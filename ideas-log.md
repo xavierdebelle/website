@@ -126,7 +126,7 @@ its ID forever. Statuses: new, planned, in progress, done, dropped.
 - work.html has a real-estate chapter but no tools for it. Add a renovation budget (fork of budget-tracker.html), a duplex cash-flow calculator and a contractor and quote tracker.
 
 ### IDEA-030 · Stripe payment links in the Activity Planner
-- **Category:** Feature · **Effort:** M · **Impact:** ★★ · **Status:** new
+- **Category:** Feature · **Effort:** M · **Impact:** ★★ · **Status:** done (done in v148, 2026-11-10)
 - tools/activity-planner.html already tracks who has paid, but payment happens elsewhere. A Stripe payment link per activity closes the loop and is the first step toward charging for the tool itself.
 
 ### IDEA-031 · "Lock this price for 7 days, book a call" in the Package Builder
@@ -855,3 +855,21 @@ its ID forever. Statuses: new, planned, in progress, done, dropped.
 ### IDEA-194 · Sell the galaxy intro to 333 Photo clients as a website centrepiece
 - **Category:** Monetization · **Effort:** M · **Impact:** ★★ · **Status:** new
 - The Galaxy Map is already driven by data: the logo is four triangles taken from an SVG (`LOGO`), the sections come from one list (`MAP`), and every visual setting (speed, colours, star count, gold) sits in one `T` block. That means the same piece can be rebuilt for another brand in hours, not weeks: their logo as the mark the camera flies through, their services as constellations, their colours. Offer it on the 333 Photo side as a fixed-price "Signature intro" for restaurants, venues, developers and creative studios (for example $1,500–2,500, sold with a photo or brand shoot), with Galaxy Map itself as the live demo. It turns an art experiment into a high-margin add-on that no other photographer in Montreal can offer, and every client site that runs one is a showcase linking back to 333 Photo.
+
+## 2026-11-12 — SEO, performance, accessibility, mobile
+
+### IDEA-195 · Give the Wedding Invite its own share picture
+- **Category:** Fix · **Effort:** S · **Impact:** ★★ · **Status:** new
+- tools/wedding-invite.html is a link that gets sent to every guest by WhatsApp, iMessage and email, but its `og:image` (line ~18) is `assets/og/home.png`, the black "Xavier de Belle" site card, while its alt text promises "Enya & Sami — wedding invitation". So the first thing each guest sees in the chat is Xavier's personal brand, not the couple. Make a 1200×630 card in the invite's own look (bone #efe4d4, clay, Cormorant Garamond: "Enya & Sami · 11 · 11 · 2027 · Los Cabos") as `assets/og/wedding-invite.png` and point the tag at it, plus an `apple-touch-icon` in the same palette for guests who save it to their home screen. The preview is the invitation's envelope; when invites become a product (IDEA-181), a matching card should be part of every one.
+
+### IDEA-196 · Load the small build of three.js in the Wedding Invite and Galaxy Map
+- **Category:** Fix · **Effort:** S · **Impact:** ★★ · **Status:** new
+- Both tools/wedding-invite.html (line ~283) and tools/galaxy-map.html import `three@0.169.0/build/three.module.js`, the full unminified file: 1.3 MB for the phone to parse, 261 KB over the wire. The same release ships `three.module.min.js`, which is 687 KB to parse and 138 KB over the wire (measured on jsdelivr today), with the same code. Change the import map line in both pages to the `.min.js` file and add a `<link rel="modulepreload">` for it so the download starts with the page. Guests opening the invite on hotel Wi-Fi or roaming data in Mexico see the envelope sooner, and the Galaxy Map intro starts faster for anyone testing it as the new home page (IDEA-193).
+
+### IDEA-197 · Swipe between photos and pinch to zoom in Photo Review
+- **Category:** Feature · **Effort:** S · **Impact:** ★★ · **Status:** new
+- In tools/photo-review.html, moving between photos and zooming only works with a mouse or keyboard: the stage's pointer handler ignores anything that isn't `pointerType === 'mouse'` (line ~875, "Touch scrolls natively"), and Arrow keys and +/− (line ~893) do the rest. A client reviewing on a phone, which is most of them, has to scroll down to the thumbnails to change photo and use the zoom buttons to look at detail. Add a horizontal swipe (when not zoomed in and not drawing) that calls `goPhoto()`, and a two-finger pinch that calls `zoomTo()`, the gestures every phone gallery has taught people. It makes the review feel like their camera roll, so clients go through all the photos in one sitting and reach the approval sooner. Separate from IDEA-116, which is about image file size, not gestures.
+
+### IDEA-198 · Pre-fill the guest's email and booking on the Stripe link (builds on IDEA-030)
+- **Category:** Monetization · **Effort:** S · **Impact:** ★★ · **Status:** new
+- v148 added a "Pay by card" button to tools/activity-planner.html (line ~906) that opens the organiser's bare Stripe payment link and asks the guest to "use the name you booked with" so the organiser can match it by hand. Stripe payment links accept `?prefilled_email=` and `?client_reference_id=` in the address, so append the guest's booking email and a reference made of the event id and the booking's public roster key (`rk`, letters and numbers only, so it fits Stripe's rules). The guest doesn't retype their email on a phone keyboard, and every Stripe payment arrives already labelled with the event and the guest, so the organiser records it with method Stripe in seconds instead of guessing. It is also the groundwork for marking bookings paid automatically if the planner is ever sold as a paid tool.
