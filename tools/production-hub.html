@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <script src="../assets/account.js"></script>   <!-- site-wide account; the tool falls back to its own sign-in without it -->
 <script defer src="../assets/stats.js"></script>
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">   <!-- maximum-scale: tapping a box never zooms the page (pinch-to-zoom still works on iPhone) -->
 <title>Production Hub — Xavier de Belle</title>
 <meta name="description" content="Today, the work in production, the big picture, the year's goals and the raw ideas, in one place. Reads Pipelines and Project Phases and keeps them in step.">
 <link rel="icon" href="../assets/logo.svg" type="image/svg+xml">
@@ -445,26 +445,67 @@ textarea[data-grow]{min-height:40px!important;height:40px;overflow:hidden;resize
   .srow .ttl{min-width:0}
   #dlg{padding:0;place-items:stretch}
   #dlg .box,#dlg .box.wide{max-width:none;max-height:100vh;height:100%;border-top-width:4px}
-  /* ---- phone: tabs live in a bar at the bottom (thumb reach), a smaller header, bigger tap targets ---- */
-  .top{padding:10px 14px 8px;padding-top:max(10px,env(safe-area-inset-top))}
+  /* ---- phone: the page is a fixed frame — header, the content (the only part that scrolls), then the tab bar —
+     so the bar sits still just above the browser's own bar instead of riding along when Safari's toolbar moves ---- */
+  html,body{height:100%;overflow:hidden;overscroll-behavior:none}
+  body{display:flex;flex-direction:column;height:100vh;height:100dvh;min-height:0}
+  .top{display:contents}
+  .top-row{order:1;flex:none;background:var(--black);color:var(--white);padding:10px 14px 8px;padding-top:max(10px,env(safe-area-inset-top))}
+  #runbar{order:2;flex:none}
+  #bars{order:3;flex:none}
+  main{order:4;flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:14px 12px 28px}
+  .tabs{order:5;flex:none;position:static;margin:0;gap:0;background:var(--black);border-top:1px solid #333;display:grid;grid-template-columns:repeat(5,1fr);overflow:visible;padding-bottom:env(safe-area-inset-bottom)}
   .brand a{display:none}
-  .brand h1{font-size:20px}
-  .tbtn{padding:7px 10px}
-  .tabs{position:fixed;left:0;right:0;bottom:0;z-index:50;margin:0;gap:0;background:var(--black);border-top:1px solid #333;display:grid;grid-template-columns:repeat(5,1fr);overflow:visible;padding-bottom:env(safe-area-inset-bottom)}
-  .tab{flex-direction:column;justify-content:center;gap:3px;padding:9px 2px 8px;border-bottom:0;border-top:3px solid transparent;font-size:10px;letter-spacing:.04em;text-align:center;white-space:normal;line-height:1.1;position:relative;min-height:56px}
+  .brand h1{font-size:21px}
+  .tbtn{padding:9px 12px;font-size:11px}
+  .tab{flex-direction:column;justify-content:center;gap:3px;padding:10px 2px 9px;border-bottom:0;border-top:3px solid transparent;font-size:11px;letter-spacing:.03em;text-align:center;white-space:normal;line-height:1.1;position:relative;min-height:60px}
   .tab[aria-selected=true]{border-top-color:var(--yellow);border-bottom:0}
   .tab .lvl,.tab .lg{display:none}
-  .tab .count{position:absolute;top:5px;right:calc(50% - 26px);font-size:9px;padding:1px 4px;line-height:1.3}
-  .tab .count:empty,.tab .count[data-zero]{display:none}
-  main{padding:14px 12px calc(84px + env(safe-area-inset-bottom))}
-  #toast{bottom:calc(70px + env(safe-area-inset-bottom))}
-  .circ,.chk{width:26px;height:26px}
-  .task{padding:11px 14px 11px 16px}
-  .amb{padding:6px 12px}
-  .menu{padding:8px 10px}
+  .tab .count{position:absolute;top:5px;right:calc(50% - 28px);font-size:10px;padding:1px 5px;line-height:1.3}
+  .tab .count[data-zero]{display:none}
+  #toast{bottom:16px}
+  /* bigger type and targets */
+  body{font-size:16px}
+  .b{padding:10px 14px;font-size:12px}
+  .tag{font-size:10px;padding:4px 7px}
+  .pill{font-size:11px}
+  .due{font-size:12px;padding:3px 9px}
+  .circ,.chk{width:28px;height:28px;font-size:14px}
+  .task{padding:12px 14px 12px 16px;gap:14px}
+  .tb .t{font-size:17px}
+  .tb .n{font-size:14.5px}
+  .amb{padding:8px 14px;font-size:15px}
+  .menu{padding:10px 12px;font-size:22px}
   .lh{padding:14px 10px 4px 16px}
-  .addtask{margin:4px 6px 6px}
-  .phead h2{font-size:24px}
+  .lh h2{font-size:22px}
+  .addtask{margin:4px 6px 6px;padding:10px}
+  .addtask .plus{font-size:24px}
+  .pcard{padding:12px 14px 10px}
+  .pcard .pt{font-size:16.5px}
+  .pcard .pf,.pcard .nx{font-size:14px}
+  .cl,.tm{font-size:11px;padding:4px 7px}
+  .play{padding:6px 10px;font-size:12px}
+  .padd{padding:12px 10px;font-size:15px}
+  .srow{padding:10px 14px}
+  .srow .ttl{font-size:16px}
+  .phead h2{font-size:26px}
+  .bcard .bt{font-size:18px}
+  .bcard .bn{font-size:14.5px}
+  .bbox button,.pswitch button{padding:13px 14px 11px;font-size:13px}
+  .grp{font-size:11px}
+  #amenu button{padding:13px 16px;font-size:16px}
+  /* open notes and cards: nothing wider than the screen, so no side scrolling */
+  #dlg .box,#dlg .box.wide{overflow-x:hidden;height:100vh;height:100dvh;max-height:100dvh}
+  #dlg .body{overflow-wrap:anywhere}
+  #dlg .body *{max-width:100%;min-width:0}
+  #dlg input[type=date]{-webkit-appearance:none;appearance:none;min-height:44px;background:var(--white)}
+  #dlg label{font-size:11px}
+  #dlg h3{font-size:22px}
+  .cw-stage button{padding:10px 12px;font-size:11px}
+  .ctask .tod{padding:7px 9px;font-size:10px}
+  .ctask .x,.cm-item .cd button,.dclr{font-size:20px;padding:4px 8px}
+  .dpick{padding:6px 9px;font-size:11px}
+  #dlg .foot .b{padding:11px 15px}
 }
 
 /* iPhone zooms into any text box under 16px when you tap it; on touch screens every box is 16px so the page stays put */
@@ -1381,7 +1422,7 @@ function shutDlg() { $('dlg').classList.remove('on'); dlgKind = null; cardOpen =
 $('dlg').addEventListener('click', function (e) { if (e.target === $('dlg')) closeDlg(); });
 document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { if ($('amenu')) closeMenu(); else if ($('dlg').classList.contains('on')) closeDlg(); } });
 function grow(root) { (root || document).querySelectorAll('[data-grow]').forEach(function (t) { var g = function () { t.style.height = 'auto'; t.style.height = (t.scrollHeight + 2) + 'px'; }; t.addEventListener('input', g); g(); }); }
-function show(tab) { U.tab = tab; saveUi(); render(); window.scrollTo(0, 0); }
+function show(tab) { U.tab = tab; saveUi(); render(); window.scrollTo(0, 0); document.querySelector('main').scrollTop = 0; }
 function listPick(title, lead, attr) {
   openDlg('<h3>' + title + '</h3><div class="body"><p class="lead">' + lead + '</p><div class="pick">'
     + S.lists.map(function (l) { return '<button class="b' + (l.id === (U.lastList || S.lists[0].id) ? ' y' : '') + '" ' + attr + ' data-list="' + l.id + '">' + esc(l.name) + '</button>'; }).join('')
@@ -2147,7 +2188,8 @@ function sortable(o) {
       if (navigator.vibrate) try { navigator.vibrate(12); } catch (err) {}
       place();
       scroller = setInterval(function () {        // keep scrolling while held near an edge
-        if (py < 70) window.scrollBy(0, -14); else if (py > innerHeight - 70) window.scrollBy(0, 14);
+        var pg = document.querySelector('main'); pg = getComputedStyle(pg).overflowY === 'auto' ? pg : window;   // on a phone the content scrolls, not the page
+        if (py < 70) pg.scrollBy(0, -14); else if (py > innerHeight - 70) pg.scrollBy(0, 14);
         var row = document.elementFromPoint(px, py); row = row && row.closest('.pboard,.lists');
         if (row) { var rb = row.getBoundingClientRect(); if (px < rb.left + 50) row.scrollLeft -= 14; else if (px > rb.right - 50) row.scrollLeft += 14; }
         place();

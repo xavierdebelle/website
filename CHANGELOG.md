@@ -5,6 +5,42 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v159 — 2026-11-13
+
+**What's new** · Update · [tools/production-hub.html]
+### The Production Hub, made for the phone
+- The tab bar at the bottom no longer moves. It sits still just above
+  Safari's bar while the content scrolls above it.
+- Opening a task or a card never scrolls sideways, even with long links.
+- Tapping a text box no longer zooms the page. Pinch-to-zoom still works.
+- Bigger text, tick circles and buttons throughout.
+
+**Production Hub — `tools/production-hub.html`, source `production_hub_v10.html`**
+- Under 760px the page is a fixed frame (`html, body` don't scroll; `body`
+  is a 100dvh flex column; the header is `display: contents` so its row and
+  the tab bar are frame items): top row, running-timer bar, sync bars, then
+  `main` (the only part that scrolls, `overscroll-behavior: contain`), then
+  the tab bar in normal flow at the bottom with the safe-area inset. Safari's
+  toolbar no longer drags it along, and nothing overlaps the content.
+  `show()` resets `main`'s scroll; the drag edge-scroll uses `main` when it's
+  the scroller.
+- Viewport adds `maximum-scale=1`: iOS no longer auto-zooms into a focused
+  field (pinch-zoom is unaffected on iOS); the 16px rule stays as a backup.
+- Dialogs: `100dvh` tall, `overflow-x: hidden`, every child capped at the
+  screen width with `overflow-wrap: anywhere`; date inputs drop iOS's
+  intrinsic width.
+- Sizes: body 16px, task titles 17px, cards 16.5px, buttons 12px with
+  10×14px padding, ticks 28px, ⋯ menus and their items larger, tabs 11px
+  with 60px rows.
+
+**Verified** (375px and 1280px) — the document never scrolls on a phone
+(only `main`), the bar keeps its position while the content scrolls; a task
+with a 100-character link and a card window both measure exactly screen
+width; hold-to-drag still reorders inside the scrolling content; desktop
+unchanged. No console errors.
+
+---
+
 ## v158 — 2026-11-13
 
 **What's new** · Update · [tools/production-hub.html]
