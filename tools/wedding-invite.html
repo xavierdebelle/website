@@ -50,10 +50,15 @@
   html, body { margin: 0; background: var(--bg); color: var(--ink); }
   body { font-family: var(--serif); font-size: 18px; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
   .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-  #scene { position: fixed; top: 0; left: 0; width: 100%; height: 100vh; height: 100lvh; display: block; z-index: 0; }
+  #scene { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
   .grain { position: fixed; inset: 0; z-index: 3; pointer-events: none; opacity: .09; mix-blend-mode: multiply; display: none;
     background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"); }
-  main { position: relative; z-index: 2; }
+  main { position: relative; z-index: 2; overflow-x: hidden; overflow-x: clip; }
+  /* every decoration is a pre-rendered relief canvas living inside its own box, so it scrolls with its text */
+  [data-deco] { position: relative; z-index: 0; }
+  canvas.relief { position: absolute; z-index: -1; display: block; pointer-events: none; opacity: 0; transform: translateY(14px) scale(.985); transition: opacity 1.1s ease, transform 1.3s cubic-bezier(.2,.75,.2,1); }
+  canvas.relief.in { opacity: 1; transform: none; }
+  canvas.relief.now { transition: none; }
 
   .kicker { display: block; font: 500 12px/1.4 var(--serif); letter-spacing: .34em; text-transform: uppercase; color: var(--ink-soft); }
   h2 { font: 400 clamp(34px, 7.4vw, 54px)/1.08 var(--display); margin: 14px 0 22px; letter-spacing: -.005em; }
@@ -65,12 +70,14 @@
   /* ---------- hero ---------- */
   .hero { height: 300vh; position: relative; }
   .hero__pin { position: sticky; top: 0; height: 100vh; height: 100lvh; overflow: hidden; pointer-events: none; }
-  .names { position: absolute; left: 0; right: 0; top: 17%; text-align: center; opacity: 0; padding: 0 16px; }
+  .names { position: absolute; z-index: 1; left: 0; right: 0; top: 17%; text-align: center; opacity: 0; padding: 0 16px; }
   .names h1 { margin: 0; font: italic 400 clamp(40px, min(12vw, 8.5vh), 92px)/.98 var(--display); color: #5e3d37; }
   .names h1 span { display: block; font-size: .5em; margin: .12em 0; color: var(--rose); }
   .names .date { margin-top: 18px; font: 400 15px/1 var(--display); letter-spacing: .3em; color: var(--ink); }
   .names .place { margin-top: 10px; font: 500 11px/1 var(--serif); letter-spacing: .34em; text-transform: uppercase; color: var(--ink-soft); }
-  .hint { position: absolute; left: 0; right: 0; bottom: max(32px, env(safe-area-inset-bottom)); display: flex; justify-content: center; }
+  .hint { position: absolute; left: 0; right: 0; bottom: max(32px, env(safe-area-inset-bottom)); display: flex; justify-content: center; z-index: 2; }
+  /* keep it above Safari's bottom toolbar: anchor to the small viewport, not the stage's full height */
+  @supports (height: 100svh) { .hint { bottom: auto; top: calc(100svh - 84px - env(safe-area-inset-bottom)); } }
   .hint button { pointer-events: auto; background: rgba(60,30,25,.28); border: 1px solid rgba(255,235,225,.45); color: #fbece5; border-radius: 40px; padding: 12px 22px; font: 500 11px/1 var(--serif); letter-spacing: .32em; text-transform: uppercase; cursor: pointer; -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
   .hint button em { font-style: italic; letter-spacing: .04em; text-transform: none; font-size: 14px; margin-left: 8px; opacity: .85; }
 
@@ -100,6 +107,13 @@
   .tl__row { display: grid; grid-template-columns: 76px 1fr; gap: 58px; align-items: center; min-height: 92px; position: relative; }
   .tl__row .icon { width: 76px; height: 76px; }
   .tl__row::after { content: ""; position: absolute; left: 99px; top: 50%; width: 10px; height: 10px; border-radius: 50%; background: #f6e6df; border: 1px solid rgba(106,71,64,.5); transform: translateY(-50%); }
+  .tl__track { position: absolute; left: 104px; top: 46px; bottom: 46px; width: 0; z-index: 2; pointer-events: none; }
+  .tl__clock { position: sticky; top: calc(50vh - 26px); top: calc(50svh - 26px); width: 52px; height: 52px; margin-left: -26px; opacity: 0; transition: opacity .5s ease; }
+  .tl.on .tl__clock { opacity: 1; }
+  .tl__clock span { position: absolute; left: 50%; bottom: 50%; background: #6f4238; border-radius: 2px; transform-origin: 50% 100%; box-shadow: 1px 2px 2px rgba(80,40,30,.25); }
+  .tl__clock .h { width: 3px; height: 12px; margin-left: -1.5px; }
+  .tl__clock .m { width: 2px; height: 18px; margin-left: -1px; }
+  .tl__clock::after { content: ""; position: absolute; left: 50%; top: 50%; width: 5px; height: 5px; margin: -2.5px 0 0 -2.5px; border-radius: 50%; background: #c99a6e; }
   .tl__row > div:last-child { transition: opacity .45s ease; }
   .tl.on .tl__row:not(.active) > div:last-child { opacity: .38; }
   .tl__time { font: 500 13px/1 var(--display); letter-spacing: .14em; color: var(--rose); }
@@ -139,12 +153,12 @@
 </style>
 </head>
 <body>
-<canvas id="scene" aria-hidden="true"></canvas>
 <div class="grain" aria-hidden="true"></div>
 
 <main>
   <section class="hero" id="hero" aria-label="The invitation">
     <div class="hero__pin">
+      <canvas id="scene" aria-hidden="true"></canvas>
       <div class="names" id="names">
         <h1>Enya <span>&amp;</span> Sami</h1>
         <div class="date">11 · 11 · 2027</div>
@@ -211,7 +225,8 @@
     <span class="kicker rv">El gran día</span>
     <h2 class="rv" style="--d:.08s">Timeline</h2>
     <p class="note rv" style="--d:.14s">Times to be confirmed — the sun, at least, is on schedule.</p>
-    <div class="tl">
+    <div class="tl" id="tl">
+      <div class="tl__track" aria-hidden="true"><div class="tl__clock" id="tlClock" data-deco="clock"><span class="h"></span><span class="m"></span></div></div>
       <div class="tl__row rv"><div class="icon" data-deco="icon" data-icon="door"></div><div><div class="tl__time">3:00 PM</div><div class="tl__what">Arrivals<em>Agua fresca and a first look at the view</em></div></div></div>
       <div class="tl__row rv"><div class="icon" data-deco="icon" data-icon="bell"></div><div><div class="tl__time">3:30 PM</div><div class="tl__what">The ceremony<em>On the sand, facing the Pacific</em></div></div></div>
       <div class="tl__row rv"><div class="icon" data-deco="icon" data-icon="glass"></div><div><div class="tl__time">4:15 PM</div><div class="tl__what">Cocktail hour<em>Mezcal, margaritas, golden hour</em></div></div></div>
@@ -487,13 +502,14 @@ async function start() {
   }
 
   /* ---------- hero: doors, stage, curtains, facade ---------- */
-  let vw = 0, vh = 0, D = 1, stickyLen = 1;
+  let vw = 0, vh = 0, S = 0, D = 1, stickyLen = 1;
   const hero = {};
   function buildHero() {
     const W = vw, H = vh, G = new THREE.Group(); hero.G = G; scene.add(G);
 
     // curtains
-    const ctop = H / 2 - 30, cbot = -H / 2 + H * .2, cw = W / 2 + 6, N = Math.max(7, Math.round(cw / 26));
+    const yb = -H / 2 + (H - S);   // bottom of the small viewport, where Safari's toolbar starts
+    const ctop = H / 2 - 30, cbot = yb + S * .16, cw = W / 2 + 6, N = Math.max(7, Math.round(cw / 26));
     hero.cur = { ctop, cbot, ch: ctop - cbot, cw, N, list: [] };
     for (const side of [-1, 1]) {
       const g = new THREE.PlaneGeometry(1, 1, Math.min(200, N * 10), 26); const m = mesh(g, M.curtain); G.add(m);
@@ -514,9 +530,9 @@ async function start() {
     for (let i = 0; i <= n; i++) { const t = tassel(16); t.position.set(-W / 2 - 12 + sw * i, H / 2 - 40, 66); G.add(t); }
 
     // facade
-    const F = Math.min(W * .98, H * .5), u = F / 100, fac = new THREE.Group();
-    fac.position.set(0, -H / 2 + H * .045, 40); G.add(fac);
-    { const valB = 30 + sw * .2 + Math.min(70, sw * .2) + 10, facTop = H - (H * .045 + 81 * u); hero.namesMid = (valB + facTop) / 2; }
+    const F = Math.min(W * .98, S * .5), u = F / 100, fac = new THREE.Group();
+    fac.position.set(0, yb + S * .045, 40); G.add(fac);
+    { const valB = 30 + sw * .2 + Math.min(70, sw * .2) + 10, facTop = S - (S * .045 + 81 * u); hero.namesMid = (valB + facTop) / 2; }
     const box = (w, h, x, y, d, m, r = 2) => mesh(ext(rrect(w * u, h * u, r * u), d, Math.min(d * .4, 4)), m, x * u, y * u, 0);
     fac.add(box(110, 5, 0, 2.5, 10, M.blush, 1.5));                          // plinth
     for (const sx of [-1, 1]) {
@@ -567,8 +583,9 @@ async function start() {
     // foreground roses + leaves along the bottom edge
     const fr = [], fl2 = [];
     const span = W / 2 + 30;
-    for (let x = -span; x < span; x += 20 + rnd() * 16) { const s = (2.6 + rnd() * 2) * u; fr.push({ x, y: -H / 2 + 6 + rnd() * F * .05, z: 110 + rnd() * 20, s }); }
-    for (let x = -span; x < span; x += 14) fl2.push({ x, y: -H / 2 + rnd() * F * .07, z: 104, a: rnd() * PI * 2, s: 2.4 * u * (.8 + rnd() * .5) });
+    for (let x = -span; x < span; x += 20 + rnd() * 16) { const s = (2.6 + rnd() * 2) * u; fr.push({ x, y: yb + 6 + rnd() * F * .05, z: 110 + rnd() * 20, s }); }
+    if (H - S > 10) for (let x = -span; x < span; x += 18 + rnd() * 14) fr.push({ x, y: -H / 2 + 8 + rnd() * (H - S - 8), z: 112 + rnd() * 20, s: (2.4 + rnd() * 2) * u });
+    for (let x = -span; x < span; x += 14) fl2.push({ x, y: yb + rnd() * F * .07, z: 104, a: rnd() * PI * 2, s: 2.4 * u * (.8 + rnd() * .5) });
     G.add(roses(fr), leaves(fl2));
 
     // doors with the monogram seal
@@ -757,6 +774,14 @@ async function start() {
       g.add(flowers([{ x: -w * .38, y: -h * .48, z: 20, s: 12 }, { x: -w * .48, y: -h * .36, z: 18, s: 9 }]), leaves([{ x: -w * .3, y: -h * .56, z: 16, a: .2, s: 14 }, { x: -w * .54, y: -h * .5, z: 16, a: 2.4, s: 12 }]));
       return g;
     },
+    clock(w) {
+      const Rc = w / 2, g = new THREE.Group();
+      const face = mesh(lathe([[0, 3], [Rc * .86, 3], [Rc * .9, 5], [Rc * .95, 8], [Rc, 6], [Rc, 0], [0, 0]], 48), M.clay); face.rotation.x = PI / 2; g.add(face);
+      g.add(mesh(new THREE.TorusGeometry(Rc * .97, 1.8, 8, 48), M.gold, 0, 0, 5));
+      const ticks = []; for (let i = 0; i < 12; i++) { const a = i / 12 * PI * 2; ticks.push({ x: Math.sin(a) * Rc * .72, y: Math.cos(a) * Rc * .72, z: 4, sx: i % 3 ? 1.1 : 1.8, sy: i % 3 ? 1.1 : 1.8, sz: 1.2 }); }
+      g.add(inst(pearlGeo, M.deep, ticks));
+      return g;
+    },
     desert(w, h) {
       const g = new THREE.Group(), b = -h / 2;
       const wave = (y, amp, f, ph, d, m, z) => { const s = new THREE.Shape(); s.moveTo(-w / 2 - 20, b); for (let i = 0; i <= 40; i++) { const x = -w / 2 - 20 + (w + 40) * i / 40; s.lineTo(x, b + y + Math.sin(x * f + ph) * amp + Math.sin(x * f * 2.3 + ph * 2) * amp * .35); } s.lineTo(w / 2 + 20, b); s.closePath(); return mesh(ext(s, d, Math.min(d * .5, 4), 8), m, 0, 0, z); };
@@ -784,123 +809,141 @@ async function start() {
     },
   };
 
-  let decos = [];
-  function disposeGroup(g) { g.traverse((o) => { if (o.geometry && o.geometry !== ellip && o.geometry !== pearlGeo && o.geometry !== roseGeo) o.geometry.dispose(); }); scene.remove(g); }
-  function build() {
-    if (hero.G) disposeGroup(hero.G);
-    decos.forEach((d) => disposeGroup(d.g)); decos = [];
-    seed = 1111;
-    buildHero();
-    document.querySelectorAll("[data-deco]").forEach((el) => {
-      const r = el.getBoundingClientRect(), top = r.top + scrollY;
-      const g = B[el.dataset.deco](r.width, r.height, el);
-      g.position.set(r.left + r.width / 2 - vw / 2, -(top + r.height / 2), 0);
-      g.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
-      scene.add(g); decos.push({ g, top, h: r.height, a: -1 });
-    });
-    buildClock();
-  }
-  // a little clock rides the timeline's dotted line, stays put on screen and tells the time of the row beside it
-  let tlc = null;
-  function buildClock() {
-    if (tlc) disposeGroup(tlc.g);
-    const el = document.querySelector(".tl"), r = el.getBoundingClientRect(), top = r.top + scrollY;
-    const rows = [...el.querySelectorAll(".tl__row")].map((row) => {
-      const rr = row.getBoundingClientRect(), [hm, ap] = row.querySelector(".tl__time").textContent.trim().split(/\s+/);
-      let [h, m] = hm.split(":").map(Number); if (ap === "PM" && h < 12) h += 12; if (ap === "AM" && h === 12) h = 24;
-      return { row, y: rr.top + scrollY + rr.height / 2, mins: h * 60 + m };
-    });
-    const Rc = 25, g = new THREE.Group();
-    const face = mesh(lathe([[0, 3], [Rc * .86, 3], [Rc * .9, 5], [Rc * .95, 8], [Rc, 6], [Rc, 0], [0, 0]], 48), M.clay); face.rotation.x = PI / 2; g.add(face);
-    g.add(mesh(new THREE.TorusGeometry(Rc, 1.8, 8, 48), M.gold, 0, 0, 5));
-    const ticks = []; for (let i = 0; i < 12; i++) { const a = i / 12 * PI * 2; ticks.push({ x: Math.sin(a) * Rc * .72, y: Math.cos(a) * Rc * .72, z: 4 }); }
-    g.add(inst(pearlGeo, M.deep, ticks.map((t, i) => ({ ...t, sx: i % 3 ? 1.1 : 1.8, sy: i % 3 ? 1.1 : 1.8, sz: 1.2 }))));
-    const hand = (len, wid, z) => { const hg = new THREE.Group(), geo = new THREE.BoxGeometry(wid, len, 1.6); geo.translate(0, len / 2 - 2, 0); hg.add(mesh(geo, M.wood)); hg.position.z = z; g.add(hg); return hg; };
-    const hourH = hand(Rc * .46, 2.6, 6), minH = hand(Rc * .7, 1.7, 7.5);
-    g.add(mesh(new THREE.SphereGeometry(2.2, 10, 8), M.gold, 0, 0, 9));
-    scene.add(g);
-    tlc = { g, el, rows, hourH, minH, top, bottom: top + r.height, x: r.left + 104 - vw / 2, active: null };
-  }
-  function updateClock(y) {
-    if (!tlc) return;
-    const { rows } = tlc, cy = clamp(y + vh * .5, rows[0].y, rows[rows.length - 1].y);
-    tlc.g.position.set(tlc.x, -cy, 30);
-    const a = reduce ? 1 : sstep(vh * .95, vh * .55, tlc.top - y) * (1 - sstep(-vh * .1, -vh * .5, tlc.bottom - y - vh * .5));
-    tlc.g.scale.setScalar(Math.max(.001, a)); tlc.g.visible = a > .002;
-    tlc.el.classList.toggle("on", a > .5);
-    let i = 0; while (i < rows.length - 2 && cy > rows[i + 1].y) i++;
-    const f = clamp((cy - rows[i].y) / (rows[i + 1].y - rows[i].y)), mins = lerp(rows[i].mins, rows[i + 1].mins, sstep(.25, .75, f));
-    tlc.minH.rotation.z = -(mins % 60) / 60 * PI * 2;
-    tlc.hourH.rotation.z = -((mins / 60) % 12) / 12 * PI * 2;
-    const act = f < .5 ? rows[i] : rows[i + 1];
-    if (act !== tlc.active) { tlc.active?.row.classList.remove("active"); act.row.classList.add("active"); tlc.active = act; }
-  }
+  function disposeGroup(g) { g.traverse((o) => { if (o.geometry && o.geometry !== ellip && o.geometry !== pearlGeo && o.geometry !== roseGeo) o.geometry.dispose(); }); g.removeFromParent(); }
 
-  // the large viewport (Safari with its toolbar hidden): stable while scrolling, unlike innerHeight
-  function bigViewH() {
+  /* ---------- relief bakery: each decoration is rendered once into a canvas inside its own box ----------
+     The page then scrolls natively: text and relief move together, nothing has to keep up with the finger. */
+  const baker = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  baker.setClearColor(0x000000, 0);
+  baker.shadowMap.enabled = true; baker.shadowMap.type = THREE.PCFSoftShadowMap;
+  const BDPR = Math.min(devicePixelRatio || 1, 2);
+  const bScene = new THREE.Scene();
+  const bKey = new THREE.DirectionalLight(0xfff1e8, 1.55);
+  bKey.castShadow = true; bKey.shadow.bias = -0.0004; bKey.shadow.normalBias = .6;
+  bScene.add(new THREE.HemisphereLight(0xfff6f2, 0xe8c7bc, 2.3), bKey, bKey.target);
+  const bShade = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.ShadowMaterial({ color: "#6e3f36", opacity: .32 }));
+  bShade.receiveShadow = true; bScene.add(bShade);
+  const bCam = new THREE.OrthographicCamera(-1, 1, 1, -1, -3000, 3000); bCam.position.z = 1500;
+  const LDIR = new THREE.Vector3(-.5, .78, 1).normalize();
+  function bake(group, W, H) {
+    W = Math.round(W); H = Math.round(H);
+    bScene.add(group); bShade.scale.set(W, H, 1);
+    Object.assign(bCam, { left: -W / 2, right: W / 2, top: H / 2, bottom: -H / 2 }); bCam.updateProjectionMatrix();
+    bKey.position.copy(LDIR).multiplyScalar(1600); bKey.target.position.set(0, 0, 0);
+    const sc = bKey.shadow.camera, m = 220;
+    Object.assign(sc, { left: -W / 2 - m, right: W / 2 + m, top: H / 2 + m, bottom: -H / 2 - m, near: 10, far: 4000 }); sc.updateProjectionMatrix();
+    const res = Math.min(phone ? 2048 : 4096, Math.max(512, 2 ** Math.ceil(Math.log2(Math.max(W, H) * 1.4))));
+    if (bKey.shadow.mapSize.x !== res) { bKey.shadow.mapSize.set(res, res); if (bKey.shadow.map) { bKey.shadow.map.dispose(); bKey.shadow.map = null; } }
+    baker.setPixelRatio(BDPR); baker.setSize(W, H, false);
+    baker.render(bScene, bCam);
+    const c = document.createElement("canvas"); c.width = Math.round(W * BDPR); c.height = Math.round(H * BDPR);
+    c.getContext("2d").drawImage(baker.domElement, 0, 0, c.width, c.height);
+    disposeGroup(group);
+    return c;
+  }
+  const MARGIN = { icon: 34, medal: 40, clock: 22 };
+  const decoEls = [...document.querySelectorAll("[data-deco]")];
+  decoEls.forEach((el, i) => { el.dataset.i = i; });
+  const baked = new Map(), queue = new Set(); let qTimer = 0;
+  function placeDeco(el) {
+    const w = el.offsetWidth, h = el.offsetHeight; if (!w || !h) return;
+    const prev = baked.get(el); if (prev && Math.abs(prev.w - w) < 1 && Math.abs(prev.h - h) < 1) return;
+    seed = 1111 + Number(el.dataset.i) * 97;
+    const m = MARGIN[el.dataset.deco] ?? 70;
+    const g = B[el.dataset.deco](w, h, el);
+    g.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+    const c = bake(g, w + 2 * m, h + 2 * m);
+    c.className = "relief"; c.setAttribute("aria-hidden", "true");
+    Object.assign(c.style, { left: -m + "px", top: -m + "px", width: w + 2 * m + "px", height: h + 2 * m + "px" });
+    const old = el.querySelector(":scope > canvas.relief");
+    if (old) { if (old.classList.contains("in") || reduce) c.classList.add("in", "now"); old.remove(); }
+    else if (reduce) c.classList.add("in", "now");
+    el.prepend(c);
+    if (!c.classList.contains("in")) io.observe(c);
+    baked.set(el, { w, h });
+  }
+  function runQueue() {
+    qTimer = 0; if (!queue.size) return;
+    const el = [...queue].sort((x, y) => Math.abs(x.getBoundingClientRect().top) - Math.abs(y.getBoundingClientRect().top))[0];
+    queue.delete(el); placeDeco(el);
+    if (queue.size) qTimer = setTimeout(runQueue, 0);
+  }
+  const enqueue = (el) => { queue.add(el); if (!qTimer) qTimer = setTimeout(runQueue, 40); };
+  const ro = new ResizeObserver((ents) => ents.forEach((e) => enqueue(e.target)));
+  decoEls.forEach((el) => ro.observe(el));
+  decoEls.forEach(enqueue);   // don't wait for the observer's first report
+
+  /* ---------- timeline clock: a sticky page element; only its hands move ---------- */
+  const tlEl = $("#tl"), clockEl = $("#tlClock"), handH = clockEl.querySelector(".h"), handM = clockEl.querySelector(".m");
+  const tlRows = [...tlEl.querySelectorAll(".tl__row")].map((row) => {
+    const [hm, ap] = row.querySelector(".tl__time").textContent.trim().split(/\s+/);
+    let [h, m] = hm.split(":").map(Number); if (ap === "PM" && h < 12) h += 12; if (ap === "AM" && h === 12) h = 24;
+    return { row, mins: h * 60 + m };
+  });
+  let activeRow = null, clockQueued = false;
+  function updateClock() {
+    clockQueued = false;
+    const tr = tlEl.getBoundingClientRect(), vhNow = innerHeight;
+    tlEl.classList.toggle("on", tr.top < vhNow * .6 && tr.bottom > vhNow * .4);
+    if (tr.bottom < -200 || tr.top > vhNow + 200) return;
+    const cr = clockEl.getBoundingClientRect(), cy = cr.top + cr.height / 2;
+    const ys = tlRows.map((r) => { const b = r.row.getBoundingClientRect(); return b.top + b.height / 2; });
+    let i = 0; while (i < ys.length - 2 && cy > ys[i + 1]) i++;
+    const f = clamp((cy - ys[i]) / (ys[i + 1] - ys[i])), mins = lerp(tlRows[i].mins, tlRows[i + 1].mins, sstep(.25, .75, f));
+    handM.style.transform = `rotate(${(mins % 60) / 60 * 360}deg)`;
+    handH.style.transform = `rotate(${((mins / 60) % 12) / 12 * 360}deg)`;
+    const act = f < .5 ? tlRows[i] : tlRows[i + 1];
+    if (act !== activeRow) { activeRow?.row.classList.remove("active"); act.row.classList.add("active"); activeRow = act; }
+  }
+  addEventListener("scroll", () => { if (!clockQueued) { clockQueued = true; requestAnimationFrame(updateClock); } }, { passive: true });
+  addEventListener("resize", () => requestAnimationFrame(updateClock));
+  updateClock();
+
+  /* ---------- live hero: its canvas sits inside the pinned stage, so it never chases the scroll ---------- */
+  const pin = $(".hero__pin");
+  function smallViewH() {
     const d = document.createElement("div");
-    d.style.cssText = "position:fixed;top:0;left:0;width:1px;height:100vh;height:100lvh;visibility:hidden;pointer-events:none";
+    d.style.cssText = "position:fixed;top:0;left:0;width:1px;height:100vh;height:100svh;visibility:hidden;pointer-events:none";
     document.body.appendChild(d); const h = d.getBoundingClientRect().height; d.remove();
     return Math.round(h || innerHeight);
   }
-  function layout() {
-    vw = document.documentElement.clientWidth; vh = bigViewH();
+  let heroDirty = true;
+  function layoutHero() {
+    vw = pin.clientWidth; vh = pin.clientHeight; S = Math.min(vh, smallViewH());
     renderer.setSize(vw, vh, false);
-    camera.aspect = vw / vh; D = (vh / 2) / Math.tan(FOV / 2 * PI / 180); camera.position.z = D; camera.far = D + 3000; camera.updateProjectionMatrix();
+    camera.aspect = vw / vh; D = (vh / 2) / Math.tan(FOV / 2 * PI / 180); camera.far = D + 3000; camera.updateProjectionMatrix();
+    camera.position.set(0, 0, D); camera.lookAt(0, 0, 0);
     bg.scale.set(vw * 1.6, vh * 1.6, 1);
-    const sc = key.shadow.camera, m = 260; sc.left = -vw / 2 - m; sc.right = vw / 2 + m; sc.top = vh / 2 + m; sc.bottom = -vh / 2 - m; sc.near = 10; sc.far = 5000; sc.updateProjectionMatrix();
+    const sc = key.shadow.camera, m = 260; Object.assign(sc, { left: -vw / 2 - m, right: vw / 2 + m, top: vh / 2 + m, bottom: -vh / 2 - m, near: 10, far: 5000 }); sc.updateProjectionMatrix();
     stickyLen = Math.max(1, heroEl.offsetHeight - vh);
-    build();
+    if (hero.G) disposeGroup(hero.G);
+    seed = 1111; buildHero();
     namesEl.style.top = vw >= 768 ? Math.max(20, hero.namesMid - namesEl.offsetHeight / 2) + "px" : "";
+    heroDirty = true;
   }
-  let rt = 0, lastDocH = 0;
-  function maybeLayout() {
-    const w = document.documentElement.clientWidth, h = bigViewH();
-    if (Math.abs(w - vw) > 2 || Math.abs(h - vh) > 2 || Math.abs(document.documentElement.scrollHeight - lastDocH) > 4) { layout(); lastDocH = document.documentElement.scrollHeight; }
-  }
-  addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(maybeLayout, 200); });
-  addEventListener("orientationchange", () => { clearTimeout(rt); rt = setTimeout(maybeLayout, 350); });
-  layout(); lastDocH = document.documentElement.scrollHeight;
-  addEventListener("load", () => setTimeout(maybeLayout, 60));
-  document.fonts?.ready.then(() => setTimeout(maybeLayout, 60));
-  // late reflows (fonts, the countdown) would leave the relief off its text: re-anchor when the page height moves
-  new ResizeObserver(() => { clearTimeout(rt); rt = setTimeout(maybeLayout, 200); }).observe(document.querySelector("main"));
+  let rt = 0;
+  new ResizeObserver(() => { clearTimeout(rt); rt = setTimeout(() => { if (Math.abs(pin.clientWidth - vw) > 1 || Math.abs(pin.clientHeight - vh) > 1) layoutHero(); }, 150); }).observe(pin);
+  layoutHero();
 
   const mouse = { x: 0, y: 0, tx: 0, ty: 0 };
   addEventListener("pointermove", (e) => { mouse.tx = e.clientX / innerWidth * 2 - 1; mouse.ty = e.clientY / innerHeight * 2 - 1; }, { passive: true });
 
   let curP = reduce ? 1 : 0, last = performance.now();
   const ldir = new THREE.Vector3();
-  let drawnY = -1;
-  function frame(now, fromScroll) {
+  function frame(now) {
+    requestAnimationFrame(frame);
     const dt = Math.min(.05, Math.max(0, (now - last) / 1000)); last = now; const t = now / 1000, y = Math.max(0, scrollY);
-    const camY = -(y + vh / 2);
-    camera.position.set(0, camY, D); camera.lookAt(0, camY, 0);
-    bg.position.set(0, camY, 0);
+    if (y > stickyLen + vh + 40 && !heroDirty) return;   // stage scrolled away: nothing to draw
     mouse.x += (mouse.tx - mouse.x) * .05; mouse.y += (mouse.ty - mouse.y) * .05;
     ldir.set(-.5 + mouse.x * .22, .78 - mouse.y * .18, 1).normalize();
-    key.target.position.set(0, camY, 0); key.position.set(ldir.x * 2400, camY + ldir.y * 2400, ldir.z * 2400);
-
+    key.target.position.set(0, 0, 0); key.position.set(ldir.x * 2400, ldir.y * 2400, ldir.z * 2400);
     const tP = reduce ? 1 : clamp(y / stickyLen);
     curP += (tP - curP) * (reduce ? 1 : 1 - Math.exp(-dt * 8));
-    hero.G.position.y = -(Math.min(y, stickyLen) + vh / 2);
-    hero.G.visible = y < stickyLen + vh;
-    if (hero.G.visible) updateHero(curP, t);
-
-    for (const d of decos) {
-      const st = d.top - y;
-      const a = reduce ? 1 : sstep(vh * 1.02, vh * .7, st);
-      if (Math.abs(a - d.a) > 1e-3) { d.a = a; d.g.scale.set(.94 + .06 * a, .94 + .06 * a, Math.max(.002, a)); }
-      d.g.visible = st < vh * 1.4 && st + d.h > -vh * .4;
-      if (d.g.visible && d.g.userData.flags) d.g.userData.flags.forEach((f, i) => { f.rotation.x = Math.sin(t * 1.6 + i) * .25; f.rotation.z = Math.sin(t * 1.1 + i * 2) * .05; });
-    }
-    updateClock(y);
+    updateHero(curP, t);
     renderer.render(scene, camera);
-    drawnY = y;
-    if (!fromScroll) requestAnimationFrame(frame);
+    heroDirty = false;
   }
   requestAnimationFrame(frame);
-  addEventListener("scroll", () => { if (Math.max(0, scrollY) !== drawnY) frame(performance.now(), true); }, { passive: true });
 }
 </script>
 <!-- version picker: a small dot in the top-left corner, between the two designs -->

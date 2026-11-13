@@ -5,6 +5,43 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v157 — 2026-11-13
+
+**What's new** · Fix · [tools/wedding-invite.html]
+### Wedding Invite: smooth on phones, for real this time
+On a phone the decorations bounced against the text as you scrolled. Each
+decoration now lives inside its own box, so it moves with its words like
+anything else on the page. The Open button also sits above Safari's
+toolbar now, where you can see it.
+
+**Wedding Invite v2 — `tools/wedding-invite.html`** (source `wedding-invite-v2.html`)
+- Root cause (v155 didn't fix it): iOS scrolls on the compositor, so a fixed
+  WebGL canvas that follows `scrollY` is always a frame or more behind the
+  text. No tuning removes that.
+- New structure: every `[data-deco]` element gets a pre-rendered relief —
+  the same three.js scene rendered once (orthographic, soft shadows on a
+  ShadowMaterial, transparent background) into a `<canvas class="relief">`
+  inside the element (`z-index:-1`, 22–70px margin for overflowing vines
+  and shadows). Text and relief now scroll together natively. Re-rendered
+  only when that element's size changes (ResizeObserver); fade-and-rise in
+  on first view (CSS). Lost: the picado sway and the press-up-from-the-page
+  animation.
+- The hero is the only live WebGL: its canvas sits inside the sticky
+  `.hero__pin` (100lvh), so it never chases the scroll; composition (facade,
+  roses, names) anchored to the small viewport so nothing hides behind the
+  toolbar. Stops rendering once scrolled past.
+- Timeline clock is now a sticky DOM element (`.tl__clock`, baked face, CSS
+  hands) instead of a 3D object following the scroll.
+- Open button: `top: calc(100svh − 84px − safe-area)` instead of the
+  stage's bottom (which is under Safari's toolbar).
+
+**Verified** — local preview at 375×812 and desktop: all 22 reliefs render in
+under a second, line up inside their boxes, opening and names unchanged,
+clock tracks the rows, no console errors. Still not tried on a physical
+iPhone.
+
+---
+
 ## v156 — 2026-11-12
 
 **What's new** · Update · [tools/production-hub.html]
