@@ -5,6 +5,43 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v151 — 2026-11-12
+
+**What's new** · The map · [index.html]
+### Move the branches,<br>and a calmer phone
+On a computer, hover a branch of the map and it lights up while the rest goes
+dark. Drag a branch anywhere, just for fun; a reload puts the tree back. On
+phones the + and − are gone (pinch to zoom), and the account window is now
+short: your status, Access and Sign out. The white map keeps the same yellow
+as the black one.
+
+**Homepage — `index.html`**
+- Branch drag: pressing on any node of a branch and moving carries the whole
+  branch (per-cluster offset over the baked layout; the trunk to the centre
+  and any bleed link between two branches stretch to follow; particles flow
+  there since they read nodeX/nodeY and lPts every frame). A press that
+  doesn't move is still a tap. Nothing is saved. Carve field rebuilt on drop.
+- Hover (mouse only): the branch nearest the pointer (within 70 px) eases to
+  +35% brightness, every other particle and label to −72%.
+- Touch screens (`hover: none` and `pointer: coarse`): + and − hidden.
+- Inverted map: accent back to the dark map's gold [243,201,63] and "Belle"
+  in --volt, Xavier's choice over the darker gold.
+- Hint text: "Drag a branch to move it".
+
+**Account panel — `assets/account.js` (every page)**
+- The synced-tools list is gone (too long on a phone; Xavier wanted access +
+  sign out only). Members and others get **Access** + **Sign out**; Xavier
+  keeps the "waiting / Manage access" row + Sign out.
+- On phones the sheet is at most 85% of the screen with its own scroll, and
+  the close button (44 px) sticks to the top, so it can always be reached.
+
+**Verified (Playwright Chromium)** — hover lit Tools (hoverK 1); dragging Tools
+moved Events with it, no navigation; 375 px phone: +/− hidden, Index there;
+panel signed in as owner and as a member on the mock: no tool list, close
+button inside the screen and working; no page errors.
+
+---
+
 ## v150 — 2026-11-10
 
 **What's new** · Privacy fix · [tools.html#events]

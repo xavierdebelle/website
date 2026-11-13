@@ -167,9 +167,9 @@
     '.xa-float{position:fixed;top:14px;right:14px;z-index:60}',
     '.xa-float .xa-chip:not(.xa-out){padding:4px}.xa-float .xa-lbl{display:none}',   // on the map: avatar and dot only, clear of the name
     '.xa-scrim{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1000;display:flex;justify-content:flex-end;align-items:flex-start}',
-    '.xa-panel{background:#000;color:#fff;border:3px solid #fff;width:min(380px,100vw);max-height:100vh;overflow:auto;margin:12px;padding:22px;box-sizing:border-box;',
+    '.xa-panel{background:#000;color:#fff;border:3px solid #fff;width:min(380px,100vw);max-height:calc(100vh - 24px);max-height:calc(100dvh - 24px);overflow:auto;margin:12px;padding:22px;box-sizing:border-box;',
     'font:15px/1.5 "Helvetica Neue",Helvetica,Arial,sans-serif;text-align:left}',
-    '@media (max-width:560px){.xa-scrim{align-items:flex-end}.xa-panel{margin:0;width:100vw;border-width:3px 0 0}}',
+    '@media (max-width:560px){.xa-scrim{align-items:flex-end}.xa-panel{margin:0;width:100vw;border-width:3px 0 0;max-height:85vh;max-height:85dvh;padding-bottom:max(22px,env(safe-area-inset-bottom))}}',
     '.xa-k{font:400 10px/1.2 ui-monospace,"SF Mono",Menlo,Consolas,monospace;letter-spacing:.24em;text-transform:uppercase;color:#8a8a8a;margin:0 0 10px}',
     '.xa-h{font-weight:900;text-transform:uppercase;letter-spacing:-.03em;font-size:30px;line-height:.9;margin:0 0 14px}',
     '.xa-who{display:flex;gap:12px;align-items:center;margin:0 0 16px}',
@@ -192,7 +192,7 @@
     '.xa-note{color:#8a8a8a;font-size:12px;margin:10px 0 0}',
     '.xa-admin{display:flex;justify-content:space-between;align-items:center;gap:10px;background:#141414;padding:12px;margin:0 0 18px;font-size:14px}',
     '.xa-admin a{color:#ffe800}',
-    '.xa-x{float:right;background:none;border:0;color:#8a8a8a;font-size:22px;line-height:1;cursor:pointer;padding:0 0 0 10px}',
+    '.xa-x{float:right;position:sticky;top:0;z-index:1;background:#000;border:0;color:#fff;font-size:26px;line-height:1;cursor:pointer;width:44px;height:44px;margin:-12px -12px 0 8px}',
     '.xa-x:hover{color:#ffe800}',
     '.xa-toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:1001;background:#ffe800;color:#000;padding:14px 18px;max-width:min(460px,calc(100vw - 32px));',
     'font:700 14px/1.4 "Helvetica Neue",Helvetica,Arial,sans-serif;border:3px solid #000;box-shadow:0 0 0 3px #ffe800}'
@@ -260,7 +260,7 @@
     var h = '<button type="button" class="xa-x" data-xa="close" aria-label="Close">×</button>';
     if (!S.user) {
       h += '<p class="xa-k">Account</p><h2 class="xa-h">Sign in</h2>' +
-        '<p style="margin:0 0 18px">Sync Project Phases, Budget Tracker and Idea Bank across your devices. One sign-in covers the whole site. Sync is by invitation — signing in sends your request.</p>' +
+        '<p style="margin:0 0 18px">Sync your tools across your devices. One sign-in covers the whole site. Sync is by invitation — signing in sends your request.</p>' +
         (S.status === 'error' ? '<p class="xa-status xa-s-wait"><b>Didn’t work</b>Sign-in failed' + (S.msg ? ' (' + esc(S.msg) + ')' : '') + '. Try again.</p>' : '') +
         '<div class="xa-acts"><button type="button" class="xa-btn xa-solid" data-xa="signin">' + (S.status === 'checking' ? 'Signing in…' : 'Sign in with Google') + '</button>' +
         '<a class="xa-btn" href="' + ROOT + 'access.html">About access</a></div>' +
@@ -283,15 +283,9 @@
         h += '<div class="xa-admin"><span>' + (S.pending ? '<b>' + S.pending + '</b> waiting for access' : 'No one waiting') + '</span>' +
           '<a href="' + ROOT + 'access.html">Manage access →</a></div>';
       }
-      h += '<p class="xa-k">Your synced tools</p><ul class="xa-list">' + TOOLS.map(function (t) {
-        var here = current && current.doc === t.doc;
-        var canSync = here && current.syncNow && (S.status === 'owner' || S.status === 'member');
-        return '<li><a href="' + ROOT + t.href + '">' + esc(t.name) + (here ? ' <span class="xa-here">• open</span>' : '') +
-          '<small>' + esc(toolState(t)) + '</small></a>' +
-          (canSync ? '<button type="button" class="xa-btn xa-sm" data-xa="sync">Sync now</button>' : '') + '</li>';
-      }).join('') + '</ul>';
-      h += '<div class="xa-acts"><button type="button" class="xa-btn" data-xa="signout">Sign out</button>' +
-        (S.status === 'pending' || S.status === 'declined' ? '<a class="xa-btn" href="' + ROOT + 'access.html">About access</a>' : '') + '</div>' +
+      // the tool list was too long for a phone (Xavier, 2026-11-12): access and sign out only
+      h += '<div class="xa-acts">' + (S.status === 'owner' ? '' : '<a class="xa-btn" href="' + ROOT + 'access.html">Access</a>') +
+        '<button type="button" class="xa-btn" data-xa="signout">Sign out</button></div>' +
         '<p class="xa-note">Signing out here signs you out of the whole site on this device. <a href="' + ROOT + 'privacy.html">Privacy</a></p>';
     }
     box.innerHTML = h;

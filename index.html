@@ -19,7 +19,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="description" content="Photographer, cinematographer, tool-builder. Montreal. A mind map of everything I make.">
 <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
-<link rel="stylesheet" href="assets/style.css?v=150">
+<link rel="stylesheet" href="assets/style.css?v=151">
 <script src="assets/account.js"></script>
 <script defer src="assets/stats.js"></script>
 <style>
@@ -102,6 +102,8 @@
     transition: background .15s, color .15s, border-color .15s;
   }
   .ctl:hover { background: var(--volt); border-color: var(--volt); color: var(--ink); }
+  /* phones and tablets zoom by pinching: no + / − buttons there */
+  @media (hover: none) and (pointer: coarse) { #btnIn, #btnOut { display: none; } }
   .ctl--wide { width: auto; padding: 0 16px; font-size: 11px; letter-spacing: .16em; font-family: var(--mono); }
 
   .hud--top {
@@ -126,7 +128,7 @@
   .hud, .hud--brand h1, .hud--brand h1 em, .hud--hint b, .ctl, .hud--top a { transition: color .6s ease, background-color .6s ease, border-color .6s ease; }
   html.inverted .hud { color: #55565a; }
   html.inverted .hud--brand h1 { color: #101114; }
-  html.inverted .hud--brand h1 em { color: rgb(176,124,6); }
+  html.inverted .hud--brand h1 em { color: var(--volt); }
   html.inverted .hud--hint b { color: #101114; }
   html.inverted .ctl, html.inverted .hud--top a { background: #f6f6f4; border-color: #101114; color: #101114; }
   html.inverted .ctl:hover, html.inverted .hud--top a:hover { background: var(--volt); border-color: var(--volt); color: var(--ink); }
@@ -216,8 +218,8 @@
 
 <div class="hud hud--hint" aria-hidden="true">
   <b>Tap the mark</b> to open the map &middot; twice to invert it<br>
-  <b>Click</b> a node to open it &middot; <b>Drag</b> to move &middot; <b>Scroll</b> to zoom<br>
-  <span style="opacity:.5">v150</span>
+  <b>Click</b> a node to open it &middot; <b>Drag</b> a branch to move it &middot; <b>Scroll</b> to zoom<br>
+  <span style="opacity:.5">v151</span>
 </div>
 
 <div class="hud hud--ctl">
@@ -408,7 +410,7 @@ const THEME = {
   light: {
     bg       : [246,246,244],       // near-white; pure #fff is harsh at this density
     particle : [8,8,10],
-    accent   : [176,124,6],         // the same gold, darkened to hold on white
+    accent   : [243,201,63],        // the same gold as the dark map (Xavier, 2026-11-12: no darker gold on white)
     label    : [16,17,20],
     labelDim : [96,100,108],
     hint     : [122,126,134],
@@ -1330,6 +1332,8 @@ function buildGeometry(){
   }
 
   syncGeometry();
+  keepBase();
+  applyOffsets();
 
   mapHalfW = 40; mapHalfH = 40; ancHalfW = 40; ancHalfH = 40;
   for(let i=1;i<nodes.length;i++){
@@ -1345,6 +1349,45 @@ function buildGeometry(){
 function syncGeometry(){
   for(let i=0;i<nodes.length;i++){ nodeX[i]=nodes[i].x; nodeY[i]=nodes[i].y; }
 }
+
+/* ---- moving a branch, just for fun ---------------------------------------
+   A branch (a cluster: its anchor and everything under it) can be dragged.
+   The baked positions stay as they are (baseX/baseY, baseL); each cluster
+   carries an offset, and the trunk to the centre and any bleed link between
+   two territories stretch to follow. Particles read nodeX/nodeY and lPts every
+   frame, so they simply flow to the new place. Nothing is saved: a reload
+   puts the tree back. */
+const clOff = [];                       // [cluster] = {x, y}, layout px
+let baseX = null, baseY = null, baseL = null;
+function keepBase(){
+  baseX = new Float32Array(nodes.length); baseY = new Float32Array(nodes.length);
+  for(let i=0;i<nodes.length;i++){ baseX[i] = nodes[i].x; baseY[i] = nodes[i].y; }
+  baseL = lPts.slice();
+}
+function offOf(c){ return clOff[c] || { x:0, y:0 }; }
+function applyOffsets(){
+  if(!baseX) return;
+  for(let i=1;i<nodes.length;i++){
+    const o = offOf(nodes[i].cluster);
+    nodes[i].x = baseX[i] + o.x; nodes[i].y = baseY[i] + o.y;
+  }
+  for(let li=0; li<links.length; li++){
+    const l = links[li], m = lN[li], b0 = lOff[li]*2;
+    let A, B;
+    if(l.kind === 1){ A = B = offOf(l.cluster); }
+    else if(l.kind === 0){ A = { x:0, y:0 }; B = offOf(nodes[l.b].cluster); }
+    else { A = offOf(nodes[l.a].cluster); B = offOf(nodes[l.b].cluster); }
+    for(let k=0;k<m;k++){
+      const u = m > 1 ? k/(m-1) : 1, b = b0 + k*2;
+      lPts[b]   = baseL[b]   + A.x + (B.x-A.x)*u;
+      lPts[b+1] = baseL[b+1] + A.y + (B.y-A.y)*u;
+    }
+  }
+  syncGeometry();
+}
+
+/* ---- hover: the branch under the mouse lights up, the rest darkens ------- */
+let hoverC = -1, hoverK = 0, hoverShown = -1;
 
 /* an anchor carries its whole subtree, however deep it runs */
 function nodeVisible(i){
@@ -1769,6 +1812,12 @@ function frame(now, dt){
 
   const FOV = T.fov, halfW = cw*0.5, halfH = ch*0.5, Zd = zoom*dpr;
   const drift = T.driftAmp * (reduced ? 0.45 : 1);
+  /* hover: ease towards the branch under the mouse (or none) */
+  const wantK = (hoverC >= 0 && mapOpen) ? 1 : 0;
+  if(hoverC >= 0) hoverShown = hoverC;
+  hoverK += (wantK - hoverK)*Math.min(1, 0.14*dts);
+  if(hoverK < 0.004 && wantK === 0){ hoverK = 0; hoverShown = -1; }
+  const hk = hoverK, hc = hoverShown;
   bCount.fill(0);
 
   for(let i=0;i<N;i++){
@@ -1839,6 +1888,11 @@ function frame(now, dt){
     /* ---- brightness: depth, density, breath, twinkle ------------------- */
     let lum = bri[i]*(0.30 + 0.78*s)*gBri;
     lum *= 0.80 + 0.20*sinT(now*twr[i] + twp[i]);
+    if(hk > 0){
+      let pc = -2;                                   // which branch this particle belongs to
+      if(!isFree){ const o = own[i]; pc = o >= 0 ? nodes[o].cluster : (links[-1-o].kind === 2 ? -2 : links[-1-o].cluster); }
+      lum *= pc === hc ? 1 + 0.35*hk : 1 - 0.72*hk;
+    }
 
     /* ---- firing / selection: the only gold in the piece ---------------- */
     let e = 0;
@@ -1918,6 +1972,8 @@ function drawLabels(now, dts){
 
     const anchor = n.kind === 1;
     let a = n.labelA * (anchor ? 0.92 : 0.68);
+    if(hoverK > 0) a *= n.cluster === hoverShown ? 1 + 0.3*hoverK : 1 - 0.7*hoverK;
+    a = Math.min(1, a);
     const gold = (i === selected) || (now - n.fireAt < T.fireNodeDecay*0.9);
     if(gold) a = Math.min(1, a + 0.22);
 
@@ -2078,16 +2134,20 @@ function zoomAt(nz, sx, sy){
   clampCam();
 }
 
+let grabC = -1;                              // the branch being dragged, or -1 (panning)
 cv.addEventListener("pointerdown", function(e){
   try{ cv.setPointerCapture(e.pointerId); }catch(_){}
   ptrs.set(e.pointerId, {x:e.clientX, y:e.clientY});
   if(ptrs.size === 1){
+    const ni = mapOpen ? nearestNode(e.clientX, e.clientY, isSmall ? 30 : 24) : -1;
+    grabC = ni > 0 ? nodes[ni].cluster : -1;
+    if(grabC >= 0 && !clOff[grabC]) clOff[grabC] = { x:0, y:0 };
     dragging = true; moved = 0;
     downX = lastX = e.clientX; downY = lastY = e.clientY;
     downT = performance.now()/1000;
     cv.classList.add("dragging");
   } else if(ptrs.size === 2){
-    dragging = false;
+    dragging = false; grabC = -1;
     cv.classList.remove("dragging");
     pinchD = distOf() || 1; pinchZ = zoom;
     const m = midOf();
@@ -2104,6 +2164,14 @@ cv.addEventListener("pointermove", function(e){
     const dx = e.clientX-lastX, dy = e.clientY-lastY;
     lastX = e.clientX; lastY = e.clientY;
     moved += Math.abs(dx)+Math.abs(dy);
+    if(grabC >= 0 && moved >= T.tapSlop){           // a press on a branch that moves: carry the branch
+      const o = clOff[grabC], lim = Math.max(mapHalfW, mapHalfH)*0.9;
+      o.x = clamp(o.x + dx/zoom, -lim, lim); o.y = clamp(o.y + dy/zoom, -lim, lim);
+      applyOffsets();
+      hoverC = grabC;
+      return;
+    }
+    if(grabC >= 0) return;                          // still within tap slop: wait
     camX -= dx/zoom; camY -= dy/zoom;
     userZoomed = true;
     clampCam();
@@ -2122,6 +2190,8 @@ function pointerEnd(e){
   const was = ptrs.size;
   ptrs.delete(e.pointerId);
   cv.classList.remove("dragging");
+  if(grabC >= 0 && moved >= T.tapSlop){ buildCarve(); if(e.pointerType !== "mouse") hoverC = -1; }
+  if(ptrs.size === 0) grabC = -1;
   if(was === 1 && dragging){
     if(moved < T.tapSlop && performance.now()/1000 - downT < 0.7)
       handleTap(downX, downY, clock);   // the loop's clock, not wall time
@@ -2135,6 +2205,13 @@ function pointerEnd(e){
   }
 }
 cv.addEventListener("pointerup", pointerEnd);
+cv.addEventListener("pointermove", function(e){
+  if(e.pointerType !== "mouse" || ptrs.size) return;   // hover is a mouse thing; dragging sets its own
+  const ni = mapOpen ? nearestNode(e.clientX, e.clientY, 70) : -1;
+  hoverC = ni > 0 ? nodes[ni].cluster : -1;
+  cv.style.cursor = ni > 0 && nearestNode(e.clientX, e.clientY, 24) > 0 ? "pointer" : "";
+});
+cv.addEventListener("pointerleave", function(){ hoverC = -1; });
 cv.addEventListener("pointercancel", pointerEnd);
 
 cv.addEventListener("wheel", function(e){
