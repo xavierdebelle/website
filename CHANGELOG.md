@@ -5,6 +5,36 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v158 — 2026-11-13
+
+**What's new** · Update · [tools/production-hub.html]
+### The Production Hub on a phone
+- The tabs now sit in a bar along the bottom of the screen, where your
+  thumb is, with a small count on each.
+- The header is shorter, and tick circles, menus and task rows are easier
+  to tap.
+- The little black-and-yellow sliver at the bottom of the page is gone. It
+  was the message bar peeking out when it had nothing to say.
+
+**Production Hub — `tools/production-hub.html`, source `production_hub_v9.html`**
+- Under 760px: `.tabs` becomes a fixed 5-column bar at the bottom (safe-area
+  aware; top border marks the open tab; level words hidden; "In Production"
+  reads "Production"; zero counts hidden); header padding and title smaller,
+  the "Xavier de Belle · Tools" line hidden; ticks 26px, roomier rows and ⋯
+  buttons; page bottom padding clears the bar; messages sit above it.
+- The message bar (`#toast`) is `visibility: hidden` when idle and slides by
+  its full height plus 40px: an empty bar was only padding tall, so 180% of
+  its height left a sliver on screen.
+
+**Pipelines — `tools/pipelines.html`, source `pipelines_v9.html`**
+- Same message-bar fix.
+
+**Verified** (375px and 1280px) — no sliver at the bottom; tab bar fixed at
+the bottom with badges; a message shows clear above the bar; desktop layout
+unchanged (tabs in the header). No console errors.
+
+---
+
 ## v157 — 2026-11-13
 
 **What's new** · Fix · [tools/wedding-invite.html]

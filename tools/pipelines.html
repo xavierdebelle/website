@@ -249,8 +249,8 @@ textarea[data-grow]{min-height:40px!important;height:40px;overflow:hidden;resize
 .tpl-pick button.on small{color:#ccc}
 
 /* toast */
-#toast{position:fixed;left:50%;bottom:max(22px,env(safe-area-inset-bottom));transform:translate(-50%,180%);background:var(--black);color:var(--white);padding:12px 16px;display:flex;gap:14px;align-items:center;transition:transform .25s var(--ease);z-index:90;max-width:calc(100vw - 32px);border-left:4px solid var(--yellow)}
-#toast.on{transform:translate(-50%,0)}
+#toast{position:fixed;left:50%;bottom:max(22px,env(safe-area-inset-bottom));transform:translate(-50%,calc(100% + 40px));visibility:hidden;background:var(--black);color:var(--white);padding:12px 16px;display:flex;gap:14px;align-items:center;transition:transform .25s var(--ease),visibility .25s;z-index:90;max-width:calc(100vw - 32px);border-left:4px solid var(--yellow)}
+#toast.on{transform:translate(-50%,0);visibility:visible}   /* hidden when idle: an empty bar is too short to slide fully off a phone screen */
 #toast button{background:var(--yellow);border:0;color:var(--black);padding:6px 10px;font:var(--wide);font-size:10px;letter-spacing:.06em;text-transform:uppercase}
 
 @media (max-width:700px){
