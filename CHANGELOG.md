@@ -5,6 +5,33 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v153 — 2026-11-12
+
+**Memory Map v11 — `tools/memory-map.html`** (Personal, owner-only; no "What's new" block, private)
+- The map now grows every week. Proposals live in the same private doc
+  (`users/<owner>/tools/memory-map` → `data.proposals`), added by a Sunday
+  scheduled task on Xavier's Mac or by Claude.ai, both through the XDB
+  connector's existing add-only `add_item` (no connector or rules change).
+- Proposal shapes: `{id, kind:"new", node:{id,parent,label,text,src}, pillars,
+  links:[[otherId, why]], reason, from, at}` · `{kind:"update", target,
+  label?, text?, parent?, pillars?, close?}` · `{kind:"link", a, b, why}`.
+- Pending ones show as unlit neurons pulsing gold (both styles); "This week"
+  panel lists them with Keep / Edit / Skip (4-second undo, then a queued
+  `runTransaction`). Kept → joins the map with `data.added` /
+  `data.addedLinks` / `data.changed` dates; skipped → `data.skipped` so it
+  isn't proposed again. Proposal text is escaped (only `<b>` kept).
+- Growth: NEW tags for 7 days (map, panel, Index), weekly summary toast on
+  open, pillar balance per week (lines + share bar), rewind slider with
+  replay. Everything older counts from 2026-11-07.
+- Index rebuilt on open, "Download a copy" of the map JSON; importing a file
+  keeps the account's open proposals, dates and skipped list.
+- Mock harness: `runTransaction` added to `mockfb/firebase-database.js`.
+- Verified on the mock database: keep / edit / skip / edit-then-place
+  (reload), two decisions at once (both saved after queuing), escaped
+  `<script>`, rewind, phone layout, Graphic style. Scan clean.
+
+---
+
 ## v152 — 2026-11-12
 
 **What's new** · Update · [tools.html#art]

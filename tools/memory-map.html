@@ -179,7 +179,78 @@ body.locked .hud, body.locked #c, body.locked #panel{visibility:hidden}
 .gate__row{display:flex;gap:10px;flex-wrap:wrap}
 .gate__row .btn{text-decoration:none}
 .gate__row .btn[hidden]{display:none}
-#updateRow{margin-top:18px}
+#updateRow{margin-top:18px;display:flex;gap:10px;flex-wrap:wrap}
+
+/* ============ THIS WEEK: review + growth (v11) ============ */
+#btnWeek{position:relative;display:inline-flex;align-items:center;white-space:nowrap}
+#btnWeek .n{display:inline-grid;place-items:center;min-width:18px;height:18px;margin-left:8px;padding:0 4px;background:var(--volt);color:var(--ink);font-weight:900;letter-spacing:0}
+#btnWeek .n:empty{display:none}
+#btnWeek.due{animation:due 1.8s ease-in-out infinite}
+@keyframes due{50%{border-color:var(--volt);color:var(--volt)}}
+@media (prefers-reduced-motion:reduce){#btnWeek.due{animation:none;border-color:var(--volt)}}
+#week{position:fixed;z-index:65;top:0;left:0;height:100%;width:min(460px,100%);background:var(--pbg);color:var(--pfg);border-right:var(--edge) solid var(--pfg);padding:var(--gut);overflow-y:auto;transform:translateX(-105%);transition:transform .45s cubic-bezier(.2,.8,.2,1),background-color .6s,color .6s}
+#week.open{transform:none}
+body.week-open .hud--brand{opacity:0}
+#weekClose{position:absolute;top:calc(var(--gut) - 8px);right:calc(var(--gut) - 8px);width:42px;height:42px;background:var(--pbg);border:3px solid var(--pfg);color:var(--pfg);font-weight:900;font-size:18px;cursor:pointer}
+#weekClose:hover{background:var(--volt);border-color:var(--volt);color:var(--ink)}
+#week .kick{font-family:var(--mono);font-size:10px;letter-spacing:.24em;text-transform:uppercase;color:var(--volt);margin:0}
+#week h2{font-weight:900;letter-spacing:-.05em;line-height:.84;font-size:clamp(40px,7vw,64px);margin:12px 52px 10px 0;text-transform:uppercase}
+#week .sum{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;line-height:1.9;margin:0}
+#week .sum b{color:var(--volt)}
+#week h3{font-family:var(--mono);font-size:10px;letter-spacing:.24em;text-transform:uppercase;color:var(--volt);margin:30px 0 12px;padding-top:16px;border-top:var(--edge) solid var(--pfg);display:flex;justify-content:space-between;gap:10px}
+#week h3 span{color:var(--dust)}
+#week .empty{font-size:14px;line-height:1.6;opacity:.7;margin:0}
+.prop{border:var(--edge) solid var(--pfg);padding:14px;margin:0 0 10px}
+.prop.focus{border-color:var(--volt)}
+.prop .tag{font-family:var(--mono);font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:var(--volt)}
+.prop .tag i{font-style:normal;color:var(--dust);margin-left:6px}
+.prop h4{all:unset;display:block;cursor:pointer;font-weight:900;text-transform:uppercase;font-size:19px;letter-spacing:-.02em;line-height:1.05;margin:6px 0 8px}
+.prop h4:hover{color:var(--volt)}
+.prop p{font-size:14px;line-height:1.55;margin:0 0 8px;opacity:.86}
+.prop .was{opacity:.5;text-decoration:line-through}
+.prop .why{font-family:var(--mono);font-size:10px;letter-spacing:.1em;line-height:1.6;opacity:.55;text-transform:uppercase}
+.prop .acts{display:flex;gap:8px;margin-top:12px}
+.prop .acts button{flex:1;padding:11px 8px;border:3px solid var(--pfg);background:transparent;color:var(--pfg);font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;font-weight:700;cursor:pointer}
+.prop .acts button.keep{background:var(--volt);border-color:var(--volt);color:var(--ink)}
+.prop .acts button:hover{background:var(--pfg);color:var(--pbg);border-color:var(--pfg)}
+.prop .acts button:disabled{opacity:.35;cursor:default}
+.prop.done{opacity:.55}
+.prop.done .acts{display:none}
+.prop .state{font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;margin-top:10px;display:flex;gap:12px;align-items:center}
+.prop .state button{all:unset;cursor:pointer;color:var(--volt);text-decoration:underline}
+.edit{display:grid;gap:8px;margin-top:10px}
+.edit label{font-family:var(--mono);font-size:9px;letter-spacing:.2em;text-transform:uppercase;opacity:.6}
+.edit input,.edit textarea,.edit select{width:100%;padding:9px 10px;border:2px solid var(--pfg);background:var(--pbg);color:var(--pfg);font:inherit;font-size:14px}
+.edit textarea{min-height:90px;resize:vertical;line-height:1.5}
+.edit .pils{display:flex;gap:6px}
+.edit .pils button{flex:1;padding:8px;border:2px solid var(--pfg);background:transparent;color:var(--pfg);font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;cursor:pointer}
+.edit .pils button[aria-pressed="true"]{background:var(--volt);border-color:var(--volt);color:var(--ink)}
+.bal{display:grid;gap:12px}
+.bal .row{display:grid;grid-template-columns:76px 1fr 92px;gap:10px;align-items:center}
+.bal .nm{font-weight:900;text-transform:uppercase;font-size:14px}
+.bal .val{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-align:right;text-transform:uppercase}
+.bal .val b{color:var(--volt)}
+.bal svg{width:100%;height:34px;display:block;overflow:visible}
+.bal .share{height:10px;display:flex;border:2px solid var(--pfg);margin-top:4px}
+.bal .share i{display:block;height:100%}
+.bal .legend{font-family:var(--mono);font-size:9px;letter-spacing:.16em;text-transform:uppercase;opacity:.6;line-height:1.7}
+.rew{display:flex;gap:10px;align-items:center}
+.rew input{flex:1;accent-color:var(--volt)}
+.rew button{width:42px;height:42px;flex:none;border:3px solid var(--pfg);background:transparent;color:var(--pfg);font-weight:900;cursor:pointer}
+.rew button:hover,.rew button[aria-pressed="true"]{background:var(--volt);border-color:var(--volt);color:var(--ink)}
+#rewLbl{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;margin:10px 0 0;line-height:1.7}
+#rewLbl b{color:var(--volt)}
+#rewBadge{position:fixed;z-index:41;left:50%;top:14px;transform:translateX(-50%);font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;background:var(--volt);color:var(--ink);padding:8px 12px;font-weight:700;display:none;cursor:pointer;border:0}
+#rewBadge.on{display:block}
+#panel .newtag{display:inline-block;margin-left:10px;font-family:var(--mono);font-size:10px;letter-spacing:.2em;background:var(--volt);color:var(--ink);padding:3px 6px;vertical-align:middle}
+.index__col button .nt{font-family:var(--mono);font-size:9px;letter-spacing:.18em;color:var(--volt);margin-left:8px;vertical-align:middle}
+html.inverted #week .kick,html.inverted #week h3,html.inverted #week .sum b,html.inverted .prop .tag,html.inverted .bal .val b,html.inverted #rewLbl b{color:rgb(176,124,6)}
+html.sheet #week{width:100%;border-right:0}
+#btnWeek .ws{display:none}
+html.phone #btnWeek .wl{display:none}
+html.phone #btnWeek .ws{display:inline}
+html.phone .hud--ctl{gap:6px}
+html.phone .hud--ctl .ctl--wide{padding:0 12px}
 </style>
 </head>
 <body class="locked">
@@ -201,7 +272,7 @@ body.locked .hud, body.locked #c, body.locked #panel{visibility:hidden}
 
 <header class="hud hud--brand">
   <h1><i>Xavier</i> <i>de</i> <em>Belle</em></h1>
-  <p>What Claude knows about you<br><span id="count"></span><br>Memory map v10 &middot; 2026-11-07</p>
+  <p>What Claude knows about you<br><span id="count"></span><br>Memory map v11 &middot; grows every Sunday</p>
 </header>
 
 <div class="hud hud--top">
@@ -224,10 +295,11 @@ body.locked .hud, body.locked #c, body.locked #panel{visibility:hidden}
 <div class="hud hud--hint" aria-hidden="true">
   <b>Click</b> a node to open it &middot; <b>Drag</b> to move &middot; <b>Scroll</b> to zoom<br>
   <b>Tap the mark</b> to fire it &middot; twice to invert it<br>
-  <span style="opacity:.5">v10</span>
+  <span style="opacity:.5">v11</span>
 </div>
 
 <div class="hud hud--ctl">
+  <button class="ctl ctl--wide" id="btnWeek" type="button" aria-expanded="false" aria-label="This week"><span class="wl">This week</span><span class="ws">Week</span><span class="n" id="weekN"></span></button>
   <button class="ctl ctl--wide" id="btnMenu" type="button" aria-expanded="false">Menu</button>
   <button class="ctl ctl--wide" id="btnIndex" type="button">Index</button>
   <button class="ctl" id="btnOut" type="button" aria-label="Zoom out">&minus;</button>
@@ -248,19 +320,34 @@ body.locked .hud, body.locked #c, body.locked #panel{visibility:hidden}
 </aside>
 
 <div id="toast" role="status"></div>
+<button id="rewBadge" type="button">Rewound &middot; back to now</button>
+
+<aside id="week" aria-label="This week">
+  <button id="weekClose" aria-label="Close">&times;</button>
+  <p class="kick" id="wkKick">This week</p>
+  <h2 id="wkTitle">This week</h2>
+  <p class="sum" id="wkSum"></p>
+  <h3>To review <span id="wkCount"></span></h3>
+  <div id="wkList"></div>
+  <h3>Pillar balance <span>memories per week</span></h3>
+  <div class="bal" id="wkBal"></div>
+  <h3>Rewind <span>how the map grew</span></h3>
+  <div class="rew"><button id="rewPlay" type="button" aria-label="Replay how the map grew">&#9654;</button><input type="range" id="rew" min="0" max="0" value="0" aria-label="Week"></div>
+  <p id="rewLbl"></p>
+</aside>
 
 <section class="index" id="index-view" aria-label="Text index of every memory">
   <h2>The <span>Index</span></h2>
   <p class="kicker">Everything Claude knows, as a plain list</p>
   <div class="index__grid" id="indexGrid"></div>
   <p style="margin-top:34px"><button class="btn" id="btnIndexClose" type="button">Back to the map</button></p>
-  <p id="updateRow"><label class="btn">Update the map from a file<input type="file" id="updateFile" accept=".json,application/json" hidden></label></p>
+  <p id="updateRow"><label class="btn">Update the map from a file<input type="file" id="updateFile" accept=".json,application/json" hidden></label><button class="btn" id="btnDownload" type="button">Download a copy</button></p>
 </section>
 
 <script>
 "use strict";
-function startMap(D){
-const ROOT = D.root, DATA = D.nodes, CROSS = D.cross, PILLARS = D.pillars;
+function startMap(D, api){
+const ROOT = D.root, DATA = D.nodes.slice(), CROSS = D.cross.slice(), PILLARS = Object.assign({}, D.pillars);
 
 /* ==========================================================================
    1 · DATA  — identical to v2
@@ -281,6 +368,48 @@ const PILLAR_DESC = {
   H: "Mental health, physical health",
   S: "Your purpose, what you're valued for, work, projects"
 };
+
+/* v11 · THE MAP GROWS EVERY WEEK
+   `added` / `addedLinks` = the day a memory or connected dot joined the map
+   (everything older counts from the first map, BASE). `proposals` = what the
+   Sunday review (or Claude.ai, through the XDB connector) suggested and Xavier
+   hasn't decided yet: they show as unlit neurons pulsing gold until he keeps
+   or skips them in "This week". Proposal text is escaped (only <b> survives),
+   since it was written by a model, not typed by him. */
+const BASE = "2026-11-07";
+const dayStr = t => { const x = new Date(t); return x.getFullYear() + "-" + String(x.getMonth()+1).padStart(2,"0") + "-" + String(x.getDate()).padStart(2,"0"); };
+const addDays = (s, k) => { const d = new Date(s + "T12:00:00"); d.setDate(d.getDate() + k); return dayStr(d); };
+const TODAY = dayStr(Date.now()), WEEK_AGO = addDays(TODAY, -6);
+const ADDED = D.added || {}, ADDED_L = D.addedLinks || {}, CHANGED = D.changed || {};
+const esc = v => String(v == null ? "" : v).replace(/[&<>"]/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;" })[c]);
+const safe = v => esc(v).replace(/&lt;(\/?)b&gt;/g, "<$1b>");
+const plain = v => String(v == null ? "" : v).replace(/<[^>]+>/g, "");
+const pils = v => [...new Set(String(v || "").toUpperCase().replace(/[^LHS]/g, ""))].join("");
+const PROPS = [], PEND = {};
+const known = new Set([ROOT[0], ...DATA.map(r => r[0])]);
+(Array.isArray(D.proposals) ? D.proposals : []).forEach(p => {
+  if(!p || !p.id || !p.kind) return;
+  const q = JSON.parse(JSON.stringify(p));
+  q.pillars = pils(q.pillars);
+  if(q.kind === "new"){
+    const nd = q.node; if(!nd || !nd.id || !nd.label) return;
+    let id = String(nd.id).replace(/[^A-Za-z0-9_-]/g, "-"); while(known.has(id)) id += "-n";
+    nd.id = id; nd.text = safe(nd.text); nd.label = plain(nd.label);
+    q.placed = known.has(nd.parent);
+    known.add(id);
+    if(q.placed){ DATA.push([id, nd.parent, nd.label, nd.text, nd.src || "c"]); PILLARS[id] = q.pillars; PEND[id] = q.id; }
+    q.links = (Array.isArray(q.links) ? q.links : []).filter(x => Array.isArray(x) && known.has(x[0]));
+    if(q.placed) q.links.forEach(x => CROSS.push([id, x[0], plain(x[1]), q.id]));
+  } else if(q.kind === "link"){
+    if(!known.has(q.a) || !known.has(q.b)) return;
+    q.why = plain(q.why); CROSS.push([q.a, q.b, q.why, q.id]);
+  } else if(q.kind === "update"){
+    if(!known.has(q.target) || q.target === ROOT[0]) return;
+    if(q.text != null) q.text = safe(q.text);
+    if(q.label != null) q.label = plain(q.label);
+  } else return;
+  PROPS.push(q);
+});
 
 
 
@@ -331,19 +460,26 @@ addNode(ROOT); DATA.forEach(addNode);
 nodes.forEach(n => { if(n.parent) byId[n.parent].kids.push(n); });
 (function depth(n, d, br){ n.level = d; n.branch = br; n.kids.forEach(k => depth(k, d+1, d===0 ? k : br)); })(byId.me, 0, null);
 
-nodes.forEach(n => { n.p = PILLARS[n.id] || ""; });
+nodes.forEach(n => { n.p = PILLARS[n.id] || ""; n.pending = PEND[n.id] || null; n.addedAt = ADDED[n.id] || BASE;
+  n.isNew = !n.pending && !!ADDED[n.id] && n.addedAt >= WEEK_AGO; n.changed = !!CHANGED[n.id] && CHANGED[n.id] >= WEEK_AGO; n.upd = null; });
+PROPS.forEach(q => { if(q.kind === "update") byId[q.target].upd = q.id; });
 branches_union: {
   const up = n => { n.kids.forEach(k => { up(k); for(const c of k.p) if(!n.p.includes(c)) n.p += c; }); };
   byId.me.kids.forEach(up);
 }
 const links = [];
-nodes.forEach(n => { if(n.parent) links.push({ a:byId[n.parent], b:n, cross:false, why:"" }); });
-CROSS.forEach(([a,b,why]) => { if(byId[a] && byId[b]) links.push({ a:byId[a], b:byId[b], cross:true, why }); });
+nodes.forEach(n => { if(n.parent) links.push({ a:byId[n.parent], b:n, cross:false, why:"", pending:n.pending, addedAt:n.addedAt, fresh:n.isNew }); });
+CROSS.forEach(([a,b,why,pid]) => { if(byId[a] && byId[b]){ const k = ADDED_L[a+"~"+b] || ADDED_L[b+"~"+a];
+  links.push({ a:byId[a], b:byId[b], cross:true, why, pending:pid || null, addedAt:k || BASE, fresh:!pid && !!k && k >= WEEK_AGO }); } });
 links.forEach((l,i) => { l.i = i; l.a.links.push(l); l.b.links.push(l); l.fireAt = -99; l.dir = 1; l.done = 1;
   l.bend = (l.cross ? 0.20 : 0.06) * (Math.random() < .5 ? -1 : 1) * (0.6 + Math.random()*0.8); });
 const branches = byId.me.kids;
-document.getElementById("count").textContent =
-  nodes.length + " memories · " + branches.length + " branches · " + CROSS.length + " connected dots";
+function refreshCount(){
+  document.getElementById("count").textContent =
+    nodes.filter(n => !n.pending && !n.gone).length + " memories · " + branches.filter(b => !b.pending && !b.gone).length + " branches · " +
+    links.filter(l => l.cross && !l.pending && !l.gone).length + " connected dots";
+}
+refreshCount();
 
 branches.forEach((b,i) => {
   const ang = -Math.PI/2 + i*(Math.PI*2/branches.length);
@@ -564,7 +700,10 @@ applyTheme(0);
    8 · STATE
    ========================================================================== */
 let filter="all", query="", sel=null, hover=null, selAt=-9, selCross=null, focusB=null, preview=null;
-function visible(n){ return filter==="all" || n.level===0 || n.p.includes(filter); }
+let rewindTo = null;   // a week-end date while rewinding, else null
+function present(n){ return !n.gone && !(rewindTo && (n.pending || n.addedAt > rewindTo)); }
+function linkPresent(l){ return !l.gone && present(l.a) && present(l.b) && !(rewindTo && (l.pending || l.addedAt > rewindTo)); }
+function visible(n){ return present(n) && (filter==="all" || n.level===0 || n.p.includes(filter)); }
 function matches(n){ if(!query) return false; return (n.label+" "+n.text.replace(/<[^>]+>/g,"")).toLowerCase().includes(query.toLowerCase()); }
 const dimN = new Float32Array(nodes.length);
 function computeDim(){
@@ -575,7 +714,8 @@ function computeDim(){
   const anyMatch = query && nodes.some(matches);
   nodes.forEach((n,i) => {
     let d = 1;
-    if(!visible(n)) d = 0.05;
+    if(!present(n)) d = 0;
+    else if(!visible(n)) d = 0.05;
     else if(near) d = near.has(n) ? 1 : 0.16;
     else if(anyMatch) d = matches(n) ? 1 : 0.16;
     dimN[i] += (d - dimN[i])*0.12;
@@ -587,7 +727,7 @@ dimN.fill(1);
 /* ==========================================================================
    9 · FIRING — a brightness wave along a link's own particle chain
    ========================================================================== */
-function linkVisible(l){ return visible(l.a) && visible(l.b); }
+function linkVisible(l){ return linkPresent(l) && visible(l.a) && visible(l.b); }
 function fireLink(l, from, when){
   if(!linkVisible(l)) return;
   if(when - l.fireAt < T.fireTravel*1.15) return;
@@ -655,7 +795,7 @@ function curveCtl(l, o){
 }
 const CC = links.map(() => ({}));
 
-let last = performance.now()/1000, start = last, logoPulse = 0;
+let last = performance.now()/1000, start = last, logoPulse = 0, pulse = 0;
 function frame(){
   const nowAbs = performance.now()/1000;
   const dt = Math.min(0.05, nowAbs-last); last = nowAbs;
@@ -672,6 +812,7 @@ function frame(){
   const cyw = Math.cos(yaw), syw = Math.sin(yaw), ct = Math.cos(tilt), st = Math.sin(tilt);
   updateFirings(now, breath, dt);
   logoPulse *= 0.92;
+  pulse = reduced ? 0.6 : 0.5 + 0.5*Math.sin(now*3.4);
 
   const near = computeDim();
   const S0 = sel || preview;
@@ -735,14 +876,17 @@ function frame(){
         if(lit >= 0 && lit < T.fireNodeDecay) gold = 1 - lit/T.fireNodeDecay;
         if(n === sel || matches(n)) gold = Math.max(gold, 0.7);
         else if(selCross && selCross.has(n)) gold = Math.max(gold, 0.55);
+        if(n.pending){ a *= 0.4 + 0.45*pulse; gold = Math.max(gold, 0.3 + 0.7*pulse); }   // proposed: unlit, pulsing gold
+        else if(n.upd) gold = Math.max(gold, 0.2 + 0.5*pulse);
       } else {
         const l = links[own[i]], c = CC[own[i]], u = prm[i], v = 1-u;
         const wob = reduced ? 0 : Math.sin(now*rate[i] + dph[i])*1.1;
         tx = v*v*c.ax + 2*v*u*c.cx + u*u*c.bx + c.nx*(jit[i]+wob);
         ty = v*v*c.ay + 2*v*u*c.cy + u*u*c.by + c.ny*(jit[i]+wob);
-        d = Math.min(dimN[l.a.idx], dimN[l.b.idx]);
+        d = linkPresent(l) ? Math.min(dimN[l.a.idx], dimN[l.b.idx]) : 0;
         a = bri[i]*(0.9 + breath*0.2);
-        if(l.cross) gold = 0.2;  // the connected dots run in gold, quietly
+        if(l.pending){ a *= 0.45 + 0.4*pulse; gold = 0.3 + 0.6*pulse; }
+        if(l.cross) gold = Math.max(gold, 0.2);  // the connected dots run in gold, quietly
         const prog = (now - l.fireAt)/(T.fireTravel*(l.cross ? 1.6 : 1));
         if(prog > -0.05 && prog < 1 + T.fireWidth){
           const uu = l.dir > 0 ? u : 1-u;
@@ -872,10 +1016,16 @@ function drawGraphic(now){
   const focus = sel || hover;
   links.forEach(l => {
     const c = ctrlFor(l), A = toS(c.ax, c.ay), B = toS(c.bx, c.by);
-    const a = Math.min(dimN[l.a.idx], dimN[l.b.idx]);
+    const a = linkPresent(l) ? Math.min(dimN[l.a.idx], dimN[l.b.idx]) : 0;
+    if(a < 0.01) return;
     const active = focus && (l.a === focus || l.b === focus);
     ctx.beginPath(); ctx.moveTo(A[0], A[1]);
-    if(l.cross){
+    if(l.pending){
+      const C = toS(c.cx, c.cy);
+      ctx.quadraticCurveTo(C[0], C[1], B[0], B[1]);
+      ctx.setLineDash([2, 5]); ctx.strokeStyle = YL;
+      ctx.globalAlpha = a*(0.3 + 0.6*pulse); ctx.lineWidth = 1.6;
+    } else if(l.cross){
       const C = toS(c.cx, c.cy);
       ctx.quadraticCurveTo(C[0], C[1], B[0], B[1]);
       ctx.setLineDash([5, 6]); ctx.strokeStyle = YL;
@@ -922,6 +1072,13 @@ function drawGraphic(now){
     const isSel = n === sel, hit = matches(n), linked = selCross && selCross.has(n);
     ctx.globalAlpha = a;
     if(n.level === 0) return;   // the centre is the same white X mark as Organic, drawn last
+    if(a < 0.01) return;
+    if(n.pending){   // proposed: an unlit ring, pulsing gold
+      ctx.globalAlpha = a*(0.15 + 0.25*pulse); ctx.fillStyle = YL; ctx.beginPath(); ctx.arc(x, y, r*(1.8 + 0.6*pulse), 0, 6.283); ctx.fill();
+      ctx.globalAlpha = a*(0.5 + 0.5*pulse); ctx.strokeStyle = YL; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, y, r + 1, 0, 6.283); ctx.stroke();
+      ctx.globalAlpha = 1; return;
+    }
+    if(n.upd){ ctx.globalAlpha = a*(0.3 + 0.6*pulse); ctx.strokeStyle = YL; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, y, r + 6, 0, 6.283); ctx.stroke(); }
     if(glow > 0.02 || isSel || hit || linked){
       ctx.globalAlpha = a*Math.max(glow, isSel || hit ? 0.5 : linked ? 0.35 : 0)*0.6;
       ctx.fillStyle = YL; ctx.beginPath(); ctx.arc(x, y, r*2.4, 0, 6.283); ctx.fill();
@@ -943,11 +1100,12 @@ function drawGraphicLabels(near){
   nodes.forEach(n => {
     if(n.level === 0) return;
     const hit = matches(n), isNear = near && near.has(n), linked = selCross && selCross.has(n);
-    if(n.level >= 2 && !(kk > 0.36 || isNear || hit)) return;
+    if(n.level >= 2 && !(kk > 0.36 || isNear || hit || n.pending)) return;
     const x = (LX(n)-camX)*zoom + W/2, y = (LY(n)-camY)*zoom + H/2;
     if(x < -220 || y < -40 || x > W+220 || y > H+40) return;
     const a = dimN[n.idx], r = gRadius(n)*rs;
-    let size, text = n.label;
+    if(a < 0.02) return;
+    let size, text = n.pending ? "+ " + n.label : n.label;
     if(n.level === 1){ size = Math.max(13, 26*kk); text = text.toUpperCase(); ctx.font = "900 " + size + "px " + stack; }
     else { size = Math.max(11, 13*Math.min(kk, 1.4)); ctx.font = "600 " + size + "px " + stack; }
     const w = ctx.measureText(text).width;
@@ -964,8 +1122,9 @@ function drawGraphicLabels(near){
       ctx.fillRect(right ? lx - 3 : lx - w - 3, y - size*0.62, w + 6, size*1.24);
     }
     ctx.globalAlpha = n.level === 1 ? a : a*(isNear || hit || n === hover ? 1 : 0.78);
-    ctx.fillStyle = n.level === 1 ? FG : (n === sel || hit || linked ? YL : FG);
+    ctx.fillStyle = n.level === 1 ? FG : (n === sel || hit || linked || n.pending ? YL : FG);
     ctx.fillText(text, lx, ly);
+    if((n.isNew || n.changed) && !rewindTo) newTag(lx, ly, w, ctx.textAlign, Math.max(9, size*0.62), a, YL, 1);
   });
   ctx.globalAlpha = 1;
 }
@@ -982,11 +1141,11 @@ function drawLabels(now, near){
     const n = nodes[i];
     if(n.labelA < 0.01) continue;
     const anchor = n.level === 1, hit = matches(n), isNear = near && near.has(n);
-    if(!anchor && !(zoom > (n.level===2 ? 1.05 : 1.35) || isNear || hit || n === hover)) continue;
+    if(!anchor && !(zoom > (n.level===2 ? 1.05 : 1.35) || isNear || hit || n === hover || n.pending)) continue;
     const SX = (LX(n)-camX)*Zd + halfW, SY = (LY(n)-camY)*Zd + halfH;
     if(SX < -160*dpr || SX > cw+160*dpr || SY < -40*dpr || SY > ch+40*dpr) continue;
     let a = n.labelA*(anchor ? 0.92 : 0.68)*Math.max(0.12, dimN[i]);
-    const gold = n === sel || hit || (selCross && selCross.has(n)) || (now - n.fireAt >= 0 && now - n.fireAt < T.fireNodeDecay*0.9);
+    const gold = n === sel || hit || n.pending || (selCross && selCross.has(n)) || (now - n.fireAt >= 0 && now - n.fireAt < T.fireNodeDecay*0.9);
     if(gold || n === hover || isNear) a = Math.min(1, a + 0.22);
     let tx, ty;
     if(anchor){ ctx.textAlign = "center"; tx = SX; ty = SY + 30*dpr; }
@@ -995,9 +1154,23 @@ function drawLabels(now, near){
     ctx.font = (anchor ? "600 " : "400 ") + (anchor ? aSize : cSize).toFixed(1) + "px " + FONT;
     if("letterSpacing" in ctx) ctx.letterSpacing = anchor ? (1.2*dpr)+"px" : (0.3*dpr)+"px";
     ctx.fillStyle = gold ? "rgba("+CUR.accent+","+a.toFixed(3)+")" : (anchor ? CUR.label : CUR.labelDim) + a.toFixed(3) + ")";
-    ctx.fillText(anchor ? n.label.toUpperCase() : n.label, tx, ty);
+    const label = (n.pending ? "+ " : "") + (anchor ? n.label.toUpperCase() : n.label);
+    ctx.fillText(label, tx, ty);
+    if((n.isNew || n.changed) && !rewindTo) newTag(tx, ty, ctx.measureText(label).width, ctx.textAlign, (anchor ? aSize : cSize)*0.8, Math.min(1, a + 0.3), "rgb(" + CUR.accent + ")", dpr);
   }
   if("letterSpacing" in ctx) ctx.letterSpacing = "0px";
+}
+
+/* a small NEW (or UPDATED) tag after a label, for a week after it joined */
+function newTag(x, y, w, align, size, a, col, k){
+  ctx.save();
+  if("letterSpacing" in ctx) ctx.letterSpacing = (1.5*k) + "px";
+  ctx.font = "700 " + size.toFixed(1) + "px " + FONT; ctx.textAlign = "left";
+  const t = "NEW", tw = ctx.measureText(t).width + 6*k, pad = 6*k;
+  const x0 = align === "left" ? x + w + pad : align === "right" ? x - w - pad - tw : x + w/2 + pad;
+  ctx.globalAlpha = a; ctx.fillStyle = col; ctx.fillRect(x0, y - size*0.72, tw, size*1.44);
+  ctx.fillStyle = CUR.bg; ctx.fillText(t, x0 + 3*k, y + 0.5*k);
+  ctx.restore();
 }
 
 /* ==========================================================================
@@ -1034,9 +1207,9 @@ function pick(sx, sy, touch){
   crowded = !!(touch && best && second < 1e9 && second - bd < 12 && zoomT < 2.2);
   return best;
 }
-function toast(msg){
+function toast(msg, ms){
   const t = document.getElementById("toast"); t.textContent = msg; t.classList.add("show");
-  clearTimeout(toast.h); toast.h = setTimeout(() => t.classList.remove("show"), 2600);
+  clearTimeout(toast.h); toast.h = setTimeout(() => t.classList.remove("show"), ms || 2600);
 }
 /* phones: tapping a branch first zooms into it, so its memories are readable */
 function focusOn(b){
@@ -1135,7 +1308,15 @@ function select(n){
   const br = n.level === 0 ? "The centre" : n.level === 1 ? "Branch" : byId[n.branch ? n.branch.id : n.parent].label;
   document.getElementById("pk").textContent = br;
   document.getElementById("pt").textContent = n.label;
+  if(n.isNew || n.changed){ const t = document.createElement("span"); t.className = "newtag"; t.textContent = n.isNew ? "New" : "Updated"; document.getElementById("pt").appendChild(t); }
+  if(n.pending) document.getElementById("pk").textContent = "Proposed · not in your map yet";
   document.getElementById("pb").innerHTML = n.text;
+  if(n.pending || n.upd){
+    const b = document.createElement("p"), btn = document.createElement("button");
+    btn.className = "btn"; btn.type = "button"; btn.textContent = "Review it in This week";
+    btn.onclick = () => openWeek(n.pending || n.upd);
+    b.style.marginTop = "16px"; b.appendChild(btn); document.getElementById("pb").appendChild(b);
+  }
   document.getElementById("ps").innerHTML = [...n.p].map(s => "<span class=\"pil\">"+PILLAR_NAME[s]+"</span>").join("") +
     '<p class="learned">Learned in ' + [...n.src].map(s => SRC_NAME[s]).join(" · ") + "</p>";
   const ul = document.getElementById("pl"), pc = document.getElementById("pc");
@@ -1246,21 +1427,285 @@ q.addEventListener("keydown", e => { if(e.key === "Enter"){ const n = nodes.find
 
 /* index */
 const idx = document.getElementById("index-view"), grid = document.getElementById("indexGrid");
-branches.forEach(b => {
-  const col = document.createElement("div"); col.className = "index__col";
-  const h = document.createElement("h3"); h.textContent = b.label; col.appendChild(h);
-  const add = (n, sub) => { const btn = document.createElement("button"); btn.textContent = n.label; if(sub) btn.className = "sub";
-    btn.onclick = () => { idx.classList.remove("is-on"); select(n); }; col.appendChild(btn); n.kids.forEach(k => add(k, true)); };
-  b.kids.forEach(k => add(k, false));
-  grid.appendChild(col);
-});
-document.getElementById("btnIndex").onclick = () => { idx.classList.add("is-on"); idx.scrollTop = 0; };
-document.getElementById("btnIndex2").onclick = () => { setMenu(false); idx.classList.add("is-on"); idx.scrollTop = 0; };
+function buildIndex(){   // rebuilt on every open, so memories kept this session show up
+  grid.innerHTML = "";
+  branches.forEach(b => {
+    if(b.pending || b.gone) return;
+    const col = document.createElement("div"); col.className = "index__col";
+    const h = document.createElement("h3"); h.textContent = b.label; col.appendChild(h);
+    const add = (n, sub) => { if(n.pending || n.gone) return;
+      const btn = document.createElement("button"); btn.textContent = n.label; if(sub) btn.className = "sub";
+      if(n.isNew || n.changed){ const t = document.createElement("span"); t.className = "nt"; t.textContent = n.isNew ? "NEW" : "UPDATED"; btn.appendChild(t); }
+      btn.onclick = () => { idx.classList.remove("is-on"); select(n); }; col.appendChild(btn); n.kids.forEach(k => add(k, true)); };
+    b.kids.forEach(k => add(k, false));
+    grid.appendChild(col);
+  });
+}
+function openIndex(){ buildIndex(); idx.classList.add("is-on"); idx.scrollTop = 0; }
+document.getElementById("btnIndex").onclick = openIndex;
+document.getElementById("btnIndex2").onclick = () => { setMenu(false); openIndex(); };
+document.getElementById("btnDownload").onclick = () => api && api.download();
 document.getElementById("btnIndexClose").onclick = () => idx.classList.remove("is-on");
+
+
+/* ==========================================================================
+   14b · THIS WEEK — review what the Sunday review proposed (Keep / Edit /
+   Skip), the week's growth, pillar balance over time, and a rewind
+   ========================================================================== */
+const weekEl = document.getElementById("week"), btnWeek = document.getElementById("btnWeek");
+const KIND = { new:"New memory", update:"Update", link:"New connection" };
+const fmt = d => new Date(d + "T12:00:00").toLocaleDateString("en-CA", { month:"short", day:"numeric" });
+const openProps = () => PROPS.filter(q => !q.decided);
+function openWeek(focusId){
+  if(sheetMode) deselect();
+  setMenu(false); renderWeek(focusId);
+  weekEl.classList.add("open"); document.body.classList.add("week-open", "engaged"); btnWeek.setAttribute("aria-expanded", "true");
+  if(!focusId) weekEl.scrollTop = 0;
+}
+function closeWeek(){ weekEl.classList.remove("open"); document.body.classList.remove("week-open"); btnWeek.setAttribute("aria-expanded", "false"); }
+btnWeek.onclick = () => weekEl.classList.contains("open") ? closeWeek() : openWeek();
+document.getElementById("weekClose").onclick = closeWeek;
+
+function ownP(n){ return pils(PILLARS[n.id]); }
+function stats(){
+  const fresh = nodes.filter(n => n.level && n.isNew && !n.pending && !n.gone);
+  const dots = links.filter(l => l.cross && l.fresh && !l.pending && !l.gone).length;
+  const upd = nodes.filter(n => n.changed && !n.isNew && !n.gone).length;
+  const by = { L:0, H:0, S:0 }; fresh.forEach(n => { for(const c of ownP(n)) by[c]++; });
+  return { fresh: fresh.length, dots, upd, by };
+}
+function refreshWeek(){
+  const k = openProps().length;
+  document.getElementById("weekN").textContent = k ? k : "";
+  btnWeek.classList.toggle("due", k > 0);
+  refreshCount();
+}
+
+function placeOptions(sel){
+  const opts = [];
+  nodes.forEach(n => { if(n.level >= 1 && n.level <= 2 && !n.pending && !n.gone)
+    opts.push('<option value="' + esc(n.id) + '"' + (n.id === sel ? " selected" : "") + ">" + esc(n.level === 2 ? byId[n.parent].label + " › " + n.label : n.label) + "</option>"); });
+  return '<option value="">Choose where it goes…</option>' + opts.join("");
+}
+function card(q, focusId){
+  const el = document.createElement("div"); el.className = "prop" + (q.id === focusId ? " focus" : ""); el.dataset.id = q.id;
+  const nd = q.kind === "new" ? q.node : null, tgt = q.kind === "update" ? byId[q.target] : null;
+  let title, where = "", body = "", jump = null;
+  if(nd){
+    title = nd.label; jump = byId[nd.id] || null;
+    where = q.placed && byId[nd.parent] ? "in " + byId[nd.parent].label : "needs a place";
+    body = "<p>" + nd.text + "</p>";
+    if(q.links.length) body += '<p class="why">Connects to ' + q.links.map(x => esc(byId[x[0]] ? byId[x[0]].label : x[0])).join(" · ") + "</p>";
+  } else if(tgt){
+    title = tgt.label; jump = tgt; where = q.close ? "closing it" : "changes";
+    if(q.label != null && q.label !== tgt.label) body += '<p><span class="was">' + esc(tgt.label) + "</span> &rarr; " + esc(q.label) + "</p>";
+    if(q.text != null) body += '<p class="was">' + esc(plain(q.origText != null ? q.origText : tgt.text)) + "</p><p>" + q.text + "</p>";
+    if(q.parent && byId[q.parent] && q.parent !== tgt.parent) body += "<p>Moves to " + esc(byId[q.parent].label) + "</p>";
+  } else {
+    const A = byId[q.a], B = byId[q.b];
+    title = A.label + " ↔ " + B.label; jump = A; body = "<p>" + esc(q.why) + "</p>";
+  }
+  const pl = q.pillars ? [...q.pillars].map(c => PILLAR_NAME[c]).join(" · ") : "";
+  const meta = [pl, q.from ? "from " + q.from : "", q.at ? fmt(q.at) : ""].filter(Boolean).join(" · ");
+  el.innerHTML = '<div class="tag">' + (q.close ? "Closed thread" : KIND[q.kind]) + (where ? "<i>" + esc(where) + "</i>" : "") + "</div>" +
+    "<h4 tabindex=\"0\">" + esc(title) + "</h4>" + body +
+    (q.reason ? '<p class="why">Why: ' + esc(q.reason) + "</p>" : "") + (meta ? '<p class="why">' + esc(meta) + "</p>" : "") +
+    '<div class="acts"><button class="keep" type="button">' + (q.moved ? "Keep · reloads" : "Keep") + '</button><button class="ed" type="button">Edit</button><button class="sk" type="button">Skip</button></div>';
+  const h4 = el.querySelector("h4");
+  const go = () => { if(!jump || !present(jump)) return; if(sheetMode) closeWeek(); select(jump); };
+  h4.onclick = go; h4.onkeydown = e => { if(e.key === "Enter") go(); };
+  const kb = el.querySelector(".keep");
+  if(nd && !q.placed && !q.parentSet){ kb.disabled = true; kb.title = "Edit it first to choose where it goes"; }
+  kb.onclick = () => decide(q, "keep", el);
+  el.querySelector(".sk").onclick = () => decide(q, "skip", el);
+  el.querySelector(".ed").onclick = () => editCard(q, el);
+  if(q.decided) markDone(el, q.decided, "saved");
+  return el;
+}
+function renderWeek(focusId){
+  renderHead();
+  const list = document.getElementById("wkList"); list.innerHTML = "";
+  const todo = PROPS.filter(q => !q.decided || q.justNow);
+  if(!todo.length) list.innerHTML = '<p class="empty">Nothing to review. The next review runs on its own on Sunday evening, and anything Claude.ai adds shows up here too.</p>';
+  todo.forEach(q => list.appendChild(card(q, focusId)));
+  renderBalance(); renderRewind();
+  if(focusId){ const f = list.querySelector('[data-id="' + CSS.escape(focusId) + '"]'); if(f) setTimeout(() => f.scrollIntoView({ block:"center", behavior:"smooth" }), 80); }
+}
+function renderHead(){
+  const st = stats();
+  document.getElementById("wkKick").textContent = "This week · " + fmt(WEEK_AGO) + " – " + fmt(TODAY);
+  document.getElementById("wkTitle").textContent = st.fresh ? "+" + st.fresh + (st.fresh === 1 ? " memory" : " memories") : "This week";
+  const parts = [];
+  if(st.fresh || st.dots) parts.push("<b>+" + st.dots + "</b> connected dots" + (st.upd ? " · <b>" + st.upd + "</b> updated" : ""));
+  if(st.fresh) parts.push(["L","H","S"].map(c => PILLAR_NAME[c] + " <b>+" + st.by[c] + "</b>").join(" · "));
+  if(!parts.length) parts.push(st.upd ? "<b>" + st.upd + "</b> updated" : "Nothing new yet this week.");
+  document.getElementById("wkSum").innerHTML = parts.join("<br>");
+  const k = openProps().length;
+  document.getElementById("wkCount").textContent = k ? k + " left" : "all done";
+}
+
+/* -- deciding: the map changes at once; it is saved after a few seconds, so
+      a mis-tap can be undone -- */
+const timers = new Map();
+function markDone(el, action, how){
+  el.classList.add("done");
+  let s = el.querySelector(".state"); if(!s){ s = document.createElement("div"); s.className = "state"; el.appendChild(s); }
+  s.innerHTML = (action === "keep" ? "Kept" : "Skipped") + (how === "saved" ? " · saved" : how === "error" ? " · couldn't save" : ' <button type="button">Undo</button>');
+  return s;
+}
+function applyLocal(q, action){
+  const undo = [];
+  const set = (o, k, v) => { const old = o[k]; undo.push(() => { o[k] = old; }); o[k] = v; };
+  const linksOf = pid => links.filter(l => l.pending === pid);
+  if(q.kind === "new" && q.placed){
+    const n = byId[q.node.id];
+    if(action === "keep"){ set(n, "pending", null); set(n, "addedAt", TODAY); set(n, "isNew", true);
+      linksOf(q.id).forEach(l => { set(l, "pending", null); set(l, "addedAt", TODAY); set(l, "fresh", true); }); }
+    else { set(n, "gone", true); linksOf(q.id).forEach(l => set(l, "gone", true)); }
+    if(sel === n) deselect();
+  } else if(q.kind === "link"){
+    linksOf(q.id).forEach(l => action === "keep" ? (set(l, "pending", null), set(l, "addedAt", TODAY), set(l, "fresh", true)) : set(l, "gone", true));
+  } else if(q.kind === "update"){
+    const t = byId[q.target];
+    set(t, "upd", null);
+    if(action === "keep"){
+      if(q.text != null) set(t, "text", q.text);
+      if(q.label != null) set(t, "label", q.label);
+      if(q.pillars){ set(PILLARS, t.id, q.pillars); if(!t.kids.length) set(t, "p", q.pillars); }
+      set(t, "changed", true);
+      if(sel === t) select(t);
+    }
+  }
+  refreshWeek(); renderHead();
+  return () => { undo.reverse().forEach(f => f()); refreshWeek(); renderHead(); };
+}
+function decide(q, action, el){
+  if(timers.has(q.id)) return;
+  const revert = applyLocal(q, action);
+  const s = markDone(el, action);
+  const t = setTimeout(() => commit(q, action, el, revert), 4000);
+  timers.set(q.id, { t, q, action, el, revert });
+  s.querySelector("button").onclick = () => { clearTimeout(t); timers.delete(q.id); revert(); el.classList.remove("done"); s.remove(); };
+}
+function commit(q, action, el, revert){
+  timers.delete(q.id);
+  const reload = action === "keep" && (q.moved || (q.kind === "new" && !q.placed) || (q.kind === "update" && q.parent && q.parent !== byId[q.target].parent));
+  return api.commit(q, action, TODAY).then(() => {
+    q.decided = action; q.justNow = true; markDone(el, action, "saved");
+    refreshWeek(); renderHead(); renderBalance(); renderRewind();
+    if(reload){ toast("Saved · re-arranging the map"); setTimeout(() => location.reload(), 900); }
+  }, err => { revert(); markDone(el, action, "error"); el.classList.remove("done"); toast("Couldn't save: " + (err && err.message || err)); });
+}
+function flush(){ [...timers.values()].forEach(x => { clearTimeout(x.t); commit(x.q, x.action, x.el, x.revert); }); }
+addEventListener("pagehide", flush);
+
+/* -- editing a proposal before keeping it -- */
+function editCard(q, el){
+  if(el.querySelector(".edit")) return;
+  const nd = q.kind === "new" ? q.node : null, tgt = q.kind === "update" ? byId[q.target] : null;
+  const f = document.createElement("div"); f.className = "edit";
+  if(q.kind === "link"){
+    f.innerHTML = '<label>Why they connect</label><input class="e-why" value="' + esc(q.why) + '">';
+  } else {
+    const label = nd ? nd.label : (q.label != null ? q.label : tgt.label);
+    const text = nd ? nd.text : (q.text != null ? q.text : tgt.text);
+    const parent = nd ? nd.parent : (q.parent || tgt.parent);
+    const pv = q.pillars || (tgt ? ownP(tgt) : "");
+    f.innerHTML = '<label>Title</label><input class="e-label" value="' + esc(label) + '">' +
+      '<label>What Claude knows</label><textarea class="e-text">' + esc(plain(text)) + "</textarea>" +
+      '<label>Where it goes</label><select class="e-parent">' + placeOptions(parent) + "</select>" +
+      '<label>Pillars</label><div class="pils">' + ["L","H","S"].map(c => '<button type="button" data-p="' + c + '" aria-pressed="' + pv.includes(c) + '">' + PILLAR_NAME[c] + "</button>").join("") + "</div>";
+    f.querySelectorAll(".pils button").forEach(b => b.onclick = () => b.setAttribute("aria-pressed", b.getAttribute("aria-pressed") !== "true"));
+  }
+  f.insertAdjacentHTML("beforeend", '<div class="acts" style="margin-top:4px"><button class="keep e-save" type="button">Save changes</button><button class="e-cancel" type="button">Cancel</button></div>');
+  el.querySelector(".acts").style.display = "none";
+  el.appendChild(f);
+  f.querySelector(".e-cancel").onclick = () => { f.remove(); el.querySelector(".acts").style.display = ""; };
+  f.querySelector(".e-save").onclick = () => {
+    if(q.kind === "link"){ q.why = plain(f.querySelector(".e-why").value).trim();
+      links.filter(l => l.pending === q.id).forEach(l => l.why = q.why); }
+    else {
+      const label = plain(f.querySelector(".e-label").value).trim(), text = esc(f.querySelector(".e-text").value.trim());
+      const parent = f.querySelector(".e-parent").value;
+      const pv = [...f.querySelectorAll(".pils button")].filter(b => b.getAttribute("aria-pressed") === "true").map(b => b.dataset.p).join("");
+      if(!label){ toast("It needs a title"); return; }
+      q.pillars = pv;
+      if(nd){
+        const wasText = nd.text;
+        nd.label = label; if(plain(wasText) !== f.querySelector(".e-text").value.trim()) nd.text = text;
+        if(parent && parent !== nd.parent){ nd.parent = parent; q.parentSet = true; if(q.placed) q.moved = true; }
+        const n = byId[nd.id];
+        if(n){ n.label = nd.label; n.text = nd.text; PILLARS[n.id] = pv; n.p = pv; }
+      } else {
+        if(label !== tgt.label) q.label = label;
+        if(plain(q.text != null ? q.text : tgt.text) !== f.querySelector(".e-text").value.trim()){ if(q.origText == null) q.origText = tgt.text; q.text = text; }
+        if(parent && parent !== tgt.parent) q.parent = parent; else delete q.parent;
+      }
+    }
+    q.edited = true;
+    el.replaceWith(card(q, q.id));
+  };
+}
+
+/* -- pillar balance over time: one line per pillar, a point per week -- */
+function weekEnd(s){ const d = new Date(s + "T12:00:00"); return addDays(s, (7 - d.getDay()) % 7); }
+function weeks(){ const out = []; let w = weekEnd(BASE); const end = weekEnd(TODAY); while(w <= end){ out.push(w); w = addDays(w, 7); } return out; }
+function countsAt(w){
+  const c = { L:0, H:0, S:0, all:0 };
+  nodes.forEach(n => { if(n.pending || n.gone || n.addedAt > w) return; c.all++; if(n.level >= 2) for(const p of ownP(n)) c[p]++; });   // all = the header's count
+  return c;
+}
+function renderBalance(){
+  const W8 = weeks(), C = W8.map(countsAt), last = C[C.length-1], prev = C.length > 1 ? C[C.length-2] : null;
+  const box = document.getElementById("wkBal");
+  const rows = ["L","H","S"].map(p => {
+    const v = C.map(c => c[p]), lo = Math.min(...v), hi = Math.max(...v), n = v.length;
+    const X = i => n === 1 ? 50 : 4 + i*(92/(n-1)), Y = x => hi === lo ? 17 : 30 - (x-lo)/(hi-lo)*26;
+    const pts = v.map((x,i) => X(i).toFixed(1) + "," + Y(x).toFixed(1)).join(" ");
+    const d = prev ? last[p] - prev[p] : 0;
+    return '<div class="row"><span class="nm">' + PILLAR_NAME[p] + '</span><svg viewBox="0 0 100 34" preserveAspectRatio="none" aria-hidden="true">' +
+      (n > 1 ? '<polyline points="' + pts + '" fill="none" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke"/>' : "") +
+      '<circle cx="' + X(n-1) + '" cy="' + Y(v[n-1]) + '" r="3.5" fill="var(--volt)"/></svg>' +
+      '<span class="val">' + last[p] + (d ? " <b>+" + d + "</b>" : "") + "</span></div>";
+  }).join("");
+  const tot = last.L + last.H + last.S || 1;
+  const share = '<div class="share" role="img" aria-label="Share of memories: Love ' + Math.round(last.L/tot*100) + "%, Health " + Math.round(last.H/tot*100) + "%, Success " + Math.round(last.S/tot*100) + '%">' +
+    '<i style="width:' + (last.L/tot*100) + '%;background:var(--volt)"></i><i style="width:' + (last.H/tot*100) + '%;background:var(--pfg)"></i><i style="width:' + (last.S/tot*100) + '%;background:var(--dust)"></i></div>' +
+    '<p class="legend">Share now · <b style="color:var(--volt)">■</b> Love ' + Math.round(last.L/tot*100) + "% · ■ Health " + Math.round(last.H/tot*100) + '% · <span style="color:var(--dust)">■</span> Success ' + Math.round(last.S/tot*100) + "%" +
+    (W8.length < 2 ? "<br>The lines fill in week by week." : "") + "</p>";
+  box.innerHTML = rows + share;
+}
+
+/* -- rewind: hide everything that joined after the chosen week -- */
+const rew = document.getElementById("rew"), rewLbl = document.getElementById("rewLbl"), rewPlay = document.getElementById("rewPlay"), rewBadge = document.getElementById("rewBadge");
+let playT = 0;
+function setRewind(i){
+  const W8 = weeks(); i = clamp(i, 0, W8.length-1); rew.value = i;
+  const now = i === W8.length-1;
+  rewindTo = now ? null : W8[i];
+  if(sel && !present(sel)) deselect();
+  const c = countsAt(W8[i]);
+  rewLbl.innerHTML = (now ? "<b>Now</b>" : "Week ending <b>" + fmt(W8[i]) + "</b>") + " · " + c.all + " memories · Love " + c.L + " · Health " + c.H + " · Success " + c.S +
+    (W8.length < 2 ? "<br>Rewind fills in as the weeks go by. The first map is from " + fmt(BASE) + "." : "");
+  rewBadge.classList.toggle("on", !now);
+  rewBadge.innerHTML = now ? "" : "Rewound to " + esc(fmt(W8[i])) + " &middot; back to now";
+}
+function renderRewind(){ const W8 = weeks(); rew.max = W8.length-1; rew.disabled = W8.length < 2; rewPlay.disabled = W8.length < 2; if(!playT) setRewind(rewindTo ? W8.indexOf(rewindTo) : W8.length-1); }
+rew.addEventListener("input", () => { stopPlay(); setRewind(+rew.value); });
+function stopPlay(){ clearInterval(playT); playT = 0; rewPlay.setAttribute("aria-pressed", "false"); rewPlay.innerHTML = "&#9654;"; }
+rewPlay.onclick = () => {
+  if(playT){ stopPlay(); return; }
+  let i = 0; setRewind(0); rewPlay.setAttribute("aria-pressed", "true"); rewPlay.innerHTML = "&#10074;&#10074;";
+  playT = setInterval(() => { i++; setRewind(i); fireNode(byId.me, performance.now()/1000 - start); if(i >= weeks().length-1) stopPlay(); }, 1200);
+};
+rewBadge.onclick = () => { stopPlay(); setRewind(weeks().length-1); };
+
+refreshWeek();
 
 addEventListener("keydown", e => {
   if(e.key === "Escape"){
     if(idx.classList.contains("is-on")) { idx.classList.remove("is-on"); return; }
+    if(weekEl.classList.contains("open") && !e.target.closest("#week input, #week textarea, #week select")) { closeWeek(); return; }
     focusB = null; deselect(); query = ""; q.value = ""; fit(); document.body.classList.remove("engaged");
   }
 });
@@ -1271,6 +1716,14 @@ addEventListener("resize", () => { resize(); if(!sel) fit(); });
    ========================================================================== */
 fit(); camX = camTX; camY = camTY; zoom = zoomT*0.82;
 setTimeout(() => fireNode(byId.me, performance.now()/1000 - start), 1800);
+setTimeout(() => {   // the week at a glance, once the map has bloomed
+  const k = openProps().length, st = stats();
+  const bits = [];
+  if(st.fresh) bits.push("This week +" + st.fresh + (st.fresh === 1 ? " memory" : " memories") + (st.dots ? ", +" + st.dots + " connections" : "") +
+    ["L","H","S"].filter(c => st.by[c]).map(c => ", " + PILLAR_NAME[c] + " +" + st.by[c]).join(""));
+  if(k) bits.push(k + (k === 1 ? " new memory" : " new memories") + " to review · This week");
+  if(bits.length) toast(bits.join(" · "), 6500);
+}, 2600);
 requestAnimationFrame(frame);
 
 }
@@ -1293,13 +1746,86 @@ requestAnimationFrame(frame);
   function normalise(d){
     if(!d || !d.root || !d.nodes) return null;
     var row = function(r){ r = listOf(r); return [r[0], r[1] || null, r[2] || "", r[3] || "", r[4] || ""]; };
-    return { root: row(d.root), nodes: listOf(d.nodes).map(row), cross: listOf(d.cross).map(function(c){ c = listOf(c); return [c[0], c[1], c[2] || ""]; }), pillars: d.pillars || {} };
+    var obj = function(v){ return v && typeof v === "object" && !Array.isArray(v) ? v : {}; };
+    return { root: row(d.root), nodes: listOf(d.nodes).map(row), cross: listOf(d.cross).map(function(c){ c = listOf(c); return [c[0], c[1], c[2] || ""]; }), pillars: d.pillars || {},
+      added: obj(d.added), addedLinks: obj(d.addedLinks), changed: obj(d.changed),
+      proposals: listOf(d.proposals).filter(function(p){ return p && typeof p === "object"; }).map(function(p){
+        p = JSON.parse(JSON.stringify(p)); if(p.links) p.links = listOf(p.links).map(listOf); return p; }),
+      skipped: listOf(d.skipped) };
   }
+
+  /* Keep / Skip from "This week": one transaction on the map, so an add from
+     the Sunday review or Claude.ai landing at the same moment is never lost.
+     The proposal leaves the list; a kept one joins the map with today's date;
+     a skipped one is remembered so it isn't proposed again. */
+  function commit(q, action, today){
+    var user = window.xdbAccount.state().user;
+    if(!user || window.xdbAccount.state().status !== "owner") return Promise.reject(new Error("signed out"));
+    return window.xdbAccount.sdk().then(function(fb){
+      var found = false;
+      return fb.f.runTransaction(ref(fb, user.uid), function(cur){
+        if(!cur || !cur.data) return cur;
+        var d = cur.data, props = listOf(d.proposals), i = -1;
+        props.forEach(function(p, k){ if(p && p.id === q.id) i = k; });
+        if(i < 0){ found = false; return; }                       // already decided elsewhere: change nothing
+        found = true;
+        var nodes = listOf(d.nodes), cross = listOf(d.cross);
+        var has = function(id){ return id === listOf(d.root)[0] || nodes.some(function(r){ return listOf(r)[0] === id; }); };
+        d.added = d.added || {}; d.addedLinks = d.addedLinks || {}; d.changed = d.changed || {}; d.pillars = d.pillars || {};
+        if(action === "keep"){
+          if(q.kind === "new"){
+            var n = q.node;
+            if(!has(n.id) && has(n.parent)){
+              nodes.push([n.id, n.parent, n.label, n.text || "", n.src || "c"]);
+              d.pillars[n.id] = q.pillars || ""; d.added[n.id] = today;
+              listOf(q.links).forEach(function(x){ x = listOf(x); if(has(x[0])){ cross.push([n.id, x[0], x[1] || ""]); d.addedLinks[n.id + "~" + x[0]] = today; } });
+            }
+          } else if(q.kind === "link"){
+            if(has(q.a) && has(q.b)){ cross.push([q.a, q.b, q.why || ""]); d.addedLinks[q.a + "~" + q.b] = today; }
+          } else if(q.kind === "update"){
+            nodes.forEach(function(r, k){ r = listOf(r); if(r[0] !== q.target) return;
+              if(q.label != null) r[2] = q.label;
+              if(q.text != null) r[3] = q.text;
+              if(q.parent && has(q.parent)) r[1] = q.parent;
+              nodes[k] = r; });
+            if(q.pillars) d.pillars[q.target] = q.pillars;
+            d.changed[q.target] = today;
+          }
+        } else {
+          var sk = listOf(d.skipped);
+          sk.push({ id: q.id, kind: q.kind, label: q.node ? q.node.label : (q.label || q.target || (q.a + " ~ " + q.b)), at: today });
+          d.skipped = sk.slice(-300);
+        }
+        props.splice(i, 1);
+        d.proposals = props; d.nodes = nodes; d.cross = cross;
+        cur.updatedAt = Date.now(); cur.device = "Memory Map";
+        return cur;
+      }).then(function(){ return found; });
+    });
+  }
+  function download(){
+    var user = window.xdbAccount.state().user; if(!user) return;
+    window.xdbAccount.sdk().then(function(fb){ return fb.f.get(ref(fb, user.uid)); }).then(function(snap){
+      var v = snap.val(); if(!v || !v.data) return;
+      var a = document.createElement("a");
+      a.href = URL.createObjectURL(new Blob([JSON.stringify(v.data, null, 1)], { type: "application/json" }));
+      a.download = "memory-map-data-" + new Date().toISOString().slice(0, 10) + ".json";
+      document.body.appendChild(a); a.click(); setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 500);
+    });
+  }
+  /* decisions save one after another, never two at once */
+  var queue = Promise.resolve();
+  function commitQueued(q, action, today){
+    var run = queue.then(function(){ return commit(q, action, today); });
+    queue = run.catch(function(){});
+    return run;
+  }
+  var API = { commit: commitQueued, download: download };
   function show(t, p, signIn, load){ title.textContent = t; text.textContent = p; bIn.hidden = !signIn; bLoad.hidden = !load; gate.hidden = false; }
   function start(d){
     if(started){ location.reload(); return; }
     started = true; gate.hidden = true; document.body.classList.remove("locked");
-    startMap(d);
+    startMap(d, API);
   }
   function ref(fb, uid){ return fb.f.ref(fb.db, "users/" + uid + "/tools/" + DOC); }
   function load(user){
@@ -1321,7 +1847,14 @@ requestAnimationFrame(frame);
       d.root[1] = "";                                   // the database won't keep a null
       d.nodes.forEach(function(r){ if(r[1] === null) r[1] = ""; });
       return window.xdbAccount.sdk().then(function(fb){
-        return fb.f.set(ref(fb, user.uid), { data: d, updatedAt: Date.now(), device: "Memory Map (file)" });
+        /* a file replaces the memories, but keeps what the account already
+           has that the file doesn't: open proposals, dates, skipped list */
+        return fb.f.get(ref(fb, user.uid)).then(function(snap){
+          var old = snap.val() && snap.val().data ? normalise(snap.val().data) || {} : {};
+          ["added", "addedLinks", "changed"].forEach(function(k){ if(!raw[k] && old[k]) d[k] = old[k]; });
+          ["proposals", "skipped"].forEach(function(k){ if(!raw[k] && old[k] && old[k].length) d[k] = old[k]; });
+          return fb.f.set(ref(fb, user.uid), { data: d, updatedAt: Date.now(), device: "Memory Map (file)" });
+        });
       }).then(function(){ start(normalise(d)); });
     }).catch(function(e){ alert("That file didn't load: " + (e && e.message || e)); });
   }
