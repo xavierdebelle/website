@@ -5,6 +5,35 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v155 — 2026-11-12
+
+**What's new** · Fix · [tools/wedding-invite.html]
+### Wedding Invite runs properly on phones
+The embossed version glitched on phones: the decorations drifted off their
+text and jumped while scrolling. They now stay locked to the page, and the
+whole thing is lighter for a phone to draw.
+
+**Wedding Invite v2 — `tools/wedding-invite.html`** (source `wedding-invite-v2.html`)
+- Cause: Safari's toolbar changes `innerHeight` while scrolling; the canvas
+  was CSS `100vh` (large viewport) but rendered at `innerHeight`, and toolbar
+  moves over 140px triggered a full rebuild. Now the canvas and the hero pin
+  are `100lvh` and the scene is laid out for the large viewport (measured
+  with a probe), so toolbar moves change nothing; rebuild only on width,
+  large-viewport or page-height change (ResizeObserver on main, fonts.ready,
+  load), so late reflows re-anchor the relief.
+- Drawn on `scroll` as well as rAF so the relief keeps pace with the text;
+  hero (curtain mesh + normals) skipped once off screen.
+- Phones (`pointer: coarse`): pixel ratio ≤1.6, 1024 shadow map, no
+  multiply-blend grain layer over the canvas. Canvas width = page width
+  (no scrollbar offset on desktop).
+- "Open" autoplay targets the pin's real height.
+
+**Verified** — local preview at 375×812 and desktop: hero, plaque, timeline
+clock and every section line up with their text; no console errors. Not
+tested on a physical iPhone or the iOS simulator (needs full Xcode).
+
+---
+
 ## v154 — 2026-11-12
 
 **What's new** · The Biz · [tools.html#debelle]
