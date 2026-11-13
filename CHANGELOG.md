@@ -5,6 +5,48 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v152 — 2026-11-12
+
+**What's new** · Update · [tools.html#art]
+### Wedding Invite, version 2
+The invitation for Enya & Sami now opens in embossed paper: carved
+hacienda doors slide apart, the curtains part on their names over a little
+mission church, and every section rises out of the page as you scroll.
+- A countdown in raised medallions, the details on a beaded card, the story
+  under an arch of bougainvillea, and a small clock that rides down the
+  timeline telling the time of each moment.
+- Tap "Open" and the whole opening plays by itself, slowly.
+- The first version — the envelope over the desert — is still there. A
+  small dot in the top-left corner switches between the two.
+
+**Wedding Invite v2 — `tools/wedding-invite.html`, source `Tools files/Art/wedding-invite-v2.html`** (Art)
+- Same URL as before; v1 moved to `tools/wedding-invite-v1.html` (companion
+  page, `xdb-companion` → wedding-invite.html, noindex, canonical updated).
+- Version picker (`.vpick`, top-left, 30px dot at 60% opacity) on both
+  pages, linking to each other.
+- Rendering: perspective camera sized so z=0 is 1:1 with CSS pixels;
+  decorations are built per `[data-deco]` element and anchored to its layout
+  box (rebuilt on width change). Paper is an exact-colour basic plane with a
+  ShadowMaterial layer; key light follows the camera; PCF soft shadows.
+- Hero: sticky 300vh; seal lifts, doors slide (not swing — swinging warped
+  against the decor), pleated curtains gather; names centred between valance
+  and gable on ≥768px. "Open" = 7 s eased scripted scroll, any wheel/touch/
+  key cancels it.
+- Timeline clock: sticky on the dotted line, hands interpolate between row
+  times, active row highlighted (`.tl.on`, `.tl__row.active`).
+- Add to calendar (.ics data URI, 15:30 UTC-7 = 22:30Z), Open in maps (Los
+  Cabos search). three@0.169.0 + BufferGeometryUtils from jsdelivr; Bodoni
+  Moda + Cormorant Garamond. Nothing stored. Placeholders unchanged
+  (ceremony time, timeline, gifts). No RSVP form (nothing to send it to).
+- Scan: clean.
+
+**Verified** — local preview at 375×812 and desktop: doors, seal, curtains,
+names, Open autoplay to the names, every section's relief, medallion
+countdown, clock tracking the rows, desert finale; picker opens, closes,
+and links both ways; no console errors.
+
+---
+
 ## v151 — 2026-11-12
 
 **What's new** · The map · [index.html]

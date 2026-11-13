@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Enya &amp; Sami · 11 · 11 · 2027</title>
+<meta name="description" content="Enya &amp; Sami are getting married — Thursday 11 November 2027, Los Cabos, México.">
+<meta name="theme-color" content="#efe4d4">
+<meta name="robots" content="noindex, nofollow">
+<meta name="xdb-companion" content="wedding-invite.html">
+<!-- social preview: link cards on Instagram, iMessage, WhatsApp, Facebook, X -->
+<link rel="canonical" href="https://xavierdebelle.com/tools/wedding-invite-v1.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Xavier de Belle">
+<meta property="og:locale" content="en_CA">
+<meta property="og:title" content="Enya &amp; Sami · 11 · 11 · 2027">
+<meta property="og:description" content="Enya &amp; Sami are getting married — Thursday 11 November 2027, Los Cabos, México.">
+<meta property="og:url" content="https://xavierdebelle.com/tools/wedding-invite-v1.html">
+<meta property="og:image" content="https://xavierdebelle.com/assets/og/home.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Enya &amp; Sami — wedding invitation">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="../assets/logo.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Jost:wght@200;300;400;500&display=swap" rel="stylesheet">
+<!--
+  Wedding Invite — Enya & Sami, Los Cabos, 11 November 2027.
+  A scroll-driven three.js invitation: an envelope opens to the card, then the
+  camera travels over a Baja desert while the day runs from morning to night
+  (the sky follows the timeline). Papel picado, Talavera liner, luminarias.
+  Everything is drawn in code — no images.
+  Source: Tools files/Art/wedding-invite-v1.html — kept as version 1 since v152,
+  reachable from the version picker (top-left dot) on either page.
+-->
+<style>
+  :root {
+    --bone: #f6f0e6;
+    --sand: #e8d9c3;
+    --clay: #b5603a;
+    --clay-d: #8f4527;
+    --sage: #7d8b6c;
+    --ink: #2b2420;
+    --muted: #7a6a5e;
+    --talavera: #2f4f86;
+    --marigold: #d99a3a;
+    --serif: "Cormorant Garamond", "Cormorant", Georgia, serif;
+    --sans: "Jost", "Helvetica Neue", Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: #efe4d4; color: var(--ink); }
+  body { font-family: var(--sans); font-weight: 300; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+  #scene { position: fixed; inset: 0; width: 100vw; height: 100vh; height: 100lvh; display: block; z-index: 0; }
+  .grain {
+    position: fixed; inset: -50%; z-index: 2; pointer-events: none; opacity: .07; mix-blend-mode: multiply;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  }
+  main { position: relative; z-index: 1; }
+
+  /* ---------- opening ---------- */
+  .open { height: 340vh; position: relative; }
+  .open__sticky { position: sticky; top: 0; height: 100vh; height: 100svh; display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: max(28px, env(safe-area-inset-top)) 16px max(34px, env(safe-area-inset-bottom)); pointer-events: none; }
+  .open__top { font: 500 11px/1 var(--sans); letter-spacing: .38em; text-transform: uppercase; color: var(--clay-d); margin: 0; }
+  .open__hint { pointer-events: auto; background: none; border: 0; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 14px; color: var(--clay-d); font: 500 11px/1 var(--sans); letter-spacing: .34em; text-transform: uppercase; padding: 10px 18px; }
+  .open__hint i { display: block; width: 1px; height: 46px; background: linear-gradient(var(--clay-d), transparent); transform-origin: top; animation: drip 2.2s cubic-bezier(.6,0,.3,1) infinite; }
+  .open__hint small { font: italic 400 15px/1 var(--serif); letter-spacing: .04em; text-transform: none; color: var(--muted); }
+  @keyframes drip { 0% { transform: scaleY(0); opacity: 1; } 60% { transform: scaleY(1); opacity: 1; } 100% { transform: scaleY(1); opacity: 0; } }
+  .fallback-card { display: none; }
+
+  /* ---------- sections ---------- */
+  .sec { min-height: 150vh; display: flex; align-items: center; justify-content: center; padding: 26vh 16px; }
+  .panel {
+    position: relative; width: 100%; max-width: 640px; padding: 64px 44px 56px;
+    background: rgba(248, 243, 234, .9); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+    border: 1px solid rgba(43,36,32,.12); box-shadow: 0 30px 80px -40px rgba(60,35,20,.45);
+    text-align: center;
+  }
+  .panel::before { content: ""; position: absolute; inset: 9px; border: 1px solid rgba(181,96,58,.28); pointer-events: none; }
+  .panel--wide { max-width: 900px; }
+  .rosette { display: block; width: 46px; height: 46px; margin: 0 auto 22px; }
+  .eyebrow { display: block; font: 500 11px/1 var(--sans); letter-spacing: .36em; text-transform: uppercase; color: var(--clay); margin-bottom: 18px; }
+  h2 { font: italic 300 clamp(40px, 8vw, 68px)/1.02 var(--serif); margin: 0 0 26px; letter-spacing: -.01em; }
+  .panel p { font-size: 17px; line-height: 1.8; margin: 0 auto 18px; max-width: 30em; color: #3d342e; }
+  .panel p.lead { font: 400 22px/1.6 var(--serif); color: var(--ink); }
+  .note { font: italic 400 16px/1.4 var(--serif) !important; color: var(--muted) !important; }
+
+  .facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; margin: 38px 0 0; border-top: 1px solid rgba(43,36,32,.14); }
+  .facts div { padding: 22px 10px 4px; }
+  .facts div + div { border-left: 1px solid rgba(43,36,32,.14); }
+  .facts dt { font: 500 10px/1 var(--sans); letter-spacing: .32em; text-transform: uppercase; color: var(--clay); margin-bottom: 10px; }
+  .facts dd { margin: 0; font: 400 19px/1.35 var(--serif); }
+
+  /* countdown */
+  .count { display: grid; grid-template-columns: repeat(4, 1fr); margin: 12px 0 26px; }
+  .count div { padding: 6px 4px; }
+  .count div + div { border-left: 1px solid rgba(43,36,32,.14); }
+  .num { display: block; font: 200 clamp(40px, 10vw, 84px)/1 var(--sans); font-variant-numeric: tabular-nums lining-nums; color: var(--ink); }
+  .num.flip { animation: flip .6s cubic-bezier(.2,.8,.2,1); }
+  @keyframes flip { from { transform: translateY(-28%) rotateX(70deg); opacity: 0; } to { transform: none; opacity: 1; } }
+  .lbl { display: block; margin-top: 10px; font: 500 10px/1.5 var(--sans); letter-spacing: .3em; text-transform: uppercase; color: var(--muted); }
+  .lbl em { display: block; font: italic 400 14px/1.2 var(--serif); letter-spacing: 0; text-transform: none; color: var(--clay); }
+
+  /* timeline */
+  .tl { position: relative; text-align: left; margin: 36px auto 10px; max-width: 470px; padding-left: 58px; --p: 0; }
+  .tl__line, .tl__fill { position: absolute; left: 19px; top: 8px; bottom: 8px; width: 1px; background: rgba(43,36,32,.16); }
+  .tl__fill { background: var(--clay); transform-origin: top; transform: scaleY(var(--p)); }
+  .tl__sun { position: absolute; left: 19px; top: calc(8px + var(--p) * (100% - 16px)); width: 16px; height: 16px; border-radius: 50%; transform: translate(-50%, -50%); background: var(--marigold); box-shadow: 0 0 0 5px rgba(217,154,58,.2), 0 0 24px 4px rgba(217,154,58,.5); }
+  .tl__item { position: relative; padding: 4px 0 34px; }
+  .tl__item::before { content: ""; position: absolute; left: -44px; top: 12px; width: 9px; height: 9px; background: var(--bone); border: 1px solid var(--clay); transform: rotate(45deg); }
+  .tl__time { font: 500 11px/1 var(--sans); letter-spacing: .3em; text-transform: uppercase; color: var(--clay); }
+  .tl__item h3 { margin: 8px 0 4px; font: 400 27px/1.15 var(--serif); }
+  .tl__item h3 em { font-weight: 300; color: var(--muted); font-size: 21px; }
+  .tl__item p { font-size: 15.5px; line-height: 1.65; margin: 0; max-width: none; }
+
+  /* gifts */
+  .gifts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 34px; }
+  .gift { border: 1px solid rgba(43,36,32,.14); padding: 30px 22px 24px; background: rgba(255,255,255,.35); }
+  .gift svg { width: 44px; height: 44px; display: block; margin: 0 auto 16px; }
+  .gift h3 { margin: 0 0 8px; font: 400 25px/1.15 var(--serif); }
+  .gift p { font-size: 15px !important; line-height: 1.6 !important; margin: 0 !important; }
+  .gift .soon { display: inline-block; margin-top: 16px; font: 500 10px/1 var(--sans); letter-spacing: .3em; text-transform: uppercase; color: var(--clay); border-top: 1px solid rgba(181,96,58,.35); padding-top: 10px; }
+
+  /* end */
+  .end { min-height: 120vh; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; text-align: center; color: #f6efe4; padding: 30vh 16px max(60px, env(safe-area-inset-bottom)); text-shadow: 0 2px 30px rgba(5,8,20,.6); }
+  .end .eyebrow { color: #e9b98a; }
+  .end__names { font: italic 300 clamp(56px, 14vw, 132px)/1 var(--serif); margin: 0 0 18px; }
+  .end__names span { color: #e9a57a; }
+  .end__date { font: 300 22px/1.4 var(--sans); letter-spacing: .22em; margin: 0 0 6px; }
+  .end__more { font: italic 400 17px/1.5 var(--serif); opacity: .8; margin: 18px 0 64px; }
+  .end__by { font: 500 10px/1 var(--sans); letter-spacing: .32em; text-transform: uppercase; opacity: .5; }
+
+  /* reveal: panels unfold from a crease, contents rise in after */
+  .reveal { opacity: 0; transform: translateY(36px); transition: opacity 1.1s ease, transform 1.3s cubic-bezier(.2,.75,.2,1); transition-delay: var(--d, 0s); }
+  .reveal.in { opacity: 1; transform: none; }
+  .panel.fold { clip-path: inset(49.5% 0 49.5% 0); opacity: 0; transform: perspective(900px) rotateX(18deg) translateY(40px); transition: clip-path 1.5s cubic-bezier(.7,0,.2,1), opacity .6s ease, transform 1.5s cubic-bezier(.2,.7,.2,1); }
+  .panel.fold.in { clip-path: inset(0 0 0 0); opacity: 1; transform: none; }
+  .panel.fold .reveal { transition-delay: calc(.55s + var(--d, 0s)); }
+  .panel.fold:not(.in) .reveal { opacity: 0; transform: translateY(24px); }
+
+  @media (max-width: 640px) {
+    .panel { padding: 52px 22px 44px; }
+    .facts { grid-template-columns: 1fr; }
+    .facts div + div { border-left: 0; border-top: 1px solid rgba(43,36,32,.14); }
+    .facts div { padding: 18px 6px 14px; }
+    .gifts { grid-template-columns: 1fr; }
+    .tl { padding-left: 50px; }
+    .tl__item::before { left: -36px; }
+    .lbl { letter-spacing: .18em; }
+  }
+
+  /* reduced motion: no unfolding, no long opening scroll */
+  @media (prefers-reduced-motion: reduce) {
+    .open { height: 100vh; }
+    .reveal, .panel.fold { opacity: 1 !important; transform: none !important; clip-path: none !important; transition: none !important; }
+    .open__hint i { animation: none; }
+  }
+
+  /* no WebGL: a plain card and a desert gradient */
+  .no-gl body { background: linear-gradient(#f3dfcb 0%, #f2d1ad 40%, #d9b98f 70%, #2a2c45 100%) fixed; }
+  .no-gl #scene { display: none; }
+  .no-gl .open { height: 100vh; }
+  .no-gl .open__hint { display: none; }
+  .no-gl .fallback-card { display: block; text-align: center; background: #fbf6ec; border: 1px solid rgba(181,96,58,.5); padding: 48px 28px; max-width: 420px; width: 100%; box-shadow: 0 30px 60px -30px rgba(60,35,20,.5); }
+  .fallback-card p { margin: 0; font: 500 11px/1.6 var(--sans); letter-spacing: .3em; text-transform: uppercase; color: var(--muted); }
+  .fallback-card h1 { font: italic 300 72px/1 var(--serif); margin: 22px 0; }
+  .fallback-card h1 span { color: var(--clay); display: block; font-size: 52px; }
+  .fallback-card .d { font: 300 26px/1 var(--sans); letter-spacing: .1em; text-transform: none; color: var(--ink); margin: 20px 0 10px; }
+</style>
+</head>
+<body>
+<canvas id="scene" aria-hidden="true"></canvas>
+<div class="grain" aria-hidden="true"></div>
+
+<main>
+  <section class="open" id="open" aria-label="The invitation">
+    <div class="open__sticky">
+      <p class="open__top" id="openTop">Para ti &middot; For you</p>
+      <h1 class="sr-only">Enya &amp; Sami are getting married — Thursday 11 November 2027, Los Cabos, México</h1>
+      <div class="fallback-card" aria-hidden="true">
+        <p>Together with their families</p>
+        <h1>Enya <span>&amp;</span> Sami</h1>
+        <p>are getting married</p>
+        <p class="d">11 · 11 · 2027</p>
+        <p>Los Cabos · Baja California Sur</p>
+      </div>
+      <button class="open__hint" id="openBtn" type="button">
+        <span>Scroll to open</span>
+        <small>desliza para abrir</small>
+        <i></i>
+      </button>
+    </div>
+  </section>
+
+  <section class="sec" id="story">
+    <div class="panel fold">
+      <svg class="rosette reveal" viewBox="0 0 46 46" aria-hidden="true"><g fill="none" stroke="#b5603a" stroke-width="1.2"><circle cx="23" cy="23" r="6"/><path d="M23 3c4 6 4 8 0 14c-4-6-4-8 0-14zM23 43c4-6 4-8 0-14c-4 6-4 8 0 14zM3 23c6-4 8-4 14 0c-6 4-8 4-14 0zM43 23c-6-4-8-4-14 0c6 4 8 4 14 0z"/><path d="M9 9l6 6M37 9l-6 6M9 37l6-6M37 37l-6-6" stroke-linecap="round"/></g><circle cx="23" cy="23" r="2.2" fill="#d99a3a"/></svg>
+      <span class="eyebrow reveal" style="--d:.05s">Nuestra historia</span>
+      <h2 class="reveal" style="--d:.12s">Where the desert<br>meets the sea</h2>
+      <p class="lead reveal" style="--d:.2s">On the eleventh of November 2027, at the very tip of Baja — where the desert runs out of land and meets the Pacific — Enya and Sami are getting married.</p>
+      <p class="reveal" style="--d:.28s">Picture warm sand, a big quiet sky, a sunset that stops every conversation, and the people they love most in one place. They would love for you to be one of them.</p>
+      <dl class="facts reveal" style="--d:.38s">
+        <div><dt>When</dt><dd>Thursday<br>11 November 2027</dd></div>
+        <div><dt>Where</dt><dd>Los Cabos<br>Baja California Sur</dd></div>
+        <div><dt>Dress</dt><dd>Desert formal<br><span style="font-size:15px;color:var(--muted)">light fabrics, shoes that like sand</span></dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <section class="sec" id="countdown">
+    <div class="panel fold">
+      <span class="eyebrow reveal">Faltan</span>
+      <h2 class="reveal" style="--d:.08s">Until they say <em>sí</em></h2>
+      <div class="count reveal" style="--d:.18s" role="timer" aria-live="off">
+        <div><span class="num" id="cd-d">—</span><span class="lbl">Days<em>días</em></span></div>
+        <div><span class="num" id="cd-h">—</span><span class="lbl">Hours<em>horas</em></span></div>
+        <div><span class="num" id="cd-m">—</span><span class="lbl">Minutes<em>minutos</em></span></div>
+        <div><span class="num" id="cd-s">—</span><span class="lbl">Seconds<em>segundos</em></span></div>
+      </div>
+      <p class="note reveal" style="--d:.28s" id="cd-note">to the ceremony · 3:30 in the afternoon, Los Cabos time</p>
+    </div>
+  </section>
+
+  <section class="sec" id="day">
+    <div class="panel fold">
+      <span class="eyebrow reveal">El gran día</span>
+      <h2 class="reveal" style="--d:.08s">The day,<br>hour by hour</h2>
+      <p class="note reveal" style="--d:.14s">Times to be confirmed — the sun, at least, is on schedule.</p>
+      <div class="tl" id="tl">
+        <span class="tl__line"></span><span class="tl__fill"></span><span class="tl__sun" aria-hidden="true"></span>
+        <div class="tl__item reveal"><span class="tl__time">3:00 pm</span><h3>Arrivals <em>· bienvenida</em></h3><p>Agua fresca, a bit of shade and a first look at the view.</p></div>
+        <div class="tl__item reveal"><span class="tl__time">3:30 pm</span><h3>The ceremony <em>· la ceremonia</em></h3><p>On the sand, facing the Pacific. Short, sweet, sí.</p></div>
+        <div class="tl__item reveal"><span class="tl__time">4:15 pm</span><h3>Cocktail hour <em>· coctel</em></h3><p>Mezcal, margaritas and the golden hour doing its thing.</p></div>
+        <div class="tl__item reveal"><span class="tl__time">5:20 pm</span><h3>Sunset <em>· atardecer</em></h3><p>Everyone stops for this one.</p></div>
+        <div class="tl__item reveal"><span class="tl__time">6:30 pm</span><h3>Dinner <em>· la cena</em></h3><p>One long table under an open sky.</p></div>
+        <div class="tl__item reveal"><span class="tl__time">8:00 pm</span><h3>First dance <em>· primer baile</em></h3><p>Then the floor is everyone's.</p></div>
+        <div class="tl__item reveal"><span class="tl__time">8:15 pm</span><h3>Fiesta</h3><p>Dancing until the luminarias burn down.</p></div>
+        <div class="tl__item reveal"><span class="tl__time">11:30 pm</span><h3>Late-night tacos <em>· tacos</em></h3><p>Because it's Mexico.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" id="gifts">
+    <div class="panel panel--wide fold">
+      <span class="eyebrow reveal">Regalos</span>
+      <h2 class="reveal" style="--d:.08s">Gifts</h2>
+      <p class="reveal" style="--d:.16s">Honestly, getting yourself to the tip of Baja is the gift. If you would still like to give something, here are a few ideas.</p>
+      <div class="gifts">
+        <div class="gift reveal" style="--d:.22s">
+          <svg viewBox="0 0 44 44" aria-hidden="true"><g fill="none" stroke="#b5603a" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="22" cy="17" r="7" fill="#d99a3a" fill-opacity=".25"/><path d="M22 4v3M22 27v3M9 17h3M32 17h3M13 8l2 2M31 8l-2 2"/><path d="M4 38c6-5 12-5 18 0s12 5 18 0"/></g></svg>
+          <h3>Honeymoon fund</h3>
+          <p>Help them go somewhere new together — a few nights, a long dinner, a boat out to the arch.</p>
+          <span class="soon">Details to follow</span>
+        </div>
+        <div class="gift reveal" style="--d:.3s">
+          <svg viewBox="0 0 44 44" aria-hidden="true"><g fill="none" stroke="#b5603a" stroke-width="1.3" stroke-linejoin="round"><path d="M8 40V18a14 14 0 0 1 28 0v22"/><path d="M15 40V22a7 7 0 0 1 14 0v18"/><path d="M4 40h36" stroke-linecap="round"/></g><circle cx="22" cy="13" r="2" fill="#2f4f86"/></svg>
+          <h3>For the home</h3>
+          <p>A small registry is on its way, for the practical-minded among us.</p>
+          <span class="soon">Coming soon</span>
+        </div>
+        <div class="gift reveal" style="--d:.38s">
+          <svg viewBox="0 0 44 44" aria-hidden="true"><g fill="none" stroke="#b5603a" stroke-width="1.3" stroke-linejoin="round"><rect x="5" y="11" width="34" height="23"/><path d="M5 11l17 13 17-13"/></g><circle cx="22" cy="24" r="3.4" fill="#b5603a"/></svg>
+          <h3>A letter</h3>
+          <p>Write them something by hand. They will keep every single one.</p>
+          <span class="soon">Bring it on the day</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="end" id="end">
+    <span class="eyebrow reveal">Con mucho amor</span>
+    <p class="end__names reveal" style="--d:.1s">Enya <span>&amp;</span> Sami</p>
+    <p class="end__date reveal" style="--d:.2s">11 · 11 · 2027</p>
+    <p class="end__date reveal" style="--d:.25s;font-size:15px;letter-spacing:.32em;font-family:var(--sans);font-weight:400">LOS CABOS · MÉXICO</p>
+    <p class="end__more reveal" style="--d:.32s">More details soon &middot; más detalles pronto</p>
+    <p class="end__by">Made with love by Xavier</p>
+  </footer>
+</main>
+
+<script defer src="../assets/stats.js"></script>
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js" } }
+</script>
+<script type="module">
+import * as THREE from "three";
+
+const $ = (s) => document.querySelector(s);
+const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+const sstep = (a, b, v) => { const t = clamp((v - a) / (b - a)); return t * t * (3 - 2 * t); };
+const seg = (p, a, b) => clamp((p - a) / (b - a));
+const eio = (t) => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+const eout = (t) => 1 - Math.pow(1 - t, 3);
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* =========================================================
+   Page: reveals, countdown, timeline progress, open button
+   ========================================================= */
+const io = new IntersectionObserver((es) => es.forEach((e) => {
+  if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); }
+}), { threshold: 0, rootMargin: "0px 0px -12% 0px" });
+document.querySelectorAll(".reveal, .fold").forEach((el) => io.observe(el));
+
+const WEDDING = new Date("2027-11-11T15:30:00-07:00").getTime(); // Baja California Sur: UTC-7, no DST
+const cd = { d: $("#cd-d"), h: $("#cd-h"), m: $("#cd-m"), s: $("#cd-s") };
+const pad = (n) => String(n).padStart(2, "0");
+function setNum(el, v) {
+  if (el.textContent === v) return;
+  el.textContent = v;
+  if (!reduce) { el.classList.remove("flip"); void el.offsetWidth; el.classList.add("flip"); }
+}
+function tick() {
+  let ms = WEDDING - Date.now();
+  if (ms <= 0) {
+    ["d", "h", "m", "s"].forEach((k) => setNum(cd[k], "0"));
+    $("#cd-note").textContent = "¡Felicidades, Enya & Sami!";
+    return;
+  }
+  const d = Math.floor(ms / 864e5); ms -= d * 864e5;
+  const h = Math.floor(ms / 36e5); ms -= h * 36e5;
+  const m = Math.floor(ms / 6e4); ms -= m * 6e4;
+  setNum(cd.d, String(d)); setNum(cd.h, pad(h)); setNum(cd.m, pad(m)); setNum(cd.s, pad(Math.floor(ms / 1000)));
+}
+tick(); setInterval(tick, 1000);
+
+const tl = $("#tl");
+function tlProgress() {
+  const r = tl.getBoundingClientRect();
+  tl.style.setProperty("--p", clamp((innerHeight * 0.55 - r.top) / r.height).toFixed(4));
+}
+addEventListener("scroll", tlProgress, { passive: true });
+tlProgress();
+
+const openSec = $("#open");
+$("#openBtn").addEventListener("click", () => {
+  scrollTo({ top: openSec.offsetHeight - innerHeight + 2, behavior: reduce ? "auto" : "smooth" });
+});
+
+/* =========================================================
+   Three.js
+   ========================================================= */
+let renderer = null;
+try {
+  renderer = new THREE.WebGLRenderer({ canvas: $("#scene"), antialias: true, powerPreference: "high-performance" });
+} catch (e) { renderer = null; }
+if (!renderer || !renderer.getContext()) {
+  document.documentElement.classList.add("no-gl");
+} else {
+  await start();
+}
+
+async function start() {
+  // Fonts first: the card face is drawn into a canvas.
+  try {
+    await Promise.race([
+      Promise.all([
+        document.fonts.load('italic 300 200px "Cormorant Garamond"'),
+        document.fonts.load('400 80px "Cormorant Garamond"'),
+        document.fonts.load('500 30px "Jost"'),
+        document.fonts.load('300 80px "Jost"'),
+      ]),
+      new Promise((r) => setTimeout(r, 2500)),
+    ]);
+  } catch (e) { /* fall back to system serif */ }
+
+  const rng = (() => { let a = 20271111; return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; })();
+
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.setSize(innerWidth, innerHeight, false);
+  const maxAniso = renderer.capabilities.getMaxAnisotropy();
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 0.1, 2000);
+  scene.add(camera);
+  scene.fog = new THREE.Fog(0xf6e3d0, 45, 340);
+
+  const hemi = new THREE.HemisphereLight(0xffffff, 0xc9a98a, 1.2);
+  const sun = new THREE.DirectionalLight(0xffffff, 2);
+  scene.add(hemi, sun, sun.target);
+  // soft key light from just above the viewer, so things facing us are never in silhouette
+  const key = new THREE.DirectionalLight(0xfff1e2, 1.4);
+  key.position.set(.4, .8, 1); key.target.position.set(0, 0, -1);
+  camera.add(key, key.target);
+
+  /* ---------- canvas helpers ---------- */
+  const mkCanvas = (w, h) => { const c = document.createElement("canvas"); c.width = w; c.height = h; return [c, c.getContext("2d")]; };
+  function grain(x, w, h, a) {
+    const img = x.getImageData(0, 0, w, h), d = img.data;
+    for (let i = 0; i < d.length; i += 4) { const n = (Math.random() - .5) * 255 * a; d[i] += n; d[i + 1] += n; d[i + 2] += n; }
+    x.putImageData(img, 0, 0);
+  }
+  function tex(c, repeat) {
+    const t = new THREE.CanvasTexture(c);
+    t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = maxAniso;
+    if (repeat) { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(repeat[0], repeat[1]); }
+    return t;
+  }
+  function spaced(x, text, cx, y, spacing) {
+    const chars = [...text];
+    const widths = chars.map((ch) => x.measureText(ch).width);
+    const total = widths.reduce((a, b) => a + b, 0) + spacing * (chars.length - 1);
+    let px = cx - total / 2;
+    x.textAlign = "left";
+    chars.forEach((ch, i) => { x.fillText(ch, px, y); px += widths[i] + spacing; });
+    x.textAlign = "center";
+  }
+  function glowTexture() {
+    const [c, x] = mkCanvas(64, 64);
+    const g = x.createRadialGradient(32, 32, 0, 32, 32, 32);
+    g.addColorStop(0, "rgba(255,255,255,1)"); g.addColorStop(.25, "rgba(255,255,255,.6)"); g.addColorStop(1, "rgba(255,255,255,0)");
+    x.fillStyle = g; x.fillRect(0, 0, 64, 64);
+    return tex(c);
+  }
+  const glowTex = glowTexture();
+
+  /* ---------- textures: paper, liner, card, seal ---------- */
+  function paperFront() {
+    const W = 1024, H = 704; const [c, x] = mkCanvas(W, H);
+    x.fillStyle = "#efe3cf"; x.fillRect(0, 0, W, H);
+    const vx = W / 2, vy = H * 0.5, my = H * 0.56;
+    x.fillStyle = "rgba(120,80,50,.06)";               // side flaps slightly shaded
+    x.beginPath(); x.moveTo(0, 0); x.lineTo(vx, my); x.lineTo(0, H); x.fill();
+    x.beginPath(); x.moveTo(W, 0); x.lineTo(vx, my); x.lineTo(W, H); x.fill();
+    x.strokeStyle = "rgba(110,70,40,.16)"; x.lineWidth = 2;
+    x.beginPath(); x.moveTo(0, H); x.lineTo(vx, my); x.lineTo(W, H); x.stroke();
+    x.strokeStyle = "rgba(255,255,255,.5)"; x.lineWidth = 1.5;
+    x.beginPath(); x.moveTo(0, 2); x.lineTo(vx, vy + 2); x.lineTo(W, 2); x.stroke();
+    grain(x, W, H, .05);
+    return tex(c);
+  }
+  function paperPlain(col) {
+    const [c, x] = mkCanvas(512, 256);
+    x.fillStyle = col; x.fillRect(0, 0, 512, 256);
+    grain(x, 512, 256, .05);
+    return tex(c);
+  }
+  function linerTex() {
+    const S = 512; const [c, x] = mkCanvas(S, S);
+    const B = "#2f4f86", G = "#d99a3a", BG = "#f3ebdd";
+    x.fillStyle = BG; x.fillRect(0, 0, S, S);
+    x.strokeStyle = "rgba(47,79,134,.22)"; x.lineWidth = 2;
+    for (let i = 0; i <= 4; i++) { x.beginPath(); x.moveTo(i * 128, 0); x.lineTo(i * 128, S); x.stroke(); x.beginPath(); x.moveTo(0, i * 128); x.lineTo(S, i * 128); x.stroke(); }
+    for (let gy = 0; gy < 4; gy++) for (let gx = 0; gx < 4; gx++) {
+      const cx = gx * 128 + 64, cy = gy * 128 + 64;
+      x.fillStyle = B;
+      for (let k = 0; k < 8; k++) { x.save(); x.translate(cx, cy); x.rotate(k * Math.PI / 4); x.beginPath(); x.ellipse(0, -27, 8.5, 19, 0, 0, Math.PI * 2); x.fill(); x.restore(); }
+      x.fillStyle = BG; x.beginPath(); x.arc(cx, cy, 10, 0, Math.PI * 2); x.fill();
+      x.fillStyle = G; x.beginPath(); x.arc(cx, cy, 6, 0, Math.PI * 2); x.fill();
+      x.strokeStyle = B; x.lineWidth = 2; x.beginPath(); x.arc(cx, cy, 52, 0, Math.PI * 2); x.stroke();
+    }
+    for (let gy = 0; gy <= 4; gy++) for (let gx = 0; gx <= 4; gx++) {
+      const cx = gx * 128, cy = gy * 128;
+      x.fillStyle = B; x.beginPath(); x.moveTo(cx, cy - 14); x.lineTo(cx + 14, cy); x.lineTo(cx, cy + 14); x.lineTo(cx - 14, cy); x.fill();
+      x.fillStyle = G; x.beginPath(); x.arc(cx, cy, 4, 0, Math.PI * 2); x.fill();
+    }
+    grain(x, S, S, .04);
+    return tex(c, [2.4, 1.65]);
+  }
+  function cardTex() {
+    const W = 1200, H = 1800; const [c, x] = mkCanvas(W, H);
+    x.fillStyle = "#fbf6ec"; x.fillRect(0, 0, W, H);
+    grain(x, W, H, .035);
+    x.strokeStyle = "rgba(181,96,58,.6)"; x.lineWidth = 3; x.strokeRect(58, 58, W - 116, H - 116);
+    x.lineWidth = 1.2; x.strokeRect(78, 78, W - 156, H - 156);
+    const cx = W / 2;
+    // half sun over dunes
+    x.fillStyle = "#e2a440"; x.beginPath(); x.arc(cx, 372, 84, Math.PI, 0); x.fill();
+    x.strokeStyle = "#b5603a"; x.lineWidth = 3; x.lineCap = "round";
+    x.beginPath(); x.moveTo(cx - 200, 374); x.lineTo(cx + 200, 374); x.stroke();
+    x.lineWidth = 2.4;
+    x.beginPath(); x.moveTo(cx - 170, 404); x.quadraticCurveTo(cx - 60, 380, cx + 30, 404); x.stroke();
+    x.beginPath(); x.moveTo(cx - 20, 430); x.quadraticCurveTo(cx + 80, 410, cx + 150, 430); x.stroke();
+    x.textAlign = "center"; x.textBaseline = "alphabetic";
+    x.fillStyle = "#7a6a5e"; x.font = '500 30px "Jost", sans-serif';
+    spaced(x, "TOGETHER WITH THEIR FAMILIES", cx, 580, 9);
+    x.fillStyle = "#2b2420"; x.font = 'italic 300 250px "Cormorant Garamond", Georgia, serif';
+    x.fillText("Enya", cx, 850);
+    x.fillStyle = "#b5603a"; x.font = 'italic 300 150px "Cormorant Garamond", Georgia, serif';
+    x.fillText("&", cx, 1010);
+    x.fillStyle = "#2b2420"; x.font = 'italic 300 250px "Cormorant Garamond", Georgia, serif';
+    x.fillText("Sami", cx, 1215);
+    x.fillStyle = "#7a6a5e"; x.font = '500 30px "Jost", sans-serif';
+    spaced(x, "ARE GETTING MARRIED", cx, 1320, 9);
+    x.fillStyle = "#b5603a"; x.beginPath(); x.moveTo(cx, 1372); x.lineTo(cx + 10, 1384); x.lineTo(cx, 1396); x.lineTo(cx - 10, 1384); x.fill();
+    x.strokeStyle = "rgba(181,96,58,.5)"; x.lineWidth = 1.5;
+    x.beginPath(); x.moveTo(cx - 120, 1384); x.lineTo(cx - 24, 1384); x.moveTo(cx + 24, 1384); x.lineTo(cx + 120, 1384); x.stroke();
+    x.fillStyle = "#2b2420"; x.font = '300 84px "Jost", sans-serif';
+    spaced(x, "11 · 11 · 2027", cx, 1505, 14);
+    x.fillStyle = "#7a6a5e"; x.font = '500 25px "Jost", sans-serif';
+    spaced(x, "LOS CABOS · BAJA CALIFORNIA SUR", cx, 1590, 8);
+    x.fillStyle = "#b5603a"; x.font = 'italic 400 44px "Cormorant Garamond", Georgia, serif';
+    x.fillText("con mucho amor", cx, 1680);
+    return tex(c);
+  }
+  function sealTex() {
+    const S = 256; const [c, x] = mkCanvas(S, S);
+    x.clearRect(0, 0, S, S);
+    x.strokeStyle = "rgba(70,18,6,.45)"; x.lineWidth = 4;
+    x.beginPath(); x.arc(128, 128, 104, 0, Math.PI * 2); x.stroke();
+    x.textAlign = "center"; x.textBaseline = "middle";
+    x.font = 'italic 300 118px "Cormorant Garamond", Georgia, serif';
+    x.fillStyle = "rgba(255,200,170,.35)"; x.fillText("E&S", 130, 136);
+    x.fillStyle = "rgba(70,18,6,.62)"; x.fillText("E&S", 127, 132);
+    return tex(c);
+  }
+
+  /* ---------- envelope + card ---------- */
+  const EW = 3.2, EH = 2.2;
+  const rig = new THREE.Group(); scene.add(rig);
+  const env = new THREE.Group(); rig.add(env);
+  const envMats = [];
+  const mat = (o) => { const m = new THREE.MeshStandardMaterial({ roughness: .92, metalness: 0, alphaHash: true, ...o }); envMats.push(m); return m; };
+  function rectUV(geo, x0, y0, w, h) {
+    const p = geo.attributes.position, uv = geo.attributes.uv;
+    for (let i = 0; i < p.count; i++) uv.setXY(i, (p.getX(i) - x0) / w, (p.getY(i) - y0) / h);
+    uv.needsUpdate = true;
+  }
+  const linerMap = linerTex();
+  const paperA = paperPlain("#ecdfca");
+
+  const back = new THREE.Mesh(new THREE.PlaneGeometry(EW, EH), mat({ map: linerMap }));
+  env.add(back);
+
+  const pocketShape = new THREE.Shape();
+  pocketShape.moveTo(-EW / 2, -EH / 2); pocketShape.lineTo(EW / 2, -EH / 2); pocketShape.lineTo(EW / 2, EH / 2);
+  pocketShape.lineTo(0, 0); pocketShape.lineTo(-EW / 2, EH / 2); pocketShape.closePath();
+  const pocketGeo = new THREE.ShapeGeometry(pocketShape); rectUV(pocketGeo, -EW / 2, -EH / 2, EW, EH);
+  const pocket = new THREE.Mesh(pocketGeo, mat({ map: paperFront() }));
+  pocket.position.z = 0.03; env.add(pocket);
+
+  const flapShape = new THREE.Shape();
+  flapShape.moveTo(-EW / 2, 0); flapShape.lineTo(EW / 2, 0); flapShape.lineTo(0, -1.28); flapShape.closePath();
+  const flapGeo = new THREE.ShapeGeometry(flapShape); rectUV(flapGeo, -EW / 2, -1.28, EW, 1.28);
+  const flapLinerGeo = flapGeo.clone(); { const p = flapLinerGeo.attributes.position, uv = flapLinerGeo.attributes.uv; for (let i = 0; i < p.count; i++) uv.setXY(i, (p.getX(i) + EW / 2) / EW * 2.4, (p.getY(i) + 1.28) / 1.28 * 0.95); }
+  const flapPivot = new THREE.Group(); flapPivot.position.set(0, EH / 2, 0.036); env.add(flapPivot);
+  flapPivot.add(new THREE.Mesh(flapGeo, mat({ map: paperA, side: THREE.FrontSide })));
+  const linerMap2 = linerMap.clone(); linerMap2.repeat.set(1, 1); linerMap2.needsUpdate = true;
+  flapPivot.add(new THREE.Mesh(flapLinerGeo, mat({ map: linerMap2, side: THREE.BackSide })));
+
+  // wax seal
+  const sealShape = new THREE.Shape();
+  for (let i = 0; i <= 64; i++) {
+    const a = i / 64 * Math.PI * 2, r = 0.3 * (1 + Math.sin(a * 5) * .025 + Math.sin(a * 11 + 1) * .02 + Math.sin(a * 3 + 2) * .03);
+    i ? sealShape.lineTo(Math.cos(a) * r, Math.sin(a) * r) : sealShape.moveTo(Math.cos(a) * r, Math.sin(a) * r);
+  }
+  const seal = new THREE.Group();
+  const sealMat = new THREE.MeshPhysicalMaterial({ color: 0xa8432a, roughness: .42, clearcoat: .7, clearcoatRoughness: .35, alphaHash: true });
+  seal.add(new THREE.Mesh(new THREE.ExtrudeGeometry(sealShape, { depth: .04, bevelEnabled: true, bevelThickness: .025, bevelSize: .035, bevelSegments: 4, curveSegments: 64 }), sealMat));
+  const sealFaceMat = new THREE.MeshStandardMaterial({ map: sealTex(), transparent: true, roughness: .5, depthWrite: false });
+  const sealFace = new THREE.Mesh(new THREE.CircleGeometry(.27, 48), sealFaceMat); sealFace.position.z = .067; seal.add(sealFace);
+  seal.position.set(0, -0.1, 0.045); env.add(seal);
+
+  // the card
+  const CW = 1.95, CH = 2.925;
+  const cardMat = new THREE.MeshBasicMaterial({ map: cardTex(), transparent: true });
+  const card = new THREE.Mesh(new THREE.PlaneGeometry(CW, CH), cardMat);
+  rig.add(card);
+
+  /* ---------- sky ---------- */
+  const skyU = {
+    uTop: { value: new THREE.Color() }, uHor: { value: new THREE.Color() }, uSun: { value: new THREE.Color() },
+    uSunDir: { value: new THREE.Vector3(0, .1, -1) }, uSunVis: { value: 1 },
+  };
+  const sky = new THREE.Mesh(new THREE.SphereGeometry(1000, 48, 24), new THREE.ShaderMaterial({
+    uniforms: skyU, side: THREE.BackSide, depthWrite: false,
+    vertexShader: `varying vec3 vDir; void main(){ vDir = position; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+    fragmentShader: `
+      uniform vec3 uTop, uHor, uSun, uSunDir; uniform float uSunVis; varying vec3 vDir;
+      void main(){
+        vec3 d = normalize(vDir); float h = d.y;
+        vec3 col = mix(uHor, uTop, pow(smoothstep(-0.02, 0.62, h), 0.85));
+        col = mix(col, uHor * 0.9, 1.0 - smoothstep(-0.25, 0.0, h));
+        float s = max(dot(d, normalize(uSunDir)), 0.0);
+        col += uSun * (pow(s, 6.0) * 0.18 + pow(s, 60.0) * 0.35) * uSunVis;
+        float disc = smoothstep(0.9968, 0.9974, s);
+        col = mix(col, uSun * 1.05 + vec3(0.06), disc * uSunVis);
+        gl_FragColor = vec4(col, 1.0);
+        #include <colorspace_fragment>
+      }`,
+  }));
+  sky.renderOrder = -1; sky.frustumCulled = false; scene.add(sky);
+
+  function starField(n, size) {
+    const g = new THREE.BufferGeometry(), a = new Float32Array(n * 3);
+    for (let i = 0; i < n; i++) {
+      const th = rng() * Math.PI * 2, y = 0.04 + rng() * 0.96, r = Math.sqrt(1 - y * y);
+      a.set([Math.cos(th) * r * 900, y * 900, Math.sin(th) * r * 900], i * 3);
+    }
+    g.setAttribute("position", new THREE.BufferAttribute(a, 3));
+    const p = new THREE.Points(g, new THREE.PointsMaterial({ color: 0xfff3dc, size, sizeAttenuation: false, transparent: true, opacity: 0, depthWrite: false, fog: false }));
+    p.frustumCulled = false; scene.add(p); return p;
+  }
+  const stars = [starField(1600, 1.3), starField(260, 2.4)];
+
+  /* ---------- desert ---------- */
+  function groundH(x, z) {
+    let h = Math.sin(x * .045 + Math.sin(z * .021) * 2.2) * 1.7 + Math.sin(z * .032 + x * .013) * 1.3 + Math.sin((x * .7 + z) * .09) * .35;
+    const valley = 1 - Math.exp(-(x * x) / (2 * 16 * 16));
+    h = h * (.25 + .75 * valley) + valley * 2.4 - .6;
+    return lerp(h, -5, sstep(-185, -228, z));
+  }
+  const GY = -3;
+  {
+    const g = new THREE.PlaneGeometry(760, 620, 240, 200); g.rotateX(-Math.PI / 2); g.translate(0, 0, -110);
+    const p = g.attributes.position, col = new Float32Array(p.count * 3);
+    const lo = new THREE.Color("#e2c9a4"), hi = new THREE.Color("#f7ecd9"), wet = new THREE.Color("#a99272"), c = new THREE.Color();
+    for (let i = 0; i < p.count; i++) {
+      const x = p.getX(i), z = p.getZ(i), h = groundH(x, z);
+      p.setY(i, h);
+      c.copy(lo).lerp(hi, clamp((h + 1.2) / 4.5)).lerp(wet, sstep(-200, -222, z) * .7);
+      col.set([c.r, c.g, c.b], i * 3);
+    }
+    g.setAttribute("color", new THREE.BufferAttribute(col, 3));
+    g.computeVertexNormals();
+    const ground = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1 }));
+    ground.position.y = GY; scene.add(ground);
+  }
+  const seaMat = new THREE.MeshStandardMaterial({ color: 0x6f9ea6, roughness: .28, metalness: .15 });
+  { const g = new THREE.PlaneGeometry(3000, 1600); g.rotateX(-Math.PI / 2); const sea = new THREE.Mesh(g, seaMat); sea.position.set(0, GY - .95, -1000); scene.add(sea); }
+
+  function noisify(geo, amp, f) {
+    const p = geo.attributes.position;
+    for (let i = 0; i < p.count; i++) {
+      const x = p.getX(i), y = p.getY(i), z = p.getZ(i);
+      const n = Math.sin(x * f + Math.sin(z * f * 1.3) * 2) * .5 + Math.sin(y * f * 1.7 + x * f * .6) * .35 + Math.sin(z * f * 2.3 + y * f) * .25;
+      p.setXYZ(i, x + n * amp, y + n * amp * .6, z + n * amp);
+    }
+    geo.computeVertexNormals();
+    return geo;
+  }
+  const rockMat = new THREE.MeshStandardMaterial({ color: 0x9c7258, roughness: 1, flatShading: true });
+  {
+    const arch = new THREE.Mesh(noisify(new THREE.TorusGeometry(10, 3.7, 10, 36, Math.PI), 1.3, .33), rockMat);
+    arch.scale.set(1, 1.5, .9); arch.position.set(-48, GY - 4, -292); arch.rotation.y = .45; scene.add(arch);
+    [[-68, -3, -300, 13, 22, 11], [-30, -2, -305, 4, 10, 4], [-84, -3, -290, 8, 12, 8], [-24, -3, -318, 2.5, 6, 2.5]].forEach(([x, y, z, sx, sy, sz]) => {
+      const r = new THREE.Mesh(noisify(new THREE.DodecahedronGeometry(1, 1), .18, 2.1), rockMat);
+      r.scale.set(sx, sy, sz); r.position.set(x, GY + y, z); r.rotation.y = rng() * 3; scene.add(r);
+    });
+  }
+
+  // cardón cacti (instanced)
+  const cylM = [], capM = [];
+  {
+    const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), s = new THREE.Vector3(), p = new THREE.Vector3(), e = new THREE.Euler();
+    const cyl = (x, y, z, r, len, rz = 0, ry = 0) => { e.set(0, ry, rz, "YXZ"); q.setFromEuler(e); cylM.push(m4.compose(p.set(x, y, z), q, s.set(r, len, r)).clone()); };
+    const cap = (x, y, z, r) => { q.identity(); capM.push(m4.compose(p.set(x, y, z), q, s.set(r, r, r)).clone()); };
+    function cactus(x, z, H) {
+      const y0 = GY + groundH(x, z) - .4, r = .3 + H * .025;
+      cyl(x, y0 + H / 2, z, r, H); cap(x, y0 + H, z, r);
+      const arms = 1 + Math.floor(rng() * 3);
+      for (let a = 0; a < arms; a++) {
+        const th = rng() * Math.PI * 2, h1 = H * (.32 + rng() * .25), L1 = .55 + rng() * .45, L2 = H * (.22 + rng() * .3), ar = r * .78;
+        const dx = Math.cos(th), dz = Math.sin(th);
+        cyl(x + dx * (r + L1) / 2, y0 + h1, z + dz * (r + L1) / 2, ar, r + L1, Math.PI / 2, -th);
+        const ex = x + dx * (r + L1), ez = z + dz * (r + L1);
+        cap(ex, y0 + h1, ez, ar); cyl(ex, y0 + h1 + L2 / 2, ez, ar, L2); cap(ex, y0 + h1 + L2, ez, ar);
+      }
+    }
+    for (let i = 0; i < 34; i++) {
+      const side = rng() < .5 ? -1 : 1, x = side * (9 + rng() * 42), z = 14 - rng() * 200;
+      cactus(x, z, 3 + rng() * 5.5);
+    }
+    cactus(-11, -18, 7.5); cactus(13, -52, 6.5); cactus(-12.5, -98, 8); cactus(10, -128, 5.5);
+    const cMat = new THREE.MeshStandardMaterial({ color: 0x6b7a57, roughness: .85, flatShading: true });
+    const ci = new THREE.InstancedMesh(new THREE.CylinderGeometry(1, 1, 1, 10), cMat, cylM.length);
+    cylM.forEach((m, i) => ci.setMatrixAt(i, m));
+    const si = new THREE.InstancedMesh(new THREE.SphereGeometry(1, 10, 6), cMat, capM.length);
+    capM.forEach((m, i) => si.setMatrixAt(i, m));
+    scene.add(ci, si);
+  }
+  // agaves (instanced leaves)
+  {
+    const leaves = [], d = new THREE.Object3D();
+    for (let i = 0; i < 46; i++) {
+      const side = rng() < .5 ? -1 : 1, x = side * (5.5 + rng() * 36), z = 12 - rng() * 195;
+      const y = GY + groundH(x, z) - .1, sc = .6 + rng() * .9, n = 9 + Math.floor(rng() * 4);
+      for (let k = 0; k < n; k++) {
+        d.position.set(x, y, z); d.rotation.order = "YXZ";
+        d.rotation.set(.35 + rng() * .75, k / n * Math.PI * 2 + rng() * .3, 0);
+        d.scale.set(sc, sc * (.8 + rng() * .5), sc); d.updateMatrix(); leaves.push(d.matrix.clone());
+      }
+    }
+    const lg = new THREE.ConeGeometry(.13, 1.2, 4); lg.translate(0, .6, 0);
+    const li = new THREE.InstancedMesh(lg, new THREE.MeshStandardMaterial({ color: 0x7f9c8e, roughness: .8, flatShading: true }), leaves.length);
+    leaves.forEach((m, i) => li.setMatrixAt(i, m));
+    scene.add(li);
+  }
+  // luminarias: paper bags along the path, lit at night
+  const lumBag = new THREE.MeshBasicMaterial({ color: 0xcbb08a });
+  const lumGlow = new THREE.PointsMaterial({ map: glowTex, color: 0xffb35c, size: 2.6, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending });
+  {
+    const pos = [], d = new THREE.Object3D(), gl = [];
+    for (let z = -26; z > -190; z -= 5.2) for (const s of [-1, 1]) {
+      const x = s * (4.6 + Math.sin(z * .13) * .6), y = GY + groundH(x, z) + .22;
+      d.position.set(x, y, z); d.rotation.y = rng(); d.updateMatrix(); pos.push(d.matrix.clone()); gl.push(x, y + .25, z);
+    }
+    const bi = new THREE.InstancedMesh(new THREE.BoxGeometry(.34, .48, .34), lumBag, pos.length);
+    pos.forEach((m, i) => bi.setMatrixAt(i, m));
+    const gg = new THREE.BufferGeometry(); gg.setAttribute("position", new THREE.Float32BufferAttribute(gl, 3));
+    scene.add(bi, new THREE.Points(gg, lumGlow));
+  }
+  // drifting sand / fireflies
+  const DUST = 700;
+  const dustGeo = new THREE.BufferGeometry(), dustA = new Float32Array(DUST * 3), dustS = new Float32Array(DUST);
+  for (let i = 0; i < DUST; i++) { dustA.set([(rng() - .5) * 70, GY + rng() * 11, 12 - rng() * 215], i * 3); dustS[i] = .4 + rng(); }
+  dustGeo.setAttribute("position", new THREE.BufferAttribute(dustA, 3));
+  const dustMat = new THREE.PointsMaterial({ map: glowTex, color: 0xfff4e2, size: .16, transparent: true, opacity: .7, depthWrite: false });
+  const dust = new THREE.Points(dustGeo, dustMat); dust.frustumCulled = false; scene.add(dust);
+
+  /* ---------- papel picado (lives in camera space) ---------- */
+  const FLAG = ["#c0603a", "#e2a440", "#d27d8e", "#3b5f9a", "#8fa07a", "#4f9c9a", "#f3ead9"];
+  function flagTex(color, k) {
+    const W = 200, H = 260; const [c, x] = mkCanvas(W, H);
+    x.fillStyle = color; x.fillRect(0, 0, W, H);
+    x.globalCompositeOperation = "destination-out"; x.fillStyle = "#000";
+    const dot = (cx, cy, r) => { x.beginPath(); x.arc(cx, cy, r, 0, Math.PI * 2); x.fill(); };
+    for (let i = 0; i < 10; i++) dot(10 + i * 20, H, 10);                         // scalloped hem
+    for (let y = 48; y < 222; y += 17) { dot(15, y, 3.2); dot(W - 15, y, 3.2); }  // side perforations
+    for (let i = 0; i < 9; i++) { const cx = 24 + i * 19; x.beginPath(); x.moveTo(cx, 22); x.lineTo(cx + 5, 28); x.lineTo(cx, 34); x.lineTo(cx - 5, 28); x.fill(); }
+    const cx = W / 2, cy = 138;
+    if (k % 4 === 0) {          // flower
+      for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4; x.beginPath(); x.ellipse(cx + Math.cos(a) * 36, cy + Math.sin(a) * 36, 17, 8, a, 0, Math.PI * 2); x.fill(); }
+      dot(cx, cy, 13);
+    } else if (k % 4 === 1) {   // heart
+      x.beginPath(); x.moveTo(cx, cy + 46); x.bezierCurveTo(cx - 70, cy - 2, cx - 34, cy - 58, cx, cy - 22); x.bezierCurveTo(cx + 34, cy - 58, cx + 70, cy - 2, cx, cy + 46); x.fill();
+    } else if (k % 4 === 2) {   // sun
+      dot(cx, cy, 22);
+      for (let i = 0; i < 12; i++) { const a = i * Math.PI / 6; x.beginPath(); x.moveTo(cx + Math.cos(a - .12) * 32, cy + Math.sin(a - .12) * 32); x.lineTo(cx + Math.cos(a) * 58, cy + Math.sin(a) * 58); x.lineTo(cx + Math.cos(a + .12) * 32, cy + Math.sin(a + .12) * 32); x.fill(); }
+    } else {                    // lattice of diamonds
+      for (let gy = -2; gy <= 2; gy++) for (let gx = -2; gx <= 2; gx++) { if (Math.abs(gx) + Math.abs(gy) > 3) continue; const px = cx + gx * 26, py = cy + gy * 26; x.beginPath(); x.moveTo(px, py - 10); x.lineTo(px + 10, py); x.lineTo(px, py + 10); x.lineTo(px - 10, py); x.fill(); }
+    }
+    for (const [px, py] of [[34, 62], [W - 34, 62], [34, 214], [W - 34, 214]]) { x.beginPath(); x.moveTo(px, py - 9); x.lineTo(px + 9, py); x.lineTo(px, py + 9); x.lineTo(px - 9, py); x.fill(); }
+    const t = tex(c); return t;
+  }
+  const flagMats = FLAG.map((col, i) => new THREE.MeshBasicMaterial({ map: flagTex(col, i), transparent: true, alphaTest: .4, side: THREE.DoubleSide, fog: false }));
+  const stringMat = new THREE.LineBasicMaterial({ color: 0x6b5a4a, fog: false });
+  const garland = new THREE.Group(); camera.add(garland);
+  let flags = [];
+  const ROWS = [{ d: 3, top: .0, sag: .07, n: 11, off: 0 }, { d: 4.6, top: .02, sag: .16, n: 13, off: 3 }];
+  function layoutGarland() {
+    garland.clear(); flags = [];
+    ROWS.forEach((row, ri) => {
+      const halfH = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * row.d, halfW = halfH * camera.aspect;
+      const span = halfW * 2.12, n = camera.aspect < .8 ? row.n - 4 : row.n;
+      const yAt = (u) => halfH * (1 - row.top) - row.sag * halfH * (1 - (2 * u - 1) ** 2);
+      const pts = []; for (let k = 0; k <= 48; k++) { const u = k / 48; pts.push(new THREE.Vector3(-span / 2 + u * span, yAt(u), -row.d)); }
+      garland.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), stringMat));
+      const w = Math.min(span / n * .78, halfH * .2), h = w * 1.3;
+      for (let i = 0; i < n; i++) {
+        const u = (i + .5) / n, g = new THREE.PlaneGeometry(w, h, 5, 7); g.translate(0, -h / 2, 0);
+        const m = new THREE.Mesh(g, flagMats[(i + row.off) % FLAG.length]);
+        const slope = (yAt(u + .01) - yAt(u - .01)) / (span * .02);
+        m.position.set(-span / 2 + u * span, yAt(u), -row.d + ri * .001); m.rotation.z = Math.atan(slope) * .6;
+        garland.add(m);
+        flags.push({ m, base: Float32Array.from(g.attributes.position.array), h, seed: i * 1.7 + ri * 4 });
+      }
+    });
+  }
+  layoutGarland();
+
+  /* ---------- time of day ---------- */
+  const SKY = [
+    { top: "#ecd4c4", hor: "#f7e5d2", sun: "#ffd2a3", el: .07, hs: "#ffe9d8", hg: "#c9a98a", hi: 1.25, si: 1.7, sea: "#a3b8b6" }, // dawn
+    { top: "#c6d8dc", hor: "#f4e9d9", sun: "#fff3dc", el: .5, hs: "#fff6ea", hg: "#d2b58f", hi: 1.3, si: 2.0, sea: "#6f9ea6" },   // day
+    { top: "#e2b28c", hor: "#f6cf9c", sun: "#ffbd6a", el: .17, hs: "#ffe0bd", hg: "#c79a72", hi: 1.15, si: 1.9, sea: "#8b9a96" },  // golden
+    { top: "#7a5577", hor: "#ec8e5e", sun: "#ff8a4c", el: .015, hs: "#f2a98a", hg: "#7d5a52", hi: .9, si: 1.3, sea: "#5d5b6c" },   // sunset
+    { top: "#262c4a", hor: "#8c5463", sun: "#c4604a", el: -.12, hs: "#6c6488", hg: "#3a3040", hi: .55, si: .2, sea: "#262d40" },  // dusk
+    { top: "#0b1123", hor: "#262b42", sun: "#000000", el: -.4, hs: "#43507e", hg: "#151524", hi: .45, si: 0, sea: "#101a2b" },     // night
+  ].map((o) => ({ ...o, top: new THREE.Color(o.top), hor: new THREE.Color(o.hor), sun: new THREE.Color(o.sun), hs: new THREE.Color(o.hs), hg: new THREE.Color(o.hg), sea: new THREE.Color(o.sea) }));
+  const cTop = new THREE.Color(), cHor = new THREE.Color(), cSun = new THREE.Color(), cTmp = new THREE.Color();
+  const sunDir = new THREE.Vector3();
+  const BAG_DAY = new THREE.Color("#cbb08a"), BAG_NIGHT = new THREE.Color("#ffd08f"), DUST_DAY = new THREE.Color("#fff4e2"), DUST_NIGHT = new THREE.Color("#ffd27a"), WHITE = new THREE.Color(1, 1, 1), DIM = new THREE.Color("#7a7690");
+  let night = 0;
+  function applySky(tod, time) {
+    tod = clamp(tod, 0, 5);
+    const i = Math.min(4, Math.floor(tod)), f = sstep(0, 1, tod - i), a = SKY[i], b = SKY[i + 1];
+    cTop.copy(a.top).lerp(b.top, f); cHor.copy(a.hor).lerp(b.hor, f); cSun.copy(a.sun).lerp(b.sun, f);
+    skyU.uTop.value.copy(cTop); skyU.uHor.value.copy(cHor); skyU.uSun.value.copy(cSun);
+    scene.fog.color.copy(cHor);
+    const el = lerp(a.el, b.el, f), az = lerp(.28, -.32, tod / 5);
+    sunDir.set(Math.sin(az) * Math.cos(el), Math.sin(el), -Math.cos(az) * Math.cos(el)).normalize();
+    skyU.uSunDir.value.copy(sunDir);
+    const vis = sstep(-.06, .03, el); skyU.uSunVis.value = vis;
+    sun.position.copy(camera.position).addScaledVector(sunDir, 100); sun.target.position.copy(camera.position);
+    sun.color.copy(cSun); sun.intensity = lerp(a.si, b.si, f) * Math.max(vis, .0);
+    hemi.color.copy(a.hs).lerp(b.hs, f); hemi.groundColor.copy(a.hg).lerp(b.hg, f); hemi.intensity = lerp(a.hi, b.hi, f);
+    seaMat.color.copy(a.sea).lerp(b.sea, f);
+    night = sstep(3.7, 5, tod);
+    key.intensity = lerp(1.5, .7, sstep(.5, 1.5, tod)) * (1 - night * .75);
+    const lum = sstep(3.0, 4.3, tod);
+    stars[0].material.opacity = night * (.82 + .18 * Math.sin(time * 1.7));
+    stars[1].material.opacity = night * (.85 + .15 * Math.sin(time * 2.3 + 1));
+    lumBag.color.copy(BAG_DAY).lerp(BAG_NIGHT, lum);
+    lumGlow.opacity = lum * .95;
+    dustMat.color.copy(DUST_DAY).lerp(DUST_NIGHT, night); dustMat.size = lerp(.16, .22, night); dustMat.opacity = lerp(.65, .9, night);
+    cTmp.copy(WHITE).lerp(DIM, night); flagMats.forEach((m) => m.color.copy(cTmp));
+  }
+
+  /* ---------- camera path ---------- */
+  const V = (x, y, z) => new THREE.Vector3(x, y, z);
+  let camZ0 = 6;
+  const posCurve = new THREE.CatmullRomCurve3([V(0, 0, 6), V(0, 2.2, 3), V(3, 1.3, -32), V(-1.5, 1.7, -80), V(0, 2.3, -128), V(0, 5.5, -146)], false, "centripetal");
+  const lookCurve = new THREE.CatmullRomCurve3([V(0, 0, 0), V(0, .6, -40), V(-4, .2, -85), V(1, .7, -150), V(-36, 3, -285), V(-30, 34, -300)], false, "centripetal");
+  const TOD = [[0, .25], [1, 1], [2, 1.45], [2.55, 2], [3.45, 4], [4, 5], [5, 5.2]];
+  function todAt(ph) { for (let i = 0; i < TOD.length - 1; i++) { const [p0, t0] = TOD[i], [p1, t1] = TOD[i + 1]; if (ph <= p1) return lerp(t0, t1, clamp((ph - p0) / (p1 - p0))); } return TOD[TOD.length - 1][1]; }
+
+  function fitCamera() {
+    camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
+    renderer.setSize(innerWidth, innerHeight, false);
+    const vt = 2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+    camZ0 = Math.max(6, (EW + .5) / (vt * camera.aspect));
+    posCurve.points[0].z = camZ0;
+    layoutGarland();
+  }
+
+  /* ---------- scroll → phases ---------- */
+  const secs = ["#open", "#story", "#countdown", "#day", "#gifts", "#end"].map((s) => $(s));
+  let anchors = [], openLen = 1;
+  function measure() {
+    const vh = innerHeight, maxS = document.documentElement.scrollHeight - vh;
+    openLen = Math.max(1, secs[0].offsetHeight - vh);
+    anchors = secs.map((el, i) => Math.min(maxS, i === 0 ? openLen : el.offsetTop + el.offsetHeight / 2 - vh / 2));
+    anchors[anchors.length - 1] = maxS;
+    for (let i = 1; i < anchors.length; i++) anchors[i] = Math.max(anchors[i], anchors[i - 1] + 1);
+  }
+  function phaseAt(y) {
+    if (y <= anchors[0]) return 0;
+    for (let i = 0; i < anchors.length - 1; i++) if (y < anchors[i + 1]) return i + (y - anchors[i]) / (anchors[i + 1] - anchors[i]);
+    return anchors.length - 1;
+  }
+  fitCamera(); measure();
+  addEventListener("resize", () => { fitCamera(); measure(); tlProgress(); });
+  addEventListener("load", measure);
+  new ResizeObserver(measure).observe(document.body);
+
+  const mouse = { x: 0, y: 0, tx: 0, ty: 0 };
+  addEventListener("pointermove", (e) => { mouse.tx = e.clientX / innerWidth * 2 - 1; mouse.ty = e.clientY / innerHeight * 2 - 1; }, { passive: true });
+
+  /* ---------- per-frame ---------- */
+  const openTop = $("#openTop"), openBtn = $("#openBtn");
+  let curOpen = reduce ? 1 : 0, curP = 0, last = performance.now();
+  const lookV = new THREE.Vector3(), posV = new THREE.Vector3();
+
+  function envelopeAt(p, ph, time) {
+    // rig: a tilted float that settles square to the camera
+    const settle = eout(seg(p, 0, .14));
+    rig.rotation.set(lerp(-.22, 0, settle), lerp(.32, 0, settle), lerp(.06, 0, settle));
+    rig.position.y = Math.sin(time * 1.1) * .07 * (1 - seg(p, .5, .9));
+
+    // seal pops, spins and drops away
+    const sp = seg(p, .1, .26);
+    const pop = Math.sin(seg(sp, 0, .35) * Math.PI) * .18;
+    seal.scale.setScalar(1 + pop - eio(seg(sp, .35, 1)) * .4);
+    const fly = eio(seg(sp, .3, 1));
+    seal.position.set(fly * .5, -.1 - fly * 1.9, .045 + fly * 1.4);
+    seal.rotation.set(fly * 1.6, fly * .8, fly * 2.6);
+    sealMat.opacity = sealFaceMat.opacity = 1 - seg(sp, .55, 1);
+    seal.visible = sp < 1;
+
+    // flap swings open toward the camera, then folds back behind
+    const fp = eio(seg(p, .18, .42));
+    flapPivot.rotation.x = -fp * Math.PI * 1.05;
+    flapPivot.position.z = fp > .5 ? -.012 : .036;
+
+    // card slides up out of the pocket, turns upright and comes to the camera
+    const slide = eio(seg(p, .4, .63));
+    const come = eio(seg(p, .63, .92));
+    const vt = 2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+    const d = Math.max(CH / (.84 * vt), CW / (.88 * vt * camera.aspect));
+    const zT = camZ0 - d;
+    let cy = lerp(0, 2.3, slide), cz = .016, rz = Math.PI / 2;
+    cy = lerp(cy, 0, come); cz = lerp(cz, zT, come) + Math.sin(come * Math.PI) * .6; rz = lerp(rz, 0, come);
+    // after the opening, the card lifts off and away as the desert arrives
+    const exit = seg(ph, .04, .75);
+    cy += exit * exit * 7; cz -= exit * 1.5;
+    card.position.set(0, cy, cz);
+    card.rotation.set(-exit * .7 + Math.sin(time * .9) * .015 * (1 - exit), Math.sin(come * Math.PI) * -.35 + Math.sin(time * .7) * .02 * come * (1 - exit), rz);
+    cardMat.opacity = 1 - sstep(.35, .75, ph);
+    card.visible = cardMat.opacity > 0.001;
+
+    // the envelope sinks away once the card is free
+    const fall = eio(seg(p, .64, .9));
+    env.position.set(0, -fall * 2.4, -fall * 1.8);
+    env.rotation.x = fall * .55;
+    const o = 1 - seg(p, .7, .9);
+    envMats.forEach((m) => { m.opacity = o; });
+    env.visible = o > 0.001;
+  }
+
+  function frame(now) {
+    const dt = Math.min(.05, (now - last) / 1000); last = now; const time = now / 1000;
+    const y = scrollY;
+    const tOpen = reduce ? 1 : clamp(y / openLen), tP = phaseAt(y);
+    const k = reduce ? 1 : 1 - Math.exp(-dt * 6);
+    curOpen += (tOpen - curOpen) * k; curP += (tP - curP) * k;
+    if (Math.abs(tOpen - curOpen) < 1e-4) curOpen = tOpen;
+
+    const hintO = 1 - sstep(.01, .1, curOpen);
+    openTop.style.opacity = hintO; openBtn.style.opacity = hintO; openBtn.style.visibility = hintO < .02 ? "hidden" : "visible";
+
+    envelopeAt(curOpen, curP, time);
+
+    // camera
+    const u = clamp(curP / 5);
+    posV.copy(posCurve.getPoint(u)); lookV.copy(lookCurve.getPoint(u));
+    posV.z += (1 - sstep(0, .4, curOpen)) * .9 * (1 - clamp(curP));
+    mouse.x += (mouse.tx - mouse.x) * .04; mouse.y += (mouse.ty - mouse.y) * .04;
+    const par = reduce ? 0 : 1;
+    posV.x += mouse.x * .25 * par; posV.y -= mouse.y * .15 * par;
+    camera.position.copy(posV);
+    camera.lookAt(lookV);
+    sky.position.copy(camera.position);
+    stars.forEach((s) => s.position.copy(camera.position));
+
+    applySky(todAt(curP), time);
+
+    // papel picado drops in after the card, and sways
+    const g = sstep(.45, 1.15, curP);
+    garland.visible = g > .001;
+    garland.position.y = (1 - g) * 2.4;
+    if (garland.visible) {
+      const wind = .7 + .3 * Math.sin(time * .5);
+      flags.forEach((f) => {
+        f.m.rotation.x = Math.sin(time * 1.5 + f.seed) * .2 * wind * par;
+        const pa = f.m.geometry.attributes.position, b = f.base;
+        for (let i = 0; i < pa.count; i++) {
+          const bx = b[i * 3], by = b[i * 3 + 1], depth = -by / f.h;
+          pa.array[i * 3 + 2] = Math.sin(time * 2.4 + f.seed + bx * 5 + by * 3) * .045 * depth * par;
+        }
+        pa.needsUpdate = true;
+      });
+    }
+
+    // sand drifts on the wind
+    if (!reduce) {
+      const pa = dustGeo.attributes.position.array;
+      for (let i = 0; i < DUST; i++) {
+        pa[i * 3] += dt * (1.2 + dustS[i]) * (1 - night * .8);
+        pa[i * 3 + 1] += Math.sin(time * dustS[i] + i) * dt * (.15 + night * .3);
+        if (pa[i * 3] > 35) pa[i * 3] = -35;
+      }
+      dustGeo.attributes.position.needsUpdate = true;
+    }
+
+    renderer.render(scene, camera);
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+}
+</script>
+<!-- version picker: a small dot in the top-left corner, between the two designs -->
+<nav class="vpick" aria-label="Invitation version">
+  <button type="button" class="vpick__dot" id="vpickBtn" aria-expanded="false" aria-controls="vpickMenu" title="Versions">v1</button>
+  <div class="vpick__menu" id="vpickMenu" hidden>
+    <a href="wedding-invite-v1.html" aria-current="page">Version 1 · <em>Desert</em></a>
+    <a href="wedding-invite.html">Version 2 · <em>Embossed</em></a>
+  </div>
+</nav>
+<style>
+  .vpick { position: fixed; top: max(10px, env(safe-area-inset-top)); left: 10px; z-index: 50; font: 500 10px/1 "Cormorant Garamond", Georgia, serif; letter-spacing: .2em; text-transform: uppercase; }
+  .vpick__dot { width: 30px; height: 30px; border-radius: 50%; border: 1px solid rgba(255,240,232,.7); background: rgba(60,32,26,.3); color: rgba(255,244,238,.9); cursor: pointer; opacity: .6; transition: opacity .3s; font: 500 11px/1 Georgia, serif; letter-spacing: 0; text-transform: none; -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+  .vpick__dot:hover, .vpick__dot:focus-visible, .vpick__dot[aria-expanded="true"] { opacity: 1; }
+  .vpick__menu { margin-top: 8px; display: flex; flex-direction: column; min-width: 210px; padding: 6px; background: rgba(251,244,240,.97); border: 1px solid rgba(106,71,64,.25); border-radius: 12px; box-shadow: 0 14px 34px -14px rgba(60,30,25,.45); }
+  .vpick__menu[hidden] { display: none; }
+  .vpick__menu a { color: #5e3d37; text-decoration: none; padding: 11px 12px; border-radius: 8px; }
+  .vpick__menu a:hover { background: rgba(185,120,109,.12); }
+  .vpick__menu a[aria-current] { background: rgba(185,120,109,.2); }
+  .vpick__menu em { font-style: italic; text-transform: none; letter-spacing: 0; font-size: 15px; }
+</style>
+<script>
+(() => {
+  const b = document.getElementById("vpickBtn"), m = document.getElementById("vpickMenu");
+  const set = (open) => { m.hidden = !open; b.setAttribute("aria-expanded", String(open)); };
+  b.addEventListener("click", (e) => { e.stopPropagation(); set(m.hidden); });
+  document.addEventListener("click", (e) => { if (!e.target.closest(".vpick")) set(false); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") set(false); });
+})();
+</script>
+</body>
+</html>
