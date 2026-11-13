@@ -119,6 +119,19 @@ body.is-dragging,body.is-dragging *{cursor:grabbing!important;user-select:none!i
 .ggrid .drop-before{box-shadow:-5px 0 0 var(--yellow)!important}
 .ggrid .drop-after{box-shadow:5px 0 0 var(--yellow)!important}
 .drop-in{outline:2px dashed var(--yellow);outline-offset:-2px}
+.rich-box{position:relative;display:block;background:var(--white);border:1px solid #cfc7c7;border-radius:0;padding:8px 10px;color:var(--text);font:inherit;line-height:1.45;white-space:pre-wrap;overflow-wrap:anywhere;min-width:0;text-align:left;cursor:text;outline:none}
+.rich-box:focus{outline:2px solid var(--black);outline-offset:-1px}
+.rich-box.empty::before{content:attr(data-placeholder);color:#9a9a9a;pointer-events:none;position:absolute}
+.rich-box b,.rich-box strong{font-weight:700}
+#dlg .rich-box{width:100%;min-height:84px}
+#dlg .cm-new .rich-box,#dlg .cw-fields .rich-box{min-height:42px}
+.addtask .rich-box{border:0;background:transparent;padding:0;font-size:13px;color:var(--g6);min-height:20px}
+.addtask .rich-box:focus{outline:0}
+.addtask:not(.open) .rich-box{display:none}
+.bigin .rich-box{flex:1;border:0;background:transparent;padding:14px 16px;font-size:17px;font-weight:500;min-height:0}   /* under 600, or the whole line would read as bold */
+.bigin .rich-box:focus{outline:0}
+.greview .rich-box{min-height:60px}
+.tb .n{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}   /* long details: a three-line preview; the task window shows it all */
 .addtask{display:flex;align-items:flex-start;gap:12px;margin:4px 10px 6px;padding:8px 10px;cursor:text}
 .addtask .af{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
 .addtask textarea{border:0;background:transparent;outline:none;font-size:13px;color:var(--g6);min-width:0;padding:0;resize:none;overflow:hidden;min-height:20px;line-height:1.45}
@@ -436,7 +449,7 @@ textarea[data-grow]{min-height:40px!important;height:40px;overflow:hidden;resize
 
 /* iPhone zooms into any text box under 16px when you tap it; on touch screens every box is 16px so the page stays put */
 @media (pointer: coarse){
-  input:not([type=range]):not([type=checkbox]):not([type=radio]):not(.cw-title),textarea:not(.cw-title),select{font-size:16px!important}
+  input:not([type=range]):not([type=checkbox]):not([type=radio]):not(.cw-title),textarea:not(.cw-title),select,.rich-box{font-size:16px!important}
   .addtask .aa span{visibility:hidden}   /* no keyboard shortcuts on a phone: the Add button does it */
 }
 </style>
@@ -960,6 +973,237 @@ function dateCtl(v, attr, clr, done) {
 function money(v) { var n = Number(v); return '$' + n.toLocaleString('en-CA', { minimumFractionDigits: n % 1 ? 2 : 0, maximumFractionDigits: 2 }); }
 function shortCard(t) { return /^\d{6}\S* · /.test(t) ? t.replace(/^\S+ · /, '') : t; }
 
+/* ============================================================
+   Text — the same habits as Project Phases, in every box of the hub
+   (module copied from Project Phases unchanged, minus its client view):
+   ⌘B / Ctrl+B bold (looks bold as you type), a dash and a space starts a
+   bullet, Enter keeps the list going, Tab / Shift+Tab indent. Stored as
+   plain text with **bold** markers and "• " bullets.
+   ============================================================ */
+// escaped text with **bold** shown as bold
+function fmt(s) {
+  return esc(s).replace(/\*\*([^\s*](?:[^*\n]*?[^\s*])?)\*\*/g, '<strong>$1</strong>');
+}
+// the same text without the markers — titles, CSV, search, the tab title
+function plain(s) { return String(s == null ? '' : s).replace(/\*\*([^*\n]+?)\*\*/g, '$1'); }
+function lineStart(v, i) { return v.lastIndexOf('\n', i - 1) + 1; }
+
+try { document.execCommand('styleWithCSS', false, false); } catch (e) {}
+
+/* What a box holds, in order: text pieces (bold or not) and line breaks.
+   A <br> that is the very last thing is only there to hold an empty last
+   line open, so it doesn't count. Browsers sometimes wrap lines in <div>s;
+   those count as a line break before them. */
+function richItems(box) {
+  var items = [];
+  (function walk(n) {
+    for (var c = n.firstChild; c; c = c.nextSibling) {
+      if (c.nodeType === 3) { if (c.data) items.push({ node: c, text: c.data }); }
+      else if (c.nodeName === 'BR') items.push({ node: c, br: true });
+      else if (c.nodeType === 1) {
+        if (/^(DIV|P|LI)$/.test(c.nodeName) && items.length && !items[items.length - 1].br) items.push({ block: c, br: true });
+        walk(c);
+      }
+    }
+  })(box);
+  if (items.length && items[items.length - 1].node && items[items.length - 1].br) items.pop();
+  return items;
+}
+function isBoldNode(t) { var w = getComputedStyle(t.parentNode).fontWeight; return w === 'bold' || +w >= 600; }
+function richVisible(box) { return richItems(box).map(function (it) { return it.br ? '\n' : it.text; }).join(''); }
+// the stored form: **bold** around bold runs, spaces kept outside the markers
+function richValue(box) {
+  var lines = [[]];
+  richItems(box).forEach(function (it) {
+    if (it.br) { lines.push([]); return; }
+    var b = isBoldNode(it.node);
+    it.text.split('\n').forEach(function (piece, i) {        // some browsers type line breaks as text
+      if (i) lines.push([]);
+      var line = lines[lines.length - 1], last = line[line.length - 1];
+      if (!piece) return;
+      if (last && last.b === b) last.t += piece; else line.push({ t: piece, b: b });
+    });
+  });
+  return lines.map(function (line) {
+    return line.map(function (r) {
+      if (!r.b) return r.t;
+      var m = r.t.match(/^(\s*)([\s\S]*?)(\s*)$/);
+      return m[1] + (m[2] ? '**' + m[2] + '**' : '') + m[3];
+    }).join('');
+  }).join('\n');
+}
+function richSet(box, v) {
+  v = String(v == null ? '' : v);
+  box.innerHTML = fmt(v).replace(/\n/g, '<br>') + (/\n$/.test(v) ? '<br>' : '');
+  richEmpty(box);
+}
+function richEmpty(box) { box.classList.toggle('empty', !richVisible(box)); }
+
+// where the caret is, counted in visible characters
+function richCaret(box, end) {
+  var sel = getSelection();
+  if (!sel.rangeCount || !box.contains(sel.anchorNode)) {
+    // focus moved on (a button was pressed): the last place the caret was in this box
+    return box.richLast ? box.richLast[end ? 1 : 0] : richVisible(box).length;
+  }
+  var r = sel.getRangeAt(0), probe = document.createRange();
+  probe.setStart(end ? r.endContainer : r.startContainer, end ? r.endOffset : r.startOffset);
+  var n = 0, items = richItems(box);
+  for (var i = 0; i < items.length; i++) {
+    var it = items[i];
+    if (it.node === probe.startContainer) return n + probe.startOffset;
+    var after = it.br ? (it.block ? [it.block, 0] : [it.node.parentNode, Array.prototype.indexOf.call(it.node.parentNode.childNodes, it.node) + 1])
+                      : [it.node, it.text.length];
+    if (probe.comparePoint(after[0], after[1]) > 0) return n;    // this piece ends past the caret
+    n += it.br ? 1 : it.text.length;
+  }
+  return n;
+}
+// a visible-character position → a spot in the DOM
+function richPoint(box, pos) {
+  var n = 0, items = richItems(box), prev = null;
+  for (var i = 0; i < items.length; i++) {
+    var it = items[i];
+    if (!it.br && pos <= n + it.text.length) return [it.node, pos - n];
+    if (it.br && pos === n) {
+      if (prev && !prev.br) return [prev.node, prev.text.length];
+      if (it.node) return [it.node.parentNode, Array.prototype.indexOf.call(it.node.parentNode.childNodes, it.node)];
+      return [it.block, 0];
+    }
+    n += it.br ? 1 : it.text.length;
+    prev = it;
+  }
+  return [box, box.childNodes.length - (box.lastChild && box.lastChild.nodeName === 'BR' && items.length ? 1 : 0)];
+}
+function richSelect(box, a, b) {
+  var len = richVisible(box).length;
+  a = Math.max(0, Math.min(a, len)); b = Math.max(0, Math.min(b == null ? a : b, len));
+  var r = document.createRange(), p = richPoint(box, a), q = richPoint(box, b);
+  r.setStart(p[0], p[1]); r.setEnd(q[0], q[1]);
+  var sel = getSelection(); sel.removeAllRanges(); sel.addRange(r);
+}
+function richInsert(text) { document.execCommand('insertText', false, text); }
+
+/* Lists, as in the Notes tool. Each change goes through execCommand so
+   ⌘Z undoes it. Returns true when it handled the key. */
+function richListKey(box, ev) {
+  var v = richVisible(box), c = richCaret(box), ce = richCaret(box, true);
+  var ls = lineStart(v, c), le = v.indexOf('\n', c); if (le < 0) le = v.length;
+  var before = v.slice(ls, c), line = v.slice(ls, le);
+  var m = line.match(/^(\s*)(• |(\d+)([.)]) )(.*)$/);
+  if (ev.key === 'Enter') {
+    if (m && c === ce && !m[5].trim()) { richSelect(box, ls, le); document.execCommand('delete'); return true; }  // empty item ends the list
+    document.execCommand('insertLineBreak');
+    if (m && c >= ls + m[1].length + m[2].length) richInsert(m[1] + (m[3] ? (parseInt(m[3], 10) + 1) + m[4] + ' ' : '• '));
+    return true;
+  }
+  if (ev.key === 'Tab' && m) {
+    var keep = ce - c;
+    if (ev.shiftKey) {
+      var cut = Math.min(2, m[1].length);
+      if (cut) { richSelect(box, ls, ls + cut); document.execCommand('delete'); richSelect(box, c - cut, c - cut + keep); }
+    } else {
+      richSelect(box, ls); richInsert('  '); richSelect(box, c + 2, c + 2 + keep);
+    }
+    return true;
+  }
+  if (ev.key === 'Backspace' && c === ce && /^\s*• $/.test(before)) {
+    richSelect(box, c - 2, c); document.execCommand('delete'); return true;
+  }
+  return false;
+}
+function richAfterInput(box, ev) {
+  if (ev.inputType !== 'insertText' || ev.data !== ' ' || box.classList.contains('single')) return;
+  var v = richVisible(box), c = richCaret(box), ls = lineStart(v, c);
+  if (/^\s*- $/.test(v.slice(ls, c))) { richSelect(box, c - 2, c); richInsert('• '); }
+}
+
+var NATIVE = {
+  TEXTAREA: Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value'),
+  INPUT: Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')
+};
+function richify(el) {
+  if (el.richBox) return;
+  var multi = el.tagName === 'TEXTAREA', init = NATIVE[el.tagName].get.call(el);
+  var box = document.createElement('div');
+  box.className = 'rich-box ' + (multi ? 'multi' : 'single') + (el.className ? ' ' + el.className : '');
+  box.contentEditable = 'true';
+  box.setAttribute('role', 'textbox');
+  if (multi) box.setAttribute('aria-multiline', 'true');
+  box.setAttribute('aria-label', el.getAttribute('aria-label') || (el.labels && el.labels[0] ? el.labels[0].textContent : '') || el.placeholder || '');
+  box.setAttribute('data-placeholder', el.placeholder || '');
+  box.setAttribute('data-for', el.id || '');
+  if (el.getAttribute('style')) box.setAttribute('style', el.getAttribute('style'));
+  if (multi && el.rows) box.style.minHeight = (el.rows * 1.45 + 1.1) + 'em';
+  box.spellcheck = true;
+  el.parentNode.insertBefore(box, el.nextSibling);
+  el.hidden = true;
+  el.style.display = 'none';
+  el.richBox = box;
+  richSet(box, init);
+
+  Object.defineProperty(el, 'value', { configurable: true,
+    get: function () { return richValue(box); },
+    set: function (v) { richSet(box, v); } });
+  Object.defineProperty(el, 'selectionStart', { configurable: true, get: function () { return richCaret(box); } });
+  Object.defineProperty(el, 'selectionEnd', { configurable: true, get: function () { return richCaret(box, true); } });
+  el.focus = function () { box.focus(); };
+  el.select = function () { box.focus(); richSelect(box, 0, richVisible(box).length); };
+  el.setSelectionRange = function (a, b) { box.focus(); richSelect(box, a, b); };
+  el.richSelection = function () { return { text: richVisible(box), start: richCaret(box), end: richCaret(box, true) }; };
+
+  box.addEventListener('input', function (ev) {
+    richAfterInput(box, ev);
+    richEmpty(box);
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  box.addEventListener('keydown', function (ev) {
+    // the original's own key handlers (Enter to rename, ⌘Enter to add…) go first
+    var fwd = new KeyboardEvent('keydown', { key: ev.key, code: ev.code, metaKey: ev.metaKey, ctrlKey: ev.ctrlKey,
+                                             shiftKey: ev.shiftKey, altKey: ev.altKey, bubbles: false, cancelable: true });
+    el.dispatchEvent(fwd);
+    if (fwd.defaultPrevented) { ev.preventDefault(); return; }
+    if ((ev.metaKey || ev.ctrlKey) && !ev.altKey && !ev.shiftKey && /^[bB]$/.test(ev.key)) {
+      ev.preventDefault(); document.execCommand('bold'); return;
+    }
+    if ((ev.metaKey || ev.ctrlKey) && /^[iIuU]$/.test(ev.key)) { ev.preventDefault(); return; }   // bold is the only style
+    if (ev.key === 'Enter' && !ev.metaKey && !ev.ctrlKey) {
+      ev.preventDefault();
+      if (!multi) { if (el.form) el.form.requestSubmit(); return; }       // as a plain input would
+      richListKey(box, ev);
+      return;
+    }
+    if (multi && (ev.key === 'Tab' || ev.key === 'Backspace') && !ev.metaKey && !ev.ctrlKey && !ev.altKey) {
+      if (richListKey(box, ev)) ev.preventDefault();
+    }
+  });
+  box.addEventListener('blur', function () { el.dispatchEvent(new Event('blur')); });
+  // pasted text arrives plain (line breaks kept in a multi-line box)
+  box.addEventListener('paste', function (ev) {
+    ev.preventDefault();
+    var t = (ev.clipboardData && ev.clipboardData.getData('text/plain') || '').replace(/\r/g, '');
+    if (!multi) { richInsert(t.replace(/\n+/g, ' ')); return; }
+    t.split('\n').forEach(function (l, i) { if (i) document.execCommand('insertLineBreak'); if (l) richInsert(l); });
+  });
+  box.addEventListener('drop', function (ev) { ev.preventDefault(); });
+  return box;
+}
+function richifyIn(root) {
+  Array.prototype.forEach.call((root || document).querySelectorAll('textarea:not(.cw-title):not([data-plain])'), richify);
+}
+document.addEventListener('selectionchange', function () {
+  var sel = getSelection(), n = sel.anchorNode;
+  var box = n && (n.nodeType === 1 ? n : n.parentNode).closest && (n.nodeType === 1 ? n : n.parentNode).closest('.rich-box');
+  if (box) { box.richLast = null; box.richLast = [richCaret(box), richCaret(box, true)]; }
+});
+// a <label for=…> still puts you in the box
+document.addEventListener('click', function (ev) {
+  var lab = ev.target.closest && ev.target.closest('label[for]');
+  var el = lab && document.getElementById(lab.getAttribute('for'));
+  if (el && el.richBox) el.richBox.focus();
+});
+
+
 /* ============================================================ hub state */
 function defaultHub() {
   return { lists: [{ id: 'l1', name: 'Tasks' }], tasks: [], brain: [], goals: [], checks: {}, pins: {}, due: {}, stage: {}, show: {}, qbefore: {} };
@@ -1035,7 +1279,7 @@ function fieldText(f, v) {
   if (f.type === 'date') return isDate(v) ? niceDate(v) : String(v);
   if (f.type === 'money') return isNaN(Number(v)) ? String(v) : money(v);
   if (f.type === 'number') return isNaN(Number(v)) ? String(v) : Number(v).toLocaleString('en-CA') + ' ' + String(f.name).toLowerCase();
-  if (f.type === 'multi') { var l = String(v).split('\n')[0]; return l.length > 40 ? l.slice(0, 39) + '…' : l + (String(v).indexOf('\n') > -1 ? '…' : ''); }
+  if (f.type === 'multi') { var l = plain(String(v)).split('\n')[0]; return l.length > 40 ? l.slice(0, 39) + '…' : l + (String(v).indexOf('\n') > -1 ? '…' : ''); }
   return String(v);
 }
 /* the box for a card field in the card window — the same kinds as in Pipelines */
@@ -1111,7 +1355,7 @@ function toast(msg, label, fn) {
   el.classList.add('on'); clearTimeout(toastTimer); toastTimer = setTimeout(function () { el.classList.remove('on'); }, 4500);
 }
 var dlgKind = null, cardOpen = null;   // the card window remembers itself so small dialogs can go back to it
-function openDlg(html, kind) { dlgKind = kind || null; var box = $('dlg-box'); box.innerHTML = html; box.classList.toggle('wide', !!kind); $('dlg').classList.add('on'); }
+function openDlg(html, kind) { dlgKind = kind || null; var box = $('dlg-box'); box.innerHTML = html; box.classList.toggle('wide', !!kind); $('dlg').classList.add('on'); richifyIn(box); }
 function closeDlg() { var k = dlgKind; $('dlg').classList.remove('on'); dlgKind = null; if (k === 'card') cardOpen = null; else if (cardOpen) cardDlg(cardOpen.pl, cardOpen.c); }
 function shutDlg() { $('dlg').classList.remove('on'); dlgKind = null; cardOpen = null; }
 $('dlg').addEventListener('click', function (e) { if (e.target === $('dlg')) closeDlg(); });
@@ -1142,6 +1386,7 @@ function render() {
   $('l-goals').innerHTML = checkDue() ? '<span class="dot" title="Quarter check due"></span>' : 'this year';
   $('c-brain').textContent = S.brain.filter(function (b) { return b.box === 'fresh'; }).length;
   ({ today: renderToday, prod: renderProd, big: renderBig, goals: renderGoals, brain: renderBrain })[U.tab]();
+  richifyIn($('v-' + U.tab));
   var f = document.querySelector('.view.on .flash'); if (f) f.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
   flashId = null;
   if (dlgKind === 'card' && cardOpen && $('dlg').classList.contains('on')) {
@@ -1163,7 +1408,7 @@ function taskRow(t) {
   var chips = (r.done ? '' : dueChip(r.due, r.repeat)) + (r.tag ? '<button class="tag ' + r.tag.cls + '" data-go="' + t.id + '">' + esc(r.tag.label) + (r.tag.go ? ' ↗' : '') + '</button>' : '');
   return '<div class="task' + (r.done ? ' done' : '') + (flashId === t.id ? ' flash' : '') + '" data-edit="' + t.id + '">'
     + '<button class="circ' + (r.done ? ' on' : '') + '" data-tick="' + t.id + '" aria-label="Done">' + (r.done ? '✓' : '') + '</button>'
-    + '<div class="tb"><div class="t">' + esc(r.title) + '</div>' + (t.notes && !r.done ? '<div class="n">' + esc(t.notes) + '</div>' : '')
+    + '<div class="tb"><div class="t">' + fmt(r.title) + '</div>' + (t.notes && !r.done ? '<div class="n">' + fmt(t.notes) + '</div>' : '')
     + (chips && !r.done ? '<div class="chips">' + chips + '</div>' : '') + (r.back ? '<div class="chips"><span class="due">⟳ back ' + new Date(r.back + 'T12:00').toLocaleDateString('en-CA', { weekday: 'short', month: 'short', day: 'numeric' }) + '</span></div>' : '') + '</div></div>';
 }
 function pullItems() {
@@ -1192,7 +1437,7 @@ function pullItems() {
 function renderToday() {
   // keep a half-typed new task (title and details) through a redraw
   var drafts = {}, act = document.activeElement;
-  document.querySelectorAll('#v-today [data-addto]').forEach(function (f) { var a = f.querySelector('.at'), d = f.querySelector('.ad'); if (a.value || d.value || f.contains(act)) drafts[f.getAttribute('data-addto')] = { t: a.value, d: d.value, f: act === a ? 'at' : act === d ? 'ad' : null }; });
+  document.querySelectorAll('#v-today [data-addto]').forEach(function (f) { var a = f.querySelector('.at'), d = f.querySelector('textarea.ad'); if (a.value || d.value || f.contains(act)) drafts[f.getAttribute('data-addto')] = { t: a.value, d: d.value, f: act === a ? 'at' : (act === d || act === d.richBox) ? 'ad' : null }; });
   var cols = S.lists.map(function (l) {
     var all = S.tasks.filter(function (t) { return t.list === l.id && resolve(t); });
     var open = all.filter(function (t) { return !resolve(t).done; }), done = all.filter(function (t) { return resolve(t).done; }), isOpen = !!U.open[l.id];
@@ -1218,10 +1463,11 @@ function renderToday() {
       + '<div style="height:10px"></div></div>';
   } else pull = '<button class="newlist" data-showpull>Show “Pull in”</button>';
   $('v-today').innerHTML = '<div class="lists">' + cols + '<button class="newlist" data-newlist>+ New list</button>' + pull + '</div>';
+  richifyIn($('v-today'));
   Object.keys(drafts).forEach(function (id) {
     var f = document.querySelector('#v-today [data-addto="' + id + '"]'); if (!f) return;
-    var x = drafts[id]; f.querySelector('.at').value = x.t; f.querySelector('.ad').value = x.d; f.classList.add('open'); growAd(f.querySelector('.ad'));
-    if (x.f) f.querySelector('.' + x.f).focus();
+    var x = drafts[id]; f.querySelector('.at').value = x.t; f.querySelector('textarea.ad').value = x.d; f.classList.add('open');
+    if (x.f) f.querySelector(x.f === 'at' ? '.at' : 'textarea.ad').focus();
   });
 }
 function nextDue(due, rep) {
@@ -1363,7 +1609,7 @@ function cardDlg(plid, cid) {
     })()
     + '<div class="sec-h">Comments' + (comments.length ? ' <span class="pill">' + comments.length + '</span>' : '') + '</div>'
     + '<div class="cm-new"><textarea id="cw-cm-in" data-grow rows="1" placeholder="Write a comment…"></textarea><div class="row"><span>Dated today · ⌘ Enter to post</span><button class="b y" id="cw-cm-post" type="button">Add comment</button></div></div>'
-    + (comments.length ? '<div class="cm-list">' + comments.map(function (m) { return '<div class="cm-item"><div class="cd">' + (isDate(m.at) ? niceDate(m.at, true) : '') + '<button data-cmdel="' + m.id + '" title="Delete comment">×</button></div><div class="ct">' + esc(m.text) + '</div></div>'; }).join('') + '</div>' : '')
+    + (comments.length ? '<div class="cm-list">' + comments.map(function (m) { return '<div class="cm-item"><div class="cd">' + (isDate(m.at) ? niceDate(m.at, true) : '') + '<button data-cmdel="' + m.id + '" title="Delete comment">×</button></div><div class="ct">' + fmt(m.text) + '</div></div>'; }).join('') + '</div>' : '')
     + '</div><div class="foot"><button class="b r" data-cdel="' + c.id + '">Delete</button><button class="amb" data-menu="c:' + c.id + '" style="margin-left:0;padding:7px 12px;font-size:11px;letter-spacing:.06em">ACTIONS ⋯</button><span class="sp"></span><button class="b y" data-close>Done</button></div>', 'card');
   var box = $('dlg-box'); grow(box);
   var ttl = $('cw-title');
@@ -1484,7 +1730,7 @@ function renderGoals() {
       + (!qs.length && Y >= now && !g.result ? '<div class="gwarn">No quest yet. Nothing is moving this goal forward.</div>' : '')
       + (Y >= now && !review ? '<div class="gf"><button class="b" data-glink="' + g.id + '">+ Link a quest</button><button class="b ghost" data-gnewq="' + g.id + '">+ New quest for it</button></div>' : '')
       + (review ? '<div class="greview"><div class="rb">' + Object.keys(res).map(function (k) { return '<button class="' + (g.result === k ? 'on ' + k : '') + '" data-gres="' + g.id + '" data-r="' + k + '">' + res[k] + '</button>'; }).join('') + '</div><textarea data-gnote="' + g.id + '" placeholder="What did you learn?">' + esc(g.note) + '</textarea></div>'
-        : g.note ? '<div class="gnote">' + esc(g.note) + '</div>' : '')
+        : g.note ? '<div class="gnote">' + fmt(g.note) + '</div>' : '')
       + '</div>';
   };
   var cnt = function (k) { return list.filter(function (g) { return g.result === k; }).length; }, unrev = list.length - cnt('hit') - cnt('partly') - cnt('missed');
@@ -1508,7 +1754,7 @@ function renderBrain() {
   var box = U.brainBox, f = U.brainFilter, sort = U.brainSort, mode = box === 'fresh' ? U.brainView : 'cards';
   var qy = (U.brainQ || '').trim().toLowerCase();
   var match = function (b) { return !qy || [b.text, b.note, b.why].join(' ').toLowerCase().indexOf(qy) > -1; };
-  var hl = function (t) { var e = esc(t); if (!qy) return e; var k = esc(qy).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); return e.replace(new RegExp(k, 'gi'), function (m) { return '<mark>' + m + '</mark>'; }); };
+  var hl = function (t) { var e = esc(t).replace(/\*\*([^\s*](?:[^*\n]*?[^\s*])?)\*\*/g, '<strong>$1</strong>'); if (!qy) return e; var k = esc(qy).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); return e.replace(new RegExp(k, 'gi'), function (m) { return '<mark>' + m + '</mark>'; }); };
   var inBox = function (b) { return b.box === box; }, boxN = function (k) { return S.brain.filter(function (b) { return b.box === k; }).length; };
   var list = S.brain.filter(inBox).filter(match).filter(function (b) { return f === 'all' || b.spark; })
     .sort(function (a, b) { return sort === 'score' ? ((b.score == null ? -1 : b.score) - (a.score == null ? -1 : a.score)) : ((b.spark - a.spark) || b.at.localeCompare(a.at)); });
@@ -1616,7 +1862,7 @@ addEventListener('resize', closeMenu);
 /* ============================================================ clicks */
 document.addEventListener('submit', function (e) {
   var f = e.target.closest('[data-addto]'); if (!f) return;
-  e.preventDefault(); var inp = f.querySelector('.at'), det = f.querySelector('.ad'), v = inp.value.trim(); if (!v) { inp.focus(); return; }
+  e.preventDefault(); var inp = f.querySelector('.at'), det = f.querySelector('textarea.ad'), v = inp.value.trim(); if (!v) { inp.focus(); return; }
   var t = { id: uid('t'), list: f.getAttribute('data-addto'), title: v, notes: det.value.replace(/\s+$/, ''), due: null, repeat: null, done: false, doneAt: null, ref: null, at: today() };
   inp.value = ''; det.value = '';
   S.tasks.unshift(t); flashId = t.id; commit();
@@ -1627,14 +1873,15 @@ function growAd(t) { t.style.height = 'auto'; t.style.height = t.scrollHeight + 
 document.addEventListener('focusin', function (e) { var f = e.target.closest && e.target.closest('.addtask'); if (f) f.classList.add('open'); });
 document.addEventListener('focusout', function (e) {
   var f = e.target.closest && e.target.closest('.addtask'); if (!f) return;
-  setTimeout(function () { if (!f.contains(document.activeElement) && !f.querySelector('.at').value && !f.querySelector('.ad').value) f.classList.remove('open'); }, 120);
+  setTimeout(function () { if (!f.contains(document.activeElement) && !f.querySelector('.at').value && !f.querySelector('textarea.ad').value) f.classList.remove('open'); }, 120);
 });
 document.addEventListener('input', function (e) { if (e.target.matches && e.target.matches('.addtask .ad')) growAd(e.target); });
 document.addEventListener('keydown', function (e) {
   if (!e.target.matches) return;
-  if (e.target.matches('.addtask .at') && e.key === 'Enter') { e.preventDefault(); if (e.metaKey || e.ctrlKey) e.target.form.requestSubmit(); else e.target.form.querySelector('.ad').focus(); }
-  else if (e.target.matches('.addtask .ad') && e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); e.target.form.requestSubmit(); }
-  else if (e.target.matches('.addtask .at, .addtask .ad') && e.key === 'Escape') { var f = e.target.form; f.querySelector('.at').value = ''; f.querySelector('.ad').value = ''; f.classList.remove('open'); e.target.blur(); }
+  var form = e.target.closest && e.target.closest('.addtask');
+  if (e.target.matches('.addtask .at') && e.key === 'Enter') { e.preventDefault(); if (e.metaKey || e.ctrlKey) form.requestSubmit(); else form.querySelector('textarea.ad').focus(); }
+  else if (e.target.matches('.addtask .ad') && e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); form.requestSubmit(); }
+  else if (e.target.matches('.addtask .at, .addtask .ad') && e.key === 'Escape') { form.querySelector('.at').value = ''; form.querySelector('textarea.ad').value = ''; form.classList.remove('open'); e.target.blur(); }
 });
 document.addEventListener('click', function (e) {
   if (!e.target.closest('[data-menu]')) closeMenu();

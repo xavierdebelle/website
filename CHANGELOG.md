@@ -5,6 +5,42 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v156 — 2026-11-12
+
+**What's new** · Update · [tools/production-hub.html]
+### Bold, bullets and short previews in the Production Hub
+- Every text box in the hub now works like Project Phases: ⌘B (Ctrl+B)
+  makes text bold, and you see it bold as you type. A dash and a space
+  starts a bullet list, Enter keeps it going, and Enter on an empty bullet
+  ends it.
+- In Today, long task details show a three-line preview. Open the task to
+  read all of it.
+
+**Production Hub — `tools/production-hub.html`, source `production_hub_v8.html`**
+- The rich text module from Project Phases (`fmt`, `plain`, `richify` and
+  helpers), copied unchanged except for its client-view checks. Every
+  textarea becomes a formatting box after each redraw and in every dialog:
+  task details (add box and task window), Brainstorm capture and notes,
+  goal review notes, card comments and multi-line card fields (not the card
+  title). Stored as plain text with `**bold**` and "• " bullets, so sync and
+  the other apps are unchanged.
+- Shown bold wherever it's displayed: task titles and details, Brainstorm
+  titles and notes, comments, goal notes; card previews strip the markers.
+- Today: `.tb .n` clamps to three lines.
+- The Brainstorm box drops to weight 500 (at 600+ the module reads
+  everything as bold). Touch screens get 16px in the boxes too (no zoom).
+
+**Pipelines — `tools/pipelines.html`, source `pipelines_v8.html`**
+- Comments show `**bold**` as bold (the hub can now write it).
+
+**Verified** (mock database, desktop) — real keystrokes "- one ⏎ two" →
+"• one\n• two"; ⌘B on a selection stores `**…**` and shows bold; 12-line
+details clamp to three lines and open in full; Brainstorm Enter still saves,
+with only the bold part bold; card comment and multi-line field round-trip
+their markers into the Pipelines copy. No console errors.
+
+---
+
 ## v155 — 2026-11-12
 
 **What's new** · Fix · [tools/wedding-invite.html]

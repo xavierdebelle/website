@@ -570,7 +570,7 @@ function cardDlg(cid) {
     }).join('') + '</div>' : '<p class="fnone">Nothing attached. Files go to your Google Drive, in Pipelines / ' + esc(pl.name) + ' — private unless you share one.</p>')
     + '<div class="sec-h">Comments' + (c.comments.length ? ' <span class="pill">' + c.comments.length + '</span>' : '') + '</div>'
     + '<div class="cm-new"><textarea id="cw-cm-in" data-grow rows="1" placeholder="Write a comment…"></textarea><div class="row"><span>Dated today · ⌘ Enter to post</span><button class="b y" id="cw-cm-post" type="button">Add comment</button></div></div>'
-    + (comments.length ? '<div class="cm-list">' + comments.map(function (m) { return '<div class="cm-item"><div class="cd">' + niceDate(m.at, true) + '<button data-cdel="' + m.id + '" title="Delete comment">×</button></div><div class="ct">' + esc(m.text) + '</div></div>'; }).join('') + '</div>' : '')
+    + (comments.length ? '<div class="cm-list">' + comments.map(function (m) { return '<div class="cm-item"><div class="cd">' + niceDate(m.at, true) + '<button data-cdel="' + m.id + '" title="Delete comment">×</button></div><div class="ct">' + esc(m.text).replace(/\*\*([^\s*](?:[^*\n]*?[^\s*])?)\*\*/g, '<strong>$1</strong>') + '</div></div>'; }).join('') + '</div>' : '')
     + '</div><div class="foot"><button class="b r" data-delcard="' + c.id + '">Delete</button><button class="amb" data-menu="' + c.id + '" style="margin-left:0;padding:7px 12px;font-size:11px;letter-spacing:.06em">ACTIONS ⋯</button><span class="sp"></span><button class="b y" data-close>Done</button></div>', 'card');
 
   var box = $('dlg-box');
