@@ -5,6 +5,23 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v154 — 2026-11-12
+
+**What's new** · The Biz · [tools.html#debelle]
+### Daily Brief
+The morning in one screen: the day's agenda, the emails that need me, open
+tasks and the week ahead, saved every weekday at seven. Built with Claude,
+and private: it opens for me only.
+
+**Tools page — `tools.html`**
+- New card in The Biz linking to the Daily Brief, a private Claude artifact
+  (https://claude.ai/artifact/UHa5xKPUuubr7G2RcA3mhu) that reads Xavier's
+  calendar, Gmail and Production Hub tasks. Left private on purpose (it shows
+  his inbox); visitors who click get Claude's no-access page, so the card is
+  tagged "Private". Opens in a new tab like every tool.
+
+---
+
 ## v153 — 2026-11-12
 
 **Memory Map v11 — `tools/memory-map.html`** (Personal, owner-only; no "What's new" block, private)
