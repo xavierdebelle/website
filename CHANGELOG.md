@@ -5,6 +5,36 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v161 — 2026-11-16
+
+**What's new** · New version · [tools/wedding-invite-v4.html]
+### Wedding Invite, version 4
+Version 2's embossed invitation in version 3's black ink and ivory: the
+same carved doors, curtains, little chapel and garlands, now in ivory
+relief with white flowers, tall capitals and a script ampersand. The
+papel picado flags sway again, and the stage now fades softly into the
+welcome instead of ending in a hard line.
+
+**Wedding Invite v4 — `tools/wedding-invite-v4.html`, source `Tools files/Art/wedding-invite-v4.html`** (Art, companion of `wedding-invite.html`)
+- Built from v2 (v157 structure: baked reliefs in their boxes + live hero
+  in the sticky pin). Palette: ivory #fbf8f2 relief, warm grey doors,
+  ink #1c1a17 accents and seal, white florals with ink centres, charcoal
+  leaves, paper #e8e1d6. Type: Instrument Serif caps, Pinyon Script
+  ampersands/names, Cormorant Garamond.
+- Flags: the string is one relief; each flag is its own baked canvas swung
+  by a CSS keyframe (`perspective rotateX` + slight `rotate`, staggered
+  durations/delays) — compositor-only, so it stays smooth on phones. No
+  sway with reduced motion.
+- Stage edge: `#scene` masked to fade over its last 110px; the garland
+  overlaps it by 56px.
+- Version picker on all four pages lists v1–v4. Main link still opens v2.
+
+**Verified** — local preview at 375×812 and 1280×800: doors, curtains,
+names, every relief, 20 swaying flags, clock, desert; stage-to-welcome
+fade; no console errors.
+
+---
+
 ## v160 — 2026-11-16
 
 **What's new** · New version · [tools/wedding-invite-v3.html]
