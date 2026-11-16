@@ -436,6 +436,26 @@ a.pay-opt-btn{display:block;text-align:center;text-decoration:none;margin-top:0.
 .field label.pay-check{display:flex;align-items:center;gap:0.6rem;font-size:0.95rem;color:var(--olive-dark);font-weight:500;cursor:pointer;text-transform:none;letter-spacing:normal;margin-bottom:0}
 .field .pay-check input{width:20px;height:20px;flex:none;padding:0;margin:0;-webkit-appearance:checkbox;appearance:auto;accent-color:var(--olive);cursor:pointer}
 .pay-sub{margin:0.5rem 0 0 1.6rem}
+/* v6: the admin's "Add guest" activity rows. They sit inside a .field, whose rule turns
+   every input into a full-width text box with no native look, which hid the tick. */
+.m-act-row{display:flex;align-items:center;gap:0.65rem;padding:0.55rem 0.5rem;margin:0 -0.5rem;border-bottom:0.5px solid var(--sand-dark);border-radius:6px;font-size:0.9rem;transition:background 0.15s}
+.m-act-row.on{background:var(--olive-pale)}
+.field .m-act-row input.m-act{width:20px;height:20px;flex:none;padding:0;margin:0;-webkit-appearance:checkbox;appearance:auto;accent-color:var(--olive);cursor:pointer}
+.field .m-act-row label{flex:1;min-width:0;display:block;margin:0;font-size:0.9rem;font-weight:400;text-transform:none;letter-spacing:normal;color:var(--text);cursor:pointer;overflow-wrap:anywhere}
+.m-act-row .m-act-price{color:var(--text-muted);font-size:0.78rem;white-space:nowrap}
+.field .m-act-row input.m-spots{width:58px;flex:none;padding:0.35rem 0.45rem;border-radius:6px;font-size:0.9rem;text-align:center}
+.m-act-row .m-spots-lbl{font-size:0.75rem;color:var(--text-muted);flex:none}
+/* v6: sign-ups closed */
+.closed-note{display:none;background:var(--olive-pale);border:0.5px solid var(--olive-light);border-radius:var(--radius);padding:0.9rem 1rem;font-size:0.9rem;line-height:1.55;color:var(--olive-dark);margin-top:1rem}
+.closed-note strong{display:block;font-weight:500;margin-bottom:0.15rem}
+body.signups-closed .closed-note{display:block}
+body.signups-closed #guest-form,body.signups-closed #rsvp-form,body.signups-closed #form-intro-text,body.signups-closed #save-edit-btn,body.signups-closed #r-capacity{display:none !important}
+.closed-banner{display:none;align-items:center;justify-content:space-between;gap:0.75rem;flex-wrap:wrap;background:#fbeeee;border:0.5px solid #e2b8b8;color:#8a3030;border-radius:var(--radius);padding:0.7rem 0.9rem;font-size:0.86rem;margin-bottom:1rem}
+body.signups-closed .closed-banner{display:flex}
+.closed-banner button{background:none;border:0.5px solid #c99;border-radius:14px;padding:0.25rem 0.75rem;font-family:'DM Sans',sans-serif;font-size:0.78rem;color:#8a3030;cursor:pointer}
+.signup-state{display:flex;align-items:center;gap:0.6rem;font-size:0.92rem;color:var(--text);margin-bottom:0.85rem}
+.signup-dot{width:10px;height:10px;border-radius:50%;background:#3a8a55;flex:none}
+.signup-dot.closed{background:#b34a4a}
 .demo-note{font-size:0.82rem;line-height:1.5;color:var(--text-muted);background:var(--white);border:0.5px dashed var(--olive-light);border-radius:var(--radius);padding:0.8rem 1rem;margin-bottom:1.25rem}
 .demo-note strong{color:var(--olive-dark);font-weight:500}
 .find-toggle{display:inline-flex;align-items:center;margin-top:0.85rem;padding:0.4rem 0.85rem;background:none;border:0.5px solid var(--sand-dark);border-radius:20px;font-family:'DM Sans',sans-serif;font-size:0.8rem;color:var(--text-muted);cursor:pointer;text-decoration:none;transition:all 0.15s}
@@ -523,6 +543,7 @@ input::placeholder,textarea::placeholder{color:#b3ada2;opacity:1}
 <p>Update your activities or spot counts below.</p>
 </div>
 <div id="edit-body"></div>
+<div class="closed-note"><strong>Sign-ups are closed.</strong><span class="closed-text"></span></div>
 </div>
 </div>
 
@@ -545,6 +566,7 @@ input::placeholder,textarea::placeholder{color:#b3ada2;opacity:1}
 <div id="lookup-error" class="error-msg" style="display:none"></div>
 </div>
 </div>
+<div class="closed-note"><strong>Sign-ups are closed.</strong><span class="closed-text"></span></div>
 <div id="guest-form">
 <div class="row">
 <div class="field"><label>First name</label><input type="text" id="g-first" placeholder="Alex" autocomplete="given-name"/></div>
@@ -580,6 +602,7 @@ input::placeholder,textarea::placeholder{color:#b3ada2;opacity:1}
 <p id="rsvp-intro"></p>
 <a class="find-toggle" id="rsvp-find" href="#">Already registered? View or change your booking</a>
 </div>
+<div class="closed-note"><strong>Sign-ups are closed.</strong><span class="closed-text"></span></div>
 <div id="rsvp-form">
 <div class="row">
 <div class="field"><label>First name</label><input type="text" id="r-first" placeholder="Alex" autocomplete="given-name"/></div>
@@ -646,6 +669,7 @@ Guest form
 <button class="add-btn" onclick="openAddGuest()">+ Add guest</button>
 </div>
 </div>
+<div class="closed-banner"><span><strong>Sign-ups are closed.</strong> Guests can't book or change bookings; you still can.</span><button type="button" onclick="setSignupsClosed(false)">Reopen</button></div>
 <div class="stats-row" id="stats-row"></div>
 <div class="admin-subtabs">
 <button class="admin-subtab active" id="asubtab-guests" onclick="switchSubtab('guests')">Guests</button>
@@ -884,7 +908,46 @@ box.style.display = EVENT.description ? '' : 'none';
 box.querySelector('.event-desc-text').textContent = EVENT.description || '';
 });
 renderPayInfo();
+applyClosed();
 }
+
+// ── sign-ups closed (v6) ──────────────────────────────────────
+// meta.closed = true stops guests booking or changing bookings (the rules enforce it too).
+// Guests can still open their booking by email to see it and how to pay.
+function signupsClosed() { return EVENT.closed === true; }
+function applyClosed() {
+const closed = signupsClosed();
+document.body.classList.toggle('signups-closed', closed);
+const who = EVENT.hosts || 'the organiser';
+document.querySelectorAll('.closed-text').forEach(el => {
+el.textContent = el.closest('#edit-reservation')
+? ` Your booking can't be changed here any more — contact ${who} if something needs to change.`
+: ` Already booked? Open your booking with the button above. For anything else, contact ${who}.`;
+});
+const rf = document.querySelector('#view-rsvp .closed-text');
+if (rf) rf.textContent = ` Already booked? Use "View or change your booking" above. For anything else, contact ${who}.`;
+lockEditIfClosed();
+}
+function lockEditIfClosed() {
+const body = document.getElementById('edit-body');
+if (!body) return;
+body.querySelectorAll('input, textarea, .counter-btn').forEach(el => { el.disabled = signupsClosed(); });
+}
+function closedAlert() {
+alert('Sign-ups for this event are closed. Contact ' + (EVENT.hosts || 'the organiser') + ' if you need to change something.');
+}
+window.setSignupsClosed = async function(closed) {
+if (closed && !confirm('Close sign-ups? Guests will no longer be able to book or change their bookings. You can still add and edit guests here, and reopen any time.')) return;
+try {
+if (closed) await set(ref(db, 'meta/closed'), true);
+else await remove(ref(db, 'meta/closed'));
+toast(closed ? 'Sign-ups closed' : 'Sign-ups open again');
+} catch(e) {
+alert(/PERMISSION_DENIED/i.test(String(e.code || e.message || ''))
+? "Could not close sign-ups: the database doesn't accept it yet. Xavier needs to publish the updated Firebase rules (Activity Planner v6)."
+: 'Could not save. ' + (e.code || e.message || ''));
+}
+};
 
 // ── ways to pay (v4) ──────────────────────────────────────────
 // meta.payWith = {cash, cashNote, etransfer, stripe}; any of them may be missing.
@@ -1371,6 +1434,7 @@ box.innerHTML = rows + `<div class="sub-total"><span>Total payment</span><span>$
 }
 
 window.submitGuest = async function() {
+if (signupsClosed() && !isAdmin) { closedAlert(); return; }
 const first = document.getElementById('g-first').value.trim();
 const last = document.getElementById('g-last').value.trim();
 const email = document.getElementById('g-email').value.trim();
@@ -1488,10 +1552,11 @@ The activities marked <em>✓ Paid</em> have already been paid, so they can't be
 </div>`:''}
 <div class="field"${hasPaid?' style="margin-top:1.1rem"':''}><label>Select activities</label>${grid}</div>
 <div id="edit-subtotal-box" style="display:none" class="subtotal-box"></div>
-<div class="field"><label>Notes</label><textarea id="edit-notes">${g.notes||''}</textarea></div>
+<div class="field"><label>Notes</label><textarea id="edit-notes">${esc(g.notes||'')}</textarea></div>
 <button class="submit-btn" id="save-edit-btn" onclick="saveEdit()">Save changes</button>
-<button class="secondary-btn" onclick="cancelEdit()">Cancel</button>`;
+<button class="secondary-btn" onclick="cancelEdit()">${signupsClosed() ? 'Close' : 'Cancel'}</button>`;
 updateEditSubtotal();
+lockEditIfClosed();
 document.getElementById('edit-reservation').scrollIntoView({behavior:'smooth',block:'start'});
 }
 
@@ -1561,6 +1626,7 @@ box.style.display='block';
 box.innerHTML = rows + `<div class="sub-total"><span>Total payment</span><span>${SYM}${total} ${CODE}${sel.some(a=>a.priceTbd)?' + TBD':''}</span></div>`;
 }
 window.saveEdit = async function() {
+if (signupsClosed() && !isAdmin) { closedAlert(); return; }
 const g = guests.find(x=>x.id===editingGuestId);
 if (!g) return;
 const sel = sortedActivities().filter(a => document.getElementById('ecb-'+a.id)?.checked);
@@ -1718,6 +1784,7 @@ renderRsvp();
 };
 
 window.submitRsvp = async function() {
+if (signupsClosed() && !isAdmin) { closedAlert(); return; }
 const first = document.getElementById('r-first').value.trim();
 const last = document.getElementById('r-last').value.trim();
 const email = document.getElementById('r-email').value.trim();
@@ -2350,6 +2417,12 @@ document.getElementById('event-panel').innerHTML = `
 </div>
 </div>
 <div class="mcard">
+<div class="mcard-head"><span class="mcard-title">Sign-ups</span></div>
+<div class="signup-state"><span class="signup-dot${signupsClosed() ? ' closed' : ''}"></span>${signupsClosed() ? 'Closed — guests can\'t book or change their bookings.' : 'Open — anyone with the link can book.'}</div>
+<button class="${signupsClosed() ? 'submit-btn' : 'secondary-btn'}" style="margin-top:0" onclick="setSignupsClosed(${signupsClosed() ? 'false' : 'true'})">${signupsClosed() ? 'Reopen sign-ups' : 'Close sign-ups'}</button>
+<div class="field-hint" style="margin-top:0.6rem">When closed, the guest page and activity links say so and hide the form. Guests can still look up their booking and see how to pay. You can still add and edit guests from the dashboard.</div>
+</div>
+<div class="mcard">
 <div class="mcard-head"><span class="mcard-title">Event details</span></div>
 <div class="field"><label>Event name</label><input id="es-name" value="${esc(e.name)}"/></div>
 <div class="field"><label>Event description</label><textarea id="es-description" rows="5" placeholder="What it is, what to bring, where to park…">${esc(e.description)}</textarea>
@@ -2652,16 +2725,26 @@ document.getElementById('modal-body').innerHTML=`
 <div class="field"><label>Email</label><input id="m-email" type="email" inputmode="email"/></div>
 <div class="field"><label>Phone</label><input id="m-phone" type="tel" inputmode="tel"/></div>
 <div class="field"><label>Activities & spots</label>
-${sortedActivities().map(a=>`<div style="display:flex;align-items:center;gap:0.75rem;padding:0.45rem 0;font-size:0.88rem;border-bottom:0.5px solid var(--sand-dark)">
-<input type="checkbox" value="${a.id}" class="m-act" id="ma-${a.id}" style="width:18px;height:18px">
-<label for="ma-${a.id}" style="flex:1">${a.name} <span style="color:var(--text-muted);font-size:0.78rem">${priceLabelPlain(a)}</span></label>
-<input type="number" min="1" value="1" id="ms-${a.id}" inputmode="numeric" style="width:55px;padding:0.3rem 0.4rem;border:0.5px solid var(--sand-dark);border-radius:5px;font-size:0.85rem">
-<span style="font-size:0.75rem;color:var(--text-muted)">spots</span>
-</div>`).join('')}
+${activities.length ? sortedActivities().map(a=>{
+const free = Math.max(0, a.capacity - spotsForActivity(a.id, null));
+return `<div class="m-act-row" id="mrow-${esc(a.id)}">
+<input type="checkbox" value="${esc(a.id)}" class="m-act" id="ma-${esc(a.id)}" onchange="mActTick('${esc(a.id)}')">
+<label for="ma-${esc(a.id)}">${esc(a.name)} <span class="m-act-price">${esc(priceLabelPlain(a))} · ${free} left</span></label>
+<input type="number" min="1" value="1" class="m-spots" id="ms-${esc(a.id)}" inputmode="numeric" oninput="mActSpots('${esc(a.id)}')" aria-label="Spots for ${esc(a.name)}">
+<span class="m-spots-lbl">spots</span>
+</div>`;}).join('') : '<p class="field-hint">No activities yet — add them under Edit activities first.</p>'}
 </div>
 <div class="field"><label>Notes</label><textarea id="m-notes"></textarea></div>`;
 resetModalSaveBtn();
 document.getElementById('modal-overlay').classList.add('open');
+};
+window.mActTick = function(id) {
+document.getElementById('mrow-' + id).classList.toggle('on', document.getElementById('ma-' + id).checked);
+};
+// Typing a number of spots means "this one": tick the row so it isn't silently left out.
+window.mActSpots = function(id) {
+const cb = document.getElementById('ma-' + id);
+if (!cb.checked && document.getElementById('ms-' + id).value !== '') { cb.checked = true; mActTick(id); }
 };
 
 // The modal's Save button lives outside the re-rendered body, so its state survives across
@@ -2679,8 +2762,12 @@ if (modalMode==='addGuest') {
 saveBtn.disabled = true; saveBtn.textContent = 'Saving...';
 const first = document.getElementById('m-first').value.trim();
 const last = document.getElementById('m-last').value.trim();
-if (!first||!last) { saveBtn.disabled=false; saveBtn.textContent='Save'; return; }
+if (!first||!last) { alert('Add a first and last name.'); saveBtn.disabled=false; saveBtn.textContent='Save'; return; }
 const sel = Array.from(document.querySelectorAll('.m-act:checked')).map(c=>c.value);
+if (!sel.length) { alert('Tick at least one activity for this guest.'); saveBtn.disabled=false; saveBtn.textContent='Save'; return; }
+const spotsOf = id => Math.max(1, parseInt(document.getElementById('ms-'+id)?.value)||1);
+const over = sel.map(id => activities.find(a => a.id === id)).filter(a => a && spotsOf(a.id) > Math.max(0, a.capacity - spotsForActivity(a.id, null))).map(a => a.name);
+if (over.length && !confirm(`This puts ${over.join(', ')} over capacity.\n\nSave anyway?`)) { saveBtn.disabled=false; saveBtn.textContent='Save'; return; }
 const mEmail = document.getElementById('m-email').value.trim();
 const key = mEmail ? await emailKey(mEmail) : 'm' + randomId(10);
 if (recMap[key] || (mEmail && await bookingExists(key))) { alert('A guest with this email is already booked.'); saveBtn.disabled=false; saveBtn.textContent='Save'; return; }
@@ -2689,7 +2776,7 @@ id:key, first, last,
 email: mEmail,
 phone: document.getElementById('m-phone').value.trim(),
 notes: document.getElementById('m-notes').value.trim(),
-activities: sel.map(id=>({id, spots:parseInt(document.getElementById('ms-'+id)?.value)||1})),
+activities: sel.map(id=>({id, spots:spotsOf(id)})),
 payments:{}, registeredAt: new Date().toISOString()
 };
 sel.forEach(id=>{ g.payments[id]={paid:false,amount:'',method:'',date:'',notes:''}; });

@@ -5,6 +5,64 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v163 — 2026-11-16
+
+**What's new** · Update · [tools.html#events]
+### Activity Planner: close sign-ups
+Organisers can now close sign-ups for an event in one tap. The sign-up page
+and each activity's link then say sign-ups are closed instead of showing the
+form. Guests who already booked can still look up their booking and see how
+to pay. Reopen any time.
+
+Also fixed: adding a guest by hand from the dashboard. Ticking an activity
+showed no tick, so it was easy to untick it again by accident.
+
+**Activity Planner v6 — `tools/activity-planner.html`, source `Tools files/Events/activity_planner_v6.html`** (Events)
+- **Add guest glitch:** the dialog's activity rows sat inside a `.field`,
+  whose rule gives every input `width:100%` and `-webkit-appearance:none`.
+  The checkbox lost its tick (it was ticked, just invisible) and the names
+  were styled as uppercase labels. Saving itself worked; a second tap
+  unticked the row, so a guest could be saved with no activity. Now: native
+  checkbox, chosen row highlighted, spots left shown, typing a number of
+  spots ticks the row, at least one activity required, an over-capacity
+  warning, and a message when the name is missing (it used to do nothing).
+  Activity names are escaped there.
+- **Sign-ups closed:** new "Sign-ups" card in Event settings (Close / Reopen,
+  with a confirm on close) → `meta.closed = true`; reopening removes the key.
+  When closed: the guest page hides the form and welcome line and shows a
+  note. The `&a=` page hides its form. An existing booking opens read-only
+  (inputs off, no Save, a note to contact the organiser). Payment info stays.
+  The dashboard shows a red "Sign-ups are closed" banner with Reopen. The
+  organiser can still add and edit guests. Submit, edit and RSVP are also
+  refused in code; the state updates live on open pages.
+- Guest notes in the edit form are now escaped.
+- Scan: nothing new.
+
+**Firebase rules** — `meta.closed` (boolean) allowed. `guests/$k` and
+`roster/$k` writes by guests now also need
+`meta.closed !== true`. The organiser's own access is unchanged. Mock harness
+mirrors it, plus `/__rules/v161` to simulate the rules before this release (v162 and earlier).
+
+**Verified** — on the mock database at phone width (390 px). Add guest: tick
+visible and highlighted, untick clears it, nothing ticked → refused, typed
+spots tick the row, saved with the right activity and spots,
+over-capacity asks first, missing name says so. Close under the old rules →
+clear "rules needed" message, nothing saved. Close → `meta.closed`, card and
+banner say so. Guest page closes live and on reload, and submit is refused. A
+direct guest write to the database is refused (401). An existing booking is
+read-only and Save refused, and payment info is still shown. The activity page
+is closed and its submit refused. The organiser still adds a guest. No
+sideways scroll. Reopen from the banner → key removed, form back, a guest
+books. Saving event details keeps the event closed. The v148 (payments)
+and v150 (privacy) suites still pass.
+
+**Outstanding**
+- **Xavier publishes the updated rules** (whole file). Until then "Close
+  sign-ups" says the rules are needed and changes nothing. The add-guest fix
+  works now.
+
+---
+
 ## v162 — 2026-11-16
 
 **Memory Map v12 — `tools/memory-map.html`** (Personal, owner-only; no "What's new" block, private)
