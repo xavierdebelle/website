@@ -246,6 +246,42 @@ body.week-open .hud--brand{opacity:0}
 .index__col button .nt{font-family:var(--mono);font-size:9px;letter-spacing:.18em;color:var(--volt);margin-left:8px;vertical-align:middle}
 html.inverted #week .kick,html.inverted #week h3,html.inverted #week .sum b,html.inverted .prop .tag,html.inverted .bal .val b,html.inverted #rewLbl b{color:rgb(176,124,6)}
 html.sheet #week{width:100%;border-right:0}
+
+/* ============ EDIT BY HAND (v12) ============ */
+#panel .pacts{display:flex;gap:8px;flex-wrap:wrap;margin:22px 0 0}
+html.sheet #panel .pacts{order:8}
+#panel .pacts .btn{padding:11px 14px;font-size:10px}
+#panel .pacts .btn.del:hover{background:var(--pfg);border-color:var(--pfg);color:var(--pbg)}
+#panel mark,#pl mark{background:var(--volt);color:var(--ink);padding:0 2px}
+#editor{position:fixed;z-index:80;top:0;left:0;height:100%;width:min(500px,100%);background:var(--pbg);color:var(--pfg);border-right:var(--edge) solid var(--pfg);padding:var(--gut);overflow-y:auto;transform:translateX(-105%);transition:transform .45s cubic-bezier(.2,.8,.2,1)}
+#editor.open{transform:none}
+html.sheet #editor{width:100%;border-right:0}
+#editor .kick{font-family:var(--mono);font-size:10px;letter-spacing:.24em;text-transform:uppercase;color:var(--volt);margin:0}
+#editor h2{font-weight:900;letter-spacing:-.05em;line-height:.84;font-size:clamp(36px,6vw,56px);margin:12px 52px 20px 0;text-transform:uppercase;word-break:break-word}
+#edClose{position:absolute;top:calc(var(--gut) - 8px);right:calc(var(--gut) - 8px);width:42px;height:42px;background:var(--pbg);border:3px solid var(--pfg);color:var(--pfg);font-weight:900;font-size:18px;cursor:pointer}
+#edClose:hover{background:var(--volt);border-color:var(--volt);color:var(--ink)}
+#editor .edit{gap:10px}
+#editor .edit label{margin-top:8px}
+#editor .edit textarea{min-height:150px}
+#editor .hint{font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;opacity:.5;margin:0}
+.lk{display:grid;grid-template-columns:1fr 42px;gap:6px;border:2px solid var(--pfg);padding:8px;margin-top:6px}
+.lk b{font-weight:900;text-transform:uppercase;font-size:13px;align-self:center}
+.lk b::before{content:"\2194  ";color:var(--volt)}
+.lk input{grid-column:1/-1;font-size:13px !important;padding:7px 8px !important}
+.lk button{grid-row:1;grid-column:2;border:2px solid var(--pfg);background:transparent;color:var(--pfg);font-weight:900;cursor:pointer;height:34px}
+.lk button:hover{background:var(--volt);border-color:var(--volt);color:var(--ink)}
+#edLinkRes{display:grid;gap:4px;margin-top:6px}
+#edLinkRes button{all:unset;cursor:pointer;padding:9px 10px;border:2px dashed var(--pline);font-weight:700;font-size:13px;text-transform:uppercase}
+#edLinkRes button small{display:block;font-family:var(--mono);font-weight:400;font-size:9px;letter-spacing:.14em;opacity:.55;margin-top:3px}
+#edLinkRes button:hover,#edLinkRes button:focus-visible{border-color:var(--volt);color:var(--volt)}
+#editor .acts{display:flex;gap:8px;margin-top:20px}
+#editor .acts button{flex:1;padding:14px 8px;border:3px solid var(--pfg);background:transparent;color:var(--pfg);font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;font-weight:700;cursor:pointer}
+#editor .acts button.keep{background:var(--volt);border-color:var(--volt);color:var(--ink)}
+#editor .acts button:disabled{opacity:.4;cursor:default}
+#btnNew{border-color:var(--volt);color:var(--volt)}
+html.phone #btnNew{display:none}
+html.phone body.menu-open #btnNew{display:inline-block}
+html.inverted #editor .kick{color:rgb(176,124,6)}
 #btnWeek .ws{display:none}
 html.phone #btnWeek .wl{display:none}
 html.phone #btnWeek .ws{display:inline}
@@ -272,7 +308,7 @@ html.phone .hud--ctl .ctl--wide{padding:0 12px}
 
 <header class="hud hud--brand">
   <h1><i>Xavier</i> <i>de</i> <em>Belle</em></h1>
-  <p>What Claude knows about you<br><span id="count"></span><br>Memory map v11 &middot; grows every Sunday</p>
+  <p>What Claude knows about you<br><span id="count"></span><br>Memory map v12 &middot; grows every Sunday</p>
 </header>
 
 <div class="hud hud--top">
@@ -281,6 +317,7 @@ html.phone .hud--ctl .ctl--wide{padding:0 12px}
     <button class="tab" data-s="organic" aria-pressed="true">Organic</button>
     <button class="tab" data-s="graphic" aria-pressed="false">Graphic</button>
     <button class="tab" id="btnIndex2" type="button">Index</button>
+    <button class="tab" id="btnNew" type="button">+ New memory</button>
   </div>
   <div class="tabs" role="group" aria-label="Filter by pillar">
     <button class="tab" data-f="all" aria-pressed="true">All</button>
@@ -295,7 +332,7 @@ html.phone .hud--ctl .ctl--wide{padding:0 12px}
 <div class="hud hud--hint" aria-hidden="true">
   <b>Click</b> a node to open it &middot; <b>Drag</b> to move &middot; <b>Scroll</b> to zoom<br>
   <b>Tap the mark</b> to fire it &middot; twice to invert it<br>
-  <span style="opacity:.5">v11</span>
+  <span style="opacity:.5">v12</span>
 </div>
 
 <div class="hud hud--ctl">
@@ -317,6 +354,30 @@ html.phone .hud--ctl .ctl--wide{padding:0 12px}
   <div class="src" id="ps"></div>
   <h3>Connected to</h3>
   <ul id="pl"></ul>
+  <div class="pacts" id="pacts"></div>
+</aside>
+
+<aside id="editor" aria-label="Edit a memory">
+  <button id="edClose" type="button" aria-label="Close">&times;</button>
+  <p class="kick" id="edKick">New memory</p>
+  <h2 id="edTitle">New memory</h2>
+  <div class="edit">
+    <label for="edLabel">Title</label>
+    <input id="edLabel" maxlength="80" autocomplete="off">
+    <label for="edText">What Claude knows</label>
+    <textarea id="edText" maxlength="4000"></textarea>
+    <p class="hint">**word** makes it bold &middot; a blank line starts a new paragraph</p>
+    <label for="edParent" id="edParentLbl">Where it goes</label>
+    <select id="edParent"></select>
+    <label>Pillars</label>
+    <div class="pils" id="edPils"></div>
+    <label for="edLinkQ">Connected dots</label>
+    <div id="edLinks"></div>
+    <input id="edLinkQ" type="search" placeholder="Search memories to connect" autocomplete="off">
+    <div id="edLinkRes"></div>
+  </div>
+  <div class="acts"><button class="keep" id="edSave" type="button">Save</button><button id="edCancel" type="button">Cancel</button></div>
+  <div class="acts" id="edDelRow"><button id="edDel" type="button">Delete this memory</button></div>
 </aside>
 
 <div id="toast" role="status"></div>
@@ -356,7 +417,7 @@ const ROOT = D.root, DATA = D.nodes.slice(), CROSS = D.cross.slice(), PILLARS = 
 /* (the map's contents are not in this file: they load from Xavier's private
    Firebase area after he signs in — see the gate at the bottom) */
 
-const SRC_NAME = { c: "Claude Code", a: "Claude.ai", w: "Cowork" };
+const SRC_NAME = { c: "Claude Code", a: "Claude.ai", w: "Cowork", m: "you, by hand" };
 
 /* The three pillars: L = Love (partner, family, friends, relationships)
    H = Health (mental and physical) · S = Success (purpose, what you're valued
@@ -1342,6 +1403,18 @@ function select(n){
     b.appendChild(sm); b.onclick = () => select(o);
     li.appendChild(b); ul.appendChild(li);
   });
+  /* the searched word, highlighted wherever it shows in the panel */
+  if(query) [document.getElementById("pt"), document.getElementById("pb"), ul].forEach(el => markText(el, query));
+  /* edit by hand */
+  const pa = document.getElementById("pacts"); pa.innerHTML = "";
+  if(api && !n.pending && n.level > 0){
+    const add = (t, f, cls) => { const b = document.createElement("button"); b.type = "button"; b.className = "btn" + (cls ? " " + cls : ""); b.textContent = t; b.onclick = f; pa.appendChild(b); };
+    add("Edit", () => openEditor(n));
+    if(n.level <= 2) add("+ Add a memory here", () => openEditor(null, n.id));
+    add("Delete", () => removeNode(n), "del");
+  } else if(api && n.level === 0){
+    const b = document.createElement("button"); b.type = "button"; b.className = "btn"; b.textContent = "+ New branch"; b.onclick = () => openEditor(null, "me"); pa.appendChild(b);
+  }
   panel.classList.remove("full");
   panel.classList.add("open"); panel.scrollTop = 0; pc.scrollLeft = 0;
   document.body.classList.add("panel-open", "engaged");
@@ -1447,6 +1520,126 @@ document.getElementById("btnIndex2").onclick = () => { setMenu(false); openIndex
 document.getElementById("btnDownload").onclick = () => api && api.download();
 document.getElementById("btnIndexClose").onclick = () => idx.classList.remove("is-on");
 
+
+/* wraps every case-insensitive match of `word` in <mark>, text nodes only */
+function markText(root, word){
+  const w = word.trim().toLowerCase(); if(!w || !root) return;
+  const walk = document.createTreeWalker(root, NodeFilter.SHOW_TEXT), hits = [];
+  while(walk.nextNode()) if(walk.currentNode.nodeValue.toLowerCase().includes(w) && !walk.currentNode.parentNode.closest("mark")) hits.push(walk.currentNode);
+  hits.forEach(t => {
+    const s = t.nodeValue, low = s.toLowerCase(), frag = document.createDocumentFragment();
+    let i = 0, j;
+    while((j = low.indexOf(w, i)) >= 0){
+      if(j > i) frag.appendChild(document.createTextNode(s.slice(i, j)));
+      const m = document.createElement("mark"); m.textContent = s.slice(j, j + w.length); frag.appendChild(m);
+      i = j + w.length;
+    }
+    if(i < s.length) frag.appendChild(document.createTextNode(s.slice(i)));
+    t.parentNode.replaceChild(frag, t);
+  });
+}
+
+/* ==========================================================================
+   14a · EDIT BY HAND — add, edit, delete memories and their connected dots.
+   Saves straight to the account (one transaction), then reloads the page so
+   the layout regrows, and reopens the memory.
+   ========================================================================== */
+const editor = document.getElementById("editor");
+const ed = id => document.getElementById(id);
+let edNode = null, edLinks = [];
+const toEd = html => { const d = document.createElement("div");
+  d.innerHTML = String(html || "").replace(/<br\s*\/?>/gi, "\n").replace(/<\/p>\s*<p>/gi, "\n\n").replace(/<b>/gi, "**").replace(/<\/b>/gi, "**");
+  return d.textContent; };
+const fromEd = t => esc(t.trim()).replace(/\*\*([^*\n]+?)\*\*/g, "<b>$1</b>").replace(/\n/g, "<br>");
+function edPlaces(selId, self){
+  const bad = new Set(); if(self){ const add = n => { bad.add(n.id); n.kids.forEach(add); }; add(self); }
+  const opts = ['<option value="me"' + (selId === "me" ? " selected" : "") + ">The centre (a new branch)</option>"];
+  nodes.forEach(n => { if(n.level >= 1 && n.level <= 2 && !n.pending && !n.gone && !bad.has(n.id))
+    opts.push('<option value="' + esc(n.id) + '"' + (n.id === selId ? " selected" : "") + ">" + esc(n.level === 2 ? byId[n.parent].label + " › " + n.label : n.label) + "</option>"); });
+  return opts.join("");
+}
+function drawEdLinks(){
+  const box = ed("edLinks"); box.innerHTML = "";
+  if(!edLinks.length){ box.innerHTML = '<p class="hint">None yet. Search below to connect this memory to others.</p>'; }
+  edLinks.forEach((l, i) => {
+    const row = document.createElement("div"); row.className = "lk";
+    row.innerHTML = "<b>" + esc(byId[l.id].label) + '</b><button type="button" aria-label="Remove this connection">&times;</button><input placeholder="Why they connect (optional)" maxlength="200">';
+    const inp = row.querySelector("input"); inp.value = l.why; inp.oninput = () => { l.why = inp.value; };
+    row.querySelector("button").onclick = () => { edLinks.splice(i, 1); drawEdLinks(); findLinks(); };
+    box.appendChild(row);
+  });
+}
+function findLinks(){
+  const qv = ed("edLinkQ").value.trim().toLowerCase(), box = ed("edLinkRes"); box.innerHTML = "";
+  if(!qv) return;
+  const taken = new Set(edLinks.map(l => l.id)); if(edNode) taken.add(edNode.id);
+  nodes.filter(n => n.level > 0 && !n.pending && !n.gone && !taken.has(n.id) &&
+      (n.label + " " + plain(n.text)).toLowerCase().includes(qv))
+    .sort((a, b) => (b.label.toLowerCase().includes(qv)) - (a.label.toLowerCase().includes(qv)))
+    .slice(0, 8).forEach(n => {
+      const b = document.createElement("button"); b.type = "button";
+      b.innerHTML = esc(n.label) + "<small>" + esc(n.level === 1 ? "Branch" : (n.branch ? n.branch.label : "")) + "</small>";
+      b.onclick = () => { edLinks.push({ id: n.id, why: "" }); ed("edLinkQ").value = ""; box.innerHTML = ""; drawEdLinks(); ed("edLinkQ").focus(); };
+      box.appendChild(b);
+    });
+  if(!box.children.length) box.innerHTML = '<p class="hint">No memory matches that.</p>';
+}
+ed("edLinkQ").addEventListener("input", findLinks);
+ed("edLinkQ").addEventListener("keydown", e => { if(e.key === "Enter"){ e.preventDefault(); const b = ed("edLinkRes").querySelector("button"); if(b) b.click(); } });
+function openEditor(n, parentId){
+  edNode = n || null;
+  const pv = n ? pils(PILLARS[n.id]) : "";
+  ed("edKick").textContent = n ? "Edit · " + (n.level === 1 ? "Branch" : (n.branch ? n.branch.label : "")) : "New memory";
+  ed("edTitle").textContent = n ? n.label : "New memory";
+  ed("edLabel").value = n ? n.label : "";
+  ed("edText").value = n ? toEd(n.text) : ""; ed("edText").dataset.was = ed("edText").value;
+  ed("edParent").innerHTML = edPlaces(n ? n.parent : (parentId || (focusB ? focusB.id : "")), n);
+  if(!n && !parentId && !focusB) ed("edParent").insertAdjacentHTML("afterbegin", '<option value="" selected>Choose where it goes…</option>');
+  ed("edPils").innerHTML = ["L","H","S"].map(c => '<button type="button" data-p="' + c + '" aria-pressed="' + pv.includes(c) + '">' + PILLAR_NAME[c] + "</button>").join("");
+  ed("edPils").querySelectorAll("button").forEach(b => b.onclick = () => b.setAttribute("aria-pressed", b.getAttribute("aria-pressed") !== "true"));
+  edLinks = n ? n.links.filter(l => l.cross && !l.pending && !l.gone).map(l => ({ id: (l.a === n ? l.b : l.a).id, why: l.why || "", was: true })) : [];
+  ed("edLinkQ").value = ""; ed("edLinkRes").innerHTML = "";
+  drawEdLinks();
+  ed("edDelRow").hidden = !n;
+  ed("edSave").disabled = false;
+  if(sheetMode) deselect();
+  closeWeek(); setMenu(false);
+  editor.classList.add("open"); editor.scrollTop = 0;
+  setTimeout(() => ed("edLabel").focus(), 350);
+}
+function closeEditor(){ editor.classList.remove("open"); }
+ed("edClose").onclick = closeEditor; ed("edCancel").onclick = closeEditor;
+document.getElementById("btnNew").onclick = () => openEditor(null);
+const slug = t => { let b = plain(t).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 28) || "memory", id = b, k = 2;
+  while(byId[id]) id = b + "-" + k++; return id; };
+function afterSave(id, msg){
+  toast(msg);
+  setTimeout(() => { try { sessionStorage.setItem("mm.open", id || ""); } catch(e){} location.reload(); }, 700);
+}
+ed("edSave").onclick = () => {
+  const label = plain(ed("edLabel").value).trim().replace(/\s+/g, " ");
+  const parent = ed("edParent").value;
+  if(!label){ toast("It needs a title"); ed("edLabel").focus(); return; }
+  if(!parent){ toast("Choose where it goes"); ed("edParent").focus(); return; }
+  const pv = [...ed("edPils").querySelectorAll("button")].filter(b => b.getAttribute("aria-pressed") === "true").map(b => b.dataset.p).join("");
+  const textChanged = ed("edText").value !== ed("edText").dataset.was;
+  const change = { label, parent, pillars: pv, links: edLinks.map(l => [l.id, plain(l.why).trim()]) };
+  if(!edNode || textChanged) change.text = fromEd(ed("edText").value);
+  if(edNode){ change.id = edNode.id; change.before = edNode.links.filter(l => l.cross && !l.pending && !l.gone).map(l => (l.a === edNode ? l.b : l.a).id); }
+  else { change.id = slug(label); change.isNew = true; }
+  ed("edSave").disabled = true;
+  api.edit(change, TODAY).then(() => { closeEditor(); afterSave(change.id, edNode ? "Saved" : "Added to your map"); },
+    e => { ed("edSave").disabled = false; toast("Couldn't save: " + (e && e.message || e)); });
+};
+function removeNode(n){
+  const under = []; const add = m => { m.kids.forEach(k => { under.push(k); add(k); }); }; add(n);
+  const msg = "Delete \u201c" + n.label + "\u201d" + (under.length ? " and the " + under.length + (under.length === 1 ? " memory" : " memories") + " inside it" : "") +
+    "? Its connected dots go too. This can't be undone (Index → Download a copy first if you want a backup).";
+  if(!confirm(msg)) return;
+  api.remove(n.id, TODAY).then(() => { closeEditor(); deselect(); afterSave(n.level > 1 ? n.parent : "", "Deleted"); },
+    e => toast("Couldn't delete: " + (e && e.message || e)));
+}
+ed("edDel").onclick = () => edNode && removeNode(edNode);
 
 /* ==========================================================================
    14b · THIS WEEK — review what the Sunday review proposed (Keep / Edit /
@@ -1705,6 +1898,7 @@ refreshWeek();
 addEventListener("keydown", e => {
   if(e.key === "Escape"){
     if(idx.classList.contains("is-on")) { idx.classList.remove("is-on"); return; }
+    if(editor.classList.contains("open")) { closeEditor(); return; }
     if(weekEl.classList.contains("open") && !e.target.closest("#week input, #week textarea, #week select")) { closeWeek(); return; }
     focusB = null; deselect(); query = ""; q.value = ""; fit(); document.body.classList.remove("engaged");
   }
@@ -1716,6 +1910,8 @@ addEventListener("resize", () => { resize(); if(!sel) fit(); });
    ========================================================================== */
 fit(); camX = camTX; camY = camTY; zoom = zoomT*0.82;
 setTimeout(() => fireNode(byId.me, performance.now()/1000 - start), 1800);
+{ let id = null; try { id = sessionStorage.getItem("mm.open"); sessionStorage.removeItem("mm.open"); } catch(e){}
+  if(id && byId[id]) setTimeout(() => select(byId[id]), 1500); }
 setTimeout(() => {   // the week at a glance, once the map has bloomed
   const k = openProps().length, st = stats();
   const bits = [];
@@ -1813,6 +2009,63 @@ requestAnimationFrame(frame);
       document.body.appendChild(a); a.click(); setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 500);
     });
   }
+  /* edit by hand: one memory, its place, pillars and connected dots */
+  function mutate(fn){
+    var user = window.xdbAccount.state().user;
+    if(!user || window.xdbAccount.state().status !== "owner") return Promise.reject(new Error("signed out"));
+    return window.xdbAccount.sdk().then(function(fb){
+      var err = null;
+      return fb.f.runTransaction(ref(fb, user.uid), function(cur){
+        if(!cur || !cur.data) return cur;
+        var d = cur.data;
+        d.nodes = listOf(d.nodes).map(listOf); d.cross = listOf(d.cross).map(listOf);
+        ["pillars", "added", "addedLinks", "changed"].forEach(function(k){ if(!d[k] || typeof d[k] !== "object") d[k] = {}; });
+        try { fn(d); } catch(e){ err = e; return; }
+        cur.updatedAt = Date.now(); cur.device = "Memory Map";
+        return cur;
+      }).then(function(){ if(err) throw err; });
+    });
+  }
+  function edit(c, today){
+    return mutate(function(d){
+      var root = listOf(d.root)[0];
+      var row = function(id){ for(var i = 0; i < d.nodes.length; i++) if(d.nodes[i][0] === id) return d.nodes[i]; return null; };
+      var has = function(id){ return id === root || !!row(id); };
+      var pair = function(a, b){ for(var i = 0; i < d.cross.length; i++){ var x = d.cross[i]; if((x[0] === a && x[1] === b) || (x[0] === b && x[1] === a)) return i; } return -1; };
+      if(!has(c.parent)) throw new Error("the place it goes no longer exists");
+      if(c.isNew){
+        var id = c.id; while(has(id)) id += "-2";
+        c.id = id;
+        d.nodes.push([id, c.parent, c.label, c.text || "", "m"]);
+        d.added[id] = today;
+      } else {
+        var r = row(c.id); if(!r) throw new Error("that memory is gone");
+        /* never under itself or its own children */
+        var p = c.parent; while(p && p !== root){ if(p === c.id) throw new Error("a memory can't go inside itself"); var pr = row(p); p = pr ? pr[1] : null; }
+        r[1] = c.parent; r[2] = c.label; if(c.text != null) r[3] = c.text;
+        d.changed[c.id] = today;
+      }
+      if(c.pillars) d.pillars[c.id] = c.pillars; else delete d.pillars[c.id];
+      var want = {};
+      c.links.forEach(function(l){ if(l[0] !== c.id && has(l[0])) want[l[0]] = l[1] || ""; });
+      (c.before || []).forEach(function(o){ if(!(o in want)){ var i = pair(c.id, o); if(i >= 0) d.cross.splice(i, 1); delete d.addedLinks[c.id + "~" + o]; delete d.addedLinks[o + "~" + c.id]; } });
+      Object.keys(want).forEach(function(o){ var i = pair(c.id, o);
+        if(i >= 0) d.cross[i][2] = want[o];
+        else { d.cross.push([c.id, o, want[o]]); d.addedLinks[c.id + "~" + o] = today; } });
+    });
+  }
+  function remove(id){
+    return mutate(function(d){
+      var gone = {}; gone[id] = 1;
+      var grew = true; while(grew){ grew = false; d.nodes.forEach(function(r){ if(!gone[r[0]] && gone[r[1]]){ gone[r[0]] = 1; grew = true; } }); }
+      if(!d.nodes.some(function(r){ return r[0] === id; })) throw new Error("that memory is already gone");
+      d.nodes = d.nodes.filter(function(r){ return !gone[r[0]]; });
+      d.cross = d.cross.filter(function(x){ return !gone[x[0]] && !gone[x[1]]; });
+      Object.keys(gone).forEach(function(g){ delete d.pillars[g]; delete d.added[g]; delete d.changed[g]; });
+      Object.keys(d.addedLinks).forEach(function(k){ var ab = k.split("~"); if(gone[ab[0]] || gone[ab[1]]) delete d.addedLinks[k]; });
+    });
+  }
+
   /* decisions save one after another, never two at once */
   var queue = Promise.resolve();
   function commitQueued(q, action, today){
@@ -1820,7 +2073,8 @@ requestAnimationFrame(frame);
     queue = run.catch(function(){});
     return run;
   }
-  var API = { commit: commitQueued, download: download };
+  function queued(f){ return function(){ var a = arguments, run = queue.then(function(){ return f.apply(null, a); }); queue = run.catch(function(){}); return run; }; }
+  var API = { commit: commitQueued, download: download, edit: queued(edit), remove: queued(remove) };
   function show(t, p, signIn, load){ title.textContent = t; text.textContent = p; bIn.hidden = !signIn; bLoad.hidden = !load; gate.hidden = false; }
   function start(d){
     if(started){ location.reload(); return; }

@@ -5,6 +5,29 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v162 — 2026-11-16
+
+**Memory Map v12 — `tools/memory-map.html`** (Personal, owner-only; no "What's new" block, private)
+- Edit by hand: the panel of any memory has Edit / + Add a memory here /
+  Delete; the centre has + New branch; "+ New memory" sits next to Index
+  (in the Menu on phones). The editor (left drawer, full screen on phones)
+  edits title, text (`**bold**`, blank line = paragraph; text is only
+  rewritten if it was changed), where it goes, pillars, and its connected
+  dots: search memories by title or text to add one, a "why" per dot,
+  × to remove.
+- Saves are one queued `runTransaction` on the doc, same conventions as
+  the XDB connector's `memory_map` tool: new ids are slugs of the title,
+  src `m` ("you, by hand"), `added` / `changed` / `addedLinks` dates; a
+  delete removes the memory, everything inside it and their dots (after a
+  confirm). The page reloads to regrow the layout and reopens the memory.
+- Search: the searched word is highlighted (`<mark>`) in the opened
+  memory's title, text and connection list.
+- Verified on the mock: highlight, create with a searched link, edit
+  (title, swap a link, pillars only → text byte-identical), delete with
+  reopen of the parent, phone menu. Scan clean.
+
+---
+
 ## v161 — 2026-11-16
 
 **What's new** · New version · [tools/wedding-invite-v4.html]
