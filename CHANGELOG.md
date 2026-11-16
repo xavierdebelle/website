@@ -5,6 +5,40 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v160 — 2026-11-16
+
+**What's new** · New version · [tools/wedding-invite-v3.html]
+### Wedding Invite, version 3
+A third take on Enya & Sami's invitation, in black ink on ivory stationery.
+A folded card slides open like doors, their names rise in tall capitals,
+and a line drawing of a little Los Cabos chapel draws itself as you scroll.
+- The details, the wedding and the day's timeline sit side by side like an
+  opened gatefold card (stacked on a phone).
+- Switch between all three versions with the small dot in the top-left
+  corner.
+
+**Wedding Invite v3 — `tools/wedding-invite-v3.html`, source `Tools files/Art/wedding-invite-v3.html`** (Art, companion of `wedding-invite.html`)
+- Style from three reference cards Xavier sent (gatefold with line-drawn
+  venue + timeline panel; huge condensed names; script "The Wedding").
+  Instrument Serif caps, Pinyon Script, Cormorant Garamond; ink #1c1a17 on
+  ivory, warm grey timeline panel.
+- No WebGL: the gatefold flaps are CSS transforms (open on first scroll or
+  on Open, 2.6 s), names rise letter by letter, cards settle with a slight
+  tilt (IntersectionObserver), the chapel is an SVG line drawing animated
+  with stroke-dashoffset. Everything scrolls natively — built this way
+  because of v2's trouble on phones.
+- Same countdown, calendar file, maps link, placeholders (ceremony 3:30 pm,
+  timeline, gifts) as v2. noindex, nothing stored, visit counter on.
+- Version picker on v1, v2 and v3 now lists all three. Main link
+  (`tools/wedding-invite.html`) still opens v2.
+- Scan: clean (the "email" is the calendar file's UID).
+
+**Verified** — local preview at 375×812, 800 and 1280 wide: cover, Open,
+flaps sliding, names rising, line drawing, countdown, gatefold three-panel
+and stacked layouts, timeline icons; no console errors.
+
+---
+
 ## v159 — 2026-11-13
 
 **What's new** · Update · [tools/production-hub.html]
