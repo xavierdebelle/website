@@ -949,3 +949,21 @@ its ID forever. Statuses: new, planned, in progress, done, dropped.
 ### IDEA-215 · A waitlist when Activity Planner sign-ups close or an activity is full
 - **Category:** Feature · **Effort:** M · **Impact:** ★★ · **Status:** new
 - Since v163, tools/activity-planner.html can close sign-ups, and a latecomer then just sees "Sign-ups are closed." (closed-note, line ~546). A full activity is a dead end too. Organisers always lose a few guests to cancellations, and right now they have no list of who wanted in. Add "Put me on the waitlist" (name and phone or email, hidden from the public list the same way v150 hides contact details) on closed or full screens. When the organiser removes a guest or reopens sign-ups, the dashboard shows "Offer this spot to [next person]" with a text ready to send. Full events stay full, and it is the kind of detail that makes organisers come back to the tool and share it.
+
+## 2026-11-17 — One tool in full: Memory Map
+
+### IDEA-216 · Save a copy before every delete or file import, with "Restore" in the Index
+- **Category:** Fix · **Effort:** S · **Impact:** ★★ · **Status:** new
+- In tools/memory-map.html, removeNode() (line ~1634) warns "This can't be undone (Index → Download a copy first)", and "Update the map from a file" in the Index runs save() (line ~2095), which `set`s the file's memories over the account with no confirm, so every memory added or edited by hand since v12 (src "m") that isn't in the Mac file is silently wiped. Before either write, copy the current `data` to `users/<uid>/tools/memory-map-snapshots/<timestamp>` (keep the last 10), say in the import confirm how many memories the file would drop ("6 memories you added by hand aren't in this file"), and list the snapshots in the Index with a "Restore" button. The map now grows every Sunday and by hand, so a single mis-tap or an old file shouldn't be able to erase weeks of it.
+
+### IDEA-217 · "3 to review" on the Memory Map card in tools.html
+- **Category:** Feature · **Effort:** S · **Impact:** ★ · **Status:** new
+- The Sunday review and Claude.ai drop proposals into the map, but the only signal is the pulsing "This week" button inside memory-map.html (refreshWeek(), line ~1670), so they wait until Xavier happens to open the page. The owner-only card in tools.html (line ~527, `data-owner`) can read `proposals` from his map after sign-in and show a small yellow "3 to review" tag, plus "+5 this week" from `added`. One glance at the tools page tells him the map needs two minutes of Keep/Skip, which keeps the weekly review loop actually weekly.
+
+### IDEA-218 · "Copy this branch as a brief" in the Memory Map panel
+- **Category:** Feature · **Effort:** S · **Impact:** ★★ · **Status:** new
+- The map already holds what Claude has learned about how de Belle and 333 Photo work (voice, clients, rules, preferences), but the only way out is the full JSON from "Download a copy". Add a button next to Edit / + Add a memory here in the panel's actions (select(), line ~1410) that copies the branch and everything inside it as clean text: headings for each memory, the text with **bold** kept, and the "why" of each connected dot. Paste it into a brief for a new editor or second shooter, a GoHighLevel snippet, or a fresh Claude chat, so the knowledge the map collects gets used outside the map too.
+
+### IDEA-219 · "Your business memory map": a done-for-you setup with a monthly review (builds on IDEA-126)
+- **Category:** Monetization · **Effort:** M · **Impact:** ★★ · **Status:** new
+- memory-map.html already reads and writes `users/<uid>/tools/memory-map` for whoever is signed in. Only the `status === "owner"` checks in the gate (lines ~1959, ~2015, ~2121) keep it to Xavier, and assets/account.js already has approved members. Sell it to the photographers, creators and small-business owners IDEA-126 attracts: a one-time setup (for example $490: a 60-minute interview turned into their first map of 80+ memories, their own private page) plus continuity at about $49/month for the Sunday review that proposes new memories and connections. The one-off call becomes recurring revenue, built on a tool that is already finished.
