@@ -5,6 +5,15 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v167 — 2026-11-17
+
+**Video Edit Form — `video-edit-form/index.html`** (The Biz)
+- `notes_html` redone as plain lines like the old form's email: section
+  headers in bold caps, `-LABEL: value` rows, dashed rules, joined with
+  `<br>`. v166's table layout read well in Gmail but pasted into notes as
+  label and value on separate lines; this pastes line for line.
+- Client values still escaped. Tested locally with the webhook stubbed.
+
 ## v166 — 2026-11-17
 
 **Video Edit Form — `video-edit-form/index.html`** (The Biz)

@@ -1024,69 +1024,68 @@
   }
 
   // ── HTML summary for the GoHighLevel email ─────────────
-  // GHL emails are HTML, so the plain-text summary's line breaks collapse.
-  // This builds the same content as inline-styled HTML (values escaped).
+  // GHL emails are HTML, so plain-text line breaks collapse. This sends the
+  // summary as simple lines ("-LABEL: value") joined with <br>, so it reads
+  // cleanly in the email AND pastes line-for-line into notes (like the old
+  // form). No tables: they paste as label and value on separate lines.
   function generateSummaryHtml(fd) {
     const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-    const link = v => { const t = esc(v); return /^https?:\/\//i.test(v) ? `<a href="${t}" style="color:#0D0D0D">${t}</a>` : t; };
-    const F = "font-family:Georgia,'Times New Roman',serif;";
-    const S = "font-family:Calibri,Arial,Helvetica,sans-serif;";
-    const row = (k, v, raw) => v ? `<tr><td style="${S}font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#888;padding:6px 16px 6px 0;vertical-align:top;width:150px">${esc(k)}</td><td style="${S}font-size:14px;color:#1A1A1A;padding:6px 0;vertical-align:top">${raw ? v : esc(v)}</td></tr>` : '';
-    const table = inner => inner ? `<table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;width:100%">${inner}</table>` : '';
-    const heading = t => `<div style="${S}font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#888;border-bottom:1px solid #DCDCDC;padding:28px 0 8px;margin-bottom:8px">${esc(t)}</div>`;
+    const lines = [];
+    const rule = '------------------------------------';
+    const head = t => lines.push(`<b>${esc(t.toUpperCase())}</b>`);
+    const row  = (k, v) => { if (v) lines.push(`-${esc(k.toUpperCase())}: ${esc(v).replace(/\n/g, '<br>')}`); };
+    const end  = () => lines.push(rule, '');
 
-    let h = `<div style="max-width:620px;margin:0 auto;color:#1A1A1A">`;
-    h += `<div style="${F}font-style:italic;font-size:14px;color:#888">de Belle Photography</div>`;
-    h += `<div style="${F}font-size:24px;color:#0D0D0D;margin:4px 0 16px">Video Edit Preferences</div>`;
-    h += table(
-      row('Couple', `${fd.get('client_name') || ''} & ${fd.get('partner_name') || ''}`) +
-      row('Wedding Date', fd.get('wedding_date')) +
-      row('Email', fd.get('email')) +
-      row('Submitted', new Date().toLocaleString()));
+    head('Video Edit Form'); lines.push('');
+    head('Info');
+    row('Couple', `${fd.get('client_name') || ''} & ${fd.get('partner_name') || ''}`);
+    row('Wedding Date', fd.get('wedding_date'));
+    row('Email', fd.get('email'));
+    row('Submitted', new Date().toLocaleString());
+    end();
 
     const ids = DELIVERABLE_ORDER.filter(id => document.getElementById(`del_${id}`)?.checked);
-    if (ids.length) {
-      h += heading('Deliverables');
-      for (const id of ids) {
-        const lbl = document.getElementById(`panelLabel_${id}`)?.textContent || DELIVERABLE_CONFIG[id]?.label || id;
-        h += `<div style="${F}font-size:18px;color:#0D0D0D;margin:18px 0 4px">${esc(lbl)}</div>`;
-        if (id === 'supplements') {
-          h += `<div style="${S}font-size:14px;color:#4A4A4A;padding:6px 0">One raw video: speeches, dances and special events stitched together. No music.</div>`;
-          continue;
-        }
-        let r = row('Story Order', fd.get(`${id}_story_order`)) + row('Speeches & Vows', fd.get(`${id}_speeches`));
-        const sel = fd.get(`${id}_music_sel`);
-        r += row('Music Selection', sel);
-        if (sel === 'Client chooses from library') {
-          const t = fd.get(`${id}_library_songs`);
-          if (t) r += row('Library Notes', esc(t).replace(/\n/g, '<br>'), true);
-        } else if (sel === 'Custom music') {
-          let i = 1;
-          while (fd.get(`${id}_song_title_${i}`)) {
-            const a = fd.get(`${id}_song_artist_${i}`);
-            r += row(`Song ${i}`, `${fd.get(`${id}_song_title_${i}`)}${a ? ` — ${a}` : ''}`);
-            i++;
-          }
-          const lnk = fd.get(`${id}_music_link`);
-          if (lnk) r += row('Music Link', link(lnk), true);
-        }
-        r += row('Music Style', fd.get(`${id}_music_style`)) + row('Black & White', fd.get(`${id}_bw`)) + row('Visual Aesthetic', fd.get(`${id}_visual`));
-        h += table(r) || `<div style="${S}font-size:13px;color:#888;font-style:italic">No choices made.</div>`;
+    for (const id of ids) {
+      head(document.getElementById(`panelLabel_${id}`)?.textContent || DELIVERABLE_CONFIG[id]?.label || id);
+      if (id === 'supplements') {
+        lines.push('One raw video: speeches, dances and special events stitched together. No music.');
+        end(); continue;
       }
+      row('Story Order', fd.get(`${id}_story_order`));
+      row('Speeches & Vows', fd.get(`${id}_speeches`));
+      const sel = fd.get(`${id}_music_sel`);
+      row('Music Selection', sel);
+      if (sel === 'Client chooses from library') {
+        row('Library Notes', fd.get(`${id}_library_songs`));
+      } else if (sel === 'Custom music') {
+        let i = 1;
+        while (fd.get(`${id}_song_title_${i}`)) {
+          const a = fd.get(`${id}_song_artist_${i}`);
+          row(`Song ${i}`, `${fd.get(`${id}_song_title_${i}`)}${a ? ` — ${a}` : ''}`);
+          i++;
+        }
+        row('Music Link', fd.get(`${id}_music_link`));
+      }
+      row('Music Style', fd.get(`${id}_music_style`));
+      row('Black & White', fd.get(`${id}_bw`));
+      row('Visual Aesthetic', fd.get(`${id}_visual`));
+      end();
     }
 
     const iv = fd.get('inspiration_video'), ev = fd.get('emulate_video');
     if (iv || ev) {
-      h += heading('Inspiration');
-      h += table((iv ? row('Inspiration Video', link(iv), true) : '') + (ev ? row('Video to Emulate', link(ev), true) : ''));
+      head('Inspiration');
+      row('Inspiration Video', iv);
+      row('Video to Emulate', ev);
+      end();
     }
     const rq = fd.get('special_requests');
     if (rq) {
-      h += heading('Special Requests');
-      h += `<div style="${S}font-size:14px;color:#1A1A1A;line-height:1.6">${esc(rq).replace(/\n/g, '<br>')}</div>`;
+      head('Special Requests');
+      lines.push(esc(rq).replace(/\n/g, '<br>'));
+      end();
     }
-    h += `<div style="${F}font-style:italic;font-size:12px;color:#888;border-top:1px solid #DCDCDC;margin-top:28px;padding-top:12px">One of The Originals. — de Belle Photography</div></div>`;
-    return h;
+    return `<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.6;color:#1A1A1A">${lines.join('<br>')}</div>`;
   }
 
   function downloadFile(content, filename) {
