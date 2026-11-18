@@ -5,6 +5,32 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v164 — 2026-11-17
+
+**What's new** · New tool · [video-edit-form/]
+### Video Edit Form
+Before we edit a wedding film, the couple tells us how they want it: story
+order, speeches or music-driven, songs, black and white, and the overall look,
+for each video in their package. The full feature is always chronological, and
+the supplements video is simply the raw speeches, dances and special moments
+with no music.
+
+**Video Edit Form — `video-edit-form/index.html`, source `Tools files/de Belle Photography apps/video-edit-form_3.html`** (The Biz)
+- Lives at its own address, https://xavierdebelle.com/video-edit-form/
+  (Xavier's choice), not under `tools/`. The card links there; `verify_deploy`
+  only checks `tools/` hrefs, so this one was checked by hand.
+- Changes from the original: "From Our Library" links to the de Belle YouTube
+  playlist; Full Feature has no story-order choice (fixed Chronological, sent
+  as a hidden field); a note under Speeches & Vows says that with none on the
+  day the film is edited music-driven; Supplements has no options, only an
+  explainer, and the summary says "one raw video, no music". Formspree
+  leftovers removed; social tags and visit counter added.
+- Tested locally with the webhook stubbed (nothing sent to GHL): panels,
+  library block, summary text, success screen.
+- Scan: a GoHighLevel inbound webhook URL is in the page, so anyone could
+  POST to it. New URL, same kind of exposure as Video Corrections (STATUS
+  security item c). Xavier told.
+
 ## v163 — 2026-11-16
 
 **What's new** · Update · [tools.html#events]
