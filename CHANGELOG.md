@@ -5,6 +5,15 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v165 — 2026-11-17
+
+**Video Edit Form — `video-edit-form/index.html`** (The Biz)
+- Submissions now go to the new GoHighLevel inbound webhook Xavier gave
+  (different GHL location id from the old one). Payload unchanged:
+  first_name, last_name, email, wedding_date, notes.
+- Not test-posted: a real submission is the check. Same exposure as before
+  (webhook URL readable in the page).
+
 ## v164 — 2026-11-17
 
 **What's new** · New tool · [video-edit-form/]
