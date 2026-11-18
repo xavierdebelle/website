@@ -967,3 +967,17 @@ its ID forever. Statuses: new, planned, in progress, done, dropped.
 ### IDEA-219 · "Your business memory map": a done-for-you setup with a monthly review (builds on IDEA-126)
 - **Category:** Monetization · **Effort:** M · **Impact:** ★★ · **Status:** new
 - memory-map.html already reads and writes `users/<uid>/tools/memory-map` for whoever is signed in. Only the `status === "owner"` checks in the gate (lines ~1959, ~2015, ~2121) keep it to Xavier, and assets/account.js already has approved members. Sell it to the photographers, creators and small-business owners IDEA-126 attracts: a one-time setup (for example $490: a 60-minute interview turned into their first map of 80+ memories, their own private page) plus continuity at about $49/month for the Sunday review that proposes new memories and connections. The one-off call becomes recurring revenue, built on a tool that is already finished.
+
+## 2026-11-18 — Monetization and offers
+
+### IDEA-220 · Priced "Add to my film" upgrades in the Video Edit Form (builds on IDEA-082)
+- **Category:** Monetization · **Effort:** M · **Impact:** ★★★ · **Status:** new
+- video-edit-form/index.html (v164–v168) lists every cut as a free checkbox (DELIVERABLE_CONFIG, line ~643: Vertical Reel, Horizontal Reel, 1-Min Recap, 5-Min Film, Full Feature, Supplements), but it never knows which ones the couple actually paid for. Send couples the link from GoHighLevel with their package in it (for example `?have=five_min,one_min`), show those as "Included", and show the rest as "Add to my film — $X" with the price beside it; the webhook then carries an `upgrades` field so GHL opens an opportunity. IDEA-082 sells an extra cut after the corrections round; this one sells it while the couple is excited and picking songs, before the edit starts, when adding a reel or the Full Feature costs the editor the least.
+
+### IDEA-221 · "Post-safe" licensed-music version as a paid option in the Video Edit Form
+- **Category:** Monetization · **Effort:** S · **Impact:** ★★ · **Status:** new
+- In the music step of video-edit-form/index.html (lines ~716–741) couples can paste a Spotify link or name their own songs, and nothing tells them that a film cut to a commercial song is often muted or blocked once they post it on Instagram, Facebook or YouTube. Add one line under "Your Song Selections": "Want to post it? Add a shareable version cut to a licensed track — $X", sent in the webhook as its own field. It turns a real frustration couples only discover after delivery into a small add-on (a second export of the same edit), and the films that do get posted carry de Belle's name further.
+
+### IDEA-222 · Open the Video Edit Form already filled in from the GoHighLevel link
+- **Category:** Fix · **Effort:** S · **Impact:** ★★ · **Status:** new
+- video-edit-form/index.html asks couples to type their name, partner's name, wedding date and email again, and the webhook (line ~1102) only sends those typed values, so a different email or a typo creates a second contact in GHL instead of landing on the couple's card. Read `name`, `partner`, `date`, `email` and `contact_id` from the link (GHL fills them with merge fields like `{{contact.email}}`), pre-fill the fields, and pass `contact_id` back in the payload. The preferences then always reach the right couple and workflow, which is also what lets IDEA-220's upgrades turn into an opportunity on the right card.
