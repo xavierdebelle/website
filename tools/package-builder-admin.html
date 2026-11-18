@@ -497,7 +497,7 @@ function cleaned() {
   return d;
 }
 const COLLECTION_KEYS = ['collections', 'extras', 'collLabels', 'rev', 'promo', 'gate', 'fr'];
-const WORD_KEYS = ['kicker', 'detail', 'unit', 'desc', 'flat'];
+const WORD_KEYS = ['kicker', 'detail', 'unit', 'desc', 'flat', 'copyPrice'];
 $('btn-save').addEventListener('click', async () => {
   const bad = problems();
   if (bad.length) { toast('Fix first: ' + bad.slice(0, 3).join(', ') + (bad.length > 3 ? '…' : '')); return; }

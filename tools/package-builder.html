@@ -978,11 +978,12 @@ const GLAM_OPTIONS = [
     detail:'Requires full-day wedding photography. Includes instant 4×6 prints. No second photographer during the day.' },
 ];
 
-// `flat`: sold at its set page count (pricePerPage × min), with no pages to add
+// `flat`: sold at its set page count (pricePerPage × min), with no pages to add.
+// `copyPrice`: extra copies of the same album can be added at this price each.
 const ALBUM_TYPES = [
   { id:'youngbook',   kicker:'The Heirloom Collection', name:'Young Book', pricePerPage:60, min:30, format:'Starting at 30 pages · 8×10',
     desc:'A luxurious, beautifully crafted wedding album, presented in its own elegant box.' },
-  { id:'al_mvzik3ar', kicker:'The Modern Keepsake', name:'Magazine Album', pricePerPage:10, min:60, flat:true, format:'60 pages included · 8×10',
+  { id:'al_mvzik3ar', kicker:'The Modern Keepsake', name:'Magazine Album', pricePerPage:10, min:60, flat:true, copyPrice:80, format:'60 pages included · 8×10',
     desc:'A contemporary, editorial-style album that tells your wedding story beautifully.', detail:'Additional copies $80 each' },
 ];
 
@@ -1365,7 +1366,7 @@ function catalogFromPage() {
     photo: PHOTO_OPTIONS.map(timed), video: VIDEO_OPTIONS.map(timed),
     videoAddons: VIDEO_ADDONS.map(o => Object.assign(plain(o), pick(o, ['unit']))),
     glam: GLAM_OPTIONS.map(o => Object.assign(plain(o), { reqFullDay:!!o.reqFullDay })),
-    albums: ALBUM_TYPES.map(o => Object.assign({ id:o.id, name:o.name, pricePerPage:o.pricePerPage, min:o.min, format:o.format }, words(o), pick(o, ['desc']), o.flat ? { flat:true } : {})),
+    albums: ALBUM_TYPES.map(o => Object.assign({ id:o.id, name:o.name, pricePerPage:o.pricePerPage, min:o.min, format:o.format }, words(o), pick(o, ['desc']), o.flat ? { flat:true } : {}, { copyPrice: o.copyPrice || 0 })),
     addons: OTHER_ADDONS.map(o => Object.assign(plain(o), pick(o, ['unit']))),
     settings: clone(SETTINGS),
   };
@@ -1654,6 +1655,7 @@ function renderAlbumsEdit() {
       <div class="album-type-price">$${edSpan('pricePerPage', a.pricePerPage, 'ed-num')} per page</div>
       <div class="album-type-spec">${a.flat ? 'exactly' : 'at least'} ${edSpan('min', a.min, 'ed-num')} pages${a.flat ? ` = ${fmt(a.pricePerPage * a.min)}` : ''}</div>
       <div class="album-type-spec">${edSpan('detail', a.detail || '', '', 'data-ph="Another line (optional)"')}</div>
+      <div class="album-type-spec">extra copies $${edSpan('copyPrice', a.copyPrice || 0, 'ed-num')} each <span class="ed-hint">(0: not offered)</span></div>
       <div class="ed-opts">${edTog('flat', a.flat, 'Set page count')}</div>
     </div>`).join('') + edAddBtn('albums', 'album-type-card', '+ Add an album') + `</div>`;
 }
@@ -1686,7 +1688,7 @@ function carteField(el) {
     const o = CARTE[row.dataset.l].list[+row.dataset.n];
     if (f === 'name' || f === 'desc' || f === 'format') o[f] = txt;
     else if (f === 'kicker' || f === 'detail' || f === 'unit') { if (txt) o[f] = txt; else delete o[f]; }
-    else if (f === 'price' || f === 'pricePerPage') o[f] = money();
+    else if (f === 'price' || f === 'pricePerPage' || f === 'copyPrice') o[f] = money();
     else if (f === 'minQty' || f === 'min') o[f] = Math.max(1, whole());
   }
   paintEditBar();
@@ -1846,13 +1848,16 @@ function applyCatalog(c) {
     const base = x => Object.assign({ id: String(x.id), name: String(x.name), price: num(x.price, 0), desc: String(x.desc || '') }, words(x, ['kicker', 'detail', 'unit']));
     const timed = x => Object.assign(base(x), x.hourly ? { qty: true, unit: 'per hour', minQty: Math.max(1, Math.round(num(x.minQty, 2))) } : {});
     const put = (arr, list) => arr.splice(0, arr.length, ...list);
+    // a catalog saved before v168 has no copy price: keep the page's own (the Magazine's $80)
+    const copyPriceOf = x => x.copyPrice != null ? num(x.copyPrice, 0) : ((ALBUM_TYPES.find(a => a.id === String(x.id)) || {}).copyPrice || 0);
     put(PHOTO_OPTIONS, listOf(d.photo).filter(item).map(x => Object.assign(timed(x), x.fullDay ? { fullDay: true } : {})));
     put(VIDEO_OPTIONS, listOf(d.video).filter(item).map(timed));
     put(VIDEO_ADDONS,  listOf(d.videoAddons).filter(item).map(base));
     put(GLAM_OPTIONS,  listOf(d.glam).filter(item).map(x => Object.assign(base(x), { reqFullDay: !!x.reqFullDay })));
     put(ALBUM_TYPES,   listOf(d.albums).filter(item).map(x => Object.assign({ id: String(x.id), name: String(x.name), pricePerPage: num(x.pricePerPage, 0),
                                                                   min: Math.max(1, Math.round(num(x.min, 24))), format: String(x.format || '') },
-                                                                  words(x, ['kicker', 'desc', 'detail']), x.flat ? { flat: true } : {})));
+                                                                  words(x, ['kicker', 'desc', 'detail']), x.flat ? { flat: true } : {},
+                                                                  copyPriceOf(x) ? { copyPrice: copyPriceOf(x) } : {})));
     put(OTHER_ADDONS,  listOf(d.addons).filter(item).map(base));
     // collections edited on this page (see EDITING THE COLLECTIONS); the built-in ones until saved once
     const part = x => Object.assign({ include: strs(x.include), gifts: strs(x.gifts) },
@@ -1938,7 +1943,7 @@ const freshState = () => ({
   videoAddons: new Set(),
   glam: null, glamExtraHours: 0,
   snpGuests: 0,
-  album: null, albumPages: 30,
+  album: null, albumPages: 30, albumCopies: 0,
   otherAddons: new Set(),
   collection: null,            // { id, variant } once a collection is chosen
 });
@@ -2076,6 +2081,15 @@ function renderAlbums() {
         <button class="qty-btn" onclick="changePages(2)">+</button>
       </div>
       <div class="pages-subtotal">${albumSubtotal()}</div>
+    </div>` : '') +
+    (sel && aType.copyPrice > 0 ? `<div class="album-pages-control">
+      <div class="pages-label">${L(`Additional copies (${fmt(aType.copyPrice)} each)`, `Exemplaires supplémentaires (${fmt(aType.copyPrice)} chacun)`)}</div>
+      <div class="pages-input-wrap">
+        <button class="qty-btn" onclick="changeCopies(-1)">−</button>
+        <div class="qty-display">${state.albumCopies}</div>
+        <button class="qty-btn" onclick="changeCopies(1)">+</button>
+      </div>
+      <div class="pages-subtotal">${state.albumCopies ? fmt(state.albumCopies * aType.copyPrice) : ''}</div>
     </div>` : '');
 }
 
@@ -2134,6 +2148,11 @@ function calcRaw() {
   if (state.album) {
     const a = ALBUM_TYPES.find(x => x.id===state.album);
     if (a) { const pages = a.flat ? a.min : state.albumPages, p=a.pricePerPage*pages; total+=p; lines.push({id:a.id, section:'Album', name:`${tr(a.name)} (${pages} pages)`, price:p}); }
+    if (a && a.copyPrice > 0 && state.albumCopies > 0) {
+      const n = state.albumCopies, p = a.copyPrice * n; total += p;
+      lines.push({ id:'album_copies', section:'Album', price:p,
+        name: L(`${a.name}, ${n} additional ${n > 1 ? 'copies' : 'copy'}`, `${tr(a.name)}, ${n} exemplaire${n > 1 ? 's' : ''} supplémentaire${n > 1 ? 's' : ''}`) });
+    }
   }
   state.otherAddons.forEach(id => {
     const a = OTHER_ADDONS.find(x => x.id===id);
@@ -2289,7 +2308,13 @@ function changeGlamHours(delta) {
 
 function selectAlbum(id) {
   state.album = state.album===id ? null : id;
+  state.albumCopies = 0;
   if (state.album) { const a=ALBUM_TYPES.find(x=>x.id===id); if(state.albumPages<a.min || a.flat) state.albumPages=a.min; }
+  renderAlbums(); renderSummary();
+}
+
+function changeCopies(delta) {
+  state.albumCopies = Math.max(0, Math.min(20, state.albumCopies + delta));
   renderAlbums(); renderSummary();
 }
 

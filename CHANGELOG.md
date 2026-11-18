@@ -5,6 +5,27 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v168 — 2026-11-17
+
+**Package Builder — additional Magazine Album copies**
+- Selecting the Magazine Album now shows "Additional copies ($80 each)"
+  with − / + (up to 20). Copies go in the summary as their own line
+  ("Magazine Album, 2 additional copies"), in both PDFs, and take the
+  promotion like everything else. With a collection held they are added
+  à la carte. French: "Exemplaires supplémentaires (80 $ chacun)".
+- Albums gain `copyPrice` (editable on the album card in editing mode;
+  0 = no copies offered). The published catalog has none yet, so the page
+  keeps the Magazine's built-in $80 until the next Publish saves it. The
+  "Additional copies $80 each" line on the card is still its own text.
+- The admin panel keeps `copyPrice` when it saves.
+- Tested on the mock with a copy of the live catalog: Magazine $600 + 2
+  copies $160 → $608 with the 20% promotion; no copies option on the Young
+  Book; with The Signature held, the album and a copy are added à la carte;
+  French label and line; copy price changed to $75 in editing mode →
+  published → a fresh load uses $75.
+
+---
+
 ## v167 — 2026-11-17
 
 **Video Edit Form — `video-edit-form/index.html`** (The Biz)
