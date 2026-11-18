@@ -5,6 +5,18 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v166 — 2026-11-17
+
+**Video Edit Form — `video-edit-form/index.html`** (The Biz)
+- The GHL notification email showed the summary as one run-on paragraph:
+  GHL emails are HTML, so the plain-text `notes` lost its line breaks.
+  The webhook now also sends `notes_html` — the same summary as an
+  inline-styled HTML layout (headings, label/value rows, links), with every
+  client value escaped. `notes` is unchanged for anything already using it.
+- Xavier swaps `{{inboundWebhookRequest.notes}}` for
+  `{{inboundWebhookRequest.notes_html}}` in the Internal Notification email.
+- Tested locally with the webhook stubbed; HTML rendered and checked.
+
 ## v165 — 2026-11-17
 
 **Video Edit Form — `video-edit-form/index.html`** (The Biz)
