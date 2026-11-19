@@ -5,6 +5,41 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v169 — 2026-11-19
+
+**What's new** · Update · [tools/production-hub.html]
+### Card checklists you can reorder, and time you can correct
+In the Production Hub's In Production and in Pipelines:
+- **"+ Date" on a checklist item now opens the date picker.** On a computer
+  it used to do nothing.
+- **Drag checklist items into any order** by the ⋮⋮ grip at the start of
+  each line, with a mouse or a finger.
+- **Tap a session in a card's Time list** to change its day, start or end
+  time, or to delete it. A session that ran past midnight works too.
+
+**Production Hub — `tools/production-hub.html`, source `production_hub_v11.html`; Pipelines — `tools/pipelines.html`, source `pipelines_v10.html`**
+- The "+ Date" control hides the real date input on top of a chip; Chrome
+  on a computer only opens its picker from the input's own calendar icon,
+  so a click did nothing. A click on `.dpick` now calls `showPicker()`
+  (iPhone already opened it). The phone rule that made date inputs 44px tall
+  no longer applies to this hidden one.
+- `sortable()` takes an optional `handle`: with one, the drag starts at once
+  from the grip (`touch-action: none`) and works inside the card window,
+  which scrolls while you hold near its edge. Checklist rows carry
+  `data-tid`; the new order is the card's `tasks` order (Pipelines doc).
+- Sessions: the day + times line is a button opening "Edit session" (day,
+  start, end; a running one: start only; an end before the start counts as
+  the next day; live length). Save and Delete return to the card. Pipelines'
+  session list now dates sessions by the local day, not UTC.
+
+**Verified** (mock database, desktop; finger drag simulated) — hub: "+ Date"
+calls the picker, third item dragged to the top and saved in that order,
+a 45 min session edited to 09:00–10:30 (1h30, total updated), an overnight
+23:30–00:15 → 45m; Pipelines: grip drag C → top, picker opens, session
+edited to 14:00–16:15 (2h15). No console errors.
+
+---
+
 ## v168 — 2026-11-17
 
 **Package Builder — additional Magazine Album copies**

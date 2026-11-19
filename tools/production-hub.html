@@ -388,6 +388,11 @@ textarea[data-grow]{min-height:40px!important;height:40px;overflow:hidden;resize
 .cw-fields .full{grid-column:1/-1}
 .sec-h{margin:16px 0 8px;padding-top:12px;border-top:2px solid var(--black);font:800 14px/1 "Inter Tight",sans-serif;text-transform:uppercase;display:flex;gap:10px;align-items:center}
 .sec-h .bar{flex:1;width:auto}
+.cgrip{cursor:grab;touch-action:none;color:#b5adad;font:800 14px/1 "Inter Tight",sans-serif;letter-spacing:-2px;padding:6px 6px 6px 0;user-select:none;-webkit-user-select:none;flex:none}
+.cgrip:hover{color:var(--black)}
+.sess .sedit{all:unset;cursor:pointer;flex:1;text-decoration:underline dotted #bbb;text-underline-offset:3px}
+.sess .sedit:hover{color:var(--black);text-decoration-color:var(--black)}
+#dlg .dpick input{min-height:0!important}
 .ctask{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line);flex-wrap:wrap}
 .dpick{position:relative;display:inline-flex;align-items:center;font:var(--wide);font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:#999;padding:4px 7px;cursor:pointer;white-space:nowrap;border:1px dashed #cfc7c7;flex:none}
 .dpick:hover{color:var(--black);border-color:var(--black)}
@@ -1651,14 +1656,14 @@ function cardDlg(plid, cid) {
     + '<label>Stage</label><div class="cw-stage">' + stagesOf(pl).map(function (s) { return '<button class="' + (s.id === stageOf(pl, c) ? 'on' : '') + '" data-cstage="' + s.id + '">' + esc(s.name) + '</button>'; }).join('') + '</div>'
     + (fl.length ? '<div class="cw-fields">' + fl.map(function (x) { return fieldInput(x, f[x.id]); }).join('') + '</div>' : '')
     + '<div class="sec-h">Checklist <span class="pill">' + dn + '/' + ts.length + '</span><span class="bar"><i style="width:' + pct + '%"></i></span></div>'
-    + ts.map(function (t) {
+    + '<div class="cw-tasks">' + ts.map(function (t) {
       var lk = linkedTo(t.id);
-      return '<div class="ctask' + (t.done ? ' done' : '') + '"><button class="chk' + (t.done ? ' on' : '') + '" data-ctick="' + t.id + '" aria-label="Done">' + (t.done ? '✓' : '') + '</button>'
+      return '<div class="ctask' + (t.done ? ' done' : '') + '" data-tid="' + t.id + '"><span class="cgrip" title="Drag to reorder" aria-hidden="true">⋮⋮</span><button class="chk' + (t.done ? ' on' : '') + '" data-ctick="' + t.id + '" aria-label="Done">' + (t.done ? '✓' : '') + '</button>'
         + '<input class="tt" value="' + esc(t.title) + '" data-ctt="' + t.id + '" aria-label="Task">'
         + '<span class="rm">' + (t.done && !t.due ? '' : dateCtl(t.due, 'data-ctd="' + t.id + '"', 'ctd:' + t.id, t.done))
         + (t.done ? '' : lk ? '<span class="tag on">In ' + esc(listName(lk.list)) + '</span>' : '<button class="tod" data-pull=\'' + esc(JSON.stringify({ app: 'pl', pl: plid, c: cid, t: t.id })) + '\' data-title="' + esc(t.title) + '">→ Today</button>')
         + '<button class="x" data-ctdel="' + t.id + '" title="Remove">×</button></span></div>';
-    }).join('')
+    }).join('') + '</div>'
     + '<form class="addrow" id="cw-add"><input id="cw-add-in" placeholder="Add an item" autocomplete="off"><button class="b">Add</button></form>'
     + (function () {
       var lg = listOf(c.log).filter(Boolean), run = cardRunning(c), ms = cardMs(c), ss = lg.slice().sort(function (a, b) { return b.start - a.start; });
@@ -1666,7 +1671,7 @@ function cardDlg(plid, cid) {
       var day = function (x) { return niceDate(dateStr(new Date(x))); };
       return '<div class="sec-h">Time</div><div class="tbig"><span class="tt2" data-tclock="' + c.id + '">' + (run ? '⏱ ' + clockOf(ms) : dur(ms)) + '</span>'
         + '<button class="b' + (run ? ' on' : ' y') + '" data-ctimer="' + c.id + '">' + (run ? '■ Stop' : '▶ Start timer') + '</button></div>'
-        + (ss.length ? '<div class="sess">' + ss.map(function (e) { return '<div><span>' + day(e.start) + ' · ' + t(e.start) + '–' + (e.end ? t(e.end) : 'now') + '</span><span class="' + (e.end ? '' : 'run') + '">' + (e.end ? dur(e.end - e.start) : 'running') + '</span>' + (e.end ? '<button data-edel="' + e.id + '" title="Delete this session">×</button>' : '') + '</div>'; }).join('') + '</div>' : '')
+        + (ss.length ? '<div class="sess">' + ss.map(function (e) { return '<div><button class="sedit" data-eedit="' + e.id + '" title="Change the day or times">' + day(e.start) + ' · ' + t(e.start) + '–' + (e.end ? t(e.end) : 'now') + '</button><span class="' + (e.end ? '' : 'run') + '">' + (e.end ? dur(e.end - e.start) : 'running') + '</span>' + (e.end ? '<button data-edel="' + e.id + '" title="Delete this session">×</button>' : '') + '</div>'; }).join('') + '</div>' : '')
         + '<form class="tadd" id="cw-time"><input type="number" min="1" step="1" inputmode="numeric" id="cw-time-min" placeholder="Minutes"><input type="date" id="cw-time-day" value="' + today() + '"><button class="b">+ Add time</button></form>';
     })()
     + '<div class="sec-h">Comments' + (comments.length ? ' <span class="pill">' + comments.length + '</span>' : '') + '</div>'
@@ -1891,6 +1896,36 @@ function scoreDlg(id, mode) {
   $('dlg-box').querySelectorAll('input[type=range]').forEach(function (r) { r.oninput = live; }); live();
 }
 
+
+/* "+ Date": open the date picker itself (Chrome on a computer only opens it from its own calendar icon, which is hidden here) */
+document.addEventListener('click', function (e) {
+  var lab = e.target.closest && e.target.closest('.dpick'), inp = lab && lab.querySelector('input[type=date]');
+  if (!inp || !inp.showPicker) return;
+  try { inp.showPicker(); e.preventDefault(); } catch (err) {}
+});
+function clockHM(ms) { var d = new Date(ms); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); }
+function ymdOf(ms) { var d = new Date(ms); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+/* edit one time session: its day, start and end (a running one: its start) */
+function sessionDlg(e) {
+  openDlg('<h3>Edit session</h3><div class="body"><label>Day</label><input type="date" id="se-day" value="' + ymdOf(e.start) + '">'
+    + '<div class="cw-fields"><div><label>Start</label><input type="time" id="se-start" value="' + clockHM(e.start) + '"></div>'
+    + '<div><label>End</label>' + (e.end ? '<input type="time" id="se-end" value="' + clockHM(e.end) + '">' : '<input type="text" value="Still running" disabled>') + '</div></div>'
+    + '<p class="lead" id="se-len" style="margin-top:10px"></p></div>'
+    + '<div class="foot">' + (e.end ? '<button class="b r" data-edel2="' + e.id + '">Delete</button>' : '') + '<span class="sp"></span><button class="b ghost" data-close>Cancel</button><button class="b y" data-esave="' + e.id + '">Save</button></div>');
+  var show = function () { var r = sessionRange(e); $('se-len').textContent = r ? (e.end ? 'Length: ' + dur(r[1] - r[0]) : 'Started ' + clockHM(r[0])) : 'Check the times.'; };
+  ['se-day', 'se-start', 'se-end'].forEach(function (id) { if ($(id)) $(id).addEventListener('input', show); });
+  show();
+}
+// the times in the session dialog as [start, end] in ms; an end before the start means it ran past midnight
+function sessionRange(e) {
+  var day = $('se-day').value, st = $('se-start').value; if (!day || !st) return null;
+  var a = new Date(day + 'T' + st).getTime(); if (isNaN(a)) return null;
+  if (!e.end) return a <= Date.now() ? [a, null] : null;
+  var en = $('se-end').value; if (!en) return null;
+  var b = new Date(day + 'T' + en).getTime(); if (b <= a) b += 864e5;
+  return [a, b];
+}
+
 /* ============================================================ the ⋯ menu */
 function closeMenu() { var m = $('amenu'); if (m) m.remove(); document.querySelectorAll('.amb.open').forEach(function (b) { b.classList.remove('open'); }); }
 function openMenu(btn, key) {
@@ -1953,6 +1988,13 @@ document.addEventListener('click', function (e) {
   if (d.tab) { closeMenu(); return show(d.tab); }
   if ('close' in d) return closeDlg();
   if ('signin' in d) return SH && SH.click();
+  if (d.eedit) { var hs = findCard(cardOpen.pl, cardOpen.c), se = hs && listOf(hs.c.log).find(function (x) { return x && x.id === d.eedit; }); if (se) sessionDlg(se); return; }
+  if (d.esave) {
+    var hs2 = findCard(cardOpen.pl, cardOpen.c), se2 = hs2 && listOf(hs2.c.log).find(function (x) { return x && x.id === d.esave; }); if (!se2) return closeDlg();
+    var rg = sessionRange(se2); if (!rg) return toast('Check the day and times');
+    se2.start = rg[0]; if (se2.end) se2.end = rg[1]; PLD.timers = 1; savePL(); closeDlg(); return render();
+  }
+  if (d.edel2) { if (!confirm('Delete this session?')) return; var hd2 = findCard(cardOpen.pl, cardOpen.c); hd2.c.log = listOf(hd2.c.log).filter(function (x) { return x && x.id !== d.edel2; }); savePL(); closeDlg(); return render(); }
   if (d.ctimer) { e.stopPropagation(); var ht = cardHit(d.ctimer); if (!ht) return; if (cardRunning(ht.c)) stopTimer(); else startTimer(ht.c); savePL(); render(); tickTimers(); return; }
   if ('stoptimer' in d) { stopTimer(); savePL(); render(); tickTimers(); return; }
   if (d.open && el.closest('#runbar')) { var op = d.open.split(':'); return openCard(op[0], op[1]); }
@@ -2162,7 +2204,9 @@ function sortable(o) {
   var SKIP = 'button,a,input,textarea,select,label,[contenteditable]';
   document.addEventListener('pointerdown', function (e) {
     if (e.button > 0 || !e.target.closest) return;
-    var it = e.target.closest(o.item); if (!it || e.target.closest(SKIP) || it.closest('#dlg')) return;
+    var it = e.target.closest(o.item); if (!it) return;
+    if (o.handle) { if (!e.target.closest(o.handle)) return; }               // a grip (checklist rows in a card window): drags at once
+    else if (e.target.closest(SKIP) || it.closest('#dlg')) return;
     var sx = e.clientX, sy = e.clientY, px = sx, py = sy, touch = e.pointerType !== 'mouse', started = false, timer = null;
     var ghost, dx, dy, target = null, before = true, cont = null, scroller = null, self = false;
     dragPending = true;
@@ -2189,13 +2233,15 @@ function sortable(o) {
       place();
       scroller = setInterval(function () {        // keep scrolling while held near an edge
         var pg = document.querySelector('main'); pg = getComputedStyle(pg).overflowY === 'auto' ? pg : window;   // on a phone the content scrolls, not the page
+        if (it.closest('#dlg')) pg = it.closest('#dlg .box');      // inside a card window, scroll the window
         if (py < 70) pg.scrollBy(0, -14); else if (py > innerHeight - 70) pg.scrollBy(0, 14);
         var row = document.elementFromPoint(px, py); row = row && row.closest('.pboard,.lists');
         if (row) { var rb = row.getBoundingClientRect(); if (px < rb.left + 50) row.scrollLeft -= 14; else if (px > rb.right - 50) row.scrollLeft += 14; }
         place();
       }, 30);
     }
-    if (touch) timer = setTimeout(begin, 330);
+    if (o.handle) { e.preventDefault(); begin(); }
+    else if (touch) timer = setTimeout(begin, 330);
     function move(ev) {
       px = ev.clientX; py = ev.clientY;
       if (started) return place();
@@ -2250,6 +2296,12 @@ sortable({ item: '.pcard[data-card],.pcard[data-qcard]', container: '[data-col]'
   }
   var b = target && target !== h.c.id ? cardsOf(h.pl).find(function (x) { return x.id === target; }) : null;
   moveStage(h.c, sid); h.pl.cards = reorder(cardsOf(h.pl), h.c, b, function (x) { return !x.archived && stageOf(h.pl, x) === sid; }); savePL(); flashId = h.c.id; commit();
+} });
+/* A card's checklist, by its ⋮⋮ grip (the order is Pipelines' order too) */
+sortable({ handle: '.cgrip', item: '.ctask[data-tid]', container: '.cw-tasks', onDrop: function (el, cont, bef) {
+  var h = cardOpen && findCard(cardOpen.pl, cardOpen.c); if (!h) return;
+  var ts = ctasks(h.c), t = ts.find(function (x) { return x.id === el.getAttribute('data-tid'); }), b = bef && ts.find(function (x) { return x.id === bef.getAttribute('data-tid'); });
+  if (!t) return; h.c.tasks = reorder(ts, t, b, function () { return true; }); savePL(); render();
 } });
 /* Goals: within the year */
 sortable({ item: '.goal[data-goal]', container: '.ggrid', grid: true, onDrop: function (el, cont, bef) {

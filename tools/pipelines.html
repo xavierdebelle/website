@@ -134,6 +134,11 @@ body.is-dragging,body.is-dragging *{cursor:grabbing!important;user-select:none!i
 .sess button:hover{color:var(--red)}
 .tadd{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
 #dlg .tadd input{width:auto;flex:1 1 110px}
+.cgrip{cursor:grab;touch-action:none;color:#b5adad;font:800 14px/1 "Inter Tight",sans-serif;letter-spacing:-2px;padding:6px 6px 6px 0;user-select:none;-webkit-user-select:none;flex:none}
+.cgrip:hover{color:var(--black)}
+.sess .sedit{all:unset;cursor:pointer;flex:1;text-decoration:underline dotted #bbb;text-underline-offset:3px}
+.sess .sedit:hover{color:var(--black);text-decoration-color:var(--black)}
+#dlg .dpick input{min-height:0!important}
 .amb{margin-left:auto;border:1px solid #cfc7c7;background:var(--white);color:var(--black);padding:3px 9px;font:800 14px/1 "Inter Tight",sans-serif;letter-spacing:.1em}
 .amb:hover,.amb.open{background:var(--black);color:var(--yellow);border-color:var(--black)}
 .due{display:inline-flex;align-items:center;gap:4px;border:1px solid #cfc7c7;padding:2px 8px;font-size:11px;font-weight:600;border-radius:999px;color:var(--g7);white-space:nowrap}
@@ -146,6 +151,7 @@ body.is-dragging,body.is-dragging *{cursor:grabbing!important;user-select:none!i
 .arch .row{display:flex;align-items:center;gap:10px;padding:9px 16px;border-bottom:1px solid var(--line)}
 .arch .row span{flex:1;font-weight:600}
 .empty-board{background:var(--white);padding:30px;text-align:center;color:var(--g6)}
+
 
 /* ---------- ⋯ menu ---------- */
 #amenu{position:fixed;z-index:80;background:var(--white);border:2px solid var(--black);box-shadow:0 8px 24px rgba(0,0,0,.18);min-width:220px;max-width:280px;padding:6px 0;max-height:calc(100vh - 24px);overflow:auto}
@@ -545,19 +551,19 @@ function cardDlg(cid) {
     + '<label>Stage</label><div class="cw-stage">' + pl.stages.map(function (s) { return '<button class="' + (s.id === c.stage ? 'on' : '') + '" data-stage="' + s.id + '">' + esc(s.name) + '</button>'; }).join('') + '</div>'
     + (pl.fields.length ? '<div class="cw-fields">' + pl.fields.map(function (f) { return fieldInput(f, c.fields[f.id]); }).join('') + '</div>' : '')
     + '<div class="sec-h">Checklist <span class="pill">' + done + '/' + c.tasks.length + '</span><span class="bar"><i style="width:' + pct + '%"></i></span></div>'
-    + c.tasks.map(function (t) {
-      return '<div class="task' + (t.done ? ' done' : '') + '"><button class="chk' + (t.done ? ' on' : '') + '" data-tick="' + t.id + '" aria-label="Done">' + (t.done ? '✓' : '') + '</button>'
+    + '<div class="cw-tasks">' + c.tasks.map(function (t) {
+      return '<div class="task' + (t.done ? ' done' : '') + '" data-tid="' + t.id + '"><span class="cgrip" title="Drag to reorder" aria-hidden="true">⋮⋮</span><button class="chk' + (t.done ? ' on' : '') + '" data-tick="' + t.id + '" aria-label="Done">' + (t.done ? '✓' : '') + '</button>'
         + '<input class="tt" value="' + esc(t.title) + '" data-tt="' + t.id + '" aria-label="Task">'
         + '<span class="rm">' + (t.done && !t.due ? '' : dateCtl(t.due, 'data-td="' + t.id + '"', t.id, t.done))
         + '<button class="x" data-tdel="' + t.id + '" title="Remove">×</button></span></div>';
-    }).join('')
+    }).join('') + '</div>'
     + '<form class="addrow" id="cw-add"><input id="cw-add-in" placeholder="Add an item" autocomplete="off"><button class="b">Add</button></form>'
     + (function () {
       var run = c.log.find(function (e) { return !e.end; }), ms = cardMs(c), ss = c.log.slice().sort(function (a, b) { return b.start - a.start; });
       var t = function (x) { return new Date(x).toLocaleTimeString('en-CA', { hour: '2-digit', minute: '2-digit', hour12: false }); };
       return '<div class="sec-h">Time</div><div class="tbig"><span class="tt2" data-tclock="' + c.id + '">' + (run ? '⏱ ' + clockOf(ms) : dur(ms)) + '</span>'
         + '<button class="b' + (run ? ' on' : ' y') + '" data-timer="' + c.id + '">' + (run ? '■ Stop' : '▶ Start timer') + '</button></div>'
-        + (ss.length ? '<div class="sess">' + ss.map(function (e) { return '<div><span>' + niceDate(new Date(e.start).toISOString().slice(0, 10)) + ' · ' + t(e.start) + '–' + (e.end ? t(e.end) : 'now') + '</span><span class="' + (e.end ? '' : 'run') + '">' + (e.end ? dur(e.end - e.start) : 'running') + '</span>' + (e.end ? '<button data-edel="' + e.id + '" title="Delete this session">×</button>' : '') + '</div>'; }).join('') + '</div>' : '')
+        + (ss.length ? '<div class="sess">' + ss.map(function (e) { return '<div><button class="sedit" data-eedit="' + e.id + '" title="Change the day or times">' + niceDate(ymdOf(e.start)) + ' · ' + t(e.start) + '–' + (e.end ? t(e.end) : 'now') + '</button><span class="' + (e.end ? '' : 'run') + '">' + (e.end ? dur(e.end - e.start) : 'running') + '</span>' + (e.end ? '<button data-edel="' + e.id + '" title="Delete this session">×</button>' : '') + '</div>'; }).join('') + '</div>' : '')
         + '<form class="tadd" id="cw-time"><input type="number" min="1" step="1" inputmode="numeric" id="cw-time-min" placeholder="Minutes"><input type="date" id="cw-time-day" value="' + today() + '"><button class="b">+ Add time</button></form>';
     })()
     + '<div class="sec-h">Files' + (c.files.length ? ' <span class="pill">' + c.files.length + '</span>' : '') + '<span class="sp"></span><button class="b" data-fattach="' + c.id + '">+ Attach a file</button></div>'
@@ -650,6 +656,35 @@ function fileAction(fid, unlink) {
     if (fl.shared && navigator.clipboard) navigator.clipboard.writeText(fl.link).then(function () { fileSay(hit.c.id, 'Link copied — anyone with it can view “' + esc(fl.name) + '”.', 4000); }, function () { fileSay(hit.c.id, ''); });
     else fileSay(hit.c.id, '');
   }, function (err) { fileSay(hit.c.id, 'Couldn’t change sharing: ' + esc(err.message)); });
+}
+
+/* "+ Date": open the date picker itself (Chrome on a computer only opens it from its own calendar icon, which is hidden here) */
+document.addEventListener('click', function (e) {
+  var lab = e.target.closest && e.target.closest('.dpick'), inp = lab && lab.querySelector('input[type=date]');
+  if (!inp || !inp.showPicker) return;
+  try { inp.showPicker(); e.preventDefault(); } catch (err) {}
+});
+function clockHM(ms) { var d = new Date(ms); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); }
+function ymdOf(ms) { var d = new Date(ms); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+/* edit one time session: its day, start and end (a running one: its start) */
+function sessionDlg(e) {
+  openDlg('<h3>Edit session</h3><div class="body"><label>Day</label><input type="date" id="se-day" value="' + ymdOf(e.start) + '">'
+    + '<div class="cw-fields"><div><label>Start</label><input type="time" id="se-start" value="' + clockHM(e.start) + '"></div>'
+    + '<div><label>End</label>' + (e.end ? '<input type="time" id="se-end" value="' + clockHM(e.end) + '">' : '<input type="text" value="Still running" disabled>') + '</div></div>'
+    + '<p class="lead" id="se-len" style="margin-top:10px"></p></div>'
+    + '<div class="foot">' + (e.end ? '<button class="b r" data-edel2="' + e.id + '">Delete</button>' : '') + '<span class="sp"></span><button class="b ghost" data-close>Cancel</button><button class="b y" data-esave="' + e.id + '">Save</button></div>');
+  var show = function () { var r = sessionRange(e); $('se-len').textContent = r ? (e.end ? 'Length: ' + dur(r[1] - r[0]) : 'Started ' + clockHM(r[0])) : 'Check the times.'; };
+  ['se-day', 'se-start', 'se-end'].forEach(function (id) { if ($(id)) $(id).addEventListener('input', show); });
+  show();
+}
+// the times in the session dialog as [start, end] in ms; an end before the start means it ran past midnight
+function sessionRange(e) {
+  var day = $('se-day').value, st = $('se-start').value; if (!day || !st) return null;
+  var a = new Date(day + 'T' + st).getTime(); if (isNaN(a)) return null;
+  if (!e.end) return a <= Date.now() ? [a, null] : null;
+  var en = $('se-end').value; if (!en) return null;
+  var b = new Date(day + 'T' + en).getTime(); if (b <= a) b += 864e5;
+  return [a, b];
 }
 
 /* ---------- ⋯ menu ---------- */
@@ -747,6 +782,13 @@ document.addEventListener('click', function (e) {
   var d = el.dataset;
   if (d.menu) { e.stopPropagation(); if (el.classList.contains('open')) return closeMenu(); return openMenu(el, d.menu); }
   if ('close' in d) return closeDlg();
+  if (d.eedit) { var hs = findCard(openCard), se = hs && hs.c.log.find(function (x) { return x.id === d.eedit; }); if (se) sessionDlg(se); return; }
+  if (d.esave) {
+    var hs2 = findCard(openCard), se2 = hs2 && hs2.c.log.find(function (x) { return x.id === d.esave; }); if (!se2) return closeDlg();
+    var rg = sessionRange(se2); if (!rg) return toast('Check the day and times');
+    se2.start = rg[0]; if (se2.end) se2.end = rg[1]; closeDlg(); return commit();
+  }
+  if (d.edel2) { if (!confirm('Delete this session?')) return; var hd2 = findCard(openCard); hd2.c.log = hd2.c.log.filter(function (x) { return x.id !== d.edel2; }); closeDlg(); return commit(); }
   if (d.timer) { e.stopPropagation(); var ht = findCard(d.timer), was = ht.c.log.some(function (x) { return !x.end; }); if (was) stopTimer(); else startTimer(ht.c); commit(); tickTimers(); return; }
   if ('stoptimer' in d) { stopTimer(); commit(); tickTimers(); return; }
   if (d.edel) { if (!confirm('Delete this session?')) return; var he = findCard(openCard); he.c.log = he.c.log.filter(function (x) { return x.id !== d.edel; }); return commit(); }
@@ -808,7 +850,9 @@ function sortable(o) {
   var SKIP = 'button,a,input,textarea,select,label,[contenteditable]';
   document.addEventListener('pointerdown', function (e) {
     if (e.button > 0 || !e.target.closest) return;
-    var it = e.target.closest(o.item); if (!it || e.target.closest(SKIP) || it.closest('#dlg')) return;
+    var it = e.target.closest(o.item); if (!it) return;
+    if (o.handle) { if (!e.target.closest(o.handle)) return; }               // a grip (checklist rows in a card window): drags at once
+    else if (e.target.closest(SKIP) || it.closest('#dlg')) return;
     var sx = e.clientX, sy = e.clientY, px = sx, py = sy, touch = e.pointerType !== 'mouse', started = false, timer = null;
     var ghost, dx, dy, target = null, before = true, cont = null, scroller = null, self = false;
     dragPending = true;
@@ -834,13 +878,15 @@ function sortable(o) {
       if (navigator.vibrate) try { navigator.vibrate(12); } catch (err) {}
       place();
       scroller = setInterval(function () {        // keep scrolling while held near an edge
-        if (py < 70) window.scrollBy(0, -14); else if (py > innerHeight - 70) window.scrollBy(0, 14);
+        var pg = it.closest('#dlg .box') || window;                  // inside a card window, scroll the window
+        if (py < 70) pg.scrollBy(0, -14); else if (py > innerHeight - 70) pg.scrollBy(0, 14);
         var row = document.elementFromPoint(px, py); row = row && row.closest('.pboard,.lists');
         if (row) { var rb = row.getBoundingClientRect(); if (px < rb.left + 50) row.scrollLeft -= 14; else if (px > rb.right - 50) row.scrollLeft += 14; }
         place();
       }, 30);
     }
-    if (touch) timer = setTimeout(begin, 330);
+    if (o.handle) { e.preventDefault(); begin(); }
+    else if (touch) timer = setTimeout(begin, 330);
     function move(ev) {
       px = ev.clientX; py = ev.clientY;
       if (started) return place();
@@ -869,6 +915,11 @@ function reorder(arr, x, beforeX, sameGroup) {
   if (i < 0) { i = a.length; for (var k = a.length - 1; k >= 0; k--) if (sameGroup(a[k])) { i = k + 1; break; } }
   a.splice(i, 0, x); return a;
 }
+sortable({ handle: '.cgrip', item: '.task[data-tid]', container: '.cw-tasks', onDrop: function (el, cont, bef) {   // a card's checklist, by its ⋮⋮ grip
+  var h = openCard && findCard(openCard); if (!h) return;
+  var t = h.c.tasks.find(function (x) { return x.id === el.getAttribute('data-tid'); }), b = bef && h.c.tasks.find(function (x) { return x.id === bef.getAttribute('data-tid'); });
+  if (!t) return; h.c.tasks = reorder(h.c.tasks, t, b, function () { return true; }); commit();
+} });
 sortable({ item: '.pcard[data-card]', container: '[data-col]', onDrop: function (el, cont, bef) {
   var hit = findCard(el.getAttribute('data-card')); if (!hit) return;
   var sid = cont.getAttribute('data-col'), b = bef && hit.pl.cards.find(function (x) { return x.id === bef.getAttribute('data-card'); });
