@@ -79,7 +79,7 @@
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; }
   body {
-    background: var(--bg);
+    background: var(--wall-bg, var(--bg));
     color: var(--ink);
     font-family: var(--font-ui);
     -webkit-font-smoothing: antialiased;
@@ -118,7 +118,8 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 1rem;
+    flex-wrap: wrap;
+    gap: .6rem 1rem;
     padding: .7rem 1rem;
     background: var(--surface);
     border-bottom: 1px solid var(--line);
@@ -137,7 +138,8 @@
     font-weight: 400;
     margin-left: .6em;
   }
-  .topbar .actions { display: flex; gap: .5rem; }
+  .topbar .actions { display: flex; flex-wrap: wrap; gap: .5rem; }
+  button.icon-label { display: inline-flex; align-items: center; gap: .45rem; }
 
   .dropdown { position: relative; }
   .dropdown-menu {
@@ -164,30 +166,152 @@
   .dropdown-menu button + button { border-top: 1px solid var(--line); }
   .dropdown-menu button:hover { background: var(--surface-sunken); }
 
+  /* ---- layout menu: columns, gap, background ---- */
+  .swatch-dot {
+    display: inline-block;
+    width: .85em; height: .85em;
+    border-radius: 50%;
+    border: 1px solid var(--ink-faint);
+    background: var(--bg);
+    vertical-align: -1px;
+    margin-right: .45em;
+  }
+  .layout-menu {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    width: 248px;
+    max-width: calc(100vw - 24px);
+    padding: .85rem;
+    display: flex;
+    flex-direction: column;
+    gap: .6rem;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    box-shadow: 0 8px 24px rgba(20,18,16,.16);
+    z-index: 30;
+  }
+  .layout-menu[hidden] { display: none; }
+  .menu-label {
+    font-family: var(--font-mono);
+    font-size: .6rem;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+  .menu-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: .5rem;
+  }
+  .menu-value {
+    font-family: var(--font-mono);
+    font-size: .7rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink-dim);
+  }
+  .menu-sep { height: 1px; background: var(--line); margin: .15rem 0; }
+  .seg {
+    display: grid;
+    grid-template-columns: repeat(var(--seg-cols, 5), 1fr);
+    gap: 4px;
+  }
+  .seg button {
+    padding: .35rem 0;
+    font-size: .78rem;
+    font-variant-numeric: tabular-nums;
+  }
+  .seg button.on {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--accent-ink);
+    font-weight: 600;
+  }
+  .layout-menu input[type="range"] { width: 100%; accent-color: var(--accent); margin: 0; }
+  .swatches {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 7px;
+  }
+  .swatch {
+    width: 100%;
+    aspect-ratio: 1;
+    padding: 0;
+    border-radius: 50%;
+    border: 1px solid rgba(128,120,110,.45);
+  }
+  .swatch:hover { border-color: var(--ink-dim); }
+  .swatch.on { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .bg-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .5rem;
+  }
+  .bg-row label {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    font-size: .82rem;
+    color: var(--ink-dim);
+    cursor: pointer;
+  }
+  .bg-row button { padding: .35rem .6rem; font-size: .82rem; }
+
   /* ---- grid ---- */
+  /* columns and gap come from the Layout menu; the gap also frames the edges */
   .grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 0;
-    border-top: 1px solid var(--line);
-    border-left: 1px solid var(--line);
+    grid-template-columns: repeat(var(--cols, 3), minmax(0, 1fr));
+    gap: var(--gap, 4px);
+    padding: var(--gap, 4px);
   }
   body.drag-over .grid { outline: 2px dashed var(--accent); outline-offset: -2px; }
 
   .tile {
     position: relative;
     aspect-ratio: 4 / 5;
-    background: var(--surface);
+    background: var(--surface-sunken);
     overflow: hidden;
-    border-right: 1px solid var(--line);
-    border-bottom: 1px solid var(--line);
   }
-  .tile img {
+  .tile .media {
     width: 100%; height: 100%;
     object-fit: cover;
     display: block;
     -webkit-user-drag: element;
   }
+  .tile video.media { pointer-events: none; }
+  .tile .media.missing {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    text-align: center;
+    font-size: .75rem;
+    color: var(--ink-faint);
+    background: var(--surface-sunken);
+  }
+  /* videos play muted; this turns the sound on for one of them */
+  .tile .sound-btn {
+    position: absolute;
+    right: 5px; bottom: 5px;
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(20,18,16,.55);
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    padding: 0;
+    opacity: 0;
+    transition: opacity .12s;
+    z-index: 2;
+  }
+  .tile:hover .sound-btn,
+  .tile .sound-btn:focus-visible,
+  .tile .sound-btn.on { opacity: 1; }
+  .tile .sound-btn:hover { background: var(--accent); }
   .tile.photo { cursor: grab; }
   .tile.photo:active { cursor: grabbing; }
   .tile.photo.dragging { opacity: .35; }
@@ -437,8 +561,36 @@
   .crop-preview img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .crop-actions { display: flex; gap: .5rem; }
 
+  /* ---- lock & present ---- */
+  body.presenting .topbar,
+  body.presenting .tile .remove,
+  body.presenting .tile .replace,
+  body.presenting .tile .frame-no,
+  body.presenting .empty { display: none; }
+  body.presenting .tile.photo { cursor: default; }
+  .present-exit {
+    position: fixed;
+    top: 14px; right: 14px;
+    z-index: 120;
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    border: none;
+    padding: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(20,18,16,.62);
+    color: #fff;
+    opacity: .18;
+    transition: opacity .2s;
+  }
+  body.presenting .present-exit { display: flex; }
+  .present-exit:hover, .present-exit:focus-visible { opacity: 1; background: var(--accent); }
+
   /* no hover on touch — the tile controls have to stay put to be reachable */
   @media (hover: none) {
+    .present-exit { opacity: .55; }
+    .tile .sound-btn { opacity: 1; }
     .tile .remove {
       opacity: 1;
       width: 26px;
@@ -455,8 +607,28 @@
 <div class="topbar">
   <span class="brand">Portfolio<span class="count" id="brandCount">0</span></span>
   <div class="actions">
-    <button class="ghost" id="addBtn" type="button">Add photos</button>
-    <input type="file" id="photoInput" accept="image/*" multiple hidden />
+    <button class="ghost" id="addBtn" type="button">Add media</button>
+    <input type="file" id="photoInput" accept="image/*,video/*" multiple hidden />
+    <div class="dropdown" id="layoutDropdown">
+      <button class="ghost" id="layoutBtn" type="button" aria-haspopup="true" aria-expanded="false"><span class="swatch-dot" id="bgDot"></span>Layout</button>
+      <div class="layout-menu" id="layoutMenu" hidden>
+        <span class="menu-label">Columns</span>
+        <div class="seg" id="colSeg" role="group" aria-label="Columns"></div>
+        <div class="menu-sep"></div>
+        <div class="menu-row">
+          <label class="menu-label" for="gapInput">Gap between photos</label>
+          <span class="menu-value" id="gapValue">4 px</span>
+        </div>
+        <input type="range" id="gapInput" min="0" max="40" step="1" value="4" />
+        <div class="menu-sep"></div>
+        <span class="menu-label">Background</span>
+        <div class="swatches" id="bgSwatches"></div>
+        <div class="bg-row">
+          <label><input type="color" id="bgCustom" value="#ffffff" />Custom</label>
+          <button class="ghost" id="bgDefault" type="button">Default</button>
+        </div>
+      </div>
+    </div>
     <div class="dropdown" id="exportDropdown">
       <button class="ghost" id="exportBtn" type="button" aria-haspopup="true" aria-expanded="false">Export</button>
       <div class="dropdown-menu" id="exportMenu" hidden>
@@ -466,15 +638,18 @@
       </div>
     </div>
     <button class="ghost" id="clearBtn" type="button">Clear all</button>
+    <button class="primary icon-label" id="presentBtn" type="button" title="Lock the wall and present it full screen"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="1.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>Lock &amp; present</button>
   </div>
 </div>
 
 <div class="grid" id="grid"></div>
 
 <div class="empty" id="emptyState">
-  <p>Drop images anywhere, or add a few to lay out your portfolio grid.</p>
-  <button class="primary" id="emptyAddBtn" type="button">Add photos</button>
+  <p>Drop photos, GIFs or videos anywhere, or add a few to lay out your portfolio grid.</p>
+  <button class="primary" id="emptyAddBtn" type="button">Add media</button>
 </div>
+
+<button class="present-exit" id="presentExit" type="button" aria-label="Unlock and leave presentation" title="Unlock (Esc)"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="1.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></button>
 
 <div class="modal-backdrop" id="cropBackdrop" hidden>
   <div class="modal" role="dialog" aria-modal="true" aria-label="Crop photo">
@@ -482,16 +657,16 @@
       <span>Crop photo</span>
       <button class="ghost" id="cropClose" type="button" aria-label="Close">×</button>
     </div>
-    <p class="modal-hint">Drag the frame to choose what shows in the tile. Zoom to crop in closer.</p>
+    <p class="modal-hint">Drag the frame to choose what shows in the tile. Zoom to crop in closer. Videos are framed on a still of the moment you opened this.</p>
     <div class="crop-stage" id="cropStage">
       <img id="cropImg" alt="" draggable="false" />
       <div class="crop-frame" id="cropFrame"></div>
     </div>
     <button class="crop-replace" id="cropReplace" type="button">
       <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h14"/><path d="M14 5l3 3-3 3"/><path d="M21 16H7"/><path d="M10 13l-3 3 3 3"/></svg>
-      Replace photo
+      Replace
     </button>
-    <input type="file" id="cropReplaceInput" accept="image/*" hidden />
+    <input type="file" id="cropReplaceInput" accept="image/*,video/*" hidden />
     <div class="crop-zoom">
       <label for="cropZoom">Zoom</label>
       <input type="range" id="cropZoom" min="1" max="4" step="0.01" value="1" />
@@ -515,7 +690,13 @@
 <script>
 (() => {
   const STORAGE_KEY = "portfolio-tool-state-v1";
+  const MEDIA_DB = "portfolio-grid-media";
   const MAX_DIM = 1080;
+  const DEFAULT_GAP = 4;
+  const DEFAULT_COLS = 3;
+  const MAX_COLS = 8;
+  const BG_SWATCHES = ["#ffffff", "#f3f1ec", "#e9e6df", "#cfc8bb", "#8a8378",
+                       "#3a3633", "#18171b", "#000000", "#ffe800", "#a8641f"];
 
   const state = loadState();
 
@@ -529,6 +710,18 @@
   const exportBtn = document.getElementById("exportBtn");
   const exportMenu = document.getElementById("exportMenu");
   const exportDropdown = document.getElementById("exportDropdown");
+  const layoutBtn = document.getElementById("layoutBtn");
+  const layoutMenu = document.getElementById("layoutMenu");
+  const layoutDropdown = document.getElementById("layoutDropdown");
+  const colSeg = document.getElementById("colSeg");
+  const gapInput = document.getElementById("gapInput");
+  const gapValue = document.getElementById("gapValue");
+  const bgSwatches = document.getElementById("bgSwatches");
+  const bgCustom = document.getElementById("bgCustom");
+  const bgDefault = document.getElementById("bgDefault");
+  const bgDot = document.getElementById("bgDot");
+  const presentBtn = document.getElementById("presentBtn");
+  const presentExit = document.getElementById("presentExit");
   const cropBackdrop = document.getElementById("cropBackdrop");
   const cropStage = document.getElementById("cropStage");
   const cropImg = document.getElementById("cropImg");
@@ -542,10 +735,18 @@
   const cropReplaceBtn = document.getElementById("cropReplace");
   const cropReplaceInput = document.getElementById("cropReplaceInput");
 
-  const TILE_W = 4, TILE_H = 5;
   const MAX_ZOOM = 4;
+  const TILE_W = 4, TILE_H = 5;
+
+  const svg = (paths, size = 12) => `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">${paths}</svg>`;
+  const SOUND_OFF_SVG = svg('<path d="M11 5 6 9H3v6h3l5 4z"/><path d="m22 9-6 6"/><path d="m16 9 6 6"/>');
+  const SOUND_ON_SVG = svg('<path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a10 10 0 0 1 0 14"/>');
 
   function clamp(v, min, max) { return Math.min(Math.max(v, min), max); }
+
+  function newId() {
+    return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  }
 
   // The source rectangle a 4:5 tile shows: the largest tile-shaped window that
   // fits the image (that's plain "cover"), shrunk by the zoom factor.
@@ -555,8 +756,8 @@
     return { sw: sw0 / zoom, sh: sh0 / zoom };
   }
 
-  // CSS equivalent of the same window: object-position places the cover box,
-  // then scaling about that same anchor zooms without shifting the focus.
+  // CSS equivalent: object-position places the cover box, then scaling about
+  // that same anchor zooms without shifting the focus.
   function applyPhotoStyle(imgEl, photo) {
     const fx = photo.focusX ?? 50, fy = photo.focusY ?? 50, z = photo.zoom ?? 1;
     imgEl.style.objectPosition = `${fx}% ${fy}%`;
@@ -564,12 +765,26 @@
     imgEl.style.transform = z > 1 ? `scale(${z})` : "";
   }
 
+  // Items: type "image" (dataUrl, as before), "gif" and "video" (the file itself
+  // lives in IndexedDB under mediaId — too big for localStorage).
+  // cols: 1–8 (3 by default). gap in px (0 = borderless).
   function loadState() {
+    let s = null;
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) return JSON.parse(raw);
+      if (raw) s = JSON.parse(raw);
     } catch (e) {}
-    return { photos: [] };
+    if (!s || !Array.isArray(s.photos)) s = { photos: [] };
+    s.photos.forEach(p => {
+      if (!p.id) p.id = newId();
+      if (!p.type) p.type = "image";
+    });
+    if (!(s.cols >= 1 && s.cols <= MAX_COLS)) s.cols = DEFAULT_COLS;
+    if (typeof s.gap !== "number" || !isFinite(s.gap)) s.gap = DEFAULT_GAP;
+    s.gap = clamp(Math.round(s.gap), 0, 40);
+    if (typeof s.bg !== "string") s.bg = null;
+    s.present = !!s.present;
+    return s;
   }
 
   function saveState() {
@@ -580,6 +795,63 @@
     }
   }
 
+  // ---- media storage (GIFs and videos) ----
+  let dbPromise = null;
+  function openDb() {
+    if (!dbPromise) {
+      dbPromise = new Promise((resolve, reject) => {
+        const req = indexedDB.open(MEDIA_DB, 1);
+        req.onupgradeneeded = () => req.result.createObjectStore("media");
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    }
+    return dbPromise;
+  }
+  async function mediaTx(mode, fn) {
+    const db = await openDb();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction("media", mode);
+      const req = fn(tx.objectStore("media"));
+      tx.oncomplete = () => resolve(req && req.result);
+      tx.onerror = tx.onabort = () => reject(tx.error);
+    });
+  }
+  const putMedia = (id, blob) => mediaTx("readwrite", s => s.put(blob, id));
+  const getMedia = id => mediaTx("readonly", s => s.get(id));
+  const deleteMedia = id => mediaTx("readwrite", s => s.delete(id)).catch(() => {});
+  const clearMedia = () => mediaTx("readwrite", s => s.clear()).catch(() => {});
+
+  const mediaUrls = new Map();   // mediaId → object URL
+  const mediaEls = new Map();    // item id → <img>/<video>, reused so videos keep playing across re-renders
+  let mediaReady = false;
+
+  async function loadStoredMedia() {
+    await Promise.all(state.photos.filter(p => p.mediaId).map(async p => {
+      try {
+        const blob = await getMedia(p.mediaId);
+        if (blob) mediaUrls.set(p.mediaId, URL.createObjectURL(blob));
+      } catch (e) {}
+    }));
+    mediaReady = true;
+  }
+
+  function forgetMedia(item) {
+    if (!item || !item.mediaId) return;
+    const url = mediaUrls.get(item.mediaId);
+    if (url) URL.revokeObjectURL(url);
+    mediaUrls.delete(item.mediaId);
+    deleteMedia(item.mediaId);
+  }
+
+  function mediaSrc(item) {
+    return item.type === "image" ? item.dataUrl : mediaUrls.get(item.mediaId);
+  }
+
+  function isMediaFile(f) {
+    return !!f && (f.type.startsWith("image/") || f.type.startsWith("video/"));
+  }
+
   function resizeToDataURL(file, maxDim) {
     return new Promise((resolve, reject) => {
       const img = new Image();
@@ -588,6 +860,7 @@
       reader.onload = () => { img.src = reader.result; };
       img.onerror = reject;
       img.onload = () => {
+        const ratio = img.width / img.height;
         let { width, height } = img;
         if (width > height && width > maxDim) {
           height = Math.round(height * (maxDim / width));
@@ -600,65 +873,207 @@
         canvas.width = width;
         canvas.height = height;
         canvas.getContext("2d").drawImage(img, 0, 0, width, height);
-        resolve(canvas.toDataURL("image/jpeg", 0.85));
+        resolve({ dataUrl: canvas.toDataURL("image/jpeg", 0.85), ratio });
       };
       reader.readAsDataURL(file);
     });
   }
 
-  // ---- grid ----
+  function videoRatio(url) {
+    return new Promise((resolve, reject) => {
+      const v = document.createElement("video");
+      v.preload = "metadata";
+      v.muted = true;
+      v.onloadedmetadata = () => v.videoWidth ? resolve(v.videoWidth / v.videoHeight) : reject(new Error("no picture"));
+      v.onerror = () => reject(v.error || new Error("unreadable"));
+      v.src = url;
+    });
+  }
+
+  async function storeBlob(file) {
+    const mediaId = newId();
+    try {
+      await putMedia(mediaId, file);
+    } catch (e) {
+      throw new Error("there isn't enough storage space in this browser");
+    }
+    return mediaId;
+  }
+
+  // Photos are shrunk to JPEG as before; GIFs keep their original file so
+  // they stay animated, and videos are kept whole.
+  async function importMedia(file) {
+    if (file.type === "image/gif") {
+      const url = URL.createObjectURL(file);
+      try {
+        const img = await loadImageEl(url);
+        const ratio = img.naturalWidth / img.naturalHeight;
+        const mediaId = await storeBlob(file);
+        mediaUrls.set(mediaId, url);
+        return { type: "gif", mediaId, ratio };
+      } catch (e) {
+        URL.revokeObjectURL(url);
+        throw e instanceof Error ? e : new Error("this GIF couldn't be read");
+      }
+    }
+    if (file.type.startsWith("video/")) {
+      const url = URL.createObjectURL(file);
+      try {
+        let ratio;
+        try { ratio = await videoRatio(url); }
+        catch (e) { throw new Error("this browser can't play that video format"); }
+        const mediaId = await storeBlob(file);
+        mediaUrls.set(mediaId, url);
+        return { type: "video", mediaId, ratio };
+      } catch (e) {
+        URL.revokeObjectURL(url);
+        throw e;
+      }
+    }
+    try {
+      const { dataUrl, ratio } = await resizeToDataURL(file, MAX_DIM);
+      return { type: "image", dataUrl, ratio };
+    } catch (e) {
+      throw new Error("this browser can't open that image format");
+    }
+  }
+
+  function addFailed(file, e) {
+    alert(`Couldn't add "${file.name}" — ${(e && e.message) || "this file isn't supported"}.`);
+  }
+
+  function mediaElementFor(item) {
+    const src = mediaSrc(item);
+    if (!src) {
+      const ph = document.createElement("div");
+      ph.className = "media missing";
+      if (mediaReady) ph.textContent = "This file isn't saved in this browser";
+      return ph;
+    }
+    let el = mediaEls.get(item.id);
+    if (el && el._src === src) return el;
+    if (item.type === "video") {
+      el = document.createElement("video");
+      el.muted = true;
+      el.loop = true;
+      el.autoplay = true;
+      el.playsInline = true;
+      el.setAttribute("muted", "");
+      el.setAttribute("playsinline", "");
+      el.preload = "auto";
+    } else {
+      el = document.createElement("img");
+      el.alt = "";
+      el.draggable = false;
+    }
+    el.className = "media";
+    el.src = src;
+    el._src = src;
+    mediaEls.set(item.id, el);
+    return el;
+  }
+
+  // ---- grid layout ----
+  function getColumnCount() { return state.cols || DEFAULT_COLS; }
+
+  function layout() {
+    grid.style.setProperty("--cols", String(getColumnCount()));
+    grid.style.setProperty("--gap", state.gap + "px");
+  }
+
+  // ---- grid rendering ----
   function render() {
     grid.innerHTML = "";
+    const present = state.present;
+    const ids = new Set();
 
     state.photos.forEach((photo, i) => {
+      ids.add(photo.id);
       const tile = document.createElement("div");
       tile.className = "tile photo";
-      tile.draggable = true;
       tile.dataset.index = i;
-      tile.tabIndex = 0;
-      tile.setAttribute("role", "button");
-      tile.title = "Click to crop and zoom · drag to reorder";
 
-      const img = document.createElement("img");
-      img.src = photo.dataUrl;
-      img.alt = "";
-      img.draggable = false;
-      applyPhotoStyle(img, photo);
-      tile.appendChild(img);
+      const media = mediaElementFor(photo);
+      if (media.tagName !== "DIV") applyPhotoStyle(media, photo);
+      tile.appendChild(media);
 
-      const frameNo = document.createElement("span");
-      frameNo.className = "frame-no";
-      frameNo.textContent = String(i + 1).padStart(2, "0");
-      tile.appendChild(frameNo);
+      if (photo.type === "video" && media.tagName === "VIDEO") tile.appendChild(soundButton(media));
 
-      const remove = document.createElement("button");
-      remove.className = "remove";
-      remove.type = "button";
-      remove.setAttribute("aria-label", "Remove photo");
-      remove.textContent = "×";
-      remove.addEventListener("click", (e) => {
-        e.stopPropagation();
-        state.photos.splice(i, 1);
-        saveState();
-        render();
-      });
-      tile.appendChild(remove);
+      // presenting locks the wall: no reordering, cropping, swapping or removing
+      if (!present) {
+        tile.draggable = true;
+        tile.tabIndex = 0;
+        tile.setAttribute("role", "button");
+        tile.title = "Click to crop and zoom · drag to reorder";
 
-      tile.addEventListener("click", () => openCropModal(i));
-      tile.addEventListener("keydown", (e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
+        tile.addEventListener("click", (e) => {
+          if (e.target.closest(".sound-btn")) return;
           openCropModal(i);
-        }
-      });
+        });
+        tile.addEventListener("keydown", (e) => {
+          if (e.target !== tile) return;
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            openCropModal(i);
+          }
+        });
+
+        const frameNo = document.createElement("span");
+        frameNo.className = "frame-no";
+        frameNo.textContent = String(i + 1).padStart(2, "0");
+        tile.appendChild(frameNo);
+
+        const remove = document.createElement("button");
+        remove.className = "remove";
+        remove.type = "button";
+        remove.setAttribute("aria-label", "Remove");
+        remove.textContent = "×";
+        remove.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const [gone] = state.photos.splice(i, 1);
+          forgetMedia(gone);
+          saveState();
+          render();
+        });
+        tile.appendChild(remove);
+
+        wireDrag(tile);
+      }
 
       grid.appendChild(tile);
-      wireDrag(tile);
+    });
+
+    // re-attached videos carry on; make sure nothing got left paused
+    mediaEls.forEach((el, id) => {
+      if (!ids.has(id)) mediaEls.delete(id);
+      else if (el.tagName === "VIDEO" && el.paused) el.play().catch(() => {});
     });
 
     brandCount.textContent = state.photos.length;
     emptyState.style.display = state.photos.length ? "none" : "flex";
     grid.style.display = state.photos.length ? "grid" : "none";
+    layout();
+  }
+
+  function soundButton(video) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "sound-btn";
+    const paint = () => {
+      b.innerHTML = video.muted ? SOUND_OFF_SVG : SOUND_ON_SVG;
+      b.classList.toggle("on", !video.muted);
+      b.setAttribute("aria-label", video.muted ? "Sound on" : "Sound off");
+      b.title = b.getAttribute("aria-label");
+    };
+    b.addEventListener("click", (e) => {
+      e.stopPropagation();
+      video.muted = !video.muted;
+      if (!video.muted) video.play().catch(() => {});
+      paint();
+    });
+    b.addEventListener("keydown", (e) => e.stopPropagation());
+    paint();
+    return b;
   }
 
   let dragIndex = null;
@@ -684,16 +1099,15 @@
       e.preventDefault();
       e.stopPropagation();
       tile.classList.remove("drop-target", "replace-target");
+      dragCounter = 0;
+      document.body.classList.remove("drag-over");
       const dropIndex = Number(tile.dataset.index);
 
-      // an image dragged in from outside swaps the photo in this slot
+      // a file dragged in from outside swaps what's in this slot
       if (isFileDrag(e)) {
-        const files = Array.from(e.dataTransfer.files || []).filter(f => f.type.startsWith("image/"));
+        const files = Array.from(e.dataTransfer.files || []).filter(isMediaFile);
         if (!files.length) return;
-        const dataUrl = await resizeToDataURL(files[0], MAX_DIM);
-        state.photos[dropIndex] = { dataUrl, focusX: 50, focusY: 50, zoom: 1 };
-        saveState();
-        render();
+        await replaceMediaAt(dropIndex, files[0]);
         if (files.length > 1) handleFiles(files.slice(1));
         return;
       }
@@ -716,11 +1130,29 @@
       .forEach(t => t.classList.remove("drop-target", "replace-target"));
   }
 
+  // Swap the file in a slot; the crop starts fresh for the new file.
+  async function replaceMediaAt(index, file) {
+    const item = state.photos[index];
+    if (!item || !isMediaFile(file)) return;
+    let media;
+    try { media = await importMedia(file); }
+    catch (e) { addFailed(file, e); return; }
+    if (state.photos[index] !== item) { forgetMedia(media); return; }
+    forgetMedia(item);
+    state.photos[index] = { id: newId(), ...media, focusX: 50, focusY: 50, zoom: 1 };
+    saveState();
+    render();
+  }
+
   async function handleFiles(fileList) {
-    const files = Array.from(fileList).filter(f => f.type.startsWith("image/"));
+    const files = Array.from(fileList).filter(isMediaFile);
     for (const file of files) {
-      const dataUrl = await resizeToDataURL(file, MAX_DIM);
-      state.photos.push({ dataUrl, focusX: 50, focusY: 50, zoom: 1 });
+      try {
+        const media = await importMedia(file);
+        state.photos.push({ id: newId(), ...media, focusX: 50, focusY: 50, zoom: 1 });
+      } catch (e) {
+        addFailed(file, e);
+      }
     }
     saveState();
     render();
@@ -736,7 +1168,7 @@
   // whole-page drop zone
   let dragCounter = 0;
   document.addEventListener("dragenter", (e) => {
-    if (!e.dataTransfer.types.includes("Files")) return;
+    if (!e.dataTransfer.types.includes("Files") || state.present) return;
     e.preventDefault();
     dragCounter++;
     document.body.classList.add("drag-over");
@@ -754,16 +1186,155 @@
     e.preventDefault();
     dragCounter = 0;
     document.body.classList.remove("drag-over");
+    if (state.present) return;
     if (e.dataTransfer.files && e.dataTransfer.files.length) handleFiles(e.dataTransfer.files);
   });
 
   clearBtn.addEventListener("click", () => {
     if (!state.photos.length) return;
-    if (!confirm("Remove all photos from this portfolio?")) return;
+    if (!confirm("Remove everything from this portfolio?")) return;
     state.photos = [];
+    mediaUrls.forEach(url => URL.revokeObjectURL(url));
+    mediaUrls.clear();
+    mediaEls.clear();
+    clearMedia();
     saveState();
     render();
   });
+
+  // ---- layout menu: columns, gap, background ----
+  const COL_CHOICES = [1, 2, 3, 4, 5, 6, 7, 8];
+  colSeg.style.setProperty("--seg-cols", "4");
+  COL_CHOICES.forEach(n => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.textContent = n === null ? "Auto" : String(n);
+    b.dataset.cols = n === null ? "" : String(n);
+    b.title = n === null ? "Fit to the screen width" : `${n} column${n > 1 ? "s" : ""}`;
+    b.addEventListener("click", () => {
+      state.cols = n;
+      saveState();
+      applyLayoutSettings();
+    });
+    colSeg.appendChild(b);
+  });
+
+  BG_SWATCHES.forEach(c => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "swatch";
+    b.style.background = c;
+    b.dataset.colour = c;
+    b.setAttribute("aria-label", "Background " + c);
+    b.addEventListener("click", () => setBackground(c));
+    bgSwatches.appendChild(b);
+  });
+
+  function setBackground(c) {
+    state.bg = c || null;
+    saveState();
+    applyLayoutSettings();
+  }
+
+  function applyLayoutSettings() {
+    const colKey = state.cols ? String(state.cols) : "";
+    colSeg.querySelectorAll("button").forEach(b => b.classList.toggle("on", b.dataset.cols === colKey));
+    gapInput.value = state.gap;
+    gapValue.textContent = state.gap ? state.gap + " px" : "Borderless";
+    if (state.bg) document.documentElement.style.setProperty("--wall-bg", state.bg);
+    else document.documentElement.style.removeProperty("--wall-bg");
+    bgDot.style.background = state.bg || "";
+    bgSwatches.querySelectorAll(".swatch").forEach(s => s.classList.toggle("on", s.dataset.colour === state.bg));
+    if (state.bg && /^#[0-9a-f]{6}$/i.test(state.bg)) bgCustom.value = state.bg;
+    layout();
+  }
+
+  gapInput.addEventListener("input", () => {
+    state.gap = clamp(Math.round(Number(gapInput.value) || 0), 0, 40);
+    applyLayoutSettings();
+  });
+  gapInput.addEventListener("change", saveState);
+  bgCustom.addEventListener("input", () => setBackground(bgCustom.value));
+  bgDefault.addEventListener("click", () => setBackground(null));
+
+  function closeMenus() {
+    layoutMenu.hidden = true;
+    layoutBtn.setAttribute("aria-expanded", "false");
+    exportMenu.hidden = true;
+    exportBtn.setAttribute("aria-expanded", "false");
+  }
+
+  layoutBtn.addEventListener("click", () => {
+    const willOpen = layoutMenu.hidden;
+    closeMenus();
+    layoutMenu.hidden = !willOpen;
+    layoutBtn.setAttribute("aria-expanded", String(willOpen));
+    if (willOpen) keepMenuOnScreen(layoutMenu);
+  });
+
+  // on a phone the button sits mid-bar, so a right-aligned menu can run off the left edge
+  function keepMenuOnScreen(menu) {
+    menu.style.right = "";
+    const r = menu.getBoundingClientRect();
+    const margin = 12;
+    if (r.left < margin) menu.style.right = (r.left - margin) + "px";
+  }
+
+  // ---- lock & present ----
+  let fullscreenByUs = false;
+  const fullscreenEl = () => document.fullscreenElement || document.webkitFullscreenElement;
+
+  function enterPresent() {
+    closeMenus();
+    if (!cropBackdrop.hidden) closeCropModal();
+    state.present = true;
+    saveState();
+    applyPresent();
+    const el = document.documentElement;
+    const req = el.requestFullscreen || el.webkitRequestFullscreen;
+    if (req && !fullscreenEl()) {
+      try {
+        fullscreenByUs = true;
+        const p = req.call(el);
+        if (p && p.catch) p.catch(() => { fullscreenByUs = false; });
+      } catch (e) {
+        fullscreenByUs = false;
+      }
+    }
+  }
+
+  function exitPresent() {
+    state.present = false;
+    saveState();
+    applyPresent();
+    if (fullscreenEl() && fullscreenByUs) {
+      const exit = document.exitFullscreen || document.webkitExitFullscreen;
+      try {
+        const p = exit.call(document);
+        if (p && p.catch) p.catch(() => {});
+      } catch (e) {}
+    }
+    fullscreenByUs = false;
+  }
+
+  function applyPresent() {
+    document.body.classList.toggle("presenting", !!state.present);
+    render();
+  }
+
+  // Esc out of full screen ends the presentation too
+  function onFullscreenChange() {
+    if (!fullscreenEl() && fullscreenByUs) {
+      fullscreenByUs = false;
+      if (state.present) exitPresent();
+    }
+    layout();
+  }
+  document.addEventListener("fullscreenchange", onFullscreenChange);
+  document.addEventListener("webkitfullscreenchange", onFullscreenChange);
+
+  presentBtn.addEventListener("click", enterPresent);
+  presentExit.addEventListener("click", exitPresent);
 
   // ---- crop modal ----
   let cropIndex = null;
@@ -772,14 +1343,31 @@
   let cropDragging = false;
   let grabOffset = { x: 0, y: 0 };
 
+  // the crop window for a video is picked on a still of its current frame
+  function videoFrame(v) {
+    if (!v || v.tagName !== "VIDEO" || v.readyState < 2 || !v.videoWidth) return null;
+    const c = document.createElement("canvas");
+    const s = Math.min(1, MAX_DIM / Math.max(v.videoWidth, v.videoHeight));
+    c.width = Math.round(v.videoWidth * s);
+    c.height = Math.round(v.videoHeight * s);
+    c.getContext("2d").drawImage(v, 0, 0, c.width, c.height);
+    return c.toDataURL("image/jpeg", 0.85);
+  }
+
   function openCropModal(index) {
     const photo = state.photos[index];
-    if (!photo) return;
+    if (!photo || state.present) return;
+    let src = mediaSrc(photo);
+    if (photo.type === "video") {
+      src = videoFrame(mediaEls.get(photo.id));
+      if (!src) { alert("The video is still loading — try again in a moment."); return; }
+    }
+    if (!src) return;
     cropIndex = index;
     cropFocus = { x: photo.focusX ?? 50, y: photo.focusY ?? 50 };
     cropZoom = photo.zoom ?? 1;
-    cropImg.src = photo.dataUrl;
-    cropPreviewImg.src = photo.dataUrl;
+    cropImg.src = src;
+    cropPreviewImg.src = src;
     // the stage has no layout box while the modal is hidden — show it, then measure
     cropBackdrop.hidden = false;
     if (cropImg.complete && cropImg.naturalWidth) updateCropVisuals();
@@ -898,24 +1486,23 @@
     const file = cropReplaceInput.files[0];
     const index = cropIndex;
     cropReplaceInput.value = "";
-    if (!file || index === null || !file.type.startsWith("image/")) return;
+    if (!file || index === null) return;
+    await replaceMediaAt(index, file);
 
-    const dataUrl = await resizeToDataURL(file, MAX_DIM);
-    const photo = state.photos[index];
-    if (!photo) return;
-    photo.dataUrl = dataUrl;
-    photo.focusX = 50;
-    photo.focusY = 50;
-    photo.zoom = 1;
-    saveState();
-    render();
-
-    // only refresh the editor if it is still showing this same photo
+    // only refresh the editor if it is still showing this same slot
     if (cropIndex !== index) return;
+    const photo = state.photos[index];
+    if (!photo) { closeCropModal(); return; }
+    if (photo.type === "video") {
+      // a new video needs a moment to load before a still can be taken
+      closeCropModal();
+      return;
+    }
     cropFocus = { x: 50, y: 50 };
     cropZoom = 1;
-    cropImg.src = dataUrl;
-    cropPreviewImg.src = dataUrl;
+    const src = mediaSrc(photo);
+    cropImg.src = src;
+    cropPreviewImg.src = src;
     if (cropImg.complete && cropImg.naturalWidth) updateCropVisuals();
     else cropImg.addEventListener("load", updateCropVisuals, { once: true });
   });
@@ -928,11 +1515,15 @@
   cropClose.addEventListener("click", closeCropModal);
   cropBackdrop.addEventListener("click", (e) => { if (e.target === cropBackdrop) closeCropModal(); });
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && !cropBackdrop.hidden) closeCropModal();
+    if (e.key !== "Escape") return;
+    if (!cropBackdrop.hidden) closeCropModal();
+    else if (!layoutMenu.hidden || !exportMenu.hidden) closeMenus();
+    else if (state.present && !fullscreenEl()) exitPresent();
   });
   cropSave.addEventListener("click", () => {
     if (cropIndex === null) return;
     const photo = state.photos[cropIndex];
+    if (!photo) { closeCropModal(); return; }
     photo.focusX = Math.round(cropFocus.x * 10) / 10;
     photo.focusY = Math.round(cropFocus.y * 10) / 10;
     photo.zoom = Math.round(cropZoom * 100) / 100;
@@ -944,14 +1535,12 @@
   // ---- export ----
   exportBtn.addEventListener("click", () => {
     const willOpen = exportMenu.hidden;
+    closeMenus();
     exportMenu.hidden = !willOpen;
     exportBtn.setAttribute("aria-expanded", String(willOpen));
   });
   document.addEventListener("click", (e) => {
-    if (!exportDropdown.contains(e.target)) {
-      exportMenu.hidden = true;
-      exportBtn.setAttribute("aria-expanded", "false");
-    }
+    if (!exportDropdown.contains(e.target) && !layoutDropdown.contains(e.target)) closeMenus();
   });
   exportMenu.querySelectorAll("button[data-format]").forEach(btn => {
     btn.addEventListener("click", () => {
@@ -970,37 +1559,54 @@
     });
   }
 
+  // videos are drawn as the frame showing right now; GIFs as their first frame
+  function drawableFor(item) {
+    if (item.type === "video") {
+      const v = mediaEls.get(item.id);
+      const ok = v && v.tagName === "VIDEO" && v.readyState >= 2 && v.videoWidth;
+      return Promise.resolve(ok ? { el: v, iw: v.videoWidth, ih: v.videoHeight } : null);
+    }
+    const src = mediaSrc(item);
+    if (!src) return Promise.resolve(null);
+    return loadImageEl(src).then(img => ({ el: img, iw: img.naturalWidth, ih: img.naturalHeight }));
+  }
+
+  // Same columns, gap and background as the screen. Tiles are a fixed width
+  // in the file, and the gap is scaled with them so the export looks the same.
   async function composeGridCanvas() {
-    const cols = 3;
+    const cols = getColumnCount();
     const tileW = 356;
-    const gapPx = 6;
-    const tileH = Math.round(tileW * 5 / 4);
+    const tileH = Math.round(tileW * TILE_H / TILE_W);
+    const screenGap = state.gap;
+    const screenTile = (grid.clientWidth - screenGap * (cols + 1)) / cols;
+    const gapPx = screenGap && screenTile > 0 ? Math.max(1, Math.round(screenGap * tileW / screenTile)) : 0;
     const rows = Math.ceil(state.photos.length / cols) || 1;
-    const width = tileW * cols + gapPx * (cols - 1);
-    const height = tileH * rows + gapPx * (rows - 1);
+    const width = tileW * cols + gapPx * (cols + 1);
+    const height = tileH * rows + gapPx * (rows + 1);
 
     const canvas = document.createElement("canvas");
     canvas.width = width;
     canvas.height = height;
     const ctx = canvas.getContext("2d");
-    ctx.fillStyle = "#ffffff";
+    ctx.fillStyle = state.bg || "#ffffff";
     ctx.fillRect(0, 0, width, height);
 
-    const images = await Promise.all(state.photos.map(p => loadImageEl(p.dataUrl)));
+    const sources = await Promise.all(state.photos.map(p => drawableFor(p).catch(() => null)));
 
     state.photos.forEach((photo, i) => {
+      const src = sources[i];
+      if (!src) return;
       const col = i % cols;
       const row = Math.floor(i / cols);
-      const dx = col * (tileW + gapPx);
-      const dy = row * (tileH + gapPx);
-      const img = images[i];
-      const iw = img.naturalWidth, ih = img.naturalHeight;
+      const dx = gapPx + col * (tileW + gapPx);
+      const dy = gapPx + row * (tileH + gapPx);
+      const { iw, ih } = src;
 
       // same window the tile shows on screen: cover, shrunk by zoom, placed by focus
       const { sw, sh } = cropWindow(iw, ih, photo.zoom ?? 1);
       const sx = (iw - sw) * ((photo.focusX ?? 50) / 100);
       const sy = (ih - sh) * ((photo.focusY ?? 50) / 100);
-      ctx.drawImage(img, sx, sy, sw, sh, dx, dy, tileW, tileH);
+      ctx.drawImage(src.el, sx, sy, sw, sh, dx, dy, tileW, tileH);
     });
 
     return canvas;
@@ -1055,7 +1661,7 @@
 
   async function exportGrid(format) {
     if (!state.photos.length) {
-      alert("Add a few photos before exporting.");
+      alert("Add a few photos or videos before exporting.");
       return;
     }
     const canvas = await composeGridCanvas();
@@ -1074,6 +1680,12 @@
     }
   }
 
+  // ---- start ----
+  applyLayoutSettings();
+  document.body.classList.toggle("presenting", !!state.present);
   render();
+  loadStoredMedia().then(() => {
+    if (state.photos.some(p => p.mediaId)) render();
+  });
 })();
 </script>

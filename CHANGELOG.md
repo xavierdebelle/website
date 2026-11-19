@@ -5,6 +5,56 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v170 — 2026-11-19
+
+**What's new** · Update · [tools.html#portfolio]
+### Portfolio Grid and Masonry: columns, gaps, video, and a present mode
+Both portfolio walls caught up with FreeCanvas:
+- **Choose the number of columns**, from 1 to 8. Masonry can still fit
+  itself to the screen.
+- **Set the gap between photos**, all the way down to none for a
+  borderless wall, and **pick the background colour**.
+- **Drop in GIFs and videos** alongside photos. GIFs stay animated; videos
+  loop quietly, with a sound button if you want it.
+- **Lock & present** hides everything but the work and goes full screen.
+  Esc brings the tools back.
+
+**Portfolio Grid — `tools/portfolio-grid.html`, source `portfolio_tool_v5.html`; Portfolio Masonry — `tools/portfolio-masonry.html`, source `portfolio_masonry_v5.html`**
+- New Layout menu (columns, gap slider 0–40 px with "Borderless" at 0,
+  10 background swatches + custom + Default). Saved in the existing state
+  as `cols`, `gap`, `bg`; Grid defaults to 3 columns / 4 px (it used to draw
+  1px hairlines), Masonry to Auto / 8 px. The gap also frames the outer
+  edge. The page background follows `bg` (`--wall-bg`), so it fills the
+  screen in present mode.
+- GIFs and videos are stored like FreeCanvas: the file in IndexedDB
+  (`portfolio-grid-media` / `portfolio-masonry-media`), only `mediaId` in
+  localStorage; photos are still JPEG data URLs. Items gain `id` and `type`;
+  old saves are upgraded on load. Video crops are framed on a still of the
+  current frame. Replacing works with any of the three, on drop or from the
+  Replace control.
+- Lock & present (`state.present`): top bar, numbers and tile controls
+  hidden; no drag, crop, replace, remove or drop; full screen where
+  allowed; Esc or the corner lock leaves.
+- Exports follow the chosen columns, gap and background (gap scaled with
+  the 356 px tiles); a video exports as the frame showing at that moment.
+- The Layout menu keeps itself on screen on phones.
+- Cards on the tools page mention video and present mode.
+
+**Scan:** only xavierdebelle.com (social preview tags, already live).
+Storage keys unchanged, so existing portfolios carry over.
+
+**Verified** (local, Chromium, desktop and 375 px): photos, a GIF and an
+MP4 added to both; 2 and 5 columns, borderless, white/black/yellow
+backgrounds; media and settings survive a reload; dropping a video onto a
+photo replaces it; Grid's in-editor Replace with a GIF then a video; video
+crop at 2×; PNG/JPEG exports sized and framed as expected; present mode
+hides the tools, blocks editing, keeps videos playing, Esc and the lock
+button leave; old-format saves load with defaults. No console errors from
+the tools. Full screen itself untested (the preview pane blocks it), as
+with FreeCanvas.
+
+---
+
 ## v169 — 2026-11-19
 
 **What's new** · Update · [tools/production-hub.html]
