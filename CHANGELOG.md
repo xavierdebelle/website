@@ -5,6 +5,44 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v171 — 2026-11-19
+
+**What's new** · Update · [tools.html#debelle]
+### The Package Builder can now live inside debellephotography.com
+Put it on any page of the de Belle site and it fits in: no second logo
+bar, no studio links in front of clients. It still lives here, so every
+price or wording change shows up there at the same moment.
+
+**Package Builder — `tools/package-builder.html` (site copy edited in place; the price list and wording still come from the published catalog)**
+- Embed mode: a tiny script in `<head>` adds `html.embed` before first
+  paint when the page is inside an iframe (or has `?embed`). It hides the
+  fixed logo `nav` (the host page has its own header), pulls the header up
+  (84 px, 64 px on phones, instead of 150/120 px that cleared the nav), and
+  hides "Studio · edit" and "Lock" (now wrapped in `.studio-links`). The
+  standalone page is unchanged.
+- The password-box focus on load is now `focus({ preventScroll: true })`.
+  A first visit has no cached catalog, so the gate shows for a moment before
+  the published `gate: false` unlocks it; inside an iframe, the old plain
+  focus() made the host page scroll down to the builder on load.
+- Intended embed (on WordPress, a Custom HTML block): a plain iframe one
+  screen tall, `height:100vh; height:100dvh`, scrolling inside itself. Not
+  auto-height: the sticky price summary, the PDF pop-up and the promo bar
+  are positioned against the frame's own window, and in a frame as tall as
+  the whole page they would sit off screen.
+
+**Scan:** nothing new — Firebase catalog read, contact details, default
+figures and outside hosts are all as already live.
+**Verified:** in a separate-origin test page standing in for WordPress
+(127.0.0.1 vs localhost): no logo bar, host page no longer jumps on load,
+promo bar and sticky summary inside the frame; in embed mode at 1280×800,
+choosing a collection updates the total ($7,040), the summary pop-up opens
+centred, no console errors; standalone page still shows the nav and studio
+links. Not tested: the PDF download from inside a real cross-origin frame
+on the live WordPress site (the pop-up's "Open your PDF" link is the
+fallback if a browser blocks the download).
+
+---
+
 ## v170 — 2026-11-19
 
 **What's new** · Update · [tools.html#portfolio]
