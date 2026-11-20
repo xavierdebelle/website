@@ -5,6 +5,18 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v172 — 2026-11-19
+
+**Package Builder — `tools/package-builder.html`**
+- Embed mode keeps the de Belle logo bar (Xavier's call): `html.embed` no
+  longer hides `nav` or pulls the header up. It only hides "Studio · edit"
+  and "Lock" now. The `preventScroll` fix from v171 stays.
+
+**Scan:** nothing new. **Verified:** with `html.embed` set, nav displays
+(flex), header keeps its normal padding, studio links hidden.
+
+---
+
 ## v171 — 2026-11-19
 
 **What's new** · Update · [tools.html#debelle]

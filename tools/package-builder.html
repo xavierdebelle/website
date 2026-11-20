@@ -22,8 +22,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&family=Montserrat:wght@200;300;400;500&family=Lato:ital,wght@0,300;0,400;0,700;1,400&display=swap" rel="stylesheet">
 <script>
 // v171: embed mode. Inside an iframe (the de Belle WordPress site shows this
-// page that way), the host page already has the logo and the studio links
-// don't belong in front of clients. Decided before first paint, so no flash.
+// page that way), the studio links don't belong in front of clients.
+// Decided before first paint, so no flash. (v172: the logo bar stays.)
 (function () {
   var framed; try { framed = window.self !== window.top; } catch (e) { framed = true; }
   if (framed || /[?&]embed\b/.test(location.search)) document.documentElement.classList.add('embed');
@@ -435,10 +435,8 @@
   @media(max-width:960px) { .collections{padding:50px 24px 20px} .collections-grid{grid-template-columns:1fr} .collection.featured{margin:0} .coll-tagline{min-height:0} .carte-head{padding:40px 24px 0} .terms{padding:0 24px 50px} .builder-layout{grid-template-columns:1fr} .sidebar{position:relative;height:auto} .builder-main{padding:50px 24px 80px;border-right:none} }
   @media(max-width:580px) { .carte-divider span{font-size:18px;white-space:normal;text-align:center} .field-row{grid-template-columns:1fr} .modal-card{padding:32px 22px 26px} header{padding:120px 20px 60px} .options-grid{grid-template-columns:1fr} .album-builder{grid-template-columns:1fr 1fr} }
 
-  /* v171: embed mode (see the script in <head>) */
-  html.embed nav, html.embed .studio-links { display: none; }
-  html.embed header { padding-top: 84px; }
-  @media(max-width:580px) { html.embed header { padding-top: 64px; } }
+  /* v171: embed mode (see the script in <head>). v172: the logo bar stays. */
+  html.embed .studio-links { display: none; }
 </style>
 <script defer src="../assets/stats.js"></script>
 </head>
