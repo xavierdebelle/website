@@ -119,6 +119,11 @@ body.is-dragging,body.is-dragging *{cursor:grabbing!important;user-select:none!i
 .ggrid .drop-before{box-shadow:-5px 0 0 var(--yellow)!important}
 .ggrid .drop-after{box-shadow:5px 0 0 var(--yellow)!important}
 .drop-in{outline:2px dashed var(--yellow);outline-offset:-2px}
+.pboard>.drop-before,.pswitch>.drop-before{box-shadow:-5px 0 0 var(--yellow)!important}
+.pboard>.drop-after,.pswitch>.drop-after{box-shadow:5px 0 0 var(--yellow)!important}
+@media (min-width:761px){.lists>.drop-before{box-shadow:-5px 0 0 var(--yellow)!important}.lists>.drop-after{box-shadow:5px 0 0 var(--yellow)!important}}
+.list .lh h2,.pcol .ch{cursor:grab}
+.list.drag-ghost,.pcol.drag-ghost{max-height:60vh;overflow:hidden}
 .rich-box{position:relative;display:block;background:var(--white);border:1px solid #cfc7c7;border-radius:0;padding:8px 10px;color:var(--text);font:inherit;line-height:1.45;white-space:pre-wrap;overflow-wrap:anywhere;min-width:0;text-align:left;cursor:text;outline:none}
 .rich-box:focus{outline:2px solid var(--black);outline-offset:-1px}
 .rich-box.empty::before{content:attr(data-placeholder);color:#9a9a9a;pointer-events:none;position:absolute}
@@ -2390,10 +2395,11 @@ document.addEventListener('click', function (e) { if (Date.now() - dragEndedAt <
 document.addEventListener('touchmove', function (e) { if (document.body.classList.contains('is-dragging')) e.preventDefault(); }, { passive: false });   // hold the page still while dragging
 document.addEventListener('contextmenu', function (e) { if (dragPending || document.body.classList.contains('is-dragging')) e.preventDefault(); });
 function sortable(o) {
-  var SKIP = 'button,a,input,textarea,select,label,[contenteditable]';
+  var SKIP = o.skip || 'button,a,input,textarea,select,label,[contenteditable]';
   document.addEventListener('pointerdown', function (e) {
     if (e.button > 0 || !e.target.closest) return;
     var it = e.target.closest(o.item); if (!it) return;
+    if (o.from && !e.target.closest(o.from)) return;                        // a whole list moves only when held by its header
     if (o.handle) { if (!e.target.closest(o.handle)) return; }               // a grip (checklist rows in a card window): drags at once
     else if (e.target.closest(SKIP) || it.closest('#dlg')) return;
     var sx = e.clientX, sy = e.clientY, px = sx, py = sy, touch = e.pointerType !== 'mouse', started = false, timer = null;
@@ -2407,7 +2413,8 @@ function sortable(o) {
       if (!cont || self) return;   // still over its own spot: nothing moves
       if (over && cont.contains(over)) {
         var b = over.getBoundingClientRect();
-        before = o.grid ? (px < b.left + b.width / 2) : (py < b.top + b.height / 2);
+        var across = typeof o.grid === 'function' ? o.grid() : o.grid;
+        before = across ? (px < b.left + b.width / 2) : (py < b.top + b.height / 2);
         over.classList.add(before ? 'drop-before' : 'drop-after'); target = over;
       } else cont.classList.add('drop-in');
     }
@@ -2491,6 +2498,22 @@ sortable({ handle: '.cgrip', item: '.ctask[data-tid]', container: '.cw-tasks', o
   var h = cardOpen && findCard(cardOpen.pl, cardOpen.c); if (!h) return;
   var ts = ctasks(h.c), t = ts.find(function (x) { return x.id === el.getAttribute('data-tid'); }), b = bef && ts.find(function (x) { return x.id === bef.getAttribute('data-tid'); });
   if (!t) return; h.c.tasks = reorder(ts, t, b, function () { return true; }); savePL(); render();
+} });
+/* Today: whole lists, held by their header (side by side on a computer, stacked on a phone) */
+sortable({ item: '.list[data-tlist]', from: '.lh', container: '.lists', grid: function () { return innerWidth > 760; }, onDrop: function (el, cont, bef) {
+  var l = S.lists.find(function (x) { return x.id === el.getAttribute('data-tlist'); }), b = bef && S.lists.find(function (x) { return x.id === bef.getAttribute('data-tlist'); }); if (!l) return;
+  S.lists = reorder(S.lists, l, b, function () { return true; }); commit();
+} });
+/* In Production: a pipeline's columns (stages), held by their header — Pipelines' own order too */
+sortable({ item: '.pcol[data-col]', from: '.ch', container: '.pboard', grid: true, onDrop: function (el, cont, bef) {
+  var pl = plById(U.prodView); if (!pl || !listOf(pl.stages).length) return;
+  var st = listOf(pl.stages).filter(Boolean), s0 = st.find(function (x) { return x.id === el.getAttribute('data-col'); }), b = bef && st.find(function (x) { return x.id === bef.getAttribute('data-col'); }); if (!s0) return;
+  pl.stages = reorder(st, s0, b, function () { return true; }); savePL(); commit();
+} });
+/* In Production: the pipelines themselves, in the switcher */
+sortable({ item: '.pswitch [data-pview]', container: '.pswitch', grid: true, skip: 'a,input', onDrop: function (el, cont, bef) {
+  var all = pls(), p = all.find(function (x) { return x.id === el.getAttribute('data-pview'); }), b = bef && all.find(function (x) { return x.id === bef.getAttribute('data-pview'); }); if (!p) return;
+  PLD.pipelines = reorder(all, p, b, function () { return true; }); savePL(); commit();
 } });
 /* Goals: within the year */
 sortable({ item: '.goal[data-goal]', container: '.ggrid', grid: true, onDrop: function (el, cont, bef) {

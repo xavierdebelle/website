@@ -5,6 +5,32 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v174 — 2026-11-24
+
+**What's new** · Update · [tools/production-hub.html]
+### Production Hub: drag lists, columns and pipelines into your order
+In Today, hold a list by its title and drag it to a new spot. In In
+Production, do the same with a column's header, or with the pipeline names
+along the top. The new order shows in the Pipelines app too.
+
+**Production Hub — `tools/production-hub.html` (source `Tools files/Tools/production_hub_v13.html`)**
+- `sortable()` gains `from` (the press must start inside this part, e.g. a
+  header, with the usual hold-on-touch / drag-on-mouse), `skip` (override
+  what can't start a drag) and `grid` as a function (side by side vs stacked).
+- Today: `.list[data-tlist]` moves by its `.lh` header; left/right on a
+  computer, up/down on a phone. Saves `S.lists` order.
+- In Production: `.pcol` columns move by their `.ch` header → reorders
+  `pl.stages` in the Pipelines doc; switcher buttons reorder
+  `PLD.pipelines`. A tap still switches pipelines (a drop never counts as a tap).
+
+**Scan:** nothing new. **Verified (mock database):** lists reordered both
+ways on desktop and by a touch hold on phone width; task drag between lists
+unaffected; columns reordered and the Pipelines copy saved; pipeline order
+changed without switching view; plain click still switches; card drag
+between columns unaffected; no side scroll on phone.
+
+---
+
 ## v173 — 2026-11-24
 
 **What's new** · Update · [tools/production-hub.html]
