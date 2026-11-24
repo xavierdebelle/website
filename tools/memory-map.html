@@ -225,6 +225,14 @@ body.week-open .hud--brand{opacity:0}
 .edit .pils{display:flex;gap:6px}
 .edit .pils button{flex:1;padding:8px;border:2px solid var(--pfg);background:transparent;color:var(--pfg);font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;cursor:pointer}
 .edit .pils button[aria-pressed="true"]{background:var(--volt);border-color:var(--volt);color:var(--ink)}
+.logwk{font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;opacity:.6;margin:14px 0 6px}
+.logwk:first-child{margin-top:0}
+.logit{all:unset;box-sizing:border-box;display:block;width:100%;cursor:pointer;padding:10px 0;border-bottom:2px solid var(--pline)}
+.logit b{display:block;font-weight:900;text-transform:uppercase;font-size:14px;letter-spacing:-.01em}
+.logit b i{font-style:normal;color:var(--volt)}
+.logit span{display:block;font-size:13px;line-height:1.5;opacity:.82;margin-top:4px}
+.logit em{font-style:normal;font-family:var(--mono);font-size:9px;letter-spacing:.18em;text-transform:uppercase;opacity:.55;display:block;margin-top:4px}
+.logit:hover b{color:var(--volt)}
 .bal{display:grid;gap:12px}
 .bal .row{display:grid;grid-template-columns:76px 1fr 92px;gap:10px;align-items:center}
 .bal .nm{font-weight:900;text-transform:uppercase;font-size:14px}
@@ -308,7 +316,7 @@ html.phone .hud--ctl .ctl--wide{padding:0 12px}
 
 <header class="hud hud--brand">
   <h1><i>Xavier</i> <i>de</i> <em>Belle</em></h1>
-  <p>What Claude knows about you<br><span id="count"></span><br>Memory map v12 &middot; grows every Sunday</p>
+  <p>What Claude knows about you<br><span id="count"></span><br>Memory map v13 &middot; grows every Sunday</p>
 </header>
 
 <div class="hud hud--top">
@@ -332,7 +340,7 @@ html.phone .hud--ctl .ctl--wide{padding:0 12px}
 <div class="hud hud--hint" aria-hidden="true">
   <b>Click</b> a node to open it &middot; <b>Drag</b> to move &middot; <b>Scroll</b> to zoom<br>
   <b>Tap the mark</b> to fire it &middot; twice to invert it<br>
-  <span style="opacity:.5">v12</span>
+  <span style="opacity:.5">v13</span>
 </div>
 
 <div class="hud hud--ctl">
@@ -390,6 +398,8 @@ html.phone .hud--ctl .ctl--wide{padding:0 12px}
   <p class="sum" id="wkSum"></p>
   <h3>To review <span id="wkCount"></span></h3>
   <div id="wkList"></div>
+  <h3>Useful connections <span>found on Sundays</span></h3>
+  <div id="wkLog"></div>
   <h3>Pillar balance <span>memories per week</span></h3>
   <div class="bal" id="wkBal"></div>
   <h3>Rewind <span>how the map grew</span></h3>
@@ -542,17 +552,29 @@ function refreshCount(){
 }
 refreshCount();
 
-branches.forEach((b,i) => {
-  const ang = -Math.PI/2 + i*(Math.PI*2/branches.length);
-  b.ang = ang; b.x = Math.cos(ang)*520; b.y = Math.sin(ang)*520;
-  b.kids.forEach((k,j) => {
-    const t = b.kids.length > 1 ? j/(b.kids.length-1) - .5 : 0;
-    const a2 = ang + t*0.5; k.ang = a2;
-    const R = 820 + (j%2)*130;
-    k.x = Math.cos(a2)*R; k.y = Math.sin(a2)*R;
-    k.kids.forEach((g,m) => { g.ang = a2 + (m-(k.kids.length-1)/2)*0.12; g.x = Math.cos(g.ang)*(R+160); g.y = Math.sin(g.ang)*(R+160); });
-  });
-});
+/* v13 · a radial tree at every depth. Each branch gets a slice of the circle
+   that grows with how much it holds (so The Biz has room), every memory gets
+   a slice of its parent's, and each depth sits on its own ring. Memories four
+   or five levels deep used to start at the centre and drag a long line across
+   the map. The force layout below then relaxes it. */
+const RING = lv => lv <= 1 ? 520 : lv === 2 ? 880 : 880 + (lv - 2)*230;
+const weight = n => n.w || (n.w = 1 + n.kids.reduce((t, k) => t + weight(k), 0));
+{
+  const share = b => Math.pow(weight(b), 0.62);
+  const total = branches.reduce((t, b) => t + share(b), 0);
+  let a0 = -Math.PI/2 - Math.PI*share(branches[0])/total;   // first branch centred at the top
+  const place = (n, from, to) => {
+    n.ang = (from + to)/2; n.R = RING(n.level);
+    const j = n.level >= 2 ? (n.idx % 2)*90 : 0;              // stagger neighbours a little
+    n.x = Math.cos(n.ang)*(n.R + j); n.y = Math.sin(n.ang)*(n.R + j);
+    if(!n.kids.length) return;
+    const span = (to - from)*(n.level === 1 ? 0.92 : 1), mid = (from + to)/2;
+    const wsum = n.kids.reduce((t, k) => t + weight(k), 0);
+    let a = mid - span/2;
+    n.kids.forEach(k => { const da = span*weight(k)/wsum; place(k, a, a + da); a += da; });
+  };
+  branches.forEach(b => { const da = Math.PI*2*share(b)/total; place(b, a0, a0 + da); a0 += da; });
+}
 let heat = 1;
 function step(){
   if(heat < 0.002) return;
@@ -579,7 +601,7 @@ function step(){
   branches.forEach(b => { b.vx += (Math.cos(b.ang)*520-b.x)*0.012*heat; b.vy += (Math.sin(b.ang)*520-b.y)*0.012*heat; });
   nodes.forEach(n => {
     if(n.level < 2 || n.ang === undefined) return;
-    const R = n.level===2 ? 880 : 1120;
+    const R = RING(n.level);
     n.vx += (Math.cos(n.ang)*R-n.x)*0.0035*heat; n.vy += (Math.sin(n.ang)*R-n.y)*0.0035*heat;
   });
   nodes.forEach(n => {
@@ -698,13 +720,14 @@ let camX=0, camY=0, zoom=0.5, camTX=0, camTY=0, zoomT=0.5;
 function fit(){
   if(sheetMode){   // phones: frame by the names that are actually showing
     const list = nodes.filter(visible);
-    const f = frameNodes(list, 60, 80, T.zoomRange[0], 1.4, false);
+    const f = frameNodes(list, 60, 80, T.zoomRange[0], 1.4, false, true);
     camTX = f.cx; camTY = f.cy; zoomT = f.k; return;
   }
-  let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
-  nodes.forEach(n => { if(!visible(n)) return; x0=Math.min(x0,LX(n)); x1=Math.max(x1,LX(n)); y0=Math.min(y0,LY(n)); y1=Math.max(y1,LY(n)); });
-  const k = Math.min(W/(x1-x0+320), (H-110)/(y1-y0+150), 1.4);
-  zoomT = clamp(k, T.zoomRange[0], T.zoomRange[1]); camTX = (x0+x1)/2; camTY = (y0+y1)/2;
+  /* always centred on the mark: frame by the farthest memory on either side */
+  let mx = 1, my = 1;
+  nodes.forEach(n => { if(!visible(n)) return; mx = Math.max(mx, Math.abs(LX(n))); my = Math.max(my, Math.abs(LY(n))); });
+  const k = Math.min(W/(2*mx+320), (H-110)/(2*my+150), 1.4);
+  zoomT = clamp(k, T.zoomRange[0], T.zoomRange[1]); camTX = 0; camTY = 0;
 }
 /* How far a node's name hangs off its dot, in screen px, at zoom k — matching
    how each style actually draws it. Hidden names count as just the dot. */
@@ -728,13 +751,14 @@ function labelHang(n, k, withKids){
   const w = ctx.measureText(n.label).width + 18, lox = n.lox || 0;
   return Math.abs(lox) > 0.58 ? (lox > 0 ? [8, w, 14, 14] : [w, 8, 14, 14]) : [w/2, w/2, 24, 30];
 }
-function frameNodes(list, top, bottom, kmin, kmax, withKids){
+function frameNodes(list, top, bottom, kmin, kmax, withKids, centre){
   const availW = W - 20, availH = H - top - bottom - 30;
   let k = zoomT || 0.6, px0 = 0, px1 = 0, py0 = 0, py1 = 0;
   for(let it=0; it<8; it++){
     px0 = 1e9; px1 = -1e9; py0 = 1e9; py1 = -1e9;
     list.forEach(n => { const h = labelHang(n, k, withKids), x = LX(n)*k, y = LY(n)*k;
       px0 = Math.min(px0, x - h[0]); px1 = Math.max(px1, x + h[1]); py0 = Math.min(py0, y - h[2]); py1 = Math.max(py1, y + h[3]); });
+    if(centre){ const ax = Math.max(-px0, px1), ay = Math.max(-py0, py1); px0 = -ax; px1 = ax; py0 = -ay; py1 = ay; }   // keep the mark in the middle
     const f = Math.min(availW/(px1-px0), availH/(py1-py0));
     k = clamp(k*Math.pow(f, 0.85), kmin, kmax);
   }
@@ -760,13 +784,16 @@ applyTheme(0);
 /* ==========================================================================
    8 · STATE
    ========================================================================== */
-let filter="all", query="", sel=null, hover=null, selAt=-9, selCross=null, focusB=null, preview=null;
+let filter="all", query="", sel=null, hover=null, hoverAt=-9, selAt=-9, selCross=null, focusB=null, preview=null;
 let rewindTo = null;   // a week-end date while rewinding, else null
 function present(n){ return !n.gone && !(rewindTo && (n.pending || n.addedAt > rewindTo)); }
 function linkPresent(l){ return !l.gone && present(l.a) && present(l.b) && !(rewindTo && (l.pending || l.addedAt > rewindTo)); }
 function visible(n){ return present(n) && (filter==="all" || n.level===0 || n.p.includes(filter)); }
 function matches(n){ if(!query) return false; return (n.label+" "+n.text.replace(/<[^>]+>/g,"")).toLowerCase().includes(query.toLowerCase()); }
 const dimN = new Float32Array(nodes.length);
+/* how far the rest of the map steps back while one node has focus: Organic's
+   particles are faint already, so they keep more of their light */
+const DIM = () => style === "graphic" ? 0.16 : 0.42;
 function computeDim(){
   const focus = sel || preview || hover;
   let near = focus ? new Set([focus]) : null;
@@ -777,8 +804,8 @@ function computeDim(){
     let d = 1;
     if(!present(n)) d = 0;
     else if(!visible(n)) d = 0.05;
-    else if(near) d = near.has(n) ? 1 : 0.16;
-    else if(anyMatch) d = matches(n) ? 1 : 0.16;
+    else if(near) d = near.has(n) ? 1 : DIM();
+    else if(anyMatch) d = matches(n) ? 1 : DIM();
     dimN[i] += (d - dimN[i])*0.12;
   });
   return near;
@@ -876,7 +903,7 @@ function frame(){
   pulse = reduced ? 0.6 : 0.5 + 0.5*Math.sin(now*3.4);
 
   const near = computeDim();
-  const S0 = sel || preview;
+  const S0 = sel || preview || (style !== "graphic" ? hover : null);
   selCross = S0 ? new Set(S0.links.filter(l => l.cross && linkVisible(l)).map(l => l.a === S0 ? l.b : l.a)) : null;
   nodes.forEach(n => {
     const want = (dimN[n.idx] > 0.3 && now > 0.8 + n.level*0.35) ? 1 : 0;
@@ -1000,9 +1027,12 @@ function selRef(){ return sel || preview; }
    across branches, white for its own branch. A ring marks each node it reaches.
    ========================================================================== */
 function drawSelLinks(now){
-  const sel = selRef();   // the selected node, or the one being long-pressed
+  /* the selected node, or the one being long-pressed — or, in Organic, the
+     one under the cursor (a lighter version: no rings) */
+  const hov = !selRef() && style !== "graphic" && hover && !dragNode ? hover : null;
+  const sel = selRef() || hov;
   if(!sel) return;
-  const fade = Math.min(1, (now - selAt)/0.45);
+  const fade = Math.min(1, (now - (hov ? hoverAt : selAt))/(hov ? 0.25 : 0.45)) * (hov ? 0.85 : 1);
   const Zd = zoom*dpr, hw = cw*0.5, hh = ch*0.5;
   const toS = (x, y) => [(x-camX)*Zd + hw, (y-camY)*Zd + hh];
   const yellow = "rgba(" + mix3([255,232,0], THEME.light.accent, themeT) + ",";
@@ -1020,7 +1050,7 @@ function drawSelLinks(now){
     ctx.lineWidth = (l.cross ? 3 : 2)*dpr;
     ctx.strokeStyle = l.cross ? yellow + (0.95*fade).toFixed(3) + ")" : white + (0.55*fade).toFixed(3) + ")";
     ctx.beginPath(); ctx.moveTo(A[0], A[1]); ctx.quadraticCurveTo(C[0], C[1], B[0], B[1]); ctx.stroke();
-    if(l.cross){
+    if(l.cross && !hov){
       ctx.setLineDash([]);
       ctx.lineWidth = 1.5*dpr;
       ctx.strokeStyle = yellow + (0.8*fade).toFixed(3) + ")";
@@ -1306,6 +1336,7 @@ cv.addEventListener("pointermove", e => {
   if(!ptrs.has(e.pointerId)){
     const onL = onLogo(e.clientX, e.clientY);
     const n = onL ? null : pick(e.clientX, e.clientY);
+    if(n !== hover) hoverAt = performance.now()/1000 - start;
     hover = n; cv.classList.toggle("hot", !!n || onL); return;
   }
   ptrs.set(e.pointerId, {x:e.clientX, y:e.clientY});
@@ -1696,7 +1727,8 @@ function card(q, focusId){
     if(q.parent && byId[q.parent] && q.parent !== tgt.parent) body += "<p>Moves to " + esc(byId[q.parent].label) + "</p>";
   } else {
     const A = byId[q.a], B = byId[q.b];
-    title = A.label + " ↔ " + B.label; jump = A; body = "<p>" + esc(q.why) + "</p>";
+    title = A.label + " ↔ " + B.label; jump = A; body = "<p>" + esc(q.why) + "</p>" +
+      (q.useful ? '<p><b>Why it helps:</b> ' + esc(plain(q.useful)) + "</p>" : "");
   }
   const pl = q.pillars ? [...q.pillars].map(c => PILLAR_NAME[c]).join(" · ") : "";
   const meta = [pl, q.from ? "from " + q.from : "", q.at ? fmt(q.at) : ""].filter(Boolean).join(" · ");
@@ -1721,7 +1753,7 @@ function renderWeek(focusId){
   const todo = PROPS.filter(q => !q.decided || q.justNow);
   if(!todo.length) list.innerHTML = '<p class="empty">Nothing to review. The next review runs on its own on Sunday evening, and anything Claude.ai adds shows up here too.</p>';
   todo.forEach(q => list.appendChild(card(q, focusId)));
-  renderBalance(); renderRewind();
+  renderLog(); renderBalance(); renderRewind();
   if(focusId){ const f = list.querySelector('[data-id="' + CSS.escape(focusId) + '"]'); if(f) setTimeout(() => f.scrollIntoView({ block:"center", behavior:"smooth" }), 80); }
 }
 function renderHead(){
@@ -1785,7 +1817,7 @@ function commit(q, action, el, revert){
   const reload = action === "keep" && (q.moved || (q.kind === "new" && !q.placed) || (q.kind === "update" && q.parent && q.parent !== byId[q.target].parent));
   return api.commit(q, action, TODAY).then(() => {
     q.decided = action; q.justNow = true; markDone(el, action, "saved");
-    refreshWeek(); renderHead(); renderBalance(); renderRewind();
+    refreshWeek(); renderHead(); renderLog(); renderBalance(); renderRewind();
     if(reload){ toast("Saved · re-arranging the map"); setTimeout(() => location.reload(), 900); }
   }, err => { revert(); markDone(el, action, "error"); el.classList.remove("done"); toast("Couldn't save: " + (err && err.message || err)); });
 }
@@ -1838,6 +1870,27 @@ function editCard(q, el){
     q.edited = true;
     el.replaceWith(card(q, q.id));
   };
+}
+
+/* -- useful connections the Sunday review found, every week, with what became of them -- */
+function renderLog(){
+  const box = document.getElementById("wkLog"); box.innerHTML = "";
+  const log = (Array.isArray(D.connectionLog) ? D.connectionLog : []).slice().sort((a, b) => String(b.at || "").localeCompare(String(a.at || "")));
+  if(!log.length){ box.innerHTML = '<p class="empty">Every Sunday the review looks for connections between your memories that could be useful to you, and logs them here.</p>'; return; }
+  const linked = (a, b) => links.some(l => l.cross && !l.pending && !l.gone && ((l.a.id === a && l.b.id === b) || (l.a.id === b && l.b.id === a)));
+  const skippedIds = new Set((D.skipped || []).map(x => x && x.id));
+  log.slice(0, 12).forEach(e => {
+    const h = document.createElement("p"); h.className = "logwk"; h.textContent = "Week of " + (e.at ? fmt(e.at) : "?") + (e.note ? " · " + plain(e.note) : ""); box.appendChild(h);
+    e.items.forEach(x => {
+      const A = byId[x.a], B = byId[x.b]; if(!A || !B) return;
+      const q = PROPS.find(p => p.id === x.pid);
+      const st = linked(x.a, x.b) ? "In your map" : (q && !q.decided) ? "Waiting in To review" : skippedIds.has(x.pid) || (q && q.decided === "skip") ? "Skipped" : "Not in the map";
+      const b = document.createElement("button"); b.type = "button"; b.className = "logit";
+      b.innerHTML = "<b>" + esc(A.label) + " <i>\u2194</i> " + esc(B.label) + "</b><span>" + esc(plain(x.useful || x.why || "")) + "</span><em>" + st + "</em>";
+      b.onclick = () => { if(q && !q.decided){ renderWeek(q.id); return; } if(!present(A)) return; if(sheetMode) closeWeek(); select(A); };
+      box.appendChild(b);
+    });
+  });
 }
 
 /* -- pillar balance over time: one line per pillar, a point per week -- */
@@ -1947,7 +2000,9 @@ requestAnimationFrame(frame);
       added: obj(d.added), addedLinks: obj(d.addedLinks), changed: obj(d.changed),
       proposals: listOf(d.proposals).filter(function(p){ return p && typeof p === "object"; }).map(function(p){
         p = JSON.parse(JSON.stringify(p)); if(p.links) p.links = listOf(p.links).map(listOf); return p; }),
-      skipped: listOf(d.skipped) };
+      skipped: listOf(d.skipped),
+      connectionLog: listOf(d.connectionLog).filter(function(e){ return e && typeof e === "object"; }).map(function(e){
+        e = JSON.parse(JSON.stringify(e)); e.items = listOf(e.items).filter(function(x){ return x && typeof x === "object"; }); return e; }) };
   }
 
   /* Keep / Skip from "This week": one transaction on the map, so an add from

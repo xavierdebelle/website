@@ -5,6 +5,32 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v175 — 2026-11-24
+
+**Memory Map v13 — `tools/memory-map.html`** (Personal, owner-only; no "What's new" block, private)
+- Organic hover: the hovered memory's connections draw as the same flowing
+  dotted lines as a click (yellow connected dots, white branch lines, no
+  rings), and its connected memories turn gold.
+- Organic focus (hover, click, branch focus, search) dims the rest to 42%
+  instead of 16%, so the map stays visible behind it; Graphic unchanged.
+- Layout: a radial tree at every depth. Branches get a slice of the circle
+  by size (weight^0.62), memories a slice of their parent's, each depth its
+  own ring (`RING`). Memories four or five levels deep (e.g. Plaza Volare →
+  Tipsy Thursdays → …) used to start at the centre and trail across the
+  map.
+- Opens centred on the mark: desktop frames by the farthest memory on
+  either side; phones frame symmetrically (`frameNodes(…, centre)`).
+- This week → Useful connections: the Sunday review's `data.connectionLog`
+  (`{id, at, items:[{a, b, why, useful, pid}]}`, via `add_item`), week by
+  week, each with its status (in your map / waiting / skipped). Link
+  proposals show their `useful` line. The "Memory Map — Sunday review"
+  task now proposes 2–5 useful connections every week and logs them.
+- Verified on the mock with a map shaped like the live one (148 memories,
+  five levels deep in The Biz): centred, compact Biz, hover dimming,
+  connection log keep → "In your map". Scan clean.
+
+---
+
 ## v174 — 2026-11-24
 
 **What's new** · Update · [tools/production-hub.html]
