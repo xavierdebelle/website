@@ -256,6 +256,54 @@ body.is-dragging,body.is-dragging *{cursor:grabbing!important;user-select:none!i
 .addphase:hover{border-color:var(--black);color:var(--black)}
 
 /* ---------- Goals ---------- */
+.ptiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+.ptile{background:var(--white);border-top:6px solid var(--black);padding:14px 16px 12px;min-width:0}
+.ptile b{display:block;font:800 40px/1 "Inter Tight",sans-serif;color:var(--black);letter-spacing:-.5px}
+.ptile span{display:block;margin-top:6px;font:var(--wide);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--g6)}
+.ptile small{display:block;margin-top:4px;font-size:12px;color:var(--g6)}
+.ptile.hero{background:var(--black);border-top-color:var(--yellow)}
+.ptile.hero b{color:var(--yellow)}
+.ptile.hero span,.ptile.hero small{color:#bbb}
+.pvibe{font:800 15px/1.2 "Inter Tight",sans-serif;text-transform:uppercase;letter-spacing:.05em;background:var(--yellow);color:var(--black);padding:4px 8px}
+.pmon{margin:0 18px 14px;font-size:12px;color:var(--g6)}
+.pmon .gbar{margin:6px 0 0}
+.pcols{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px;align-items:start}
+.pcal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;padding:14px 18px}
+.pcal .wd{font:var(--wide);font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--g6);text-align:center;padding-bottom:2px}
+.pcal i{aspect-ratio:1;background:var(--bg);display:grid;place-items:center;font:600 12px/1 "Inter Tight",sans-serif;font-style:normal;color:#aaa}
+.pcal i.l1{background:#fdeab5;color:var(--black)}
+.pcal i.l2{background:var(--yellow);color:var(--black)}
+.pcal i.l3{background:var(--black);color:var(--yellow)}
+.pcal i.now{box-shadow:inset 0 0 0 2px var(--red)}
+.pcal i.fut{opacity:.45}
+.pcal i.pad{background:transparent}
+.pfacts{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}
+.pfact{padding:12px 18px;border-bottom:1px solid var(--line)}
+.pfact b{display:block;font:800 18px/1.2 "Inter Tight",sans-serif;color:var(--black)}
+.pfact span{font-size:12px;color:var(--g6)}
+.pq{padding:10px 18px;border-bottom:1px solid var(--line)}
+.pq .pqh{display:flex;gap:10px;align-items:baseline}
+.pq .pqh b{flex:1;min-width:0;overflow-wrap:anywhere;color:var(--black)}
+.pq .pqh em{font-style:normal;font:var(--wide);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--g6);white-space:nowrap}
+.pq .pqh em.up{background:var(--yellow);color:var(--black);padding:2px 5px}
+.pq .gbar{margin:6px 0 0}
+.pq small{display:block;font-size:12px;color:var(--g6);margin-top:4px}
+.pwarn{display:flex;gap:10px;align-items:center;padding:10px 18px;border-bottom:1px solid var(--line);font-size:14px}
+.pwarn b{font:800 20px/1 "Inter Tight",sans-serif;min-width:30px;color:var(--black)}
+.pwarn.bad b{color:var(--red)}
+.pwarn button{margin-left:auto}
+.pgrp{display:flex;align-items:center;gap:8px;padding:10px 18px 6px;font:var(--wide);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--g6);border-bottom:1px solid var(--line)}
+.pgrp i{font-style:normal;background:var(--black);color:var(--yellow);padding:2px 6px}
+.pdone{display:flex;gap:12px;padding:9px 18px;border-bottom:1px solid var(--line);align-items:baseline}
+.pdone .dt{font-size:11px;color:var(--g6);width:46px;flex:none;white-space:nowrap}
+.pdone .tx{flex:1;min-width:0;overflow-wrap:anywhere;color:var(--black)}
+.pdone .tx small{display:block;color:var(--g6);font-size:12px}
+.pdone.ms .tx{font-weight:800}
+.pdone.ms .tx::before{content:"★ ";color:var(--yellow);-webkit-text-stroke:.5px #000}
+.pmore{display:block;width:100%;border:0;background:transparent;padding:10px 18px;text-align:left;font:var(--wide);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--black)}
+.pmore:hover{background:var(--bg)}
+.bcard.done{border-top-color:var(--yellow)}
+.bcard.done .bt::before{content:"✓ ";color:var(--black)}
 .ghead{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}
 .ghead h2{font:800 clamp(34px,5vw,56px)/.9 "Inter Tight",sans-serif;color:var(--black);letter-spacing:-.5px}
 .ghead .yr{border:2px solid var(--black);background:var(--white);font:800 18px/1 "Inter Tight",sans-serif;padding:6px 12px}
@@ -459,13 +507,15 @@ textarea[data-grow]{min-height:40px!important;height:40px;overflow:hidden;resize
   #runbar{order:2;flex:none}
   #bars{order:3;flex:none}
   main{order:4;flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:14px 12px 28px}
-  .tabs{order:5;flex:none;position:static;margin:0;gap:0;background:var(--black);border-top:1px solid #333;display:grid;grid-template-columns:repeat(5,1fr);overflow:visible;padding-bottom:env(safe-area-inset-bottom)}
+  .tabs{order:5;flex:none;position:static;margin:0;gap:0;background:var(--black);border-top:1px solid #333;display:grid;grid-template-columns:repeat(6,1fr);overflow:visible;padding-bottom:env(safe-area-inset-bottom)}
   .brand a{display:none}
   .brand h1{font-size:21px}
   .tbtn{padding:9px 12px;font-size:11px}
   .tab{flex-direction:column;justify-content:center;gap:3px;padding:10px 2px 9px;border-bottom:0;border-top:3px solid transparent;font-size:11px;letter-spacing:.03em;text-align:center;white-space:normal;line-height:1.1;position:relative;min-height:60px}
   .tab[aria-selected=true]{border-top-color:var(--yellow);border-bottom:0}
   .tab .lvl,.tab .lg{display:none}
+  .tab{font-size:10px;letter-spacing:0;padding-left:1px;padding-right:1px}
+  .ptile b{font-size:32px}
   .tab .count{position:absolute;top:5px;right:calc(50% - 28px);font-size:10px;padding:1px 5px;line-height:1.3}
   .tab .count[data-zero]{display:none}
   #toast{bottom:16px}
@@ -535,6 +585,7 @@ textarea[data-grow]{min-height:40px!important;height:40px;overflow:hidden;resize
     <button class="tab" role="tab" data-tab="big"><span>Big Picture</span><span class="lvl">quests</span><span class="count" id="c-big"></span></button>
     <button class="tab" role="tab" data-tab="goals"><span>Goals</span><span class="lvl" id="l-goals">this year</span><span class="count" id="c-goals"></span></button>
     <button class="tab" role="tab" data-tab="brain"><span>Brainstorm</span><span class="lvl">raw ideas</span><span class="count" id="c-brain"></span></button>
+    <button class="tab" role="tab" data-tab="prog"><span>Progress</span><span class="lvl">this month</span></button>
   </nav>
 </header>
 <div id="runbar" role="status"><span>⏱</span><span class="rw" title="Open the card"></span><span class="rc">0:00:00</span><button type="button" data-stoptimer>Stop</button></div>
@@ -546,6 +597,7 @@ textarea[data-grow]{min-height:40px!important;height:40px;overflow:hidden;resize
   <section class="view wrap" id="v-big"></section>
   <section class="view wrap" id="v-goals"></section>
   <section class="view wrap" id="v-brain"></section>
+  <section class="view wrap" id="v-prog"></section>
 </main>
 
 <div id="toast" role="status"><span id="toast-msg"></span><button id="toast-btn" hidden></button></div>
@@ -1272,7 +1324,7 @@ document.addEventListener('click', function (ev) {
 
 /* ============================================================ hub state */
 function defaultHub() {
-  return { lists: [{ id: 'l1', name: 'Tasks' }], tasks: [], brain: [], goals: [], checks: {}, pins: {}, due: {}, stage: {}, show: {}, qbefore: {} };
+  return { lists: [{ id: 'l1', name: 'Tasks' }], tasks: [], brain: [], goals: [], checks: {}, pins: {}, due: {}, stage: {}, show: {}, qbefore: {}, progress: 1 };   // progress: 1 marks copies that know idea “done” and task “hist”
 }
 function normHub(s) {
   if (!s || typeof s !== 'object') return null;
@@ -1287,12 +1339,14 @@ function normHub(s) {
     return { id: String(t.id || uid('t')), list: String(t.list || out.lists[0].id), title: String(t.title == null ? '' : t.title), notes: String(t.notes || ''),
       due: isDate(t.due) ? t.due : null, repeat: ['daily', 'weekly', 'monthly'].indexOf(t.repeat) > -1 ? t.repeat : null,
       done: !!t.done, doneAt: isDate(t.doneAt) ? t.doneAt : null, ref: ref, at: isDate(t.at) ? t.at : today(),
-      wait: isDate(t.wait) ? t.wait : null };   // a repeating task ticked off sits in Completed until this date
+      wait: isDate(t.wait) ? t.wait : null,   // a repeating task ticked off sits in Completed until this date
+      hist: listOf(t.hist).filter(isDate).slice(-400) };   // the days a repeating task was done, for Progress
   });
   out.tasks.forEach(function (t) { if (!out.lists.some(function (l) { return l.id === t.list; })) t.list = out.lists[0].id; });
   out.brain = listOf(s.brain).filter(Boolean).map(function (b) {
     var o = { id: String(b.id || uid('b')), text: String(b.text || ''), note: String(b.note || ''), spark: !!b.spark, at: isDate(b.at) ? b.at : today(),
-      box: b.box === 'shelf' || b.box === 'archive' ? b.box : 'fresh', movedAt: isDate(b.movedAt) ? b.movedAt : null, why: String(b.why || '') };
+      box: ['shelf', 'archive', 'done'].indexOf(b.box) > -1 ? b.box : 'fresh', movedAt: isDate(b.movedAt) ? b.movedAt : null, why: String(b.why || '') };
+    if (o.box === 'done') o.doneAt = isDate(b.doneAt) ? b.doneAt : (o.movedAt || today());
     ['score', 'impact', 'time', 'ease'].forEach(function (k) { if (b[k] != null && isFinite(+b[k])) o[k] = Math.max(0, Math.min(100, Math.round(+b[k]))); });
     if (o.impact == null || o.time == null || o.ease == null) { delete o.impact; delete o.time; delete o.ease; }
     return o;
@@ -1311,7 +1365,7 @@ function normHub(s) {
 
 var S = defaultHub();
 try { var sv = normHub(JSON.parse(localStorage.getItem(HUB_KEY) || 'null')); if (sv) S = sv; } catch (e) {}
-var U = { tab: 'today', lastList: null, open: {}, showPull: true, brainBox: 'fresh', brainFilter: 'all', brainSort: 'new', brainView: 'cards', brainQ: '', year: new Date().getFullYear(), review: false, prodView: 'projects', quest: null, showArch: false };
+var U = { pmonth: null, popen: {}, tab: 'today', lastList: null, open: {}, showPull: true, brainBox: 'fresh', brainFilter: 'all', brainSort: 'new', brainView: 'cards', brainQ: '', year: new Date().getFullYear(), review: false, prodView: 'projects', quest: null, showArch: false };
 try { var su = JSON.parse(localStorage.getItem(UI_KEY) || 'null'); if (su) U = Object.assign(U, su); } catch (e) {}
 U.year = U.year || new Date().getFullYear();
 
@@ -1452,7 +1506,7 @@ function render() {
   $('l-goals').innerHTML = checkDue() ? '<span class="dot" title="Quarter check due"></span>' : 'this year';
   $('c-brain').textContent = S.brain.filter(function (b) { return b.box === 'fresh'; }).length;
   document.querySelectorAll('.tab .count').forEach(function (c) { c.toggleAttribute('data-zero', c.textContent === '0'); });   // phones hide empty badges
-  ({ today: renderToday, prod: renderProd, big: renderBig, goals: renderGoals, brain: renderBrain })[U.tab]();
+  (({ today: renderToday, prod: renderProd, big: renderBig, goals: renderGoals, brain: renderBrain, prog: renderProgress })[U.tab] || renderToday)();
   richifyIn($('v-' + U.tab));
   var f = document.querySelector('.view.on .flash'); if (f) f.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
   flashId = null;
@@ -1510,7 +1564,7 @@ function renderToday() {
     var open = all.filter(function (t) { return !resolve(t).done; }), done = all.filter(function (t) { return resolve(t).done; }), isOpen = !!U.open[l.id];
     return '<div class="list" data-tlist="' + l.id + '"><div class="lh"><h2>' + esc(l.name) + '</h2><button class="menu" data-lmenu="' + l.id + '" aria-label="List options">⋮</button></div>'
       + '<form class="addtask" data-addto="' + l.id + '"><span class="plus">+</span><div class="af"><input class="at" placeholder="Add a task" aria-label="Add a task to ' + esc(l.name) + '" autocomplete="off">'
-      + '<textarea class="ad" rows="1" placeholder="Details" aria-label="Details"></textarea><div class="aa"><span>Enter goes to details · ⌘ Enter adds</span><button class="b y" type="submit">Add</button></div></div></form>'
+      + '<textarea class="ad" rows="1" placeholder="Details" aria-label="Details"></textarea><div class="aa"><span>Enter adds · Tab for details</span><button class="b y" type="submit">Add</button></div></div></form>'
       + open.map(taskRow).join('')
       + (done.length ? '<button class="done-toggle' + (isOpen ? ' open' : '') + '" data-dt="' + l.id + '"><span class="car">▶</span>Completed (' + done.length + ')</button>' + (isOpen ? done.map(taskRow).join('') : '') : '')
       + '</div>';
@@ -1548,7 +1602,7 @@ function tickTask(t) {
   var r = resolve(t); if (!r || r.waiting) return;
   if (!t.ref) {
     if (r.back) { t.wait = null; flashId = t.id; return commit(); }   // unticked from Completed: back now
-    if (!t.done && t.repeat) { t.due = nextDue(t.due, t.repeat); t.wait = t.due; commit(); return toast('Done. It comes back ' + niceDate(t.due, true), 'Undo', function () { t.wait = null; commit(); }); }
+    if (!t.done && t.repeat) { var was = t.due; t.due = nextDue(t.due, t.repeat); t.wait = t.due; arr(t, 'hist').push(today()); commit(); return toast('Done. It comes back ' + niceDate(t.due, true), 'Undo', function () { t.wait = null; t.due = was; t.hist.pop(); commit(); }); }
     t.done = !t.done; t.doneAt = t.done ? today() : null; return commit();
   }
   if (t.ref.app === 'pl') { r.src.done = !r.src.done; r.src.doneAt = r.src.done ? today() : null; savePL(); }
@@ -1565,9 +1619,9 @@ function editTask(t) {
     + '<div class="two"><div><label>Date</label><input type="date" id="e-due" value="' + (r.due || '') + '"' + (r.waiting ? ' disabled' : '') + '></div>'
     + '<div><label>Repeat</label><select id="e-rep"' + (linked ? ' disabled' : '') + '>' + [['', 'Doesn’t repeat'], ['daily', 'Daily'], ['weekly', 'Weekly'], ['monthly', 'Monthly']].map(function (o) { return '<option value="' + o[0] + '"' + ((t.repeat || '') === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select></div></div>'
     + '<label>List</label><select id="e-list">' + S.lists.map(function (l) { return '<option value="' + l.id + '"' + (l.id === t.list ? ' selected' : '') + '>' + esc(l.name) + '</option>'; }).join('') + '</select>'
-    + '<p class="lead" style="margin-top:12px">' + (linked ? 'Linked to <b>' + esc(r.tag.label) + '</b>. The title, tick and date are shared with it.' : 'Bigger than a task? Make it a project in In Production, or part of a quest in Big Picture.') + '</p>'
+    + '<p class="lead" style="margin-top:12px">' + (linked ? 'Linked to <b>' + esc(r.tag.label) + '</b>. The title, tick and date are shared with it.' : 'Bigger than a task? Make it a project in In Production, or part of a quest in Big Picture. Not ready yet? Send it back to Brainstorm.') + '</p>'
     + '</div><div class="foot"><button class="b r" data-tdel="' + t.id + '">' + (linked ? 'Remove from list' : 'Delete') + '</button>'
-    + (linked ? '' : '<button class="b ghost" data-t2prod="' + t.id + '">→ In Production</button><button class="b ghost" data-t2big="' + t.id + '">→ Big Picture</button>')
+    + (linked ? '' : '<button class="b ghost" data-t2prod="' + t.id + '">→ In Production</button><button class="b ghost" data-t2big="' + t.id + '">→ Big Picture</button><button class="b ghost" data-t2brain="' + t.id + '">→ Brainstorm</button>')
     + '<span class="sp"></span><button class="b ghost" data-close>Cancel</button><button class="b y" data-tsave="' + t.id + '">Save</button></div>');
 }
 function saveTaskDlg(t) {
@@ -1813,8 +1867,125 @@ function renderGoals() {
   document.querySelectorAll('[data-gnote]').forEach(function (t) { t.oninput = function () { S.goals.find(function (g) { return g.id === t.getAttribute('data-gnote'); }).note = t.value; saveHub(); }; });
 }
 
+/* ---------------------------------------------------------------- Progress */
+function keepNewFields(n) {
+  var hit = false, bi = {}, ti = {};
+  S.brain.forEach(function (b) { bi[b.id] = b; }); S.tasks.forEach(function (t) { ti[t.id] = t; });
+  n.brain.forEach(function (b) { var o = bi[b.id]; if (o && o.box === 'done' && b.box === 'fresh') { b.box = 'done'; b.doneAt = o.doneAt; b.movedAt = o.movedAt; hit = true; } });
+  n.tasks.forEach(function (t) { var o = ti[t.id]; if (o && listOf(o.hist).length && !t.hist.length) { t.hist = listOf(o.hist).slice(); hit = true; } });
+  return hit;
+}
+var SRC = { today: 'Today', prod: 'In Production', big: 'Big Picture', brain: 'Brainstorm' };
+function msDay(ms) { return dateStr(new Date(+ms)); }
+function doneItems() {
+  var out = [];
+  S.tasks.forEach(function (t) {
+    if (t.ref) return;   // a linked task counts once, where it lives
+    if (t.done && t.doneAt) out.push({ d: t.doneAt, src: 'today', title: t.title, sub: listName(t.list) });
+    listOf(t.hist).forEach(function (d) { if (isDate(d)) out.push({ d: d, src: 'today', title: t.title, sub: listName(t.list) + ' · repeats' }); });
+  });
+  pls().forEach(function (pl) { cardsOf(pl).forEach(function (c) {
+    ctasks(c).forEach(function (x) { if (x.done && isDate(x.doneAt)) out.push({ d: x.doneAt, src: 'prod', title: x.title, sub: shortCard(c.title) + ' · ' + pl.name }); });
+    var so = stageObj(pl, stageOf(pl, c));
+    if (so.done && isDate(c.stageAt)) out.push({ d: c.stageAt, src: 'prod', title: shortCard(c.title), sub: pl.name + ' · reached ' + so.name, ms: 1 });
+  }); });
+  quests().forEach(function (p) { phasesOf(p).forEach(function (ph) {
+    var ss = stepsOf(ph), last = 0;
+    ss.forEach(function (st) { if (stepDone(st) && +st.doneAt) { out.push({ d: msDay(st.doneAt), src: 'big', title: st.name, sub: p.name + ' · ' + ph.name }); last = Math.max(last, +st.doneAt); } });
+    if (ss.length && ss.every(stepDone) && last) out.push({ d: msDay(last), src: 'big', title: ph.name, sub: p.name + ' · project complete', ms: 1 });
+  }); });
+  S.brain.forEach(function (b) { if (b.box === 'done' && b.doneAt) out.push({ d: b.doneAt, src: 'brain', title: b.text, sub: 'Idea made real', ms: 1 }); });
+  return out;
+}
+function loggedIn(ym) {
+  var ms = 0, add = function (e) { if (e && e.start && e.end && msDay(e.start).slice(0, 7) === ym) ms += e.end - e.start; };
+  pls().forEach(function (pl) { cardsOf(pl).forEach(function (c) { listOf(c.log).forEach(add); }); });
+  listOf(PPD && PPD.log).forEach(add);
+  return ms;
+}
+function ymShift(ym, n) { var d = new Date(ym + '-15T12:00'); d.setMonth(d.getMonth() + n); return dateStr(d).slice(0, 7); }
+function monthName(ym, short) { return new Date(ym + '-15T12:00').toLocaleDateString('en-CA', short ? { month: 'short' } : { month: 'long' }); }
+function renderProgress() {
+  var now = today().slice(0, 7), ym = U.pmonth && U.pmonth <= now ? U.pmonth : now, cur = ym === now, t0 = today();
+  var all = doneItems(), mine = all.filter(function (x) { return x.d.slice(0, 7) === ym; }), prevYm = ymShift(ym, -1);
+  var work = mine.filter(function (x) { return !x.ms; }), miles = mine.filter(function (x) { return x.ms; });
+  var prevN = all.filter(function (x) { return !x.ms && x.d.slice(0, 7) === prevYm; }).length;
+  var perDay = {}; mine.forEach(function (x) { perDay[x.d] = (perDay[x.d] || 0) + 1; });
+  var y = +ym.slice(0, 4), m = +ym.slice(5, 7), days = new Date(y, m, 0).getDate(), lastDay = cur ? +t0.slice(8, 10) : days;
+  var dk = function (i) { return ym + '-' + String(i).padStart(2, '0'); };
+  // fun stats
+  var best = null; Object.keys(perDay).forEach(function (d) { if (!best || perDay[d] > perDay[best]) best = d; });
+  var active = Object.keys(perDay).length, longest = 0, run = 0;
+  for (var i = 1; i <= lastDay; i++) { if (perDay[dk(i)]) { run++; longest = Math.max(longest, run); } else run = 0; }
+  var streak = 0; if (cur) { var allDays = {}; all.forEach(function (x) { allDays[x.d] = 1; }); var sd = new Date(t0 + 'T12:00'); if (!allDays[t0]) sd.setDate(sd.getDate() - 1); while (allDays[dateStr(sd)]) { streak++; sd.setDate(sd.getDate() - 1); } }
+  var wdN = [0, 0, 0, 0, 0, 0, 0]; mine.forEach(function (x) { wdN[new Date(x.d + 'T12:00').getDay()]++; });
+  var wdBest = wdN.indexOf(Math.max.apply(null, wdN)), WD = ['Sundays', 'Mondays', 'Tuesdays', 'Wednesdays', 'Thursdays', 'Fridays', 'Saturdays'];
+  var bySrc = {}; Object.keys(SRC).forEach(function (k) { bySrc[k] = work.filter(function (x) { return x.src === k; }).length; });
+  var topSrc = Object.keys(bySrc).sort(function (a, b) { return bySrc[b] - bySrc[a]; })[0];
+  var ms = loggedIn(ym), hrs = ms / 36e5, newIdeas = S.brain.filter(function (b) { return b.at.slice(0, 7) === ym; }).length;
+  var n = work.length, vibe = n === 0 ? (cur ? 'Fresh month' : 'Quiet month') : n < 10 ? 'Warming up' : n < 30 ? 'Solid month' : n < 60 ? 'On a roll' : n < 100 ? 'Machine' : 'Beast mode';
+  var diff = n - prevN, vs = prevN || n ? (diff >= 0 ? '+' : '') + diff + ' vs ' + monthName(prevYm) : 'First month on record';
+  var tile = function (v, label, sub, cls) { return '<div class="ptile' + (cls ? ' ' + cls : '') + '"><b>' + v + '</b><span>' + label + '</span>' + (sub ? '<small>' + sub + '</small>' : '') + '</div>'; };
+  var head = '<div class="ghead"><button class="yr" data-pmonth="' + prevYm + '" aria-label="Previous month">‹</button><h2>' + monthName(ym).toUpperCase() + (y !== new Date().getFullYear() ? ' ' + y : '') + '</h2>'
+    + (cur ? '' : '<button class="yr" data-pmonth="' + ymShift(ym, 1) + '" aria-label="Next month">›</button>') + '<span class="pvibe">' + vibe + '</span><span class="sp"></span>'
+    + (cur ? '' : '<button class="b" data-pmonth="' + now + '">This month</button>') + '</div>';
+  var tiles = '<div class="ptiles">' + tile(n, 'Things done', vs, 'hero')
+    + tile(bySrc.today, 'Today tasks') + tile(bySrc.prod, 'In Production tasks') + tile(bySrc.big, 'Big Picture tasks')
+    + tile(miles.length, 'Milestones', miles.length ? 'projects finished, ideas made real' : 'none yet')
+    + tile(hrs >= 10 ? Math.round(hrs) + 'h' : (Math.round(hrs * 10) / 10) + 'h', 'Time logged', ms ? 'from the timers' : 'start a timer on a card') + '</div>';
+  var facts = [
+    best ? ['Best day', niceDate(best, true).replace(/, \d{4}$/, '') + ' · ' + perDay[best] + ' things'] : null,
+    cur ? ['Streak', streak ? streak + ' day' + (streak === 1 ? '' : 's') + ' in a row' + (streak >= 3 ? ' 🔥' : '') : 'Do one thing today to start one'] : ['Longest streak', longest + ' day' + (longest === 1 ? '' : 's') + ' in a row'],
+    ['Active days', active + ' of ' + lastDay + (active ? ' · ' + (Math.round(n / Math.max(active, 1) * 10) / 10) + ' a day when you’re on' : '')],
+    n ? ['You shine on', WD[wdBest]] : null,
+    n ? ['Most done in', SRC[topSrc] + ' · ' + Math.round(bySrc[topSrc] / n * 100) + '%'] : null,
+    ['New ideas', newIdeas + ' dropped in Brainstorm']
+  ].filter(Boolean);
+  var cal = '<div class="pcal">' + ['M', 'T', 'W', 'T', 'F', 'S', 'S'].map(function (w) { return '<span class="wd">' + w + '</span>'; }).join('');
+  var lead = (new Date(y, m - 1, 1).getDay() + 6) % 7; for (var k = 0; k < lead; k++) cal += '<i class="pad"></i>';
+  for (var j = 1; j <= days; j++) { var c = perDay[dk(j)] || 0; cal += '<i class="' + (c >= 6 ? 'l3' : c >= 3 ? 'l2' : c ? 'l1' : '') + (cur && dk(j) === t0 ? ' now' : '') + (cur && j > lastDay ? ' fut' : '') + '" title="' + niceDate(dk(j)) + ': ' + c + ' done">' + j + '</i>'; }
+  cal += '</div>';
+  var pct = Math.round(lastDay / days * 100);
+  var month = '<div class="panel"><div class="ph"><h3>The month</h3><span class="hint">' + (cur ? 'Day ' + lastDay + ' of ' + days : days + ' days') + '</span></div>' + cal
+    + (cur ? '<div class="pmon">' + (days - lastDay) + ' day' + (days - lastDay === 1 ? '' : 's') + ' left in ' + monthName(ym) + '<div class="gbar" style="margin:6px 0 0"><i style="width:' + pct + '%"></i></div></div>' : '')
+    + '<div class="pfacts">' + facts.map(function (f) { return '<div class="pfact"><span>' + f[0] + '</span><b>' + esc(f[1]) + '</b></div>'; }).join('') + '</div></div>';
+  // progress check
+  var Y = y, goals = S.goals.filter(function (g) { return g.year === Y; });
+  var stepsIn = function (p) { return all.filter(function (x) { return x.src === 'big' && !x.ms && x.d.slice(0, 7) === ym && x.sub.indexOf(p.name + ' · ') === 0; }).length; };
+  var gl = goals.map(function (g) {
+    var qs = g.quests.map(questById).filter(Boolean), gp = qs.length ? Math.round(qs.reduce(function (a, p) { return a + questPct(p); }, 0) / qs.length) : 0, mv = qs.reduce(function (a, p) { return a + stepsIn(p); }, 0);
+    return '<div class="pq"><div class="pqh"><b>◎ ' + esc(g.title) + '</b>' + (g.result ? '<em class="up">' + { hit: 'Hit', partly: 'Partly', missed: 'Missed' }[g.result] + '</em>' : qs.length ? '<em' + (mv ? ' class="up"' : '') + '>' + (mv ? '+' + mv + ' this month' : 'no moves this month') + '</em>' : '<em>no quest</em>') + '</div>'
+      + (qs.length ? '<div class="gbar"><i style="width:' + gp + '%"></i></div><small>' + gp + '% of its quests done</small>' : '<small>Link a quest to this goal so it moves.</small>') + '</div>';
+  }).join('');
+  var ql = quests().map(function (p) { var q = questPct(p), mv = stepsIn(p); return { p: p, q: q, mv: mv }; }).filter(function (x) { return x.q < 100 || x.mv; })
+    .sort(function (a, b) { return b.mv - a.mv || b.q - a.q; }).slice(0, 8).map(function (x) {
+      return '<div class="pq"><div class="pqh"><b>' + esc(x.p.name) + '</b><em' + (x.mv ? ' class="up"' : '') + '>' + (x.mv ? '+' + x.mv + ' this month' : 'quiet') + '</em></div><div class="gbar"><i style="width:' + x.q + '%"></i></div><small>' + x.q + '% done</small></div>';
+    }).join('');
+  var lateN = S.tasks.filter(function (t) { var r = resolve(t); return r && !r.done && r.due && r.due < t0; }).length;
+  pls().forEach(function (pl) { cardsOf(pl).forEach(function (c) { if (!c.archived) ctasks(c).forEach(function (x) { if (!x.done && isDate(x.due) && x.due < t0 && !linkedTo(x.id)) lateN++; }); }); });
+  var stuck = 0; pls().forEach(function (pl) { cardsOf(pl).forEach(function (c) { if (!c.archived && !stageObj(pl, stageOf(pl, c)).done && daysIn(c) > 14) stuck++; }); });
+  var openN = S.tasks.filter(function (t) { var r = resolve(t); return r && !r.done; }).length, fresh = S.brain.filter(function (b) { return b.box === 'fresh'; }).length;
+  var warn = function (v, label, go, bad) { return '<div class="pwarn' + (bad && v ? ' bad' : '') + '"><b>' + v + '</b><span>' + label + '</span>' + (go ? '<button class="b ghost" data-pgo="' + go + '">Go →</button>' : '') + '</div>'; };
+  var health = warn(lateN, 'late task' + (lateN === 1 ? '' : 's'), 'late', true) + warn(openN, 'open in Today', 'today') + (PLD ? warn(stuck, 'project' + (stuck === 1 ? '' : 's') + ' stuck 2+ weeks in a stage', 'prod', true) : '') + warn(fresh, 'fresh idea' + (fresh === 1 ? '' : 's') + ' waiting in Brainstorm', 'brain');
+  var check = '<div class="panel"><div class="ph"><h3>Progress check</h3></div>' + (cur ? health : '')
+    + '<div class="pgrp">Goals · ' + Y + '</div>' + (gl || '<div class="empty">No goals for ' + Y + '. <button class="b ghost" data-pgo="goals">Add one →</button></div>')
+    + (PPD ? '<div class="pgrp">Quests</div>' + (ql || '<div class="empty">No quests on the go.</div>') : '') + '</div>';
+  // everything done
+  var list = Object.keys(SRC).map(function (k) {
+    var xs = mine.filter(function (x) { return x.src === k; }).sort(function (a, b) { return b.d.localeCompare(a.d) || (b.ms || 0) - (a.ms || 0); }); if (!xs.length) return '';
+    var open = U.popen[k], shown = open ? xs : xs.slice(0, 6);
+    return '<div class="pgrp"><i>' + xs.length + '</i>' + SRC[k] + '</div>' + shown.map(function (x) {
+      return '<div class="pdone' + (x.ms ? ' ms' : '') + '"><span class="dt">' + new Date(x.d + 'T12:00').toLocaleDateString('en-CA', { month: 'short', day: 'numeric' }) + '</span><span class="tx">' + fmt(x.title) + '<small>' + esc(x.sub) + '</small></span></div>';
+    }).join('') + (xs.length > 6 ? '<button class="pmore" data-pmore="' + k + '">' + (open ? 'Show less' : 'Show all ' + xs.length + ' →') + '</button>' : '');
+  }).join('');
+  var done = '<div class="panel"><div class="ph"><h3>Everything done</h3><span class="hint">' + mine.length + ' in ' + monthName(ym) + '</span></div>'
+    + (list || '<div class="empty">' + (cur ? 'Nothing ticked off yet this month. The first one’s the best one.' : 'Nothing was ticked off in ' + monthName(ym) + '.') + '</div>')
+    + (!PLD || !PPD ? '<div class="empty" style="font-size:12px">Sign in to count In Production and Big Picture too.</div>' : '') + '</div>';
+  $('v-prog').innerHTML = head + tiles + '<div class="pcols"><div>' + month + check + '</div><div>' + done + '</div></div>';
+}
+
 /* ---------------------------------------------------------------- Brainstorm */
-var BOX = { fresh: 'Fresh', shelf: 'On the shelf', archive: 'Archived' };
+var BOX = { fresh: 'Fresh', shelf: 'On the shelf', done: 'Done', archive: 'Archived' };
 function calcScore(im, tm, ea) { return Math.round(im * 0.5 + ea * 0.25 + (100 - tm) * 0.25); }
 function ago(d) { var n = daysBetween(d, today()); return n <= 0 ? 'today' : n === 1 ? 'yesterday' : n + ' days ago'; }
 function renderBrain() {
@@ -1826,21 +1997,22 @@ function renderBrain() {
   var list = S.brain.filter(inBox).filter(match).filter(function (b) { return f === 'all' || b.spark; })
     .sort(function (a, b) { return sort === 'score' ? ((b.score == null ? -1 : b.score) - (a.score == null ? -1 : a.score)) : ((b.spark - a.spark) || b.at.localeCompare(a.at)); });
   var foot = function (b) {
-    if (box === 'fresh') return '<button class="b" data-b2today="' + b.id + '">→ Today</button><button class="b y" data-b2prod="' + b.id + '">→ In Production</button><button class="b r" data-b2big="' + b.id + '">→ Big Picture</button><span style="flex:1"></span><button class="b ghost" data-bmove="' + b.id + '" data-to="shelf">Shelf it</button><button class="b ghost" data-bmove="' + b.id + '" data-to="archive">Archive</button>';
-    if (box === 'shelf') return '<button class="b y" data-bmove="' + b.id + '" data-to="fresh">← Back to Fresh</button><button class="b ghost" data-b2prod="' + b.id + '">→ In Production</button><span style="flex:1"></span><button class="b ghost" data-bmove="' + b.id + '" data-to="archive">Archive</button>';
+    if (box === 'fresh') return '<button class="b" data-b2today="' + b.id + '">→ Today</button><button class="b y" data-b2prod="' + b.id + '">→ In Production</button><button class="b r" data-b2big="' + b.id + '">→ Big Picture</button><span style="flex:1"></span><button class="b ghost" data-bmove="' + b.id + '" data-to="shelf">Shelf it</button><button class="b ghost" data-bmove="' + b.id + '" data-to="archive">Archive</button><button class="b" data-bdone="' + b.id + '" title="It happened: move it to Done">✓ Done</button>';
+    if (box === 'shelf') return '<button class="b y" data-bmove="' + b.id + '" data-to="fresh">← Back to Fresh</button><button class="b ghost" data-b2prod="' + b.id + '">→ In Production</button><span style="flex:1"></span><button class="b ghost" data-bmove="' + b.id + '" data-to="archive">Archive</button><button class="b" data-bdone="' + b.id + '" title="It happened: move it to Done">✓ Done</button>';
+    if (box === 'done') return '<button class="b" data-bundone="' + b.id + '">↺ Not done yet</button>';
     return '<button class="b" data-bmove="' + b.id + '" data-to="fresh">Restore</button><span style="flex:1"></span><button class="b r" data-bkill="' + b.id + '">Delete forever</button>';
   };
   var cards = '<div class="bgrid">' + (list.map(function (b) {
     return '<div class="bcard ' + (b.spark && box === 'fresh' ? 'lit ' : '') + box + (flashId === b.id ? ' flash' : '') + '"><div class="bb" data-bedit="' + b.id + '"><div style="display:flex;gap:8px;align-items:flex-start"><div class="bt">' + hl(b.text) + '</div>'
       + '<button class="spark' + (b.spark ? ' on' : '') + '" data-spark="' + b.id + '" title="Sparks joy">⚡</button>' + (b.score != null ? '<button class="bscore" data-score="' + b.id + '" title="Change score">' + b.score + '</button>' : '<button class="bscore none" data-score="' + b.id + '">Score</button>') + '</div>'
       + (b.note ? '<div class="bn">' + hl(b.note) + '</div>' : '') + (b.impact != null ? '<div class="ied">Impact ' + b.impact + ' · Time ' + b.time + ' · Easy ' + b.ease + '</div>' : '')
-      + (b.why && box === 'archive' ? '<div class="bn"><b>Why:</b> ' + hl(b.why) + '</div>' : '') + '<div class="bm">added ' + ago(b.at) + (box !== 'fresh' && b.movedAt ? ' · ' + (box === 'shelf' ? 'shelved' : 'archived') + ' ' + ago(b.movedAt) : '') + '</div></div>'
+      + (b.why && box === 'archive' ? '<div class="bn"><b>Why:</b> ' + hl(b.why) + '</div>' : '') + '<div class="bm">added ' + ago(b.at) + (box === 'done' && b.doneAt ? ' · done ' + ago(b.doneAt) : box !== 'fresh' && box !== 'done' && b.movedAt ? ' · ' + (box === 'shelf' ? 'shelved' : 'archived') + ' ' + ago(b.movedAt) : '') + '</div></div>'
       + '<div class="bf">' + foot(b) + '</div></div>';
-  }).join('') || '<div class="empty">' + (qy ? 'No ideas match “' + esc(U.brainQ.trim()) + '” here.' : { fresh: 'Empty. Brain is clear.', shelf: 'Nothing on the shelf.', archive: 'Nothing archived.' }[box]) + '</div>') + '</div>';
+  }).join('') || '<div class="empty">' + (qy ? 'No ideas match “' + esc(U.brainQ.trim()) + '” here.' : { fresh: 'Empty. Brain is clear.', shelf: 'Nothing on the shelf.', done: 'Nothing done yet. When an idea becomes real, tap ✓ Done on it.', archive: 'Nothing archived.' }[box]) + '</div>') + '</div>';
   $('v-brain').innerHTML = '<form class="bigin" id="cap"><textarea id="cap-in" rows="1" placeholder="Dump it here. Half-baked is fine."></textarea><button>Drop it</button></form>'
     + '<p class="tip">Enter to save · Shift+Enter for a new line · ⚡ the ones that excite you. When one’s ready, send it to Today, In Production or Big Picture.</p>'
     + '<div class="bbox">' + Object.keys(BOX).map(function (k) { return '<button aria-pressed="' + (box === k) + '" data-bbox="' + k + '">' + BOX[k] + ' <span>' + boxN(k) + '</span></button>'; }).join('') + '</div>'
-    + ({ shelf: '<p class="bbox-hint">Good ideas, just not now. They stay out of the way until you bring them back.</p>', archive: '<p class="bbox-hint">Not relevant anymore. Kept so you remember why you let them go.</p>' }[box] || '')
+    + ({ shelf: '<p class="bbox-hint">Good ideas, just not now. They stay out of the way until you bring them back.</p>', archive: '<p class="bbox-hint">Not relevant anymore. Kept so you remember why you let them go.</p>', done: '<p class="bbox-hint">Ideas you made happen. Nothing here is deleted, and each one counts in Progress.</p>' }[box] || '')
     + '<div class="bfilter"><label class="bsearch"><span>⌕</span><input id="b-q" type="search" placeholder="Search ideas" value="' + esc(U.brainQ || '') + '" autocomplete="off">' + (qy ? '<button type="button" data-bqclear title="Clear search">×</button>' : '') + '</label>'
     + '<button class="b" aria-pressed="' + (f === 'all') + '" data-bf="all">All ' + boxN(box) + '</button><button class="b" aria-pressed="' + (f === 'spark') + '" data-bf="spark">⚡ Sparked ' + S.brain.filter(inBox).filter(function (b) { return b.spark; }).length + '</button>'
     + (mode === 'cards' ? '<button class="b" aria-pressed="' + (sort === 'new') + '" data-bsort="new">Newest</button><button class="b" aria-pressed="' + (sort === 'score') + '" data-bsort="score">Top score</button>' : '')
@@ -1976,7 +2148,9 @@ document.addEventListener('input', function (e) { if (e.target.matches && e.targ
 document.addEventListener('keydown', function (e) {
   if (!e.target.matches) return;
   var form = e.target.closest && e.target.closest('.addtask');
-  if (e.target.matches('.addtask .at') && e.key === 'Enter') { e.preventDefault(); if (e.metaKey || e.ctrlKey) form.requestSubmit(); else form.querySelector('textarea.ad').focus(); }
+  if (e.target.matches('.addtask .at') && e.key === 'Enter' && !e.isComposing) { e.preventDefault(); form.requestSubmit(); }
+  else if (e.target.matches('.addtask .at') && e.key === 'Tab' && !e.shiftKey) { e.preventDefault(); form.querySelector('textarea.ad').focus(); }
+  else if (e.target.matches('.addtask .ad') && e.key === 'Tab' && e.shiftKey) { e.preventDefault(); form.querySelector('.at').focus(); }
   else if (e.target.matches('.addtask .ad') && e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); form.requestSubmit(); }
   else if (e.target.matches('.addtask .at, .addtask .ad') && e.key === 'Escape') { form.querySelector('.at').value = ''; form.querySelector('textarea.ad').value = ''; form.classList.remove('open'); e.target.blur(); }
 });
@@ -2037,6 +2211,12 @@ document.addEventListener('click', function (e) {
     var nc = newPlCard(pp0, st0, tp.title, linesOf(tp.notes)); arr(pp0, 'cards').push(nc); savePL();
     S.tasks = S.tasks.filter(function (x) { return x !== tp; }); shutDlg(); flashId = nc.id; U.prodView = pp0.id; saveUi(); commit();
     return toast('Now a project in Pipelines · ' + stageObj(pp0, st0).name, 'View', function () { show('prod'); });
+  }
+  if (d.t2brain) {
+    var tw = T(d.t2brain), i0 = S.tasks.indexOf(tw);
+    var nb = { id: uid('b'), text: tw.title, note: tw.notes, spark: false, at: today(), box: 'fresh', movedAt: null, why: '' };
+    S.brain.unshift(nb); S.tasks = S.tasks.filter(function (x) { return x !== tw; }); shutDlg(); commit();
+    return toast('Moved to Brainstorm', 'Undo', function () { S.brain = S.brain.filter(function (x) { return x !== nb; }); S.tasks.splice(Math.min(i0, S.tasks.length), 0, tw); commit(); });
   }
   if (d.t2big) {
     if (needs('pp')) return; var tb = T(d.t2big);
@@ -2163,6 +2343,15 @@ document.addEventListener('click', function (e) {
   }
   if (d.bsave) { var bb = B(d.bsave), bt = $('b-text').value.trim(); if (bt) bb.text = bt; bb.note = $('b-note').value; shutDlg(); flashId = bb.id; return commit(); }
   if (d.bkill) { if (!confirm('Delete this idea for good?')) return; S.brain = S.brain.filter(function (x) { return x.id !== d.bkill; }); shutDlg(); return commit(); }
+  if (d.bdone) {
+    var bd = B(d.bdone), fromD = bd.box, mvD = bd.movedAt;
+    bd.box = 'done'; bd.doneAt = today(); bd.movedAt = today(); commit();
+    return toast('Done! It’s in the Done box.', 'Undo', function () { bd.box = fromD; bd.movedAt = mvD; delete bd.doneAt; commit(); });
+  }
+  if (d.bundone) { var bu = B(d.bundone); bu.box = 'fresh'; delete bu.doneAt; bu.movedAt = today(); commit(); return toast('Back in Fresh', 'Undo', function () { bu.box = 'done'; bu.doneAt = today(); commit(); }); }
+  if (d.pmonth) { U.pmonth = d.pmonth; saveUi(); return render(); }
+  if (d.pmore) { U.popen[d.pmore] = !U.popen[d.pmore]; saveUi(); return render(); }
+  if (d.pgo) { if (d.pgo === 'late' || d.pgo === 'today') return show('today'); if (d.pgo === 'brain') { U.brainBox = 'fresh'; saveUi(); return show('brain'); } if (d.pgo === 'goals') return show('goals'); return show('prod'); }
   if (d.bmove) {
     var bm = B(d.bmove), from = bm.box, lbl = { fresh: 'Fresh', shelf: 'the shelf', archive: 'Archived' }[d.to];
     if (d.to === 'archive') {
@@ -2380,7 +2569,13 @@ if (window.createCloudSync) {
   SH = window.createCloudSync({
     doc: 'production-hub', storageKey: HUB_KEY, noun: 'hub',
     payload: function () { return S; },
-    apply: function (d) { var n = normHub(d); if (!n) return false; S = n; try { localStorage.setItem(HUB_KEY, JSON.stringify(S)); } catch (e) {} render(); return true; },
+    apply: function (d) {
+      var n = normHub(d); if (!n) return false;
+      var older = !d.progress && keepNewFields(n);   // an older page wrote this copy: keep this device's Done ideas and repeat history, then send them back
+      S = n; try { localStorage.setItem(HUB_KEY, JSON.stringify(S)); } catch (e) {} render();
+      if (older) setTimeout(function () { if (SH) { SH.cloud.print = ''; SH.touch(); } });
+      return true;
+    },
     untouched: function () { return JSON.stringify(S) === JSON.stringify(defaultHub()); },
     flush: function () { saveHubNow(); },
     describe: function (d) { var t = listOf(d && d.tasks).length, b = listOf(d && d.brain).length, g = listOf(d && d.goals).length; return t + ' task' + (t === 1 ? '' : 's') + ', ' + b + ' idea' + (b === 1 ? '' : 's') + ', ' + g + ' goal' + (g === 1 ? '' : 's'); },

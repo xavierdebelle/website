@@ -5,6 +5,46 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v173 — 2026-11-24
+
+**What's new** · Update · [tools/production-hub.html]
+### Production Hub: a new Progress tab, and ideas you can tick off
+A new **Progress** tab shows everything you finished this month across
+every tab, with your best day, streak, time logged and a quick check on
+your goals and quests. Brainstorm ideas can now be marked **Done**
+(nothing is deleted), Today tasks can go back to Brainstorm, and in Today
+Enter adds the task while Tab jumps to its details.
+
+**Production Hub — `tools/production-hub.html` (source `Tools files/Tools/production_hub_v12.html`)**
+- Today add box: Enter adds the task (it used to jump to details), Tab
+  goes to the details line, Shift+Tab back. ⌘ Enter still adds from details.
+- Task dialog: "→ Brainstorm" beside → In Production / → Big Picture, for
+  unlinked tasks. The task becomes a Fresh idea (title + details), with Undo.
+- Brainstorm: new **Done** box between On the shelf and Archived. "✓ Done"
+  on Fresh and Shelf ideas, Undo in the toast, "↺ Not done yet" to bring
+  one back. Ideas store `doneAt`.
+- Repeating tasks now remember each day they were ticked (`hist`), so
+  Progress counts them. Undo on a repeat tick also restores its date.
+- New **Progress** tab (`#v-prog`, 6th tab; phone bar now 6 columns):
+  month picker, totals per tab vs last month, milestones (cards reaching a
+  done stage, Project Phases phases completed, ideas done), time logged from
+  Pipelines and Project Phases timers, a month calendar shaded by activity,
+  fun facts (best day, streak, active days, best weekday, top tab, new
+  ideas), a progress check (late tasks, open tasks, stuck projects, fresh
+  ideas, goals and quests with "+N this month"), and the full done list
+  grouped by tab. Linked tasks count once, at their source.
+- Older open pages: hub payload now carries `progress: 1`. A copy without it
+  (written by an older open page) keeps this device's Done ideas and repeat
+  history and sends them back (sync skill "adding a field", step 1).
+
+**Scan:** nothing new. **Verified (mock database):** Enter/Tab with real
+keystrokes; → Brainstorm + Undo; Done + Undo + Not done yet; Progress totals
+match seeded data across all three docs; repeat tick records history; old
+v172 page on a second device edited the hub → its edit kept, Done idea and
+history restored, no conflict bar; phone width has no side scroll.
+
+---
+
 ## v172 — 2026-11-19
 
 **Package Builder — `tools/package-builder.html`**
