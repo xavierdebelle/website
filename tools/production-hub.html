@@ -483,6 +483,22 @@ textarea[data-grow]{min-height:40px!important;height:40px;overflow:hidden;resize
 .sl .top2 b{font:800 15px/1 "Inter Tight",sans-serif}
 .sl .top2 span{font:800 18px/1 "Inter Tight",sans-serif}
 .sl .ends{display:flex;justify-content:space-between;font-size:11px;color:var(--g6)}
+.bl-row{display:flex;gap:6px;align-items:center;margin-bottom:6px}
+#dlg .bl-row input[type=text]{flex:1;min-width:0}
+#dlg .bl-row select{width:auto;flex:0 0 auto;max-width:42%}
+#dlg .bl-row .dn{display:flex;gap:5px;align-items:center;margin:0;white-space:nowrap;flex:none}
+#dlg .bl-row .dn input{width:auto;margin:0}
+.bl-row .mini{border:1px solid #cfc7c7;background:var(--white);width:32px;height:38px;padding:0;font-weight:800;flex:none}
+.bl-row .mini:hover{background:var(--black);color:var(--white)}
+.bl-sec{font:800 13px/1 "Inter Tight",sans-serif;text-transform:uppercase;margin:18px 0 8px;padding-top:12px;border-top:2px solid var(--black);color:var(--black)}
+.bl-sec small{font:500 12px/1.3 "Inter Tight",sans-serif;text-transform:none;color:var(--g6);display:block;margin-top:4px}
+.tpl-pick{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:6px}
+.tpl-pick button{border:2px solid var(--black);background:var(--white);padding:12px 10px;text-align:left;font-weight:800;font-size:14px}
+.tpl-pick button small{display:block;font-weight:500;font-size:11px;color:var(--g6);margin-top:4px}
+.tpl-pick button.on{background:var(--black);color:var(--yellow)}
+.tpl-pick button.on small{color:#ccc}
+.pswitch .pnew{color:var(--black);font-size:12px}
+@media (max-width:760px){.tpl-pick{grid-template-columns:1fr}#dlg .bl-row select{max-width:34%;padding-left:6px;padding-right:2px}.bl-row{gap:4px}.bl-row .mini{width:30px}}
 #dlg input[type=range]{accent-color:var(--black);padding:0;border:0;height:26px}
 .formula{font-size:12px;color:var(--g6);margin-top:12px;background:var(--bg);padding:8px 10px}
 
@@ -1655,7 +1671,7 @@ function renderProd() {
   var sw = '<div class="pswitch">' + pls().map(function (p) {
     var n = cardsOf(p).filter(function (c) { return !c.archived && !stageObj(p, stageOf(p, c)).done; }).length;
     return '<button aria-pressed="' + (p.id === pl.id) + '" data-pview="' + p.id + '">' + esc(p.name) + ' <span>' + n + '</span></button>';
-  }).join('') + '<a href="pipelines.html" target="_blank" rel="noopener">Open Pipelines ↗</a></div>';
+  }).join('') + '<button class="pnew" data-pnew title="Make a new pipeline">+ Pipeline</button><a href="pipelines.html" target="_blank" rel="noopener">Open Pipelines ↗</a></div>';
   var isProj = pl.id === 'projects';
   var live = cardsOf(pl).filter(function (c) { return !c.archived; }), arch = cardsOf(pl).filter(function (c) { return c.archived; });
   var fs = cfields(pl), dateF = fs.find(function (f) { return f.type === 'date'; }), otherF = fs.filter(function (f) { return f !== dateF && f.type !== 'multi'; }).slice(0, 2), moneyF = fs.find(function (f) { return f.type === 'money'; });
@@ -1691,7 +1707,7 @@ function renderProd() {
   };
   el.innerHTML = sw + (isProj ? '<p class="model"><b>Today</b> = tasks → <b>In Production</b> = projects → <b>Big Picture</b> = quests. Red cards are the project a quest is on right now; use ⋯ to show another of its projects or take it off the board.</p>' : '')
     + '<div class="phead"><h2>' + esc(pl.name) + '</h2>' + (arch.length ? '<button class="b ghost" data-togglearch>' + (U.showArch ? 'Hide' : 'Show') + ' archived (' + arch.length + ')</button>' : '')
-    + '<a class="b" href="pipelines.html" target="_blank" rel="noopener" title="Stages, fields and checklists are edited in Pipelines">⚙ Edit in Pipelines ↗</a></div>'
+    + '<button class="b" data-pedit="' + pl.id + '" title="Name, stages, card fields and the checklist for new cards">⚙ Edit pipeline</button></div>'
     + '<div class="psum">' + stagesOf(pl).map(function (s) { var n = live.filter(function (c) { return stageOf(pl, c) === s.id; }).length; return n ? '<span>' + n + ' ' + esc(s.name) + '</span>' : ''; }).join('')
     + (lateN ? '<span class="late">' + lateN + ' late</span>' : '') + (stuckN ? '<span class="stuck">' + stuckN + ' stuck 14+ days</span>' : '') + (sum ? '<span class="money-sum">' + money(sum) + ' ' + esc(String(moneyF.name).toLowerCase()) + ' open</span>' : '')
     + (function () { var ms = live.reduce(function (n, c) { return n + cardMs(c); }, 0); return ms ? '<span>⏱ ' + dur(ms) + ' logged</span>' : ''; })() + '</div>'
@@ -1870,6 +1886,73 @@ function renderGoals() {
   var f = $('gadd');
   if (f) f.onsubmit = function (e) { e.preventDefault(); var v = $('gadd-in').value.trim(); if (!v) return; var g = { id: uid('g'), year: Y, title: v, measure: '', result: null, note: '', quests: [] }; S.goals.push(g); flashId = g.id; commit(); $('gadd-in').focus(); };
   document.querySelectorAll('[data-gnote]').forEach(function (t) { t.oninput = function () { S.goals.find(function (g) { return g.id === t.getAttribute('data-gnote'); }).note = t.value; saveHub(); }; });
+}
+
+/* ---------------------------------------------------------------- Pipeline builder (same as the Pipelines app: name, stages, card fields, checklist for new cards) */
+var FIELD_TYPES = [['text', 'Text'], ['multi', 'Multi-line text'], ['number', 'Number'], ['money', 'Money'], ['date', 'Date']];
+var PTEMPLATES = {
+  wedding: { name: 'Wedding video', sub: 'Client info to accounting',
+    stages: [['Begin'], ['Client Info Request'], ['In Progress'], ['Client Review'], ['Corrections'], ['Done', true], ['Accounting']],
+    fields: [['Wedding date', 'date'], ['Package', 'text'], ['Hours', 'number'], ['Price', 'money'], ['Notes', 'multi']],
+    checklist: ['Back up the cards', 'Import + sync footage', 'Pick the music', 'Edit the highlight film', 'Colour grade', 'Sound mix', 'Export + upload', 'Send to client for review', 'Corrections (if needed)'] },
+  commercial: { name: 'Commercial shoot', sub: 'Quote to paid',
+    stages: [['Inquiry'], ['Quote sent'], ['Booked'], ['Shoot'], ['Editing'], ['Client review'], ['Delivered', true], ['Paid']],
+    fields: [['Client', 'text'], ['Shoot date', 'date'], ['Budget', 'money'], ['Brief', 'multi']],
+    checklist: ['Send quote', 'Contract + deposit', 'Shot list / brief', 'Shoot', 'Cull + edit', 'Send proofs', 'Final delivery', 'Send invoice', 'Payment received'] },
+  blank: { name: 'Blank', sub: 'Start from scratch', stages: [['To do'], ['Doing'], ['Done', true]], fields: [], checklist: [] }
+};
+var pdraft = null;
+function tplDraft(k) {
+  var t = PTEMPLATES[k];
+  return { id: null, tpl: k, name: '', checklist: t.checklist.slice(),
+    stages: t.stages.map(function (x) { return { id: uid('s'), name: x[0], done: !!x[1] }; }),
+    fields: t.fields.map(function (x) { return { id: uid('f'), name: x[0], type: x[1] }; }) };
+}
+function pipeDlg(plid) {
+  var pl = plid ? plById(plid) : null;
+  if (!pdraft) pdraft = pl ? { id: pl.id, name: String(pl.name || ''), checklist: listOf(pl.checklist).map(String),
+      stages: stagesOf(pl).map(function (x) { return { id: x.id, name: String(x.name || ''), done: !!x.done }; }),
+      fields: cfields(pl).map(function (x) { return { id: x.id, name: String(x.name || ''), type: x.type || 'text' }; }) } : tplDraft('wedding');
+  var D = pdraft;
+  function row(kind, i, inner) { return '<div class="bl-row">' + inner + '<button class="mini" type="button" data-pmv="' + kind + ':' + i + ':-1" title="Up">↑</button><button class="mini" type="button" data-pmv="' + kind + ':' + i + ':1" title="Down">↓</button><button class="mini" type="button" data-prm="' + kind + ':' + i + '" title="Remove">×</button></div>'; }
+  openDlg('<h3>' + (pl ? 'Edit pipeline' : 'New pipeline') + '</h3><div class="body">'
+    + (pl ? '' : '<label>Start from</label><div class="tpl-pick">' + Object.keys(PTEMPLATES).map(function (k) { var t = PTEMPLATES[k]; return '<button type="button" class="' + (D.tpl === k ? 'on' : '') + '" data-ptpl="' + k + '">' + t.name + '<small>' + t.sub + '</small></button>'; }).join('') + '</div>')
+    + '<label>Name</label><input type="text" id="d-name" value="' + esc(D.name) + '" placeholder="e.g. Weddings 2027">'
+    + '<div class="bl-sec">Stages<small>Left to right on the board. Tick “Done” on the stage that means finished.</small></div>'
+    + D.stages.map(function (x, i) { return row('stages', i, '<input type="text" data-dst="' + i + '" value="' + esc(x.name) + '" placeholder="Stage name"><label class="dn"><input type="radio" name="dn" data-ddone="' + i + '"' + (x.done ? ' checked' : '') + '> Done</label>'); }).join('')
+    + '<button class="b ghost" type="button" data-padd2="stages">+ Stage</button>'
+    + '<div class="bl-sec">Card fields<small>The details each card holds. Dates and the first two short fields show on the card; money adds up in the summary.</small></div>'
+    + D.fields.map(function (f, i) { return row('fields', i, '<input type="text" data-dfn="' + i + '" value="' + esc(f.name) + '" placeholder="Field name"><select data-dft="' + i + '">' + FIELD_TYPES.map(function (t) { return '<option value="' + t[0] + '"' + (f.type === t[0] ? ' selected' : '') + '>' + t[1] + '</option>'; }).join('') + '</select>'); }).join('')
+    + '<button class="b ghost" type="button" data-padd2="fields">+ Field</button>'
+    + '<div class="bl-sec">Checklist for new cards<small>One item per line. Every new card starts with this list. Changing it doesn’t touch existing cards.</small></div>'
+    + '<textarea id="d-cl" data-plain style="min-height:150px">' + esc(D.checklist.join('\n')) + '</textarea>'
+    + '</div><div class="foot">' + (pl && pl.id !== 'projects' ? '<button class="b r" data-pdel="' + pl.id + '">Delete pipeline</button>' : '')
+    + '<span class="sp"></span><button class="b ghost" data-pcancel>Cancel</button><button class="b y" data-psave>' + (pl ? 'Save' : 'Create pipeline') + '</button></div>');
+  var box = $('dlg-box');
+  $('d-name').oninput = function () { D.name = this.value; };
+  box.querySelectorAll('[data-dst]').forEach(function (i) { i.oninput = function () { D.stages[+i.getAttribute('data-dst')].name = i.value; }; });
+  box.querySelectorAll('[data-ddone]').forEach(function (i) { i.onchange = function () { D.stages.forEach(function (x, k) { x.done = k === +i.getAttribute('data-ddone'); }); }; });
+  box.querySelectorAll('[data-dfn]').forEach(function (i) { i.oninput = function () { D.fields[+i.getAttribute('data-dfn')].name = i.value; }; });
+  box.querySelectorAll('[data-dft]').forEach(function (i) { i.onchange = function () { D.fields[+i.getAttribute('data-dft')].type = i.value; }; });
+  var cl = $('d-cl'); cl.oninput = function () { D.checklist = String(cl.value).split('\n').map(function (x) { return x.replace(/^\s*[-•]\s*/, '').replace(/\*\*/g, '').trim(); }).filter(Boolean); };
+  if (!pl) setTimeout(function () { $('d-name').focus(); }, 30);
+}
+function savePipe() {
+  var D = pdraft;
+  if (!D.name.trim()) { toast('Give the pipeline a name'); $('d-name').focus(); return; }
+  var stages = D.stages.filter(function (x) { return x.name.trim(); }).map(function (x) { return { id: x.id, name: x.name.trim(), done: !!x.done }; });
+  if (!stages.length) return toast('Add at least one stage');
+  var fields = D.fields.filter(function (f) { return f.name.trim(); }).map(function (f) { return { id: f.id, name: f.name.trim(), type: f.type }; });
+  var pl = D.id ? plById(D.id) : null;
+  if (pl) {   // only these four change; everything else on the pipeline stays exactly as Pipelines wrote it
+    pl.name = D.name.trim(); pl.stages = stages; pl.fields = fields; pl.checklist = D.checklist.slice();
+    cardsOf(pl).forEach(function (c) { if (!stages.some(function (x) { return x.id === c.stage; })) { c.stage = stages[0].id; c.stageAt = today(); } });   // cards on a removed stage go to the first one
+  } else {
+    pl = { id: uid('p'), name: D.name.trim(), stages: stages, fields: fields, checklist: D.checklist.slice(), cards: [] };
+    arr(PLD, 'pipelines').push(pl);
+  }
+  pdraft = null; U.prodView = pl.id; U.showArch = false; saveUi(); shutDlg(); savePL(); commit();
+  toast(pl.name + ' saved');
 }
 
 /* ---------------------------------------------------------------- Progress */
@@ -2238,6 +2321,19 @@ document.addEventListener('click', function (e) {
   }
 
   /* In Production */
+  if ('pnew' in d) { if (needs('pl')) return; pdraft = null; return pipeDlg(null); }
+  if (d.pedit) { pdraft = null; return pipeDlg(d.pedit); }
+  if (d.ptpl) { var nmT = pdraft.name; pdraft = Object.assign(tplDraft(d.ptpl), { name: nmT }); return pipeDlg(null); }
+  if (d.padd2) { pdraft[d.padd2].push(d.padd2 === 'stages' ? { id: uid('s'), name: '', done: false } : { id: uid('f'), name: '', type: 'text' }); pipeDlg(pdraft.id); var insP = $('dlg-box').querySelectorAll(d.padd2 === 'stages' ? '[data-dst]' : '[data-dfn]'); if (insP.length) insP[insP.length - 1].focus(); return; }
+  if (d.pmv) { var pm = d.pmv.split(':'), pa = pdraft[pm[0]], pi = +pm[1], pj = pi + +pm[2]; if (pj >= 0 && pj < pa.length) { var ptmp = pa[pi]; pa[pi] = pa[pj]; pa[pj] = ptmp; } return pipeDlg(pdraft.id); }
+  if (d.prm) { var pq = d.prm.split(':'); pdraft[pq[0]].splice(+pq[1], 1); return pipeDlg(pdraft.id); }
+  if ('psave' in d) return savePipe();
+  if ('pcancel' in d) { pdraft = null; return shutDlg(); }
+  if (d.pdel) {
+    var pdl = plById(d.pdel), nC = cardsOf(pdl).length; if (!confirm('Delete “' + pdl.name + '” and its ' + nC + ' card' + (nC === 1 ? '' : 's') + '? This deletes it in Pipelines too.')) return;
+    var rn0 = runningTimer(); if (rn0 && cardsOf(pdl).indexOf(rn0.c) > -1) stopTimer();
+    PLD.pipelines = pls().filter(function (x) { return x !== pdl; }); pdraft = null; U.prodView = 'projects'; saveUi(); shutDlg(); savePL(); pruneLinks(); return commit();
+  }
   if (d.pview) { U.prodView = d.pview; U.showArch = false; saveUi(); return render(); }
   if (d.card) { var hc = cardHit(d.card); return hc && cardDlg(hc.pl.id, hc.c.id); }
   if (d.qopen) { U.quest = d.qopen; return show('big'); }

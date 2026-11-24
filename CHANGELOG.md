@@ -5,6 +5,35 @@ Every previous release is frozen, complete and runnable, under `versions/`.
 
 ---
 
+## v176 — 2026-11-24
+
+**What's new** · Update · [tools/production-hub.html]
+### Production Hub: make and edit pipelines without leaving the hub
+In In Production, "+ Pipeline" starts a new one from a template (wedding
+video, commercial shoot or blank), and "⚙ Edit pipeline" changes its name,
+stages, card fields and the checklist new cards start with. Everything shows
+up in the Pipelines app straight away.
+
+**Production Hub — `tools/production-hub.html` (source `Tools files/Tools/production_hub_v14.html`)**
+- Pipeline builder ported from the Pipelines app (`pipeDlg` / `savePipe`,
+  same templates, `PTEMPLATES`): name, stages (order, one Done stage),
+  card fields (text / multi-line / number / money / date), checklist for new
+  cards. "+ Pipeline" in the switcher; "⚙ Edit pipeline" replaces the
+  "Edit in Pipelines ↗" link. Delete pipeline (not Projects), with confirm;
+  stops a running timer on its cards and drops Today links to them.
+- Editing changes only `name`, `stages`, `fields`, `checklist`; everything
+  else on the pipeline object stays as Pipelines wrote it. Cards on a
+  removed stage move to the first stage (same as Pipelines).
+
+**Scan:** nothing new. **Verified (mock database, with account.js):**
+create from each template; edit name / remove a stage holding a card / add
+and reorder stages / add a field / checklist; unknown pipeline keys kept;
+Projects has no Delete; Pipelines app on a second device showed the new
+pipeline, the renamed stage and the delete live, no conflict; phone width
+has no side scroll.
+
+---
+
 ## v175 — 2026-11-24
 
 **Memory Map v13 — `tools/memory-map.html`** (Personal, owner-only; no "What's new" block, private)
